@@ -10,7 +10,7 @@ const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/mal
 let s=null,screen='title',tiles=[],npcs=[],dialog=[],dialogDone=null,modal=false,battle=null,frame=0,held={},last=0,editing=false;
 const read=()=>{try{return JSON.parse(localStorage.getItem('critters-v1'))}catch{return null}};
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page}
+function show(page){clearMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page}
 function critter(type,level=5){const hp=20+level*4;return {type,level,hp,maxHp:hp,xp:0,status:'',moves:['Strike',type+' Pulse','Guard','Focus']}}
 function migrate(){
  if(!s)return;
@@ -186,7 +186,7 @@ function interact(){
 }
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
 function enterGym(){if(!s.rivalPassed){s.rivalPassed=true;save();return say(['Your childhood rival is waiting at the Grass Gym entrance!'],()=>startTrainer('rival'))}return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
-function open(title,body){modal=true;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('shade').classList.add('show')}
+function open(title,body){clearMovement();modal=true;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('shade').classList.add('show')}
 function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false}
 function firstAlive(){return s.party.findIndex(p=>p.hp>0)}
 function lead(){return s.party[firstAlive()]}
@@ -323,9 +323,47 @@ $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,'
  save();build();show('game');say(['Welcome, '+name+'!','Visit the research laboratory in the northeast of the village to receive your Critter Index and starter.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
 $('index').onclick=index;$('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
-window.addEventListener('keydown',e=>{if(document.activeElement.tagName==='INPUT')return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>120){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
-window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});window.addEventListener('blur',()=>held={});
-document.querySelectorAll('[data-dir]').forEach(b=>{const d=b.dataset.dir;b.addEventListener('pointerdown',e=>{e.preventDefault();held[d]=true;move(d)});for(const ev of ['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,e=>{e.preventDefault();held[d]=false})});
+const movementCodes={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+let touchDirection=null,touchPointer=null;
+function clearMovement(){held={};touchDirection=null;touchPointer=null;document.querySelectorAll('[data-dir]').forEach(b=>b.classList.remove('pressed'))}
+window.addEventListener('keydown',e=>{
+ const target=e.target||document.activeElement;
+ if(target&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||target.isContentEditable))return;
+ const d=movementCodes[e.code];
+ if(d){e.preventDefault();if(!held[d]){held[d]=true;if(screen==='game'&&!modal&&Date.now()-last>100){move(d);last=Date.now()}}return}
+ if(['KeyE','Enter','Space'].includes(e.code)){if(screen==='game'&&!modal){e.preventDefault();if(!e.repeat)interact()}return}
+ if(e.code==='KeyI'){if(screen==='game'){e.preventDefault();if(!e.repeat&&!modal)index()}return}
+ if(e.code==='Escape'&&modal&&!battle){e.preventDefault();close()}
+});
+window.addEventListener('keyup',e=>{const d=movementCodes[e.code];if(d){e.preventDefault();held[d]=false}});
+window.addEventListener('blur',clearMovement);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearMovement()});
+window.addEventListener('pagehide',clearMovement);
+document.querySelectorAll('[data-dir]').forEach(b=>{
+ const d=b.dataset.dir;
+ b.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();
+  if(touchPointer!==null&&touchPointer!==e.pointerId)return;
+  clearMovement();touchPointer=e.pointerId;touchDirection=d;held[d]=true;
+  b.classList.add('pressed');
+  if(b.setPointerCapture)try{b.setPointerCapture(e.pointerId)}catch(_){}
+  if(screen==='game'&&!modal){move(d);last=Date.now()}
+ });
+ const release=e=>{
+  if(touchPointer!==null&&e.pointerId!==touchPointer)return;
+  e.preventDefault();clearMovement();
+ };
+ b.addEventListener('pointerup',release);
+ b.addEventListener('pointercancel',release);
+ b.addEventListener('lostpointercapture',()=>clearMovement());
+ b.addEventListener('contextmenu',e=>e.preventDefault());
+});
+window.addEventListener('pointerup',e=>{if(touchPointer===e.pointerId)clearMovement()});
+window.addEventListener('pointercancel',e=>{if(touchPointer===e.pointerId)clearMovement()});
+document.addEventListener('touchmove',e=>{if(touchPointer!==null)e.preventDefault()},{passive:false});
+document.addEventListener('selectionchange',()=>{if(touchPointer!==null&&window.getSelection)window.getSelection()?.removeAllRanges()});
+document.querySelectorAll('button').forEach(b=>b.addEventListener('contextmenu',e=>e.preventDefault()));
 if(read()?.name)$('continue').hidden=false;
 function loop(){if(screen==='game'){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}draw()}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
