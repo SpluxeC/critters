@@ -50,7 +50,7 @@ function build(){
  borders();roads();rect(11,7,2,6,T.path);rect(22,14,2,7,T.path);
  for(let y=2;y<12;y++)for(let x=3;x<31;x++)if(x!==11&&x!==12&&(x*7+y*11)%5!==0)put(x,y,(x+y)%4===0?T.rice:T.tall);
  for(let y=16;y<24;y++)for(let x=3;x<31;x++)if(x!==22&&x!==23&&(x*9+y*5)%6!==0)put(x,y,(x+y)%3===0?T.rice:T.tall);
- npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','Use the Index beam when their HP is low.']);
+ npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','Use the Index beam when their HP is low.']);npc(20,13,['Want to test your team against mine?'],'routetrainer','rt1');
  break;
  case 'town':
  borders();roads();rect(16,8,2,5,T.path);rect(16,15,2,7,T.path);houses([[4,5,8,5],[21,5,9,5],[4,17,8,4],[21,17,9,4]]);
@@ -64,7 +64,7 @@ function build(){
  for(let y=2;y<12;y++)for(let x=2;x<32;x++)if(x<10||x>12)if((x*13+y*7)%7<5)put(x,y,T.tree);
  for(let y=16;y<24;y++)for(let x=3;x<31;x++)if(x<25||x>26)if((x*19+y*11)%8<4)put(x,y,T.tall);
  rect(10,1,3,3,T.path);
- npc(18,13,['The bamboo forest twists around the walking paths.','A hidden woodland clearing lies to the north.']);
+ npc(18,13,['The bamboo forest twists around the walking paths.','A hidden woodland clearing lies to the north.']);npc(24,13,['I spotted you on the trail!'],'routetrainer','rt2');
  break;
  case 'forest':
  borders();rect(15,13,4,12,T.path);rect(5,9,24,3,T.path);rect(15,7,4,6,T.path);
@@ -76,7 +76,7 @@ function build(){
  borders();roads();rect(19,1,3,12,T.path);rect(6,15,2,8,T.path);
  for(let y=2;y<24;y++)for(let x=2;x<32;x++)if(tiles[y][x]===T.grass&&(x*17+y*13)%8<4)put(x,y,(x+y)%3===0?T.tall:T.rock);
  rect(19,1,3,12,T.path);rect(1,12,32,3,T.path);
- npc(25,13,['Mountain foothills rise above the trail.','A cave to the north is blocked by thick vines until you earn the first badge.']);
+ npc(25,13,['Mountain foothills rise above the trail.','A cave to the north is blocked by thick vines until you earn the first badge.']);npc(12,13,['A challenging battle ahead!'],'routetrainer','rt3');
  break;
  case 'cave':
  borders(T.rock);rect(15,13,4,12,T.stone);rect(4,8,27,7,T.stone);rect(10,4,16,16,T.stone);
@@ -164,6 +164,7 @@ function move(d){
  s.x=x;s.y=y;frame=(frame+1)%4;
  if(s.area==='village'&&x===24&&y===10)return region('lab',17,23);
  if(s.area==='lab'&&x===17&&y===25)return region('village',24,12);
+ if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
  if((s.steps=(s.steps||0)+1)%10===0)save();
  if(['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)&&s.introComplete&&Math.random()<0.11)startWild()
@@ -174,7 +175,7 @@ function interact(){
  if(p){if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
- if(p.kind==='gymtrainer')return s.defeated[p.id]?say(['Trainer: Good match! I will keep practicing.']):say(p.text,()=>startTrainer(p.id));
+ if(p.kind==='gymtrainer'||p.kind==='routetrainer')return s.defeated[p.id]?say(['Trainer: Good match! Want a rematch?'],()=>rematchMenu(p.id)):say(p.text,()=>startTrainer(p.id));
  if(p.kind==='leader')return s.badges?say(['Gym Leader: Your first badge is well earned.']):!s.defeated.g1||!s.defeated.g2||!s.defeated.g3||!s.puzzles.gate?say(['Gym Leader: Defeat all three trainers and open the garden mechanism first.']):startTrainer('leader');
  if(p.kind==='switch'){if(s.defeated.g1&&s.defeated.g2&&s.defeated.g3){s.puzzles.gate=true;build();save();return say(['You activate the garden mechanism. The roots withdraw!'])}return say(['The mechanism is tangled in roots. Defeat all three Gym trainers first.'])}
  return say(p.text)}
@@ -183,6 +184,7 @@ function interact(){
  if(s.area==='garden'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&x===17&&y===25)return region('garden',24,12);
 }
+function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
 function enterGym(){if(!s.rivalPassed){s.rivalPassed=true;save();return say(['Your childhood rival is waiting at the Grass Gym entrance!'],()=>startTrainer('rival'))}return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
 function open(title,body){modal=true;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('shade').classList.add('show')}
 function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false}
@@ -218,6 +220,7 @@ function startTrainer(id){
  if(id==='tutorial'){enemies=[make(s.rival,5)];name='Childhood Rival';award=0;kind='tutorial'}
  else if(id==='rival'){enemies=[make(s.rival,12),make('Beast',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
+ else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Beast',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
  startBattle({kind,enemies,name,award,id},name+' challenges you!')
 }
@@ -281,9 +284,9 @@ function endBattle(won,message,defeated){
  $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent!','Follow the eastern road to Route 1. Discover new Critters with the Index beam.']);if(b.id==='leader')build()}
 }
 function blackout(){
- battle=null;$('close').hidden=false;
- s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);
- s.area=s.lastCenter||'village';s.x=17;s.y=16;build();save();
+ const wasTutorial=battle?.kind==='tutorial';battle=null;$('close').hidden=false;
+ if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);
+ if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
  open('Blackout','<p>Your whole party fainted. You lost a little money and recovered at your last Critter Center.</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
