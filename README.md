@@ -23,7 +23,16 @@ Host the root folder as a static website, or use GitHub Pages. Keep both files i
 
 In the GitHub repository, navigate to **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, select **main** and **/(root)**, then save. When GitHub Pages deploys successfully, the expected website address is `https://spluxec.github.io/critters/`.
 
+## Phase 2 — Route 1 (implemented)
+- Walk east from the starting village after completing the research-lab tutorial.
+- Explore Route 1 countryside, rice fields and tall grass.
+- Random wild encounters with temporary type-based Critter placeholders.
+- Attack, flee or use the Critter Index capture beam; lower target HP improves capture chances.
+- Party size is limited to eight; overflow captures go directly to home storage.
+- Participating Critters earn experience and can level up. Fainted parties return to the village, healed.
+- Existing saves receive the new party/storage fields on load.
+
 ## Planned next
-Route 1, encounter and capture mechanics, the town and remaining routes, Critter Centers, comprehensive 15-type battles, module effects, optional exploration, second rival battle and first Grass Gym. The creators are still designing the original 25 Critters, so species, evolutions and starter visuals are intentionally placeholders.
+The small town, Routes 2 and 3, Critter Centers, comprehensive 15-type battles, module effects, optional exploration, second rival battle and first Grass Gym. The creators are still designing the original 25 Critters, so species, evolutions and starter visuals are intentionally placeholders.
 
 The currently implemented battle is a simplified tutorial demo, not the finalized battle system.
