@@ -1,38 +1,38 @@
 # Critters — The Beginning
 
-An original Japanese-inspired browser creature-collecting RPG. This is **Phase 1**, not the full first-gym chapter.
+An original Japanese-inspired browser monster-collecting RPG.
 
-## Implemented
-- Choose the male or female original player character and enter a name at the start.
-- Walk around a starter village with directional character sprites, traditional buildings, rice fields and NPCs.
-- Enter a research laboratory; talk to the researcher and choose Rock, Water or Electric as a placeholder starter type.
-- Friendly tutorial rival battle prototype. Rival chooses the type advantage; no money penalty for losing.
-- Early Critter Index menu with eight party slots and four buff/debuff slots.
-- Browser-local saving with a Continue option.
-- Keyboard and touch controls.
+## Play
+Visit **https://spluxec.github.io/critters/**. GitHub Pages publishes `main` from `/(root)`. The game saves to your browser's local storage.
+
+## Implemented through the current development phases
+- New Adventure: choose the original male or female player sprite and name your character.
+- Top-down tile navigation, NPC interaction and a research laboratory.
+- Rock, Water or Electric **starter type placeholders**, with the childhood rival choosing the advantaged starter.
+- Tutorial rival battle with no money penalty, even on a loss.
+- Starting Village → rice-field Route 1 → first small town → bamboo Route 2 → foothills Route 3 → traditional Garden Town.
+- Optional Hidden Forest reachable from Route 2; Mountain Cave requires the first badge's Critter Index vegetation cutter.
+- Random wild encounters with habitat-specific type placeholders and levels, four basic move actions, type effectiveness for all 15 approved types, switching, potions and revives.
+- Capture beam with higher success when the target has lower HP. Maximum eight active Critters; excess captures automatically go to home storage.
+- Experience only for participating Critters, levels, HP, trainer rewards, loss penalty and blackout recovery.
+- Critter Centers heal party, allow storing/retrieving Critters, and install/remove up to four basic modules.
+- Shops sell potions, revives and basic Critter Index modules. Modules affect battle values automatically.
+- Route trainers with interaction/sight triggers and optional rematches.
+- Childhood rival battle at the entrance to the first Grass Gym; defeat not required to proceed.
+- First Grass Gym: three trainers, garden mechanism and an overgrown maze, plus a four-Critter level 13–18 leader. The first badge unlocks cutting vegetation.
+- Browser-local saves and Continue compatible with previous prototypes.
 
 ## Controls
-- WASD or arrow keys: walk
-- E or Enter: interact, talk, continue dialogue
-- I: open Critter Index
-- Save Game button: save adventure
-- Mobile: on-screen movement pad and action buttons
+- Arrow keys or WASD: move
+- E / Enter: interact or advance dialogue
+- I: Critter Index
+- On mobile: directional pad, Talk / Use and Index buttons
+- Save Game button, or save through the Critter Index
 
-## Playing
-Host the root folder as a static website, or use GitHub Pages. Keep both files in `assets/` beside `index.html`.
+## Current limitations
+This is a substantial playable prototype, not the finished full game. The 25 original species, artwork, names, evolutions, abilities and signature moves remain intentionally unassigned while the creators design them. Trainer and wild teams use clear type-based placeholders. The four-move combat model and module values are simplified initial implementations; full status mechanics, smart enemy strategy, exploration collectibles, detailed NPC quests and production audio/art remain in later phases. The Garden Town cutting unlock is functional for the Mountain Cave entrance; additional vegetation-cut interactions will be placed as maps expand.
 
-In the GitHub repository, navigate to **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, select **main** and **/(root)**, then save. When GitHub Pages deploys successfully, the expected website address is `https://spluxec.github.io/critters/`.
+All approved type relationships are retained in the 15-type matchup data. The selected single-player Gym uses 1v1 battles; 2v2 trainer-only encounters remain future work.
 
-## Phase 2 — Route 1 (implemented)
-- Walk east from the starting village after completing the research-lab tutorial.
-- Explore Route 1 countryside, rice fields and tall grass.
-- Random wild encounters with temporary type-based Critter placeholders.
-- Attack, flee or use the Critter Index capture beam; lower target HP improves capture chances.
-- Party size is limited to eight; overflow captures go directly to home storage.
-- Participating Critters earn experience and can level up. Fainted parties return to the village, healed.
-- Existing saves receive the new party/storage fields on load.
-
-## Planned next
-The small town, Routes 2 and 3, Critter Centers, comprehensive 15-type battles, module effects, optional exploration, second rival battle and first Grass Gym. The creators are still designing the original 25 Critters, so species, evolutions and starter visuals are intentionally placeholders.
-
-The currently implemented battle is a simplified tutorial demo, not the finalized battle system.
+## Release scope
+The approved initial release targets the first Grass Gym badge, with optional exploration after that milestone.
