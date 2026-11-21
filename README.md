@@ -71,3 +71,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Instead of making every resident eligible immediately, the starting wild roster contains up to 9 species on Route 1, 12 on Route 2, 12 in Hidden Forest, 13 on Route 3, 12 near Garden Town, and 13 in Mountain Cave (subject to the area's level limits and existing legendary restrictions).
 - Every eight wild encounters within a particular region unlock four more eligible resident species for that same region. Wild-encounter progress is saved per region, so exploration gradually reveals more species without making them appear in other locations.
 - The existing weighted rarity system remains in force (rare species have far lower weights than common residents). The Critter Index describes this regional discovery behavior.
+
+## Phase 14 — Progression, leveling and evolution polish (v43)
+- In the Critter Index Party screen, each active Critter now displays its current XP, XP required for the next level, a visual progress bar, and its next authored level-up move (when one exists).
+- Defeating a Critter now reports level-ups, newly learned moves, and evolutions in the battle log.
+- Existing XP rewards, level thresholds (level × 12), per-level HP growth (+4), four equipped moves, and authored conditional evolution chains are preserved. The eight-Critter party limit and old save schema are unchanged.
