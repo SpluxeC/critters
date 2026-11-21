@@ -95,6 +95,74 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 @keyframes combatHit{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}45%{transform:translateX(6px)}70%{transform:translateX(-2px)}}
 @media(max-width:450px){.combatRoster{gap:5px}.combatCard{padding:5px}.combatCardHead{font-size:11px}.combatCardFoot{font-size:9px}#shade:has(.combatTop){padding:5px}.combatArena{height:110px}.combatSymbol{font-size:38px}}
 @media(prefers-reduced-motion:reduce){.combatSymbol,.combatFigure.hit{animation:none}}
+
+/* Phase 4 — Critter Index wrist-device experience */
+#shade:has(.watchShell){padding:clamp(5px,2vw,16px)}
+#shade:has(.watchShell) .modal{width:min(95vw,680px);max-height:95dvh;overflow-y:auto;padding:clamp(10px,2.5vw,20px);background:linear-gradient(155deg,#142c34,#203c40);border:3px solid #bb9a65}
+#shade:has(.watchShell) .modalHead h2{font-size:clamp(17px,4vw,24px);letter-spacing:.8px}
+#shade:has(.watchShell) #close{padding:7px 11px;font-size:12px}
+.watchShell{color:#f4efde;font-size:13px;min-width:0}
+.watchStatus{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#9fdac7;font-size:10px;letter-spacing:1px;margin:7px 0}
+.watchStatus strong{color:#f5dfb1;font-size:13px;letter-spacing:0}
+.watchStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:12px}
+.watchStats span{background:#223f43;border:1px solid #668b84;border-radius:7px;text-align:center;padding:6px 2px;font-size:clamp(9px,2.2vw,12px);white-space:nowrap}
+.watchTabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-bottom:12px}
+.watchTab{border:1px solid #678780;background:#274c4e;color:#c8dbd4;border-radius:7px;min-width:0;padding:10px 2px;font:700 clamp(9px,2vw,12px) system-ui;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
+.watchTab.selected{color:#1e3437;background:#f0d397;border-color:#f0d397}
+.watchTab:focus-visible,.watchPosition:focus-visible{outline:2px solid #fff2c7;outline-offset:1px}
+.watchScreen{border-radius:12px;background:linear-gradient(140deg,#182f35,#13292f);border:2px solid #567a74;padding:clamp(10px,2.5vw,16px);min-height:260px}
+.watchClockLayout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.95fr);align-items:center;gap:12px}
+.watchClock{position:relative;width:min(100%,355px);aspect-ratio:1;margin:auto;border-radius:50%;border:10px solid #a18c6a;outline:3px solid #415b58;background:radial-gradient(circle at 45% 36%,#416768,#173c45 60%,#0d2d36 100%);box-shadow:inset 0 0 0 3px #f0d8a77a,inset 0 0 22px #051c25,0 6px 14px #0008}
+.watchClock:before,.watchClock:after{content:"";position:absolute;width:21%;height:5%;top:48%;background:#314849;border:2px solid #a89c78;z-index:-1;border-radius:5px}
+.watchClock:before{left:-17%}.watchClock:after{right:-17%}
+.watchDialInner{position:absolute;inset:29%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;background:#143d47c4;border:2px solid #82afa6;box-shadow:0 0 0 4px #284d54;pointer-events:none}
+.watchDialText{font-size:clamp(7px,1.7vw,10px);letter-spacing:1px;color:#9ed0c5}
+.watchDialInner strong{font-size:clamp(19px,5vw,36px);color:#f9e3a8;line-height:1.2}
+.watchDialInner small{font-size:clamp(6px,1.6vw,10px);color:#bdcdc7;letter-spacing:1px}
+.watchDialDivider{width:48%;height:1px;background:#678983;margin:3px}
+.watchDialModules{font-size:clamp(6px,1.6vw,10px);color:#dcbf84}
+.watchPosition{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(35px,10vw,54px);aspect-ratio:1;border-radius:50%;border:2px solid #a9b7a7;background:linear-gradient(#366265,#27484d);color:#f8f3df;cursor:pointer;padding:1px;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}
+.watchPosition.selected{border-color:#f9dda1;background:#775f3d;box-shadow:0 0 0 3px #ead5a94f,0 0 13px #f4d69e66}
+.watchPosition.isModule{background:linear-gradient(#655442,#473b37);border-color:#ac906d}
+.watchPosition.isModule.selected{background:#80613c}
+.watchTime{font:800 clamp(10px,2.5vw,14px) system-ui;line-height:1}
+.watchTinyIcon{font-size:clamp(12px,3vw,17px);line-height:1.15}
+.watchSelection{border:1px solid #68857d;background:#223d42;border-radius:10px;padding:11px;min-width:0}
+.watchEyebrow{font:700 10px system-ui;letter-spacing:1px;color:#d2ba80}
+.watchSelectionHeading{font-weight:800;font-size:clamp(14px,3vw,20px);margin:9px 0}
+.watchSelectionHeading span{display:block;font-size:12px;font-weight:500;color:#c9d5c9}
+.watchSelectionStats{color:#d6dfd5;font-size:11px;line-height:1.6}
+.watchMeter{height:9px;border-radius:10px;background:#0c2732;border:1px solid #47665f;overflow:hidden;margin:7px 0}
+.watchMeter>div{height:100%;background:linear-gradient(90deg,#4ea67f,#91d6a8);transition:width 200ms ease}
+.watchSelection p,.watchSelection small{font-size:12px;line-height:1.5;color:#d6dfd5}
+.watchMinor{margin-top:10px;font-size:11px;padding:8px}
+.watchSectionTitle{display:flex;align-items:center;justify-content:space-between;font-weight:800;letter-spacing:.4px;font-size:13px;color:#f1d8a9;padding:7px 0;margin-top:3px}
+.watchSectionTitle small{color:#c5d7cd;font-weight:500}
+.watchPartyGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.watchPartyCard{min-width:0;border-radius:9px;border:1px solid #65877f;background:#27484d;padding:9px}
+.watchPartyCard>div:first-child{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.watchPartyCard strong{font-size:12px}.watchPartyCard small{margin-left:auto;font-size:10px;color:#f1d4a3}
+.watchPartyCard.empty{opacity:.55;display:flex;align-items:center;gap:9px;min-height:58px}
+.watchPartyNumber{font-size:10px;color:#f4d898;border:1px solid #c6b17d;border-radius:50%;width:22px;height:22px;display:grid;place-items:center}
+.watchPartyMeta{font-size:10px;line-height:1.5;color:#cfddd5;overflow-wrap:anywhere}
+.watchRow,.watchModuleRow{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:11px 9px;margin-bottom:6px;border-radius:7px;background:#24464a;border:1px solid #4b7470;font-size:12px}
+.watchRow span{min-width:0}.watchRow strong{color:#f1d7a0;white-space:nowrap}
+.watchModuleRow span{font-size:10px;color:#a9cbbd;white-space:nowrap}
+.watchModuleRow strong{font-size:12px;text-align:right}
+.watchMetrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.watchMetrics>div{display:grid;text-align:center;padding:12px 6px;background:#244549;border-radius:8px;border:1px solid #59827b}
+.watchMetrics strong{font-size:24px;color:#f1dba8}.watchMetrics span{font-size:10px;color:#bfd3ca}
+.watchRecordLocation{font-size:10px;color:#d6bf8d;text-align:right}
+.watchEmpty,.watchReadOnly{font-size:12px;line-height:1.5;padding:12px;background:#233d41;border-radius:8px;color:#c4d6cb}
+.watchReadOnly{border-left:3px solid #d0b477;margin-top:12px}
+.watchToolCard{background:#26474b;border:1px solid #567b75;border-radius:9px;padding:12px;margin:7px 0}
+.watchToolCard strong{font-size:13px}.watchToolCard>span{float:right;color:#e6d199;font-size:10px;letter-spacing:.5px}
+.watchToolCard p{font-size:12px;color:#d1ddd6;margin:8px 0 0;line-height:1.5}
+.watchFooter{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
+.watchFooter .btn{font-size:11px;padding:9px 12px}
+@media(max-width:520px){.watchClockLayout{grid-template-columns:1fr}.watchClock{width:min(100%,270px);border-width:7px}.watchPosition{width:clamp(36px,11vw,43px)}.watchSelection{padding:9px}.watchSelectionHeading span{display:inline;margin-left:7px}.watchScreen{min-height:240px;padding:7px}.watchStatus{margin:2px 0 8px}.watchFooter .btn{flex:1}.watchPartyCard{padding:7px}.watchPartyMeta{font-size:9px}.watchTabs{gap:3px}.watchTab{font-size:9px;padding:9px 0}}
+@media(max-width:350px){.watchPartyGrid{grid-template-columns:1fr}.watchStats span{font-size:9px}.watchClock{width:230px}.watchPosition{width:35px}}
+@media(prefers-reduced-motion:reduce){.watchMeter>div{transition:none}}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
