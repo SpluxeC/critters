@@ -1415,6 +1415,7 @@ function startTrainer(id){
 function startBattle(data,msg){
  const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
  const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
+ data.enemies.forEach(p=>normalizeMoves(p));
  battle={...data,mode:doubles?2:1,allySlots,enemySlots:data.enemies.map((p,i)=>i).slice(0,doubles?2:1),
   nextEnemy:doubles?2:1,participants:[...allySlots],pending:[],acting:0,turn:1,phase:'choose',
   guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null};
@@ -1541,6 +1542,168 @@ function defeatFoe(i,log){
  recipients.forEach(index=>awardExperience(s.party[index],gain));
  log.push(enemy.type+' fainted! Your participating Critters gain '+gain+' XP each.');
 }
+
+// One effect executor handles both player and AI; target indices are always
+// indexed into the corresponding roster (supports the existing 1v1 and 2v2).
+const STAGE_LIMIT=4;
+function battleStages(side,index){
+ battle.statStages=battle.statStages||{ally:{},enemy:{}};
+ return battle.statStages[side][index]||(battle.statStages[side][index]={});
+}
+function statFactor(side,index,stat){
+ const stage=battleStages(side,index)[stat]||0;
+ return stage>=0?1+stage*.25:1/(1-stage*.25);
+}
+function enemySide(side){return side==='ally'?'enemy':'ally'}
+function getRoster(side){return side==='ally'?s.party:battle.enemies}
+function getCombatant(side,index){return getRoster(side)[index]||null}
+function recordFaint(side,index,log){
+ const p=getCombatant(side,index);
+ if(!p||p.hp>0)return;
+ if(side==='enemy')defeatFoe(index,log);
+ else log.push((p.name||p.type)+' fainted!');
+}
+function runMoveEffect(effect,side,actorIndex,targetSide,targetIndex,log){
+ if(!effect||!battle||Math.random()*100>=Math.min(100,Math.max(0,effect.chance??100)))return;
+ const actor=getCombatant(side,actorIndex),target=getCombatant(targetSide,targetIndex);
+ if(!actor||!target)return;
+ const name=target.name||target.type;
+ const stats=battleStages(targetSide,targetIndex);
+ switch(effect.id){
+  case 'raise_stat':
+  case 'lower_stat':{
+   const sign=effect.id==='raise_stat'?1:-1,stat=effect.stat||'attack',from=stats[stat]||0;
+   stats[stat]=Math.max(-STAGE_LIMIT,Math.min(STAGE_LIMIT,from+sign*(effect.stages||1)));
+   log.push(name+"'s "+stat.replace(/_/g,' ')+' '+(sign>0?'rose!':'fell!'));return;
+  }
+  case 'ailment':
+   if(!target.status){target.status=effect.name||'affected';log.push(name+' is afflicted with '+target.status+'!');}
+   return;
+  case 'heal':{
+   const healed=Math.min(target.maxHp-target.hp,Math.max(1,Math.floor(target.maxHp*(effect.fraction||.25))));
+   target.hp+=Math.max(0,healed);log.push(name+' restored '+Math.max(0,healed)+' HP.');return;
+  }
+  case 'recoil':{
+   const lost=Math.max(1,Math.floor(actor.maxHp*(effect.fraction||.2)));
+   actor.hp=Math.max(0,actor.hp-lost);log.push((actor.name||actor.type)+' suffered '+lost+' recoil damage.');
+   if(actor.hp===0)recordFaint(side,actorIndex,log);
+   return;
+  }
+  case 'recharge':
+   battle.recharges=battle.recharges||{ally:{},enemy:{}};
+   battle.recharges[side][actorIndex]=Math.max(1,effect.turns||1);
+   log.push((actor.name||actor.type)+' must recover next turn.');return;
+  case 'terrain':
+   battle.terrain={name:effect.name||'field',type:actor.type,turns:effect.turns||4};
+   log.push('The '+battle.terrain.name.replace(/-/g,' ')+' spreads across the field!');return;
+  case 'switch':{
+   const slots=side==='ally'?battle.allySlots:battle.enemySlots;
+   const spare=getRoster(side).findIndex((p,i)=>p.hp>0&&!slots.includes(i));
+   const pos=slots.indexOf(actorIndex);
+   if(spare>=0&&pos>=0){slots[pos]=spare;if(side==='ally')claimParticipant(spare);log.push((actor.name||actor.type)+' retreats to its team.');}
+   return;
+  }
+  case 'guard':
+   if(side==='ally')battle.guards[targetIndex]=true;
+   else{battle.enemyGuards=battle.enemyGuards||{};battle.enemyGuards[targetIndex]=true;}
+   log.push(name+' gains protective cover.');return;
+  case 'team_guard':{
+   const slots=side==='ally'?battle.allySlots:battle.enemySlots;
+   for(const i of slots){
+    if(side==='ally')battle.guards[i]=true;
+    else{battle.enemyGuards=battle.enemyGuards||{};battle.enemyGuards[i]=true;}
+   }
+   log.push('The entire '+(side==='ally'?'player':'opposing')+' team braces!');return;
+  }
+  case 'team_buff':{
+   const slots=side==='ally'?battle.allySlots:battle.enemySlots;
+   for(const i of slots)if(getCombatant(side,i)?.hp>0){
+    const obj=battleStages(side,i),stat=effect.stat||'attack';
+    obj[stat]=Math.max(-STAGE_LIMIT,Math.min(STAGE_LIMIT,(obj[stat]||0)+(effect.stages||1)));
+   }
+   log.push('The '+(side==='ally'?'player':'opposing')+' team rallied!');return;
+  }
+  case 'cure_status':
+   target.status='';log.push(name+' recovered from its status condition.');return;
+  case 'reveal':
+   stats.evasion=0;log.push(name+"'s concealment was exposed!");return;
+ }
+}
+function performMove(actor,move,side,actorIndex,targetIndex,log){
+ if(!battle||!actor||actor.hp<=0)return;
+ const recharge=battle.recharges?.[side]?.[actorIndex]||0;
+ if(recharge>0){
+  battle.recharges[side][actorIndex]=recharge-1;
+  log.push((actor.name||actor.type)+' is recovering and cannot act.');return;
+ }
+ normalizeMoves(actor);
+ const moveId=move.id;
+ if(!actor.moves.includes(moveId)&&moveId!=='opening-flick')return;
+ if(moveId!=='opening-flick'&&(actor.movePP[moveId]||0)<=0){
+  log.push((actor.name||actor.type)+' has no PP left for '+move.name+'.');return;
+ }
+ if(moveId==='opening-flick'&&!actor.moves.includes(moveId))actor.moves=[moveId,...actor.moves].slice(0,4);
+ if((actor.movePP[moveId]||0)<=0){
+  log.push((actor.name||actor.type)+' has no remaining moves and uses a basic struggle!');
+ }else actor.movePP[moveId]--;
+ let targetSide=move.target==='enemy'?enemySide(side):side;
+ let target=getCombatant(targetSide,targetIndex);
+ if(move.target==='enemy'){
+  if(!target||target.hp<=0){
+   const available=targetSide==='enemy'?activeEnemies():activeAllies();
+   targetIndex=available[0];target=getCombatant(targetSide,targetIndex);
+  }
+ }else if(move.target==='self'||move.target==='field'||move.target==='ally_team'){
+  targetIndex=actorIndex;target=actor;
+ }else if(move.target==='ally'&&(!target||target.hp<=0)){targetIndex=actorIndex;target=actor}
+ if(!target||target.hp<=0)return;
+ const name=actor.name||actor.type;
+ log.push(name+' used '+move.name+'.');
+ const hitChance=Math.min(100,Math.max(5,(move.accuracy??100)*
+  statFactor(side,actorIndex,'accuracy')/statFactor(targetSide,targetIndex,'evasion')));
+ if(Math.random()*100>=hitChance){
+  log.push('It missed!');return;
+ }
+ if(move.category!=='status'&&move.power>0){
+  const factor=move.type==='Typeless'?1:mult(move.type,target.type);
+  const offense=statFactor(side,actorIndex,move.category==='physical'?'attack':'special_attack');
+  const defense=statFactor(targetSide,targetIndex,'defense');
+  const focus=side==='ally'?(battle.focus?.[actorIndex]||0):0;
+  const terrain=battle.terrain?.type===move.type?1.12:1;
+  const reduced=targetSide==='ally'?!!battle.guards?.[targetIndex]:!!battle.enemyGuards?.[targetIndex];
+  const base=Math.max(1,move.power/11+(actor.level-target.level)*.6);
+  const mod=side==='ally'?activeModifier('ally'):activeModifier('enemy');
+  const dmg=Math.max(1,Math.floor(base*factor*offense/defense*mod*(1+focus)*terrain*(reduced?.5:1)));
+  target.hp=Math.max(0,target.hp-dmg);
+  if(side==='ally')battle.focus[actorIndex]=0;
+  battle.impact=targetSide;battle.lastTarget=targetIndex;
+  log.push(dmg+' damage.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''));
+  if(target.hp===0){recordFaint(targetSide,targetIndex,log);return}
+ }
+ if(move.effect){
+  // Recoil and recharge refer to the user. Field effects use the battlefield.
+  const selfEffect=['recoil','recharge','terrain','switch','team_buff','team_guard','reveal'].includes(move.effect.id)&&move.effect.id!=='reveal';
+  const effSide=selfEffect?side:targetSide,effIndex=selfEffect?actorIndex:targetIndex;
+  runMoveEffect(move.effect,side,actorIndex,effSide,effIndex,log);
+ }
+}
+function endOfTeamTurn(log){
+ if(!battle)return;
+ for(const side of ['ally','enemy']){
+  const roster=getRoster(side),slots=side==='ally'?battle.allySlots:battle.enemySlots;
+  for(const i of slots){
+   const p=roster[i];if(!p||p.hp<=0)continue;
+   if(['poison','scorch','bleed','miasma','plague'].includes(p.status)){
+    const dmg=Math.max(1,Math.floor(p.maxHp/16));
+    p.hp=Math.max(0,p.hp-dmg);
+    log.push((p.name||p.type)+' lost '+dmg+' HP to '+p.status+'.');
+    if(p.hp===0)recordFaint(side,i,log);
+   }
+  }
+ }
+ if(battle.terrain&&--battle.terrain.turns<=0)battle.terrain=null;
+}
+
 function performPlayerAction(action,log){
  if(!battle)return;
  const actor=s.party[action.actor];if(!actor||actor.hp<=0){log.push('A fainted Critter cannot act.');return}
@@ -1615,7 +1778,9 @@ function resolveTeamTurn(){
   const target=allies.reduce((best,i)=>s.party[i].hp<s.party[best].hp?i:best,allies[0]);
   performMove(foe,move,'enemy',enemyIndex,move.target==='enemy'?target:enemyIndex,log);
  }
- battle.guards={};
+ endOfTeamTurn(log);
+ battle.guards={};battle.enemyGuards={};
+ if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  if(!s.party.some(p=>p.hp>0))return blackout();
  battle.enemySlots=battle.enemySlots.filter(i=>battle.enemies[i]?.hp>0);
  refillEnemyTeam();refillAllyTeam(log);
