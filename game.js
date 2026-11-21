@@ -342,7 +342,7 @@ async function loadCritterMoveData(){
      speciesRegistry.set(sp.speciesId,sp);
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
- if(s){for(const p of [...s.party,...s.storage])normalizeMoves(p);save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
+ if(s){for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
@@ -351,15 +351,15 @@ function critter(type,level=5){
  const primary=spec?.types?.[0]||type;
  const hp=spec?.baseStats?.hp?Math.max(1,spec.baseStats.hp+(level-1)*4):20+level*4;
  const p={type:primary,types:spec?.types||[primary],speciesId:spec?spec.speciesId:null,name:spec?.name||primary,baseStats:spec?.baseStats||null,level,hp,maxHp:hp,xp:0,status:'',moves:[],movePP:{}};
- return normalizeMoves(p);
+ return normalizeMoves(refreshSpeciesMetadata(p));
 }
 function migrate(){
  if(!s)return;
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(s.starter,5)]:[];
- s.party=s.party.map(p=>normalizeMoves({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36})).slice(0,8);
- if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves({...critter(p.speciesId||p.type||'Grass',p.level||3),...p}));
+ s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))).slice(0,8);
+ if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p})));
  s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
@@ -1269,7 +1269,66 @@ function open(title,body){releaseMovement();modal=true;$('modalTitle').textConte
 function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false}
 function firstAlive(){return s.party.findIndex(p=>p.hp>0)}
 function lead(){return s.party[firstAlive()]}
-function mult(atk,def){if(strengths[atk]?.includes(def))return 2;if(strengths[def]?.includes(atk))return 0.5;return 1}
+// Phase 1 battle-stat engine: every Critter has an independent six-stat profile.
+// Archived/placeholder Critters get stable neutral defaults, without altering their
+// original HP or the established 15-type strengths and weaknesses.
+const BATTLE_BASE_DEFAULT={hp:20,attack:13,defense:13,specialAttack:13,specialDefense:13,speed:13};
+const COMBAT_STAT_NAMES=['hp','attack','defense','specialAttack','specialDefense','speed'];
+function safeBaseStat(v,defaultValue){
+ return Number.isFinite(v)&&v>0?Math.min(250,Math.max(1,v)):defaultValue;
+}
+function statProfile(p){
+ const fromSpecies=speciesFor(p)?.baseStats;
+ const base=p?.baseStats||fromSpecies||{};
+ return Object.fromEntries(COMBAT_STAT_NAMES.map(key=>[key,safeBaseStat(base[key],BATTLE_BASE_DEFAULT[key])]));
+}
+function combatStat(p,key){
+ const profile=statProfile(p),lvl=Math.max(1,Number.isFinite(p?.level)?p.level:1);
+ if(key==='hp')return Math.max(1,Math.round(profile.hp+(lvl-1)*4));
+ return Math.max(1,Math.round(profile[key]+(lvl-1)*1.25));
+}
+function defendTypes(p){
+ // A second type is considered only if it is a valid distinct elemental type.
+ const arr=Array.isArray(p)?p:(Array.isArray(p?.types)&&p.types.length?p.types:[p?.type]);
+ const chosen=[];
+ for(const t of arr)if(isKnownType(t)&&!chosen.includes(t)&&chosen.length<2)chosen.push(t);
+ return chosen.length?chosen:['Grass']; // unavailable old-save metadata remains playable
+}
+function typeMatchup(atk,def){
+ if(!isKnownType(atk))return 1;
+ if(strengths[atk]?.includes(def))return 2;
+ if(strengths[def]?.includes(atk))return .5;
+ return 1;
+}
+function mult(atk,def){
+ // Classic combination: 2×2=4; 2×½=1; ½×½=¼.
+ return defendTypes(def).reduce((value,type)=>value*typeMatchup(atk,type),1);
+}
+function statDamageRatio(attacker,defender,offenseKey,defenseKey){
+ // Level-one reference stats matter immediately; gains are gradual per level.
+ // sqrt dampens extreme early-game stat differences without discarding them.
+ const atk=combatStat(attacker,offenseKey),def=combatStat(defender,defenseKey);
+ return Math.max(.4,Math.min(2.5,Math.sqrt(atk/Math.max(1,def))));
+}
+function combatSpeed(side,index){
+ const actor=getCombatant(side,index);
+ return actor?combatStat(actor,'speed')*statFactor(side,index,'speed'):0;
+}
+function refreshSpeciesMetadata(p){
+ if(!p)return p;
+ const species=speciesFor(p);
+ if(species){
+  p.type=species.types[0];
+  p.types=species.types.slice(0,2);
+  p.baseStats={...species.baseStats};
+  p.name=species.name;
+ }else{
+  p.types=defendTypes(p);
+  p.baseStats={...statProfile(p)};
+ }
+ return p;
+}
+
 function activeModifier(side){let value=0;for(const m of s.installed){if(!m)continue;if(m==='Power Coil')value+=side==='ally'?0.12:0;if(m==='Guard Plate')value+=side==='enemy'?-0.1:0;if(m==='Weakening Field')value+=side==='ally'?0.1:0}return Math.max(0.5,1+value)}
 
 // Phase 4 — Index is a read-only wrist device outside a Critter Center.
@@ -1329,6 +1388,7 @@ function indexParty(){
   return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
+   +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div></div>';
  }).join('');
  return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
@@ -1532,7 +1592,7 @@ function startTrainer(id){
 function startBattle(data,msg){
  const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
  const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
- data.enemies.forEach(p=>normalizeMoves(p));
+ data.enemies.forEach(p=>normalizeMoves(refreshSpeciesMetadata(p)));
  battle={...data,mode:doubles?2:1,allySlots,enemySlots:data.enemies.map((p,i)=>i).slice(0,doubles?2:1),
   nextEnemy:doubles?2:1,participants:[...allySlots],pending:[],acting:0,turn:1,phase:'choose',
   guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null};
@@ -1547,9 +1607,9 @@ function hpCard(p,side,active=false){
  if(!p)return '';
  const pct=Math.max(0,Math.round(100*p.hp/Math.max(1,p.maxHp))),low=pct<=25;
  return '<div class="combatCard '+side+(active?' active':'')+(p.hp<=0?' fainted':'')+'">'
-  +'<div class="combatCardHead"><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+'</strong><small>Lv '+p.level+'</small></div>'
+  +'<div class="combatCardHead"><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong><small>Lv '+p.level+'</small></div>'
   +'<div class="health"><div class="'+(low?'low':'')+'" style="width:'+pct+'%"></div></div>'
-  +'<div class="combatCardFoot">HP '+p.hp+'/'+p.maxHp+(p.hp===0?' · Fainted':'')+'</div></div>';
+  +'<div class="combatCardFoot">HP '+p.hp+'/'+p.maxHp+(p.hp===0?' · Fainted':'')+' · '+escapeHtml(defendTypes(p).join('/'))+'</div></div>';
 }
 function sceneFigure(p,side,i){
  if(!p||p.hp<=0)return '';
@@ -1794,9 +1854,13 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
   log.push('It missed!');return;
  }
  if(move.category!=='status'&&move.power>0){
-  const factor=move.type==='Typeless'?1:mult(move.type,target.type);
-  const offense=statFactor(side,actorIndex,move.category==='physical'?'attack':'special_attack');
-  const defense=statFactor(targetSide,targetIndex,'defense');
+  const factor=move.type==='Typeless'?1:mult(move.type,target);
+  const physical=move.category==='physical';
+  const offensiveStat=physical?'attack':'specialAttack';
+  const defensiveStat=physical?'defense':'specialDefense';
+  const rawStatRatio=statDamageRatio(actor,target,offensiveStat,defensiveStat);
+  const offense=statFactor(side,actorIndex,physical?'attack':'special_attack');
+  const defense=statFactor(targetSide,targetIndex,physical?'defense':'special_defense');
   const focus=side==='ally'?(battle.focus?.[actorIndex]||0):0;
   const terrain=battle.terrain?.type===move.type?1.12:1;
   const reduced=targetSide==='ally'?!!battle.guards?.[targetIndex]:!!battle.enemyGuards?.[targetIndex];
@@ -1804,11 +1868,11 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
   const ailmentDefense=['drench','fracture'].includes(target.status)?1.12:1;
   const base=Math.max(1,move.power/11+(actor.level-target.level)*.6);
   const mod=side==='ally'?activeModifier('ally'):activeModifier('enemy');
-  const dmg=Math.max(1,Math.floor(base*factor*offense/defense*mod*(1+focus)*terrain*ailmentAttack*ailmentDefense*(reduced?.5:1)));
+  const dmg=Math.max(1,Math.floor(base*factor*rawStatRatio*offense/defense*mod*(1+focus)*terrain*ailmentAttack*ailmentDefense*(reduced?.5:1)));
   target.hp=Math.max(0,target.hp-dmg);
   if(side==='ally')battle.focus[actorIndex]=0;
   battle.impact=targetSide;battle.lastTarget=targetIndex;
-  log.push(dmg+' damage.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''));
+  log.push(dmg+' damage.'+(factor>=4?' Devastatingly effective (4×)!':factor>1?' Super effective!':factor<=.25?' Barely effective (¼×).':factor<1?' Not very effective.':''));
   if(target.hp===0)recordFaint(targetSide,targetIndex,log);
  }
  if(move.effect){
@@ -1893,8 +1957,7 @@ function resolveTeamTurn(){
  actions.sort((a,b)=>{
   const ma=a.kind==='move'?validMove(a.moveId):null,mb=b.kind==='move'?validMove(b.moveId):null;
   const pa=ma?.priority||0,pb=mb?.priority||0;
-  return pb-pa||(s.party[b.actor]?.level||0)*statFactor('ally',b.actor,'speed')
-     -(s.party[a.actor]?.level||0)*statFactor('ally',a.actor,'speed');
+  return pb-pa||combatSpeed('ally',b.actor)-combatSpeed('ally',a.actor);
  });
  for(const action of actions){
   if(!battle)return;
@@ -1912,8 +1975,7 @@ function resolveTeamTurn(){
   const choice=list[Math.floor(Math.random()*list.length)];
   return {enemyIndex,move:choice?getMove(foe,choice):moveFallbacks[0]};
  }).sort((a,b)=>(b.move.priority||0)-(a.move.priority||0)
-   ||(battle.enemies[b.enemyIndex]?.level||0)*statFactor('enemy',b.enemyIndex,'speed')
-    -(battle.enemies[a.enemyIndex]?.level||0)*statFactor('enemy',a.enemyIndex,'speed'));
+   ||combatSpeed('enemy',b.enemyIndex)-combatSpeed('enemy',a.enemyIndex));
  for(const {enemyIndex,move} of enemyChoices){
   if(!battle)return;
   const foe=battle.enemies[enemyIndex],allies=activeAllies();
