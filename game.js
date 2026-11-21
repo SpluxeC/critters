@@ -1170,7 +1170,6 @@ function resizeGameCanvas(){
 }
 function draw(){
  if(screen!=='game'||!s)return;
- journeyHudUpdate();
  resizeGameCanvas();
  tickAtmosphere();
  updateVisual();
@@ -1700,27 +1699,6 @@ function renderIndex(){
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
-function earlyJourney(){
- if(!s)return null;
- if(!s.starter)return {title:'Find the researcher',hint:'Visit the northeast laboratory in Starting Village and speak to the researcher.',progress:0};
- if(!s.introComplete)return {title:'Complete the friendly match',hint:'Pick a move from the battle menu. Everyone is healed after the tutorial.',progress:1};
- if(['village','lab','home','neighbor'].includes(s.area))return {title:'Explore Route 1',hint:'Follow the eastern path out of the village into the rice fields.',progress:2};
- if(!s.earlyJourney?.firstEncounter)return {title:'Discover a wild Critter',hint:'Walk through the rice paddies on Route 1 to find a wild Critter.',progress:3};
- if(!s.earlyJourney?.firstCapture)return {title:'Try the capture beam',hint:'Weaken a wild Critter, then use Capture Beam during the encounter.',progress:4};
- if(!s.defeated?.rt1)return {title:'Challenge the first trainer',hint:'Find the trainer near the eastern half of Route 1’s main path.',progress:5};
- return {title:'First adventure complete!',hint:'Visit the next town’s Critter Center, then explore Route 2.',progress:6};
-}
-function journeyHudUpdate(){
- const node=$('journeyHud');if(!node)return;
- const step=earlyJourney(),show=!!(step&&screen==='game'&&!modal&&!battle);
- node.hidden=!show;if(!show)return;
- const key=step.progress;
- if(node.dataset.stage!==String(key)){
-  node.dataset.stage=String(key);
-  node.innerHTML='<span><small>FIRST ADVENTURE · '+(key+1)+'/7</small><strong>'+escapeHtml(step.title)+'</strong></span><button id="journeyHelp" aria-label="Show objective details" type="button">?</button>';
-  const help=$('journeyHelp');if(help)help.onclick=()=>{const tip=earlyJourney();if(!tip)return;open('Current Objective','<p><strong>'+escapeHtml(tip.title)+'</strong></p><p>'+escapeHtml(tip.hint)+'</p><button class="btn primary" id="objectiveDone">Got it</button>');$('objectiveDone').onclick=close};
- }
-}
 function noteOpeningEvent(key){
  s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'?s.earlyJourney:{};
  if(!s.earlyJourney[key]){s.earlyJourney[key]=true;save()}
