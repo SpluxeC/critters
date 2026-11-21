@@ -59,3 +59,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Stored Critters can swap directly with a selected party slot even with eight active members. Reordering, sending home, and retrieving remain Center-only.
 - Module maintenance now shows all four watch sockets, owned/equipped quantities, module descriptions, and safer installation/removal checks.
 - These changes reuse the existing saved party, storage, and module arrays without altering the eight-Critter party limit.
+
+## Phase 13 — Wild encounter and regional balancing (November 2026)
+- Wild encounter rates are tuned for Routes 1–3, Hidden Forest, Garden Town outskirts, and Mountain Cave. After a wild encounter, at least four additional eligible wild-terrain steps must pass before another random encounter. The first Route 1 encounter remains guaranteed after five exploration steps.
+- Wild species are selected from the existing authored habitat registry, with per-region starting level bands: Route 1 (2–5), Route 2 (5–10), Hidden Forest (7–14), Route 3 (10–18), Garden outskirts (12–20), and Mountain Cave (15–22).
+- With additional badges beyond the first, the encounter-level ceiling of advanced regions increases by two levels per badge, capped at twelve extra levels. High-level species become eligible for wilderness revisits when their original habitat ranges overlap the new ceiling.
+- Existing rarity, discovery novelty, day/night type influence, and first-badge legendary gating remain intact. All 200 species records and their original habitat entries remain unchanged. The encounter cooldown counter is saved compatibly with old browser saves.
