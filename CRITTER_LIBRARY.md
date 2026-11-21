@@ -114,3 +114,41 @@ The Critter Index keeps permanent **Unseen → Seen → Captured** progress for 
 **Migration:** Previously saved party/storage entries and capture-log entries with valid `speciesId` values are credited as captured, without inventing missing encounter details. Legacy records containing only a generic type cannot be confidently assigned to an individual species. Those are preserved as existing save records but do not count toward the 200 unique species. Milestone rewards can be claimed retroactively in the Index if the backfilled unique count qualifies.
 
 **No unrelated gameplay changes:** Battles, team turns, type strengths, encounter frequency, party capacity, home storage, original-art placeholders, and the 264-move library remain unchanged.
+
+## Evolution and progression (v30)
+
+**The 200-species cap stays fixed.** This draft roster links existing species into **12 three-stage evolution families** and **24 two-stage families**; 116 species remain standalone. The three restricted entries — Drakoryn (Dragon/Fire), Eonolith (Primordial/Rock), and Feralune (Beast/Shadow) — never evolve or serve as evolution targets. These draft lines may be redesigned when Cody and Kyle upload official art.
+
+An evolving species has an editable entry in `data/critters.json`:
+
+```json
+"evolvesTo": {
+  "speciesId": "cr-002-fernlet",
+  "minLevel": 12
+}
+```
+
+Conditional forms specify one additional requirement, for example:
+
+```json
+"evolvesTo": {
+  "speciesId": "cr-003-bramblemuff",
+  "minLevel": 28,
+  "condition": {"kind": "night"}
+}
+```
+
+Available `condition.kind` values:
+- **none**: evolve at the stated minimum level.
+- **`night`**: between 20:00 and 05:00 on the in-game world clock.
+- **`day`**: between 07:00 and 17:00.
+- **`badge`**: `{"kind":"badge","minimum":1}` requires that many earned badges.
+- **`area`**: `{"kind":"area","areaId":"forest"}` requires the player to be standing in that map area.
+
+On gaining a level that meets every condition, a Critter automatically evolves and a celebration is shown after battle. If it already meets the level threshold but missed a special condition, its **Critter Index → Party** card shows a condition hint and enables the **Evolve** button whenever the condition is met. Evolution does **not** require a Critter Center, consume items, or change the active party size.
+
+Evolution preserves the individual Critter object (including XP, move PP where moves overlap, and its place in the party or home storage). It changes to the target species name, types and stats, updates the legal learned moves, and adjusts HP to reflect the new form while preserving existing missing HP. The prior evolution is kept in `evolutionHistory` in the saved Critter.
+
+Evolution also registers the resulting form as **obtained** in the 200-species collection and counts it toward unique-species milestones, without increasing the capture-beam total or recording a fictional beam capture. An evolution-acquired form's `captures` is 0 and its `obtainedBy` is `evolution`. All original (pre-evolution) entries remain recorded.
+
+The whole evolution graph is editable. If a chain is revised, use stable `speciesId` targets and matching `evolvesFrom` backlinks, avoid cycles, and preserve the one-only rule for Dragon, Primordial and Beast. Species not assigned a chain remain standalone, so no new species or new artwork is required.
