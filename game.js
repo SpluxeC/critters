@@ -1712,8 +1712,8 @@ function renderIndex(){
   moveBookType=b.dataset.moveType;renderIndex();
  });
  document.querySelectorAll('[data-evolve-party]').forEach(b=>b.onclick=()=>{
-  const i=Number(b.dataset.evolveParty),p=s.party[i];if(!p||!evolutionReady(p))return;
-  const result=tryEvolveChain(p);if(!result.length)return;
+  const i=Number(b.dataset.evolveParty),p=s.party[i];if(!p||!evolutionReady(p,true))return;
+  const result=tryEvolveChain(p,2,true);if(!result.length)return;
   renderIndex();save();
  });
  document.querySelectorAll('[data-critter-id]').forEach(b=>b.onclick=()=>{
@@ -2401,11 +2401,13 @@ function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capt
 // v30 Evolution progression. Chains are authored in data/critters.json.
 // Evolutions consume no items or credits, cannot affect opponents, and
 // re-use the existing 200 species (three restricted types remain standalone).
+const EVOLUTION_STONE_TYPES=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting'];
+const EVOLUTION_STONES=Object.fromEntries(EVOLUTION_STONE_TYPES.map(type=>[type+' Stone',type]));
 function evolutionRule(p){return speciesFor(p)?.evolvesTo||null}
 function evolutionTarget(rule){return rule?.speciesId?speciesRegistry.get(rule.speciesId):null}
 function evolutionConditionLabel(rule){
  if(!rule)return '';
- const level='Lv '+(rule.minLevel||1);
+ const level='Lv '+(rule.minLevel||1)+(rule.stone?' · '+rule.stone:'');
  const condition=rule.condition;
  if(!condition)return level;
  if(condition.kind==='night')return level+' · nighttime (20:00–05:00)';
@@ -2414,11 +2416,12 @@ function evolutionConditionLabel(rule){
  if(condition.kind==='area')return level+' · '+(CRITTER_AREA_LABELS[condition.areaId]||condition.areaId);
  return level;
 }
-function evolutionReady(p){
+function evolutionReady(p,usingStone=false){
  if(!p?.speciesId||p.hp<=0)return false;
  const rule=evolutionRule(p),next=evolutionTarget(rule);
  if(!rule||!next||!Number.isInteger(rule.minLevel)||p.level<rule.minLevel)return false;
  if(next.speciesId===p.speciesId||!Array.isArray(next.types)||next.types.some(t=>['Dragon','Primordial','Beast'].includes(t)))return false;
+ if(rule.stone&&(!usingStone||!EVOLUTION_STONES[rule.stone]||(s.inventory?.[rule.stone]||0)<1))return false;
  const condition=rule.condition;
  if(!condition)return true;
  switch(condition.kind){
@@ -2436,10 +2439,12 @@ function registerEvolution(p,fromId){
  if(!col.seen[id])col.seen[id]={firstArea:stamp.area,firstDay:stamp.day,encounters:0,lastArea:stamp.area,discoveredBy:'evolution'};
  if(!col.caught[id])col.caught[id]={firstArea:stamp.area,firstDay:stamp.day,firstLevel:p.level,captures:0,obtainedBy:'evolution',evolvedFrom:fromId};
 }
-function evolveCritter(p){
- if(!evolutionReady(p))return null;
+function evolveCritter(p,usingStone=false){
+ if(!evolutionReady(p,usingStone))return null;
  const from=speciesFor(p),rule=evolutionRule(p),to=evolutionTarget(rule);
  if(!from||!to)return null;
+ // Only a deliberate party-screen evolution consumes a stone.
+ if(rule.stone)s.inventory[rule.stone]--;
  const oldMax=p.maxHp,oldHP=p.hp,oldPP={...(p.movePP||{})},oldMoves=[...(p.moves||[])];
  const evolvedId=to.speciesId;
  const history=Array.isArray(p.evolutionHistory)?p.evolutionHistory.slice(-19):[];
@@ -2455,8 +2460,8 @@ function evolveCritter(p){
  save();
  return {from:from.name,to:to.name,level:p.level,toId:evolvedId};
 }
-function tryEvolveChain(p,limit=2){
- const results=[];for(let i=0;i<limit;i++){const result=evolveCritter(p);if(!result)break;results.push(result)}
+function tryEvolveChain(p,limit=2,usingStone=false){
+ const results=[];for(let i=0;i<limit;i++){const result=evolveCritter(p,usingStone);if(!result)break;results.push(result);usingStone=false}
  if(results.length){s.evolutionNews=Array.isArray(s.evolutionNews)?s.evolutionNews:[];s.evolutionNews.push(...results);s.evolutionNews=s.evolutionNews.slice(-20)}
  return results;
 }
@@ -2486,14 +2491,14 @@ function evolutionChainInfo(sp){
   if(rule&&i<chain.length-1)rows.push('<div class="evoArrow">↓ '+escapeHtml(evolutionConditionLabel(rule))+'</div>');
  }
  return '<div class="watchSectionTitle">Evolution family</div><div class="evoLine">'+(rows.join('')||'<div>No evolutions</div>')+'</div>'
-  +(sp.evolvesTo?'<div class="watchReadOnly">Next evolution: '+escapeHtml(evolutionConditionLabel(sp.evolvesTo))+'. Eligible Critters evolve when leveling up, or on the Party screen when the condition is met.</div>'
+  +(sp.evolvesTo?'<div class="watchReadOnly">Next evolution: '+escapeHtml(evolutionConditionLabel(sp.evolvesTo))+'. Eligible Critters evolve when leveling up, or on the Party screen when the condition is met. Stone evolutions require a stone in your bag and a deliberate Party screen action.</div>'
   :'<div class="watchReadOnly">No further evolution is currently assigned.</div>');
 }
 function partyEvolutionControls(p,i){
  const rule=evolutionRule(p),next=evolutionTarget(rule);
  if(!rule||!next)return '';
  return '<div class="evoPartyRow"><span>Evolution → '+escapeHtml(next.name)+' · '+escapeHtml(evolutionConditionLabel(rule))+'</span>'
-  +'<button class="btn" type="button" data-evolve-party="'+i+'" '+(!evolutionReady(p)?'disabled':'')+'>Evolve</button></div>';
+  +'<button class="btn" type="button" data-evolve-party="'+i+'" '+(!evolutionReady(p,true)?'disabled':'')+'>'+(rule.stone?'Use Stone & Evolve':'Evolve')+'</button></div>';
 }
 
 function experienceToNextLevel(p){return Math.max(12,(p?.level||1)*12)}
@@ -2634,9 +2639,26 @@ function manageModules(){
  $('modulesBack').onclick=center
 }
 function shop(){
- const goods=[['Potion',30],['Revive',90],['Power Coil',120],['Guard Plate',120],['Weakening Field',150]];
- open('Village Shop','<p>Money: '+s.money+' ◇</p><div class="options">'+goods.map(([name,price])=>'<button class="btn" data-buy="'+name+'" '+(s.money<price?'disabled':'')+'>'+name+' — '+price+' ◇</button>').join('')+'</div><p class="muted">Basic modules can be bought now. Install them at a Critter Center.</p>');
- document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const name=b.dataset.buy,price=goods.find(g=>g[0]===name)[1];if(s.money<price)return;s.money-=price;if(['Potion','Revive'].includes(name))s.inventory[name]=(s.inventory[name]||0)+1;else s.modules.push(name);save();shop()})
+ const supplies=[['Potion',30],['Revive',90]];
+ const modules=[['Power Coil',120],['Guard Plate',120],['Weakening Field',150]];
+ // Shops sell stones directly into the Critter Index bag, not module sockets.
+ const stones=EVOLUTION_STONE_TYPES.map(type=>[type+' Stone',220]);
+ const goods=[...supplies,...modules,...stones];
+ const section=(title,items)=>'<h3>'+title+'</h3><div class="options">'
+  +items.map(([name,price])=>'<button class="btn" data-buy="'+escapeHtml(name)+'" '+(s.money<price?'disabled':'')+'>'
+   +escapeHtml(name)+' — '+price+' ◇'+(EVOLUTION_STONES[name]?' · Owned '+(s.inventory[name]||0):'')+'</button>').join('')+'</div>';
+ open('Critter Shop','<p>Credits: '+s.money+' ◇</p>'
+  +section('Healing items',supplies)+section('Index modules',modules)
+  +section('Evolution stones',stones)
+  +'<p class="muted">Evolution stones are used from the Critter Index Party screen after the required level is reached. Each successful stone evolution consumes one stone. Modules are installed at a Critter Center.</p>');
+ document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{
+  const name=b.dataset.buy,entry=goods.find(g=>g[0]===name);
+  if(!entry||s.money<entry[1])return;
+  s.money-=entry[1];
+  if(modules.some(g=>g[0]===name))s.modules.push(name);
+  else s.inventory[name]=(s.inventory[name]||0)+1;
+  save();shop();
+ });
 }
 function preview(id,g){const im=sprites[g],c=$(id),p=c.getContext('2d');p.imageSmoothingEnabled=false;function draw(){if(!im.naturalWidth)return;const m=spriteMetrics(g)?.[0]?.[0];if(!m)return;p.clearRect(0,0,c.width,c.height);const k=Math.min(c.width/(m.sw+10),c.height/(m.sh+8));p.drawImage(im,m.sx,m.sy,m.sw,m.sh,(c.width-m.sw*k)/2,c.height-m.sh*k-4,m.sw*k,m.sh*k)}im.addEventListener('load',draw);draw()}
 preview('malePreview','male');preview('femalePreview','female');
