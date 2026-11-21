@@ -267,7 +267,7 @@ function migrate(){
  if(!Array.isArray(s.party))s.party=s.starter?[critter(s.starter,5)]:[];
  s.party=s.party.map(p=>({...critter(p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36})).slice(0,8);
  if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>({...critter(p.type||'Grass',p.level||3),...p}));
- s.captureCount=s.captureCount||0;s.money=Number.isFinite(s.money)?s.money:250;
+ s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
  s.rivalPassed=!!s.rivalPassed;s.introComplete=!!s.introComplete;
@@ -1048,13 +1048,119 @@ function firstAlive(){return s.party.findIndex(p=>p.hp>0)}
 function lead(){return s.party[firstAlive()]}
 function mult(atk,def){if(strengths[atk]?.includes(def))return 2;if(strengths[def]?.includes(atk))return 0.5;return 1}
 function activeModifier(side){let value=0;for(const m of s.installed){if(!m)continue;if(m==='Power Coil')value+=side==='ally'?0.12:0;if(m==='Guard Plate')value+=side==='enemy'?-0.1:0;if(m==='Weakening Field')value+=side==='ally'?0.1:0}return Math.max(0.5,1+value)}
+
+// Phase 4 — Index is a read-only wrist device outside a Critter Center.
+// Party swapping and module configuration remain Center-exclusive.
+let indexTab='clock',indexSelection=0;
+const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['tools','⚙ Tools']];
 function index(){
  if(screen!=='game'||battle)return;
- let slots='';s.party.forEach((p,i)=>{slots+='<div class="slot">'+(i+1)+' o’clock<br>'+ (symbols[p.type]||'◇')+'<br>'+p.type+' Lv'+p.level+'<br>HP '+p.hp+'/'+p.maxHp+'</div>'});
- for(let i=s.party.length;i<8;i++)slots+='<div class="slot">'+(i+1)+' o’clock<br>◇<br>Empty</div>';
- for(let i=0;i<4;i++)slots+='<div class="slot module">'+(i+9)+' o’clock<br>✧<br>'+(s.installed[i]||'Empty')+'</div>';
- open('Critter Index','<b>'+escapeHtml(s.name)+'</b> · Party '+s.party.length+'/8 · Home storage '+s.storage.length+'<div class="slots">'+slots+'</div><p>Money: '+s.money+' · Badges: '+s.badges+' · Captures: '+s.captureCount+'</p><p>Inventory: '+inventoryText()+'</p><p class="muted">Party changes and module installation happen at Critter Centers.</p><div class="options"><button class="btn" id="mSave">Save Adventure</button><button class="btn" id="mTitle">Return to Title</button></div>');
- $('mSave').onclick=()=>{save();close()};$('mTitle').onclick=()=>{save();close();show('title')}
+ indexTab='clock';indexSelection=0;renderIndex();
+}
+function indexSlotContent(i){
+ if(i<8){
+  const p=s.party[i];
+  return p?'<span class="watchSlotIcon">'+(symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.type)+'</span><small>Lv '+p.level+'</small>'
+   :'<span class="watchSlotIcon empty">◇</span><span class="watchSlotName">Empty</span>';
+ }
+ const module=s.installed[i-8];
+ return '<span class="watchSlotIcon moduleSymbol">✧</span><span class="watchSlotName">'+(module?escapeHtml(module):'Open slot')+'</span>';
+}
+function indexClock(){
+ let clock='<div class="watchClock" role="group" aria-label="Critter Index 12 clock slots">'
+  +'<div class="watchDialInner"><span class="watchDialText">CRITTER INDEX</span><strong>'+s.party.length+' / 8</strong><small>ACTIVE PARTY</small>'
+  +'<span class="watchDialDivider"></span><span class="watchDialModules">MODULES '+s.installed.filter(Boolean).length+' / 4</span></div>';
+ for(let i=0;i<12;i++){
+  const angle=(i+1)*Math.PI/6-Math.PI/2;
+  const x=50+39*Math.cos(angle),y=50+39*Math.sin(angle);
+  clock+='<button type="button" class="watchPosition '+(i>=8?'isModule ':'')+(indexSelection===i?'selected':'')+'" data-index-slot="'+i+'" '
+    +'style="left:'+x.toFixed(2)+'%;top:'+y.toFixed(2)+'%" aria-label="'+(i+1)+' o’clock slot">'
+    +'<span class="watchTime">'+(i+1)+'</span><span class="watchTinyIcon">'+(i<8?(s.party[i]?symbols[s.party[i].type]||'◇':'·'):'✧')+'</span></button>';
+ }
+ clock+='</div>';
+ const i=indexSelection,p=s.party[i],mod=s.installed[i-8];
+ let detail;
+ if(i<8&&p){
+  const pct=Math.max(0,Math.min(100,Math.round(p.hp/Math.max(1,p.maxHp)*100)));
+  detail='<div class="watchSelectionHeading">'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+' <span>Lv '+p.level+'</span></div>'
+   +'<div class="watchMeter"><div style="width:'+pct+'%"></div></div><div class="watchSelectionStats">HP '+p.hp+' / '+p.maxHp+' · XP '+(p.xp||0)+' / '+p.level*12+'</div>'
+   +'<div class="watchSelectionStats">Status: '+escapeHtml(p.status||'Healthy')+'</div>';
+ }else if(i<8){
+  detail='<div class="watchSelectionHeading">Empty party position</div><p>Capture a wild Critter to fill this slot.</p>';
+ }else{
+  detail='<div class="watchSelectionHeading">Module socket '+(i+1)+'</div><p>'+(mod?escapeHtml(mod):'No module installed')+'</p>'
+   +'<small>Module changes are available only at a Critter Center.</small>';
+ }
+ return '<div class="watchClockLayout">'+clock+'<div class="watchSelection">'
+  +'<span class="watchEyebrow">'+(i+1)+' O’CLOCK '+(i<8?'· PARTY':'· MODULE')+'</span>'+detail
+  +'<button type="button" class="btn watchMinor" id="watchViewTab">'+(i<8?'View party details':'View modules')+'</button>'
+  +'</div></div>';
+}
+function indexParty(){
+ const cards=Array.from({length:8},(_,i)=>{
+  const p=s.party[i];
+  if(!p)return '<div class="watchPartyCard empty"><span>Slot '+(i+1)+'</span><strong>◇ Empty</strong></div>';
+  const pct=Math.round(100*p.hp/Math.max(1,p.maxHp));
+  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+'</strong>'
+   +'<small>Lv '+p.level+'</small></div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
+   +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
+   +'<div class="watchPartyMeta">'+(p.moves||['Strike',p.type+' Pulse','Guard','Focus']).map(escapeHtml).join(' · ')+'</div></div>';
+ }).join('');
+ return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
+  +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
+}
+function indexItems(){
+ const items=Object.entries(s.inventory||{}).filter(([,v])=>v>0);
+ const list=items.length?items.map(([k,v])=>'<div class="watchRow"><span>▣ '+escapeHtml(k)+'</span><strong>×'+v+'</strong></div>').join(''):'<div class="watchEmpty">Your bag is empty.</div>';
+ const modules=['Power Coil','Guard Plate','Weakening Field'];
+ const owned=modules.map(m=>{const count=s.modules.filter(x=>x===m).length;return count?'<div class="watchRow"><span>✧ '+escapeHtml(m)+'</span><strong>×'+count+'</strong></div>':''}).join('');
+ return '<div class="watchSectionTitle">Field inventory <small>View only</small></div>'+list
+  +'<div class="watchSectionTitle">Available modules</div>'+(owned||'<div class="watchEmpty">No uninstalled modules owned.</div>')
+  +'<div class="watchReadOnly">Items are usable during battles; modules are installed at Critter Centers.</div>';
+}
+function indexRecords(){
+ const log=(s.captureLog||[]).slice(-12).reverse();
+ const history=log.length?log.map(q=>'<div class="watchRow"><span>'+(symbols[q.type]||'◇')+' '+escapeHtml(q.type)+' <small>Lv '+Number(q.level||1)+'</small></span><span class="watchRecordLocation">'+escapeHtml(q.area||'Unknown')+' · '+escapeHtml(q.storage||'Party')+'</span></div>').join('')
+  :'<div class="watchEmpty">New captures will appear here. Older saves retain their capture totals, but individual capture histories were not previously stored.</div>';
+ return '<div class="watchMetrics">'
+  +'<div><strong>'+s.captureCount+'</strong><span>Total captures</span></div>'
+  +'<div><strong>'+s.storage.length+'</strong><span>Home storage</span></div>'
+  +'<div><strong>'+s.badges+'</strong><span>Badges</span></div>'
+  +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
+  +'<div class="watchReadOnly">Species remain labeled by type until the 25 original Critter designs are added.</div>';
+}
+function indexTools(){
+ const cutter=!!s.cut,level=s.badges>=5?'Rare':s.badges>=2?'Advanced':'Basic';
+ let modules=Array.from({length:4},(_,i)=>'<div class="watchModuleRow"><span>'+(i+9)+' O’CLOCK</span><strong>'+escapeHtml(s.installed[i]||'Empty module socket')+'</strong></div>').join('');
+ return '<div class="watchSectionTitle">Critter Index maintenance</div>'
+  +'<div class="watchToolCard"><strong>✧ Capture Beam</strong><span>ONLINE</span><p>Capture wild Critters during 1v1 encounters. Lower target HP to improve capture chances.</p></div>'
+  +'<div class="watchToolCard"><strong>⚙ Vegetation Cutter</strong><span>'+(cutter?'UNLOCKED':'LOCKED')+'</span><p>'+(cutter?'First-badge cutting function is active.':'Earn the first Grass Gym badge to unlock vegetation cutting.')+'</p></div>'
+  +'<div class="watchToolCard"><strong>◇ Module Access</strong><span>'+level.toUpperCase()+'</span><p>Basic at 0 badges · Advanced at 2 · Rare at 5.</p></div>'
+  +'<div class="watchSectionTitle">Module sockets</div>'+modules
+  +'<div class="watchReadOnly">Your watch is read-only away from a Critter Center. Modules are automatic after installation.</div>';
+}
+function renderIndex(){
+ if(!s||screen!=='game'||battle)return;
+ const tabs=INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+label+'</button>').join('');
+ let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTools();
+ open('Critter Index','<div class="watchShell"><div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
+  +'<div class="watchStats"><span>◇ '+s.money+' credits</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
+  +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>'
+  +'<div class="watchScreen" role="region" aria-label="Critter Index '+escapeHtml(indexTab)+' screen">'+content+'</div>'
+  +'<div class="watchFooter"><button type="button" class="btn" id="mSave">Save Adventure</button>'
+  +'<button type="button" class="btn" id="mTitle">Return to Title</button></div></div>');
+ document.querySelectorAll('[data-watch-tab]').forEach(b=>b.onclick=()=>{
+  if(!INDEX_TABS.some(([key])=>key===b.dataset.watchTab))return;
+  indexTab=b.dataset.watchTab;renderIndex();
+ });
+ document.querySelectorAll('[data-index-slot]').forEach(b=>b.onclick=()=>{
+  const n=Number(b.dataset.indexSlot);if(!Number.isInteger(n)||n<0||n>=12)return;
+  indexSelection=n;renderIndex();
+ });
+ const view=$('watchViewTab');
+ if(view)view.onclick=()=>{indexTab=indexSelection<8?'party':'tools';renderIndex()};
+ $('mSave').onclick=()=>{save();close()};
+ $('mTitle').onclick=()=>{save();close();show('title')};
 }
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -1227,7 +1333,7 @@ function performPlayerAction(action,log){
     if(Math.random()<chance){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
      if(s.party.length<8)s.party.push(caught);else s.storage.push(caught);
-     s.captureCount++;
+     s.captureCount++;s.captureLog=s.captureLog||[];s.captureLog.push({type:foe.type,level:foe.level,area:s.area,storage:s.party.includes(caught)?'Party':'Home'});s.captureLog=s.captureLog.slice(-80);
      endBattle(true,'Capture successful! '+foe.type+' joined '+(s.party.includes(caught)?'your party.':'home storage.'),false);
     }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
    }return;
