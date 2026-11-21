@@ -218,6 +218,28 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 .speciesMoveLine span{color:#edc98a}.speciesMoveLine strong{font-size:12px}.speciesMoveLine small{text-align:right;color:#9fd4bf}
 @media(max-width:520px){.watchTab{min-width:70px;font-size:10px;padding:10px 6px}.speciesGrid{grid-template-columns:1fr 1fr}.speciesTile{padding:6px;gap:5px}.speciesMiniIcon{width:29px;height:34px;flex-basis:29px;font-size:19px}.speciesTile strong{font-size:11px}.speciesTile small{font-size:9px}.speciesIdentity{grid-template-columns:85px minmax(0,1fr)}}
 @media(max-width:360px){.speciesGrid{grid-template-columns:1fr}.speciesIdentity{grid-template-columns:75px 1fr}}
+
+/* Discovery & collection phase — Seen / Captured / Milestones */
+.collectionProgress{margin:8px 0 13px;padding:11px;background:#1a4145;border:1px solid #527b74;border-radius:9px}
+.collectionProgressNums{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+.collectionProgressNums strong{color:#f7dfa8}.collectionProgressNums span{color:#c7ded5;font-size:11px}
+.collectionProgress>small{font-size:10px;color:#abccbf}
+.collectionDiscoverFilter{padding:6px 0}
+.collectionDiscoverFilter label{font-size:11px;color:#c3dfd3;display:grid;gap:4px}
+.collectionDiscoverFilter select{width:100%;min-width:0;padding:9px;background:#1e3c44;color:#f4eadd;border:1px solid #68958d;border-radius:7px;font-size:12px}
+.collectionStatus{display:inline-flex;align-items:center;align-self:start;justify-content:center;padding:3px 7px;border-radius:20px;border:1px solid #6a8983;color:#e6efe8;font-size:9px;font-weight:800;letter-spacing:.6px;max-width:max-content;margin:3px 0}
+.collectionStatus.unseen{background:#263e42;color:#a6b8b3;border-color:#55706c}
+.collectionStatus.seen{background:#435841;color:#e1e7a9;border-color:#829866}
+.collectionStatus.captured{background:#275c50;color:#b1e9cd;border-color:#5dba91}
+.collectionMilestones{display:grid;gap:7px}
+.collectionMilestone{background:#254448;border:1px solid #527a73;border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:9px}
+.collectionMilestone>div{min-width:0;display:grid;gap:4px}.collectionMilestone strong{font-size:12px;color:#f4e5bd}.collectionMilestone small{font-size:10px;color:#b7d6c7}
+.collectionMilestone .btn{font-size:10px;padding:8px 9px;white-space:nowrap}
+.collectionClaimed{color:#8cd3ad;font-size:11px;font-weight:800}
+.collectionLocked{color:#a6bdb1;font-size:11px;font-weight:700}
+.collectionHistory{background:#1e3e44;border:1px solid #517b73;border-radius:9px;padding:10px;margin:9px 0;display:grid;gap:5px}
+.collectionHistory strong{font-size:12px;color:#ead3a1}.collectionHistory span{font-size:11px;color:#c1dbce}
+@media(max-width:400px){.collectionProgressNums{flex-wrap:wrap}.collectionMilestone{padding:7px}.collectionMilestone strong{font-size:11px}.collectionMilestone small{font-size:9px}}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
