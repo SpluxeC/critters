@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "description": "200 editable Critters with 18 types, including Normal, Steel and Ground, using 312 original moves. All special-type restrictions, evolution IDs and habitats remain intact.",
   "species": [
     {
@@ -418,7 +418,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-007-barkling",
-        "minLevel": 23
+        "minLevel": 23,
+        "stone": "Grass Stone"
       }
     },
     {
@@ -1419,7 +1420,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-022-glintgill",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Water Stone"
       }
     },
     {
@@ -2555,7 +2557,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-039-glowpup",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Fire Stone"
       }
     },
     {
@@ -3691,7 +3694,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-056-flintpaw",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Rock Stone"
       }
     },
     {
@@ -4839,7 +4843,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-073-arcquill",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Electric Stone"
       }
     },
     {
@@ -5978,7 +5983,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-090-snowwhisk",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Ice Stone"
       }
     },
     {
@@ -6842,7 +6848,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-103-plumehop",
-        "minLevel": 12
+        "minLevel": 12,
+        "stone": "Flying Stone"
       }
     },
     {
@@ -8125,7 +8132,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-122-noctibun",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Shadow Stone"
       }
     },
     {
@@ -9196,7 +9204,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-138-echomoth",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Ghost Stone"
       }
     },
     {
@@ -10057,7 +10066,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-151-toxipup",
-        "minLevel": 12
+        "minLevel": 12,
+        "stone": "Venom Stone"
       }
     },
     {
@@ -11346,7 +11356,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-170-telekin",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Psychic Stone"
       }
     },
     {
@@ -12416,7 +12427,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
         "speciesId": "cr-186-dashkick",
-        "minLevel": 18
+        "minLevel": 18,
+        "stone": "Fighting Stone"
       }
     },
     {
