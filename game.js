@@ -6,6 +6,20 @@ const T={grass:0,path:1,tree:2,roof:3,wall:4,door:5,rice:6,flower:7,wood:8,desk:
 const palette=['#75a65e','#c6ae82','#38683d','#88684f','#baa78a','#403127','#b7bd6a','#88a961','#b38c6d','#856348','#d9c595','#507e41','#867c6b','#5a9aa5','#397b3e','#7b5c39','#b6b1a0'];
 const strengths={Fire:['Grass','Ice','Steel'],Water:['Fire','Rock','Ground'],Grass:['Water','Shadow','Ground'],Rock:['Electric','Venom'],Electric:['Water','Flying'],Ice:['Dragon','Ghost','Ground'],Flying:['Beast','Fighting'],Shadow:['Ghost','Psychic'],Ghost:['Psychic','Primordial'],Dragon:['Electric','Primordial'],Venom:['Grass','Flying'],Beast:['Dragon','Shadow'],Primordial:['Beast','Fire'],Psychic:['Fighting','Venom'],Fighting:['Rock','Ice','Normal','Steel'],Normal:[],Steel:['Rock','Ice'],Ground:['Electric','Steel','Venom']};
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧',Normal:'◯',Steel:'⚙',Ground:'⏚'};
+const STARTER_SPRITES=Object.freeze({Rock:'assets/critters/starters/rock.png',Water:'assets/critters/starters/water.png',Electric:'assets/critters/starters/electric.png'});
+const starterArtRoles=new WeakSet();
+function starterCritter(type,level){const p=critter(type,level);starterArtRoles.add(p);return p}
+function restoreStarterArtRole(){
+ // Old saves have no starter ID. Do not guess when more than one placeholder matches.
+ if(!Object.hasOwn(STARTER_SPRITES,s.starter)||s.captureLog.some(q=>q.type===s.starter&&!q.speciesId))return;
+ const matches=[...s.party,...s.storage].filter(p=>!p.speciesId&&p.type===s.starter&&p.name===s.starter);
+ if(matches.length===1)starterArtRoles.add(matches[0]);
+}
+function starterPortrait(type,size,fallbackClass,defaultSymbol){
+ const mark='<span class="starterSpriteFallback '+fallbackClass+'" aria-hidden="true">'+(symbols[type]||defaultSymbol)+'</span>';
+ if(!Object.hasOwn(STARTER_SPRITES,type))return mark;
+ return '<img class="starterSprite '+fallbackClass+'" width="'+size+'" height="'+size+'" alt="" hidden src="'+STARTER_SPRITES[type]+'">'+mark;
+}
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
 const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
 // Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
@@ -406,6 +420,7 @@ function migrate(){
  if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
  if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
+ restoreStarterArtRole();
  s.x=Math.max(1,Math.min(W-2,s.x));s.y=Math.max(1,Math.min(H-2,s.y));
 }
 function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
@@ -1320,6 +1335,10 @@ function open(title,body){
  const preserve=watch&&panel&&host.classList.contains('show')&&panel.dataset?.screenMode==='watch';
  const previous=preserve?panel.scrollTop:0;
  $('modalTitle').textContent=title;$('modalBody').innerHTML=body;host.classList.add('show');
+ for(const img of $('modalBody').querySelectorAll('.starterSprite')){
+  const reveal=()=>{if(img.naturalWidth){img.nextElementSibling.hidden=true;img.hidden=false}};
+  if(img.complete)reveal();else img.addEventListener('load',reveal,{once:true});
+ }
  if(panel){panel.dataset.screenMode=watch?'watch':'other';panel.scrollTop=preserve?previous:0}
 }
 function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false;releaseMovement()}
@@ -1390,7 +1409,7 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 // Phase 4 — Index is a read-only wrist device outside a Critter Center.
 // Party swapping and module configuration remain Center-exclusive.
 let indexTab='clock',indexSelection=0;
-const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['critters','◈ Critters'],['tools','⚙ Tools']];
+const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['critters','◈ Critters'],['sprites','Sprite Gallery'],['tools','⚙ Tools']];
 let moveBookType='Water';
 let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
 
@@ -1423,7 +1442,7 @@ function indexClock(){
  let detail;
  if(i<8&&p){
   const pct=Math.max(0,Math.min(100,Math.round(p.hp/Math.max(1,p.maxHp)*100)));
-  detail='<div class="watchSelectionHeading">'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+' <span>Lv '+p.level+'</span></div>'
+  detail='<div class="watchSelectionHeading">'+(starterArtRoles.has(p)?starterPortrait(p.type,30,'indexStarterSprite','◇'):(symbols[p.type]||'◇'))+' '+escapeHtml(p.type)+' <span>Lv '+p.level+'</span></div>'
    +'<div class="watchMeter"><div style="width:'+pct+'%"></div></div><div class="watchSelectionStats">HP '+p.hp+' / '+p.maxHp+' · XP '+(p.xp||0)+' / '+p.level*12+'</div>'
    +'<div class="watchSelectionStats">Status: '+escapeHtml(p.status||'Healthy')+'</div>';
  }else if(i<8){
@@ -1442,7 +1461,7 @@ function indexParty(){
   const p=s.party[i];
   if(!p)return '<div class="watchPartyCard empty"><span>Slot '+(i+1)+'</span><strong>◇ Empty</strong></div>';
   const pct=Math.round(100*p.hp/Math.max(1,p.maxHp));
-  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
+  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(starterArtRoles.has(p)?starterPortrait(p.type,30,'indexStarterSprite','◇'):(symbols[p.type]||'◇'))+' '+escapeHtml(p.name||p.type)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
     +'<div class="watchPartyMeta">XP '+Math.floor(p.xp||0)+' / '+experienceToNextLevel(p)+' to Lv '+(p.level+1)+'</div>'
@@ -1680,7 +1699,44 @@ function indexCritters(){
    +'<span>Page '+(critterBookPage+1)+' / '+(maxPage+1)+'</span>'
    +'<button type="button" class="btn" id="critterNext" '+(critterBookPage>=maxPage?'disabled':'')+'>Next</button></div>';
  }
- return '<div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div><p class="muted">Each species has one home region. Additional wild species gradually appear as you explore that region; rare encounters remain uncommon.</p>'+search+body;
+ return '<button type="button" class="btn spriteGalleryShortcut" data-watch-tab="sprites">View Sprite Gallery</button><div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div><p class="muted">Each species has one home region. Additional wild species gradually appear as you explore that region; rare encounters remain uncommon.</p>'+search+body;
+}
+
+// This gallery is presentation data: it never registers creatures or updates saves.
+const SPRITE_GALLERY_FAMILIES=[
+ ['Rock starter','Rock','rock-starter',3,'Rock'],
+ ['Water starter','Water','water-starter',3,'Water'],
+ ['Electric starter','Electric','electric-starter',3,'Electric'],
+ ['Australian Shepherd (Blue Merle)','Fighting','aussie-blue-merle',3],
+ ['Australian Shepherd (Red Merle)','Fighting','aussie-red-merle',3],
+ ['Pronghorn','Electric','electric-pronghorn',2],
+ ['Red Panda','Fire','fire-red-panda',1],
+ ['Microraptor','Flying','flying-microraptor',2],
+ ['Phantom Cat','Ghost','ghost-cat',2],
+ ['Glyptodont','Grass','grass-glyptodont',2],
+ ['Winter Stoat','Ice','ice-winter-stoat',1],
+ ['Aye-Aye','Psychic','psychic-aye-aye',2],
+ ['Mastodon','Rock','rock-mastodon',2],
+ ['Borzoi','Shadow','shadow-borzoi',2],
+ ['Thorny Devil','Venom','venom-thorny-devil',1],
+ ['Otter','Water / Venom','water-venom-otter',3],
+];
+function indexSpriteGallery(){
+ const frameCount=SPRITE_GALLERY_FAMILIES.reduce((sum,family)=>sum+family[3],0);
+ const groups=SPRITE_GALLERY_FAMILIES.map(([label,type,prefix,count,starter])=>{
+  const cards=Array.from({length:count},(_,i)=>{
+   const stage=i+1,inBattle=!!starter&&stage===1;
+   const src=inBattle?STARTER_SPRITES[starter]:'assets/critters/gallery/'+prefix+'-stage-'+stage+'.png';
+   return '<figure class="gallerySprite"><img width="96" height="96" loading="lazy" src="'+src+'" alt="'+escapeHtml(label)+' stage '+stage+'">'
+    +'<figcaption><strong>Stage '+stage+'</strong><small>'+(inBattle?'Starter battle art':'Gallery only')+'</small></figcaption></figure>';
+  }).join('');
+  return '<section class="spriteGalleryFamily"><div class="watchSectionTitle"><span>'+escapeHtml(label)+'</span><small>'+escapeHtml(type)+'</small></div>'
+   +(starter?'':'<p class="muted galleryNote">No species or evolution assigned</p>')
+   +'<div class="spriteGalleryFrames">'+cards+'</div></section>';
+ }).join('');
+ return '<div class="watchSectionTitle">Sprite Gallery <small>'+frameCount+' sprites</small></div>'
+  +'<p class="muted">Look through the current battle art. Gallery-only forms are previews, not available species or evolutions.</p>'
+  +'<div class="spriteGalleryFamilies">'+groups+'</div>';
 }
 
 function indexTools(){
@@ -1696,7 +1752,7 @@ function indexTools(){
 function renderIndex(){
  if(!s||screen!=='game'||battle)return;
  const tabs=INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+label+'</button>').join('');
- let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTab==='critters'?indexCritters():indexTools();
+ let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTab==='critters'?indexCritters():indexTab==='sprites'?indexSpriteGallery():indexTools();
  open('Critter Index','<div class="watchShell"><div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
   +'<div class="watchStats"><span>◇ '+s.money+' credits</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
   +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>'
@@ -1760,8 +1816,8 @@ function earlyBattleTip(){
 }
 
 function starterMenu(){
- open('Choose Your Starter','<p>Choose your first partner. The Critter Index holds your team, inventory, and capture beam.</p><div class="options"><button class="btn" data-starter="Rock">⛰ Rock</button><button class="btn" data-starter="Water">💧 Water</button><button class="btn" data-starter="Electric">⚡ Electric</button></div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
- document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;s.party=[critter(s.starter,5)];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
+ open('Choose Your Starter','<p>Choose your first partner. The Critter Index holds your team, inventory, and capture beam.</p><div class="options starterOptions">'+Object.keys(STARTER_SPRITES).map(type=>'<button class="btn" data-starter="'+type+'">'+starterPortrait(type,80,'starterChoiceSprite','◇')+'<span>'+type+'</span></button>').join('')+'</div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
+ document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;s.party=[starterCritter(s.starter,5)];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
 }
 // World / encounter balancing (v31) — area-specific encounter density, species
 // rarity, wild level ranges, and tiny novelty/time-of-day influences.
@@ -1888,10 +1944,9 @@ function startTrainer(id){
  const area=id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden';
  const used=new Set();
  const make=(t,l)=>trainerSpecies(t,l,area,id,used.size,used);
- const starter=t=>critter(t,5);
  let enemies,name,award,kind='trainer';
- if(id==='tutorial'){enemies=[starter(s.rival)];name='Childhood Rival';award=0;kind='tutorial'}
- else if(id==='rival'){enemies=[critter(s.rival,12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
+ if(id==='tutorial'){enemies=[starterCritter(s.rival,5)];name='Childhood Rival';award=0;kind='tutorial'}
+ else if(id==='rival'){enemies=[starterCritter(s.rival,12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
  else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
@@ -1927,7 +1982,8 @@ function hpCard(p,side,active=false){
 function sceneFigure(p,side,i){
  if(!p||p.hp<=0)return '';
  return '<div class="combatFigure '+side+' '+(battle.impact===side&&battle.lastTarget===i?'hit':'')+'" aria-label="'+escapeHtml(p.name||p.type)+'">'
-  +'<span class="combatAura"></span><span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>'
+  +'<span class="combatAura"></span>'
+  +(starterArtRoles.has(p)?starterPortrait(p.type,80,'combatSymbol','✦'):'<span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>')
   +'<small>'+escapeHtml(p.name||p.type)+'</small></div>';
 }
 function battleHeader(){
