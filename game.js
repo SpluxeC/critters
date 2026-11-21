@@ -333,7 +333,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=27',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=30',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -1390,7 +1390,8 @@ function indexParty(){
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
    +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
-   +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div></div>';
+   +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
+   +partyEvolutionControls(p,i)+'</div>';
  }).join('');
  return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
@@ -1597,6 +1598,7 @@ function indexCritters(){
    +'<div class="watchSectionTitle">Level 1 base stats</div>'+critterStatTable(selection)
    +collectionSpeciesHistory(selection.speciesId)
    +'<div class="watchSectionTitle">Where to find it</div><ul class="speciesHabitats">'+locations+'</ul>'
+   +evolutionChainInfo(selection)
    +'<div class="watchSectionTitle">Level-up learnset</div><div class="speciesLearnset">'+moveRows+'</div>'
    +'<div class="watchReadOnly">Draft species. Cody and Kyle can revise its name, types, stats, habitat and learnset in the species registry.</div>';
  }else{
@@ -1646,6 +1648,11 @@ function renderIndex(){
  document.querySelectorAll('[data-move-type]').forEach(b=>b.onclick=()=>{
   if(!Object.keys(strengths).concat('Typeless').includes(b.dataset.moveType))return;
   moveBookType=b.dataset.moveType;renderIndex();
+ });
+ document.querySelectorAll('[data-evolve-party]').forEach(b=>b.onclick=()=>{
+  const i=Number(b.dataset.evolveParty),p=s.party[i];if(!p||!evolutionReady(p))return;
+  const result=tryEvolveChain(p);if(!result.length)return;
+  save();renderIndex();
  });
  document.querySelectorAll('[data-critter-id]').forEach(b=>b.onclick=()=>{
   if(!speciesRegistry.has(b.dataset.critterId))return;
@@ -2118,7 +2125,106 @@ function resolveTeamTurn(){
  renderBattle(log.join(' '));
 }
 function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capture'})}
-function awardExperience(p,xp){if(!p)return;p.xp=(p.xp||0)+xp;while(p.xp>=p.level*12){p.xp-=p.level*12;p.level++;p.maxHp+=4;p.hp=Math.min(p.maxHp,p.hp+4);gainLevelMoves(p)}}
+
+// v30 Evolution progression. Chains are authored in data/critters.json.
+// Evolutions consume no items or credits, cannot affect opponents, and
+// re-use the existing 200 species (three restricted types remain standalone).
+function evolutionRule(p){return speciesFor(p)?.evolvesTo||null}
+function evolutionTarget(rule){return rule?.speciesId?speciesRegistry.get(rule.speciesId):null}
+function evolutionConditionLabel(rule){
+ if(!rule)return '';
+ const level='Lv '+(rule.minLevel||1);
+ const condition=rule.condition;
+ if(!condition)return level;
+ if(condition.kind==='night')return level+' · nighttime (20:00–05:00)';
+ if(condition.kind==='day')return level+' · daytime (07:00–17:00)';
+ if(condition.kind==='badge')return level+' · '+(condition.minimum||1)+' badge'+((condition.minimum||1)>1?'s':'');
+ if(condition.kind==='area')return level+' · '+(CRITTER_AREA_LABELS[condition.areaId]||condition.areaId);
+ return level;
+}
+function evolutionReady(p){
+ if(!p?.speciesId||p.hp<=0)return false;
+ const rule=evolutionRule(p),next=evolutionTarget(rule);
+ if(!rule||!next||!Number.isInteger(rule.minLevel)||p.level<rule.minLevel)return false;
+ if(next.speciesId===p.speciesId||!Array.isArray(next.types)||next.types.some(t=>['Dragon','Primordial','Beast'].includes(t)))return false;
+ const condition=rule.condition;
+ if(!condition)return true;
+ switch(condition.kind){
+  case 'night':return worldHour()>=20||worldHour()<5;
+  case 'day':return worldHour()>=7&&worldHour()<17;
+  case 'badge':return s.badges>=(condition.minimum||1);
+  case 'area':return s.area===condition.areaId;
+  default:return false;
+ }
+}
+function registerEvolution(p,fromId){
+ // Evolution counts as a new obtained species without falsifying beam captures.
+ const id=p.speciesId;if(!validCollectionSpecies(id))return;
+ const col=collectionData(),stamp=encounterStamp();
+ if(!col.seen[id])col.seen[id]={firstArea:stamp.area,firstDay:stamp.day,encounters:0,lastArea:stamp.area,discoveredBy:'evolution'};
+ if(!col.caught[id])col.caught[id]={firstArea:stamp.area,firstDay:stamp.day,firstLevel:p.level,captures:0,obtainedBy:'evolution',evolvedFrom:fromId};
+}
+function evolveCritter(p){
+ if(!evolutionReady(p))return null;
+ const from=speciesFor(p),rule=evolutionRule(p),to=evolutionTarget(rule);
+ if(!from||!to)return null;
+ const oldMax=p.maxHp,oldHP=p.hp,oldPP={...(p.movePP||{})},oldMoves=[...(p.moves||[])];
+ const evolvedId=to.speciesId;
+ const history=Array.isArray(p.evolutionHistory)?p.evolutionHistory.slice(-19):[];
+ history.push({from:from.speciesId,to:evolvedId,level:p.level,day:s.worldDay||1,area:s.area});
+ p.evolutionHistory=history;
+ p.speciesId=evolvedId;
+ refreshSpeciesMetadata(p);
+ p.maxHp=combatStat(p,'hp');
+ p.hp=oldHP<=0?0:Math.max(1,Math.min(p.maxHp,p.maxHp-Math.max(0,oldMax-oldHP)));
+ // Upgrade equipped moves to evolved learnset, retaining any shared PP.
+ p.moves=oldMoves;p.movePP=oldPP;normalizeMoves(p);
+ registerEvolution(p,from.speciesId);
+ save();
+ return {from:from.name,to:to.name,level:p.level,toId:evolvedId};
+}
+function tryEvolveChain(p,limit=2){
+ const results=[];for(let i=0;i<limit;i++){const result=evolveCritter(p);if(!result)break;results.push(result)}
+ if(results.length){s.evolutionNews=Array.isArray(s.evolutionNews)?s.evolutionNews:[];s.evolutionNews.push(...results);s.evolutionNews=s.evolutionNews.slice(-20)}
+ return results;
+}
+function evolutionNotification(){
+ const records=Array.isArray(s?.evolutionNews)?s.evolutionNews:[];
+ s.evolutionNews=[];
+ return records.length?'<div class="evoNotices"><strong>✧ Evolution!</strong>'+records.map(e=>'<p>'+escapeHtml(e.from)+' evolved into <b>'+escapeHtml(e.to)+'</b> at Lv '+e.level+'!</p>').join('')+'</div>':'';
+}
+function evolutionChainInfo(sp){
+ if(!sp)return '';
+ const seen=new Set(),backward=[];let cursor=sp;
+ while(cursor?.evolvesFrom&&!seen.has(cursor.speciesId)&&backward.length<3){
+  seen.add(cursor.speciesId);const parent=speciesRegistry.get(cursor.evolvesFrom);if(!parent)break;backward.unshift(parent);cursor=parent;
+ }
+ const chain=[...backward,sp],conditions=[];
+ cursor=sp;
+ while(cursor?.evolvesTo&&chain.length<4&&!seen.has('forward:'+cursor.speciesId)){
+  seen.add('forward:'+cursor.speciesId);const rule=cursor.evolvesTo,next=evolutionTarget(rule);
+  if(!next||chain.some(v=>v.speciesId===next.speciesId))break;
+  conditions.push({from:cursor,to:next,rule});chain.push(next);cursor=next;
+ }
+ const rows=[];
+ for(let i=0;i<chain.length;i++){
+  const stage=chain[i],rule=i<chain.length-1?chain[i].evolvesTo:null;
+  rows.push('<div class="evoStage"><strong>#'+String(stage.number||0).padStart(3,'0')+' '+escapeHtml(stage.name)+'</strong>'
+   +'<small>'+escapeHtml((stage.types||[]).join(' / '))+'</small></div>');
+  if(rule&&i<chain.length-1)rows.push('<div class="evoArrow">↓ '+escapeHtml(evolutionConditionLabel(rule))+'</div>');
+ }
+ return '<div class="watchSectionTitle">Evolution family</div><div class="evoLine">'+(rows.join('')||'<div>No evolutions</div>')+'</div>'
+  +(sp.evolvesTo?'<div class="watchReadOnly">Next evolution: '+escapeHtml(evolutionConditionLabel(sp.evolvesTo))+'. Eligible Critters evolve when leveling up, or on the Party screen when the condition is met.</div>'
+  :'<div class="watchReadOnly">No further evolution is currently assigned.</div>');
+}
+function partyEvolutionControls(p,i){
+ const rule=evolutionRule(p),next=evolutionTarget(rule);
+ if(!rule||!next)return '';
+ return '<div class="evoPartyRow"><span>Evolution → '+escapeHtml(next.name)+' · '+escapeHtml(evolutionConditionLabel(rule))+'</span>'
+  +'<button class="btn" type="button" data-evolve-party="'+i+'" '+(!evolutionReady(p)?'disabled':'')+'>Evolve</button></div>';
+}
+
+function awardExperience(p,xp){if(!p)return;p.xp=(p.xp||0)+xp;while(p.xp>=p.level*12){p.xp-=p.level*12;p.level++;p.maxHp+=4;p.hp=Math.min(p.maxHp,p.hp+4);gainLevelMoves(p);tryEvolveChain(p)}}
 function endBattle(won,message,defeated){
  const b=battle;battle=null;$('close').hidden=false;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>p.hp=p.maxHp)}
@@ -2126,7 +2232,7 @@ function endBattle(won,message,defeated){
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
  }
  else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);s.area='town';s.x=17;s.y=15;build()}
- save();open(won?'Battle Complete':'Defeated','<p>'+message+'</p>'+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
+ const evolveMessages=evolutionNotification();save();open(won?'Battle Complete':'Defeated','<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
  $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent!','Follow the eastern road to Route 1. Discover new Critters with the Index beam.']);if(b.id==='leader')build()}
 }
 function blackout(){
