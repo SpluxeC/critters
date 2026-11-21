@@ -1,58 +1,84 @@
-# Critters — Original Move Master Library (v1)
+# Critters — Live Move System (v26)
 
-**264 original moves**: 16 per each of the game's **15 established Critter types** (240), plus **24 Typeless/universal techniques**.
+**Status: INTEGRATED INTO BATTLES.** `data/moves.json` contains **264 original moves**: 16 each for the approved 15 Critter types, plus 24 Typeless/universal skills. This library is loaded directly at runtime. No need to edit `game.js` to change existing move names, descriptions, stats or effects supported by the engine.
 
-This is an original move catalog with familiar genre mechanics, **not a renamed copy of the Pokémon move database**.
+The playable game fetches `data/moves.json` and `data/critters.json` with no-store caching at startup. Refresh the browser after deploying edits. If the data is temporarily inaccessible, combat uses safe fallback moves and does not destroy the save.
 
-## Status
+## Files Kyle should edit
 
-**Design library only.** Data is stored at `data/moves.json`. The live v25 battle system still uses its existing four baseline actions and is deliberately unchanged. Implement the move engine as a separate, tested phase once actual Critter species are being added.
+- **`data/moves.json`** — master definition of every move. Edit `name`, `power`, `accuracy`, `pp`, `description`, `effect`, `type`, `target`, or `priority` here.
+- **`data/critters.json`** — live species registry. Add a new object to the `species` array as each original Critter is uploaded.
+- **`data/critter-learnset-template.json`** — copyable example structure (not itself a registered species).
+- **`game.js`** — executes moves, targeting, PP, status, AI, and level-up learning; do not edit for ordinary move tweaks.
 
-## Data schema
+The master files are loaded on every fresh game page visit; Kyle does not need to write new move-combat functions for existing effect IDs.
 
-Every move has `id`, `name`, `type`, `category` (`physical`, `special`, `status`), `power` (0 for status), `accuracy` (percent), `pp`, `target` (`enemy`, `self`, `ally`, `ally_team`, `field`), `priority`, `requiredLevelGuide`, `effect` (optional machine-readable future mechanic), and `description`.
+## Add a Critter with its own level-up moves
 
-**Typeless** means a universal technique. It does not introduce a sixteenth Critter elemental type, nor any change to the established weakness rules.
+Add this **illustrative example only** to the `species` array in `data/critters.json`, replacing the name, ID, type and learnset with Kyle's actual submitted Critter:
 
-`requiredLevelGuide` is a power-curve suggestion, **not a global learnset assignment**. Critters' specific learn levels should be designed case-by-case by role, story placement, evolution, and balance. Do not force each species to learn every move of its type.
+```json
+{
+  "speciesId": "replace-with-original-species-id",
+  "name": "Replace with original name",
+  "types": ["Water"],
+  "role": "balanced",
+  "art": {"spritePath": "assets/critters/replace-with-original-species-id.png"},
+  "levelUp": [
+    {"level": 1, "moveId": "opening-flick"},
+    {"level": 5, "moveId": "ripple-jab"},
+    {"level": 9, "moveId": "brook-dart"},
+    {"level": 16, "moveId": "drench-mark"},
+    {"level": 25, "moveId": "tidewell"}
+  ]
+}
+```
 
-## Type coverage
+**Do not register this example verbatim.** Each species ID must be unique and permanent. The `types` field uses approved type names; the first entry is currently the species' combat type. The second type (if added later) is metadata until dual-type damage rules are explicitly approved. A Critter added by game code with `critter("replace-with-original-species-id", level)` automatically receives its species name, primary type, and learned moves from this registry. Adding an entry does **not** automatically place it in a wild encounter pool or grant it an art asset; Kyle still needs to integrate its sprite and encounter placement.
 
-- **Fire**: Cinder Tap, Embercoil, Kindle Heart, Ash Veil, Furnace Claw, Blazeline, Singe Mark, Coalguard, Scorch Lunge, Magma Whorl, Heat Haze, Pyre Talon, Flare Torrent, Wildfire Rhythm, Volcanic Rend, Sunforge Surge
-- **Water**: Ripple Jab, Brook Dart, Tidal Calm, Mist Curtain, Current Lash, Foam Burst, Drench Mark, Reef Shell, Undertow Grip, Rainneedle, Floodplain, Breaker Fang, Tidewell, Riverstep, Abyss Break, Moonwell Deluge
-- **Grass**: Leaf Nudge, Pollen Stitch, Green Vigor, Frond Screen, Briar Swipe, Clover Gust, Spore Tangle, Bark Shelter, Thornpath, Sunpetal, Verdant Field, Vine Scythe, Canopy Ray, Rootbound Tempo, Ironwood Crash, Elderbloom
-- **Rock**: Pebble Knock, Quartz Ray, Stone Resolve, Grit Cloud, Crag Tackle, Shardbeam, Gravel Snare, Bedrock Brace, Flint Hammer, Geode Burst, Seismic Ridge, Obsidian Edge, Crystal Fault, Mountain Stance, Boulderfall, Continental Split
-- **Electric**: Spark Nudge, Circuit Flicker, Coil Charge, Static Blur, Arc Talon, Voltstream, Nerve Jolt, Grounding Field, Ion Rush, Plasma Needle, Storm Net, Thunderhook, Skywire Flash, Surge Cycle, Overcurrent, Tempest Conduit
-- **Ice**: Frost Nip, Snowmelt Ray, Cold Focus, Hail Screen, Rime Claw, Glacier Lance, Chillbind, Permafrost Skin, Sleet Slash, Prism Flurry, Whiteout, Icicle Rend, Frozen Arc, Winter Stillness, Avalanche Rush, Polar Crown
-- **Flying**: Feather Jab, Gale Whisper, Updraft Poise, Dustwing, Wingline Cut, Zephyr Needle, Airlock Gust, Tailwind Shroud, Skyhook, Cloudpiercer, Crosswind, Raptor Dive, Cyclone Sweep, Aerial Rhythm, Stormtalon, Horizon Break
-- **Shadow**: Shade Scratch, Dusk Thread, Quiet Resolve, Blindfold Mist, Umbral Talon, Gloam Dart, Dread Whisper, Nightmantle, Eclipse Slice, Blackglass Beam, Long Shadow, Nocturne Rend, Void Lantern, Cloakstep, Abyssal Hook, Midnight Bloom
-- **Ghost**: Specter Tap, Wisp Murmur, Spirit Focus, Fading Curtain, Phantom Clasp, Ectoshard, Haunt Mark, Graveglass Ward, Veil Ripper, Moonlit Echo, Haunted Ground, Soulhook, Hollow Star, Afterimage Waltz, Grim Reprise, Beyondlight
-- **Dragon**: Scale Knock, Wyrm Gleam, Ancient Bearing, Drake Glare, Fangwheel, Draconic Pulse, Dominion Cry, Scale Bastion, Clawstorm, Comet Breath, Elder Territory, Skybreaker, Primal Flare, Dragonstep, Crownshatter, Genesis Roar
-- **Venom**: Toxin Pin, Mire Spray, Bitter Focus, Noxious Screen, Fang Drip, Venom Hiss, Septic Sting, Antidote Skin, Corrode Claw, Sporegas, Poison Marsh, Viper Rend, Miasma Lance, Viral Surge, Acidfall, Plague Bloom
-- **Beast**: Paw Swat, Howl Burst, Pack Resolve, Predator Stare, Rending Pounce, Primal Yowl, Territory Mark, Hideguard, Razor Stampede, Hunter's Call, Wildground, Feral Tusk, Predator's Roar, Instinct Dance, Alpha Maul, Savage Dominion
-- **Primordial**: Relic Jab, Origin Spark, Firstlight Focus, Ageveil, Epoch Knuckle, Ancient Glyph, Timemark, Amber Aegis, Rift Cleave, Genesis Beam, Cradle Realm, Monolith Crush, Origin Current, Aeon Rhythm, Timeworn Rupture, First Dawn
-- **Psychic**: Mind Tap, Thought Needle, Calm Center, Blurred Senses, Psyche Push, Neuron Prism, Confound, Thoughtwall, Willbreaker, Astral Line, Dreamfield, Mindscythe, Starlit Idea, Clairvoyant Beat, Cerebral Crash, Infinite Focus
-- **Fighting**: Training Jab, Spirit Thrust, Battle Breath, Feint Stare, Breaker Kick, Force Palm, Pressure Lock, Iron Guard, Spiral Elbow, Kinetic Wave, Challenge Ring, Comet Uppercut, Focused Impact, Second Wind, Final Roundhouse, Victory Burst
-- **Typeless**: Opening Flick, Measured Blow, Roundhouse Sweep, Breakthrough, Last Stand, Quickstep, Steady Breath, Brace Up, Battle Sense, Tactical Swap, Field Rally, Cover Partner, Restore Spark, Second Breath, Taunting Cry, Watchful Eye, Echo Strike, Vibration Wave, Resonance Burst, Helping Signal, Clean Slate, Disrupt Pattern, Parting Shield, Fortune Step
+## In-game behavior now live
 
-## Effects
+- Each Critter has **up to four equipped moves**; on level-up the most recently learned legal moves replace older moves beyond that capacity.
+- The battle action panel shows move names, type, category, power and **remaining PP**. Using a move spends one PP; Critter Centers restore all PP and HP.
+- Damage, accuracy, attack/defense/accuracy/evasion modifiers, conditions, poison/scorch/bleed/haunt damage ticks, healing, recoil, recharge, terrain, ally shields, and team effects use one shared executor.
+- Team-turn **2v2** and wild **1v1** use the same move/target/PP rules. Team-turn order remains player team first and opponent team second; move priority and Speed affect ordering **within** each team.
+- Opponents choose from their legal moves. If none has PP, a safe basic fallback is used.
+- The Critter Index now has a **Moves** encyclopedia screen to browse types and view moves.
+- Previously saved Critters with `Strike`, `<Type> Pulse`, `Guard`, and `Focus` are migrated to legal move IDs, without altering party capacity, capture data, or established type strengths/weaknesses.
 
-The effect objects are **future engine contracts**. Allowed current IDs in this dataset: `raise_stat`, `lower_stat`, `ailment`, `terrain`, `recoil`, `recharge`, `switch`, `team_buff`, `guard`, `heal`, `reveal`, `team_guard`, `cure_status`. Type-themed conditions include `scorch`, `drench`, `entangle`, `stagger`, `jolt`, `chill`, `disorient`, `dread`, `haunt`, `intimidate`, `poison`, `bleed`, `fracture`, `confuse`, `stagger`. Their exact durations, stacking rules, battle feedback, 1v1/2v2 behavior and status immunities must be formally implemented and tested before enabling them.
+## Change moves later without breaking saves
 
-Suggested defaults for balancing (not committed gameplay rules): 4 total move slots per Critter, move PP reset via Critter Centers, learnsets including an early reliable action, and late moves with meaningful costs rather than strictly higher power.
+**Keep `id` stable once it has been assigned to a species.** You can rename `name`, rebalance power, accuracy, PP, descriptions and supported effects safely. Each game load picks up the latest move definition. If a move ID is deleted or retired, the game drops the unavailable move and adds available basic moves rather than crashing. A species referencing a retired ID should still have its learnset updated to a replacement ID.
 
-## Species template and onboarding
+Move format:
 
-Use `data/critter-learnset-template.json` as a **template**, not an actual Critter. For each uploaded Critter:
+```json
+{
+  "id": "ripple-jab",
+  "name": "Ripple Jab",
+  "type": "Water",
+  "category": "physical",
+  "power": 35,
+  "accuracy": 100,
+  "pp": 30,
+  "target": "enemy",
+  "priority": 0,
+  "requiredLevelGuide": 1,
+  "effect": null,
+  "description": "A quick close-range strike powered by the user's own momentum."
+}
+```
 
-1. Record its **unique species ID**, name, type(s), art reference, and gameplay role.
-2. Assign level-up moves by **move IDs**, using early/mid/late progression rather than copying an existing franchise learnset. A mixed-type Critter can learn compatible moves from both types and occasional Typeless moves.
-3. Set explicit levels for each assignment; keep chronological ordering and allow revisions to balance.
-4. Verify no duplicate level/move pairs, unknown move IDs, or types not present in the game.
-5. Do not change party size, watch storage, strengths/weaknesses, or current battles without a separate implementation request.
+`requiredLevelGuide` is a general balance reference only. Species learn at the **explicit levels in their own `levelUp` list**, not the guide level.
 
-Example: `"levelUp": [{"level": 1, "moveId": "opening-flick"}, {"level": 5, "moveId": "ripple-jab"}]`. Example only.
+### Supported effect IDs
 
-## Implementation handoff
+`raise_stat`, `lower_stat`, `ailment`, `terrain`, `recoil`, `recharge`, `switch`, `team_buff`, `guard`, `heal`, `reveal`, `team_guard`, `cure_status`.
 
-When ready to activate the library: build a single move executor for player and opponent, validate effect IDs, implement PP/accuracy/effect timers, capture and AI interactions, and use the same targeting rules for 1v1 and team-turn 2v2. Add gradual save migration for existing placeholder moves. Avoid changes to battle design until that phase is explicitly approved.
+Where present, `chance` is a percentage. Stat stages are bounded, and timed terrain expires after its configured turns. Some deeper mechanics (e.g. stat formulas, status tuning, timing, dual types, move animations, and encounter availability) may be rebalanced later.
+
+## Original type chart preserved
+
+Fire, Water, Grass, Rock, Electric, Ice, Flying, Shadow, Ghost, Dragon, Venom, Beast, Primordial, Psychic, Fighting. `Typeless` is a universal move tag, not a sixteenth elemental Critter type.
+
+The approved starter triangle remains **Water beats Rock; Rock beats Electric; Electric beats Water**. The complete existing type chart is still defined in `game.js`.
