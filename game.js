@@ -10,7 +10,7 @@ const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/mal
 const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
 // Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
 const npcResearcher=new Image();npcResearcher.src='assets/npc-researcher.png?v=18';
-const npcLabAssistant=new Image();npcLabAssistant.src='assets/npc-lab-assistant.png?v=19';
+const npcLabAssistant=new Image();npcLabAssistant.src='assets/npc-lab-assistant.png?v=20-player-style';
 const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant','Center Nurse','Center Clerk','Village Elder','School Teacher','Merchant','Item Shopkeeper','Gear Shopkeeper','Rice Farmer','Fisherman','Ranger','Samurai','Shrine Maiden','Monk','Blacksmith','Guard','Rival Trainer','Gym Trainer','Gym Leader','Village Child','Traveler','Festival Dancer','Mountain Hermit','Ninja','Scholar'];
 const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
