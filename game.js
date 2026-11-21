@@ -220,6 +220,33 @@ const ROUTE1_SITES=[
  {id:'r1-cache',x:7,y:21,kind:'chest',title:'Weathered Supply Crate',
   text:['A small crate tucked behind the southern paddies.'],reward:'Revive'}
 ];
+// Phase 15: optional walk-over landmarks; these never block map routes.
+const EXPLORATION_SITES=[
+ {id:'exp-bamboo',area:'route2',x:11,y:7,title:'Bamboo Wayfinder',text:'A ranger marked a shortcut through the bamboo.',reward:'Potion',quantity:1},
+ {id:'exp-forest',area:'forest',x:17,y:9,title:'Hidden Forest Shrine',text:'A shrine glows beneath ancient trees.',reward:'Revive',quantity:1},
+ {id:'exp-foothills',area:'route3',x:20,y:7,title:'Mountain Lookout',text:'The lookout reveals a beautiful valley.',credits:85},
+ {id:'exp-cave',area:'cave',x:17,y:19,title:'Crystal Alcove',text:'Shimmering crystals hide emergency supplies.',reward:'Revive',quantity:1},
+ {id:'exp-garden',area:'garden',x:16,y:13,title:'Garden Memorial',text:'A stone honors travelers who protect Critters.',credits:100}
+];
+function explorationSiteAt(area,x,y){return EXPLORATION_SITES.find(o=>o.area===area&&o.x===x&&o.y===y)}
+function discoverExplorationSite(o){
+ if(!o||s.discoveries?.[o.id])return false;
+ s.discoveries=s.discoveries||{};s.discoveries[o.id]=true;
+ const messages=[o.title+'.',o.text];
+ if(o.reward){s.inventory[o.reward]=(s.inventory[o.reward]||0)+(o.quantity||1);messages.push('Found '+o.reward+' ×'+(o.quantity||1)+'!')}
+ if(o.credits){s.money+=o.credits;messages.push('Found '+o.credits+' credits!')}
+ save();say(messages);return true;
+}
+function drawExplorationSites(ox,oy){
+ for(const o of EXPLORATION_SITES){
+  if(o.area!==s.area||s.discoveries?.[o.id])continue;
+  const x=o.x*S+16-ox,y=o.y*S+16-oy;
+  ctx.fillStyle='#12372a';ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#ffe49a';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#fff1a0';ctx.font='bold 17px system-ui';ctx.textAlign='center';
+  ctx.fillText('✦',x,y+6);ctx.textAlign='left';
+ }
+}
 let route1Blocked=new Set();
 function route1SiteAt(x,y){return s.area==='route1'?ROUTE1_SITES.find(o=>o.x===x&&o.y===y):null}
 function inspectRoute1Site(o){
@@ -1196,6 +1223,7 @@ function draw(){
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
  if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
+ drawExplorationSites(ox,oy);
  drawAtmosphericMotion(ox,oy,viewportWidth,viewportHeight,performance.now());
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
@@ -1248,6 +1276,8 @@ function move(d){
  if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
  if((s.steps=(s.steps||0)+1)%10===0)save();
+ const exploration=explorationSiteAt(s.area,s.x,s.y);
+ if(exploration&&discoverExplorationSite(exploration))return;
  if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
  const first=s.area==='route1'&&!s.earlyJourney?.firstEncounter;
  if(first){s.earlyJourney=s.earlyJourney||{};s.earlyJourney.fieldSteps=(s.earlyJourney.fieldSteps||0)+1}
@@ -1545,8 +1575,11 @@ function indexRecords(){
   +'<div><strong>'+s.captureCount+'</strong><span>Total captures</span></div>'
   +'<div><strong>'+s.storage.length+'</strong><span>Home storage</span></div>'
   +'<div><strong>'+s.badges+'</strong><span>Badges</span></div>'
+   +'<div><strong>'+EXPLORATION_SITES.filter(o=>s.discoveries?.[o.id]).length+'/'+EXPLORATION_SITES.length+'</strong><span>Exploration finds</span></div>'
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
-  +collectionProgressUI()+collectionMilestonesUI()
+  +'<div class="watchSectionTitle">Landmark discoveries</div>'
+   +EXPLORATION_SITES.map(o=>'<div class="watchRow"><span>'+escapeHtml(o.title)+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
+   +collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
