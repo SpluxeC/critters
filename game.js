@@ -2418,16 +2418,49 @@ function center(){
  open('Critter Center','<p>Your Critters were fully healed! The technician can also manage party storage and install modules.</p><div class="options"><button class="btn" id="manageParty">Manage Party / Home Storage</button><button class="btn" id="manageModules">Install Critter Index Modules</button><button class="btn" id="centerDone">Leave</button></div>');
  $('manageParty').onclick=manageParty;$('manageModules').onclick=manageModules;$('centerDone').onclick=close
 }
+// Center-only storage browser. Filters are ephemeral UI state, not save data.
+let centerStorageSearch='',centerStorageSort='recent',centerStoragePage=0,centerSwapSlot=0;
+const CENTER_STORAGE_PAGE_SIZE=16;
 function manageParty(){
+ const partyCount=s.party.length;
+ centerSwapSlot=Math.max(0,Math.min(centerSwapSlot,partyCount-1));
  const list=s.party.map((p,i)=>'<div class="centerPartyRow"><b>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
   +'<button class="btn" data-party-up="'+i+'" '+(!i?'disabled':'')+'>↑</button> '
-  +'<button class="btn" data-party-down="'+i+'" '+(i===s.party.length-1?'disabled':'')+'>↓</button> '
-  +'<button class="btn" data-store="'+i+'" '+(s.party.length<=1?'disabled':'')+'>Send Home</button></div>').join('');
- const stored=s.storage.map((p,i)=>'<div class="centerPartyRow"><b>'+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+'</small> '
-  +'<button class="btn" data-retrieve="'+i+'" '+(s.party.length>=PARTY_LIMIT?'disabled':'')+'>Add to Party</button></div>').join('')||'<p class="muted">No Critters at home.</p>';
- open('Critter Center · Party Maintenance','<p>Active party ('+s.party.length+'/'+PARTY_LIMIT+') · Home storage ('+s.storage.length+')</p>'
-  +'<p class="muted">Reorder your lead Critter with ↑/↓, or send and retrieve Critters here. Captures beyond eight go home automatically.</p>'
-  +'<div class="options">'+list+'</div><h3>Home Storage</h3><div class="options">'+stored+'</div><button class="btn" id="partyBack">Back</button>');
+  +'<button class="btn" data-party-down="'+i+'" '+(i===partyCount-1?'disabled':'')+'>↓</button> '
+  +'<button class="btn" data-store="'+i+'" '+(partyCount<=1?'disabled':'')+'>Send Home</button></div>').join('');
+ const term=centerStorageSearch.trim().toLowerCase();
+ const matching=s.storage.map((p,i)=>({p,i})).filter(({p})=>!term||
+  (p.name||p.type||'').toLowerCase().includes(term)||defendTypes(p).some(t=>t.toLowerCase().includes(term))||
+  String(p.level).includes(term));
+ if(centerStorageSort==='name')matching.sort((a,b)=>(a.p.name||a.p.type).localeCompare(b.p.name||b.p.type)||a.i-b.i);
+ if(centerStorageSort==='level')matching.sort((a,b)=>b.p.level-a.p.level||a.i-b.i);
+ const pages=Math.max(1,Math.ceil(matching.length/CENTER_STORAGE_PAGE_SIZE));
+ centerStoragePage=Math.max(0,Math.min(centerStoragePage,pages-1));
+ const selected=matching.slice(centerStoragePage*CENTER_STORAGE_PAGE_SIZE,(centerStoragePage+1)*CENTER_STORAGE_PAGE_SIZE);
+ const stored=selected.map(({p,i})=>'<div class="centerPartyRow"><b>'+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
+  +'<button class="btn" data-retrieve="'+i+'" '+(partyCount>=PARTY_LIMIT?'disabled':'')+'>Add to Party</button> '
+  +'<button class="btn" data-swap-storage="'+i+'" '+(!partyCount?'disabled':'')+'>Swap</button></div>').join('')
+  ||'<p class="muted">No stored Critters match your search.</p>';
+ const partySlots=s.party.map((p,i)=>'<option value="'+i+'" '+(i===centerSwapSlot?'selected':'')+'>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+'</option>').join('');
+ open('Critter Center · Party Maintenance','<p>Active party ('+partyCount+'/'+PARTY_LIMIT+') · Home storage ('+s.storage.length+')</p>'
+  +'<p class="muted">Reorder with ↑/↓. Send and retrieve Critters here, or swap directly even when all eight slots are full. The watch remains read-only outside Centers.</p>'
+  +'<div class="options">'+list+'</div><h3>Home Storage</h3>'
+  +'<div class="centerStorageControls"><label>Search name, type or level <input id="centerStorageSearch" type="search" placeholder="Find a stored Critter" value="'+escapeHtml(centerStorageSearch)+'"></label> '
+  +'<button class="btn" id="centerStorageFind">Search</button> '
+  +'<label>Sort <select id="centerStorageSort"><option value="recent" '+(centerStorageSort==='recent'?'selected':'')+'>Stored order</option><option value="name" '+(centerStorageSort==='name'?'selected':'')+'>Name</option><option value="level" '+(centerStorageSort==='level'?'selected':'')+'>Highest level</option></select></label></div>'
+  +'<p>Swap with <select id="centerSwapSlot">'+partySlots+'</select></p>'
+  +'<p class="muted">Showing '+selected.length+' of '+matching.length+' matching stored Critters (page '+(centerStoragePage+1)+'/'+pages+')</p>'
+  +'<div class="options">'+stored+'</div>'
+  +'<div><button class="btn" id="centerStoragePrev" '+(!centerStoragePage?'disabled':'')+'>Previous</button> '
+  +'<button class="btn" id="centerStorageNext" '+(centerStoragePage>=pages-1?'disabled':'')+'>Next</button></div>'
+  +'<button class="btn" id="partyBack">Back</button>');
+ const applySearch=()=>{centerStorageSearch=$('centerStorageSearch').value;centerStoragePage=0;manageParty()};
+ $('centerStorageFind').onclick=applySearch;
+ $('centerStorageSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();applySearch()}};
+ $('centerStorageSort').onchange=e=>{centerStorageSort=e.target.value;centerStoragePage=0;manageParty()};
+ $('centerSwapSlot').onchange=e=>{centerSwapSlot=Number(e.target.value)};
+ $('centerStoragePrev').onclick=()=>{centerStoragePage--;manageParty()};
+ $('centerStorageNext').onclick=()=>{centerStoragePage++;manageParty()};
  document.querySelectorAll('[data-party-up],[data-party-down]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.partyUp??b.dataset.partyDown),j=b.hasAttribute('data-party-up')?i-1:i+1;
   if(i<0||j<0||i>=s.party.length||j>=s.party.length)return;
@@ -2440,6 +2473,12 @@ function manageParty(){
  document.querySelectorAll('[data-retrieve]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.retrieve);if(s.party.length>=PARTY_LIMIT||i<0||i>=s.storage.length)return;
   s.party.push(s.storage.splice(i,1)[0]);save();manageParty()
+ });
+ document.querySelectorAll('[data-swap-storage]').forEach(b=>b.onclick=()=>{
+  const i=Number(b.dataset.swapStorage),slot=centerSwapSlot;
+  if(!Number.isInteger(i)||!Number.isInteger(slot)||!s.storage[i]||!s.party[slot])return;
+  [s.party[slot],s.storage[i]]=[s.storage[i],s.party[slot]];
+  save();manageParty();
  });
  $('partyBack').onclick=center
 }
