@@ -333,7 +333,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=30',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=31',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -1237,7 +1237,7 @@ function move(d){
  if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
  if((s.steps=(s.steps||0)+1)%10===0)save();
- if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete&&Math.random()<0.11)startWild()
+ if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete&&Math.random()<wildEncounterChance(s.area))startWild()
 }
 function interact(){
  if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
@@ -1688,23 +1688,59 @@ function starterMenu(){
  open('Choose Your Starter','<p>These starter types are placeholders for the original species you are designing.</p><div class="options"><button class="btn" data-starter="Rock">⛰ Rock</button><button class="btn" data-starter="Water">💧 Water</button><button class="btn" data-starter="Electric">⚡ Electric</button></div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
  document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;s.party=[critter(s.starter,5)];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','Time for your first friendly match!'],()=>startTrainer('tutorial'))})
 }
-function areaTypes(){return {route1:['Grass','Beast','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Beast'],route3:['Rock','Electric','Beast'],cave:['Rock','Ghost','Ice']}[s.area]||['Grass']}
+// World / encounter balancing (v31) — area-specific encounter density, species
+// rarity, wild level ranges, and tiny novelty/time-of-day influences.
+// None of these alter type strengths, battle turns, or party storage rules.
+const WILD_AREA_BALANCE={
+ route1:{stepRate:.075,weights:{common:16,uncommon:4,rare:.7,legendary:.015},novelty:1.6},
+ route2:{stepRate:.10,weights:{common:14,uncommon:5,rare:1,legendary:.02},novelty:1.5},
+ forest:{stepRate:.115,weights:{common:12,uncommon:5,rare:1.35,legendary:.025},novelty:1.55},
+ route3:{stepRate:.11,weights:{common:12,uncommon:5.5,rare:1.5,legendary:.03},novelty:1.45},
+ garden:{stepRate:.085,weights:{common:14,uncommon:4.5,rare:1.25,legendary:.02},novelty:1.5},
+ cave:{stepRate:.12,weights:{common:11,uncommon:5.5,rare:1.8,legendary:.04},novelty:1.4}
+};
+function encounterSpeciesFor(area){return [...speciesRegistry.values()].filter(sp=>Array.isArray(sp.habitats)&&sp.habitats.some(h=>h.areaId===area&&Number.isFinite(h.minLevel)&&Number.isFinite(h.maxLevel)&&h.maxLevel>=h.minLevel))}
+function wildHabitat(sp,area){return sp.habitats.find(h=>h.areaId===area)}
+function encounterWeight(sp,area){
+ const config=WILD_AREA_BALANCE[area];if(!config)return 0;
+ const habitat=wildHabitat(sp,area);if(!habitat)return 0;
+ const rarity=habitat.rarity||'common';
+ let weight=config.weights[rarity]||0;
+ // Legendary types remain rare and cannot spawn before the first Gym badge.
+ if(rarity==='legendary'&&s.badges<1)return 0;
+ const known=discoveryStatus(sp.speciesId);
+ if(known==='unseen')weight*=config.novelty;
+ else if(known==='captured')weight*=.9;
+ // Natural type flavor: shadowy species are more active at night; Flying in day.
+ const hour=worldHour(),night=hour>=20||hour<5;
+ if(night&&sp.types.some(t=>t==='Ghost'||t==='Shadow'))weight*=1.35;
+ else if(!night&&sp.types.some(t=>t==='Grass'||t==='Flying'))weight*=1.12;
+ return Math.max(0,weight);
+}
+function chooseWildSpecies(area,roll=Math.random()){
+ const pool=encounterSpeciesFor(area),weights=pool.map(sp=>encounterWeight(sp,area));
+ const total=weights.reduce((a,b)=>a+b,0);if(total<=0)return null;
+ let target=Math.max(0,Math.min(.999999999,roll))*total;
+ for(let i=0;i<pool.length;i++){target-=weights[i];if(target<0)return pool[i]}
+ return pool[pool.length-1]||null;
+}
+function wildEncounterChance(area){return WILD_AREA_BALANCE[area]?.stepRate||0}
+function areaTypes(){return {route1:['Grass','Water','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Shadow'],route3:['Rock','Electric','Fighting'],cave:['Rock','Ghost','Ice'],garden:['Grass','Water','Psychic']}[s.area]||['Grass']}
 function startWild(){
  if(firstAlive()<0)return blackout();
- const wildSpecies=[...speciesRegistry.values()].filter(sp=>sp.habitats?.some(h=>h.areaId===s.area));
- if(wildSpecies.length){
-  const weight={common:14,uncommon:5,rare:2,legendary:0.5};
-  const sum=wildSpecies.reduce((acc,sp)=>acc+(weight[sp.habitats.find(h=>h.areaId===s.area)?.rarity]||2),0);
-  let roll=Math.random()*sum,chosen=wildSpecies[wildSpecies.length-1];
-  for(const sp of wildSpecies){roll-=weight[sp.habitats.find(h=>h.areaId===s.area)?.rarity]||2;if(roll<=0){chosen=sp;break}}
-  const loc=chosen.habitats.find(h=>h.areaId===s.area);
-  const lvl=loc.minLevel+Math.floor(Math.random()*(loc.maxLevel-loc.minLevel+1));
-  const foe=critter(chosen.speciesId,lvl);
-  return startBattle({kind:'wild',enemies:[foe],name:'Wild Critter',award:0},'A wild '+chosen.name+' appeared!');
+ const choice=chooseWildSpecies(s.area);
+ if(choice){
+  const h=wildHabitat(choice,s.area);
+  const min=Math.max(1,Math.floor(h.minLevel)),max=Math.max(min,Math.floor(h.maxLevel));
+  const level=min+Math.floor(Math.random()*(max-min+1));
+  const foe=critter(choice.speciesId,level);
+  return startBattle({kind:'wild',enemies:[foe],name:'Wild Critter',award:0},'A wild '+choice.name+' appeared!');
  }
+ // If the registry is unavailable (for example while offline), preserve the
+ // original placeholder encounter behavior rather than silently removing battles.
  const types=areaTypes(),type=types[Math.floor(Math.random()*types.length)];
- const l=s.area==='route1'?2+Math.floor(Math.random()*3):s.area==='route2'||s.area==='forest'?5+Math.floor(Math.random()*4):8+Math.floor(Math.random()*4);
- startBattle({kind:'wild',enemies:[critter(type,l)],name:'Wild Critter',award:0},'A wild '+type+' type Critter appeared!')
+ const level=s.area==='route1'?2+Math.floor(Math.random()*4):s.area==='route2'?5+Math.floor(Math.random()*6):10+Math.floor(Math.random()*8);
+ return startBattle({kind:'wild',enemies:[critter(type,level)],name:'Wild Critter',award:0},'A wild '+type+' type Critter appeared!');
 }
 function startTrainer(id){
  if(firstAlive()<0)return blackout();
