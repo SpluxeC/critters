@@ -271,6 +271,8 @@ function migrate(){
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
  s.rivalPassed=!!s.rivalPassed;s.introComplete=!!s.introComplete;
+ s.worldMinutes=Number.isFinite(s.worldMinutes)?((s.worldMinutes%1440)+1440)%1440:8*60;
+ s.worldDay=Number.isFinite(s.worldDay)&&s.worldDay>=1?Math.floor(s.worldDay):1;
  s.discoveries=s.discoveries&&typeof s.discoveries==='object'?s.discoveries:{};
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
  s.x=Math.max(1,Math.min(W-2,s.x));s.y=Math.max(1,Math.min(H-2,s.y));
@@ -941,6 +943,129 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  ctx.fillStyle='#edc99308';ctx.fillRect(0,0,viewW,viewH);
 }
 
+
+// Phase 5: Cosmetic local-world day/night clock. One real second advances one
+// in-game minute; time is saved on existing save events. No battle/calendar effects.
+let atmospherePreviousFrame=0;
+const atmosphericIndoor=()=>['home','neighbor','lab','gym'].includes(s.area);
+function tickAtmosphere(now=performance.now()){
+ if(!s)return;
+ if(!atmospherePreviousFrame){atmospherePreviousFrame=now;return}
+ const seconds=Math.max(0,Math.min((now-atmospherePreviousFrame)/1000,0.15));
+ atmospherePreviousFrame=now;
+ if(screen!=='game'||modal||battle||document.hidden)return;
+ const m=(s.worldMinutes||0)+seconds;
+ if(m>=1440){s.worldMinutes=m%1440;s.worldDay=(s.worldDay||1)+1}
+ else s.worldMinutes=m;
+}
+function worldHour(){return ((s?.worldMinutes??480)%1440)/60}
+function worldPhase(){
+ const h=worldHour();
+ return h<5?'Night':h<7?'Dawn':h<17?'Day':h<19?'Dusk':'Night';
+}
+function skyDarkness(){
+ const h=worldHour();
+ if(h>=20||h<5)return .52;
+ if(h<7)return .52-(h-5)/2*.52;
+ if(h<17)return 0;
+ if(h<20)return (h-17)/3*.52;
+ return .52;
+}
+function atmosphericLight(x,y,radius,warmth=1){
+ const rad=ctx.createRadialGradient?.(x,y,3,x,y,radius);
+ if(rad){
+  rad.addColorStop(0,'rgba(255,220,150,'+(0.32*warmth).toFixed(3)+')');
+  rad.addColorStop(.35,'rgba(255,196,104,'+(0.14*warmth).toFixed(3)+')');
+  rad.addColorStop(1,'rgba(255,175,80,0)');
+  ctx.fillStyle=rad;ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
+ }else{
+  ctx.fillStyle='rgba(246,210,152,'+(0.09*warmth)+')';
+  ctx.beginPath();ctx.arc(x,y,Math.min(radius,30),0,Math.PI*2);ctx.fill();
+ }
+}
+function drawAtmosphericMotion(ox,oy,w,h,now){
+ // Animated foliage and subtle irrigation ripples are purely decorative:
+ // never change tile collisions, random encounters, or movement state.
+ if(atmosphericIndoor())return;
+ const wind=now/750,lowX=Math.max(0,Math.floor(ox/S)),hiX=Math.min(W,Math.ceil((ox+w)/S));
+ const lowY=Math.max(0,Math.floor(oy/S)),hiY=Math.min(H,Math.ceil((oy+h)/S));
+ for(let y=lowY;y<hiY;y++)for(let x=lowX;x<hiX;x++){
+  const t=tiles[y]?.[x];if(t!==T.tall&&t!==T.rice&&t!==T.water)continue;
+  const sx=x*S-ox,sy=y*S-oy;
+  if(t===T.water){
+   ctx.fillStyle='#c5efda80';
+   const ripple=(now/160+(x*11+y*17))%28;
+   ctx.fillRect(sx+2+ripple,sy+7+(x+y)%9,7,1.5);
+  }else{
+   const sway=Math.sin(wind+x*.8+y*.56)*2.3;
+   ctx.strokeStyle=t===T.rice?'#d9d08b':'#91be73';
+   ctx.lineWidth=1.8;
+   for(let k=0;k<2;k++){
+    const start=sx+8+k*12,base=sy+25-k*4;
+    ctx.beginPath();ctx.moveTo(start,base);ctx.lineTo(start+sway,base-11);ctx.stroke();
+   }
+  }
+ }
+ // Floating motes are sparse; fixed positions mean no flickering.
+ const motes=Math.min(34,Math.ceil(w*h/15000));
+ for(let i=0;i<motes;i++){
+  const mx=((i*173.1+Math.sin(i*33)*135+now/120*(i%3+1))%(W*S)+W*S)%(W*S)-ox;
+  const my=((i*89.7+Math.cos(i*19)*77-now/280)%(H*S)+H*S)%(H*S)-oy;
+  if(mx<0||my<0||mx>w||my>h)continue;
+  ctx.fillStyle=worldPhase()==='Night'?'#eddca785':'#f2f4d14d';
+  ctx.fillRect(mx,my,i%4===0?2:1,2);
+ }
+}
+function drawAtmosphereOverlay(ox,oy,w,h){
+ const inside=atmosphericIndoor();
+ const darkness=skyDarkness();
+ if(!inside){
+  const phase=worldPhase();
+  if(phase==='Dawn'||phase==='Dusk'){
+   ctx.fillStyle=phase==='Dawn'?'rgba(236,154,91,.10)':'rgba(220,124,77,.14)';
+   ctx.fillRect(0,0,w,h);
+  }
+  if(darkness){
+   ctx.fillStyle='rgba(12,26,53,'+darkness.toFixed(3)+')';
+   ctx.fillRect(0,0,w,h);
+  }
+ }else{
+  ctx.fillStyle='rgba(237,174,91,.055)';ctx.fillRect(0,0,w,h);
+  if(darkness>.12){
+   ctx.fillStyle='rgba(18,24,43,'+(darkness*.24).toFixed(3)+')';ctx.fillRect(0,0,w,h);
+  }
+ }
+ // Dynamic lantern pools are painted after darkening, so their colors remain warm.
+ const lamps=inside?(s.area==='lab'?[[12,3.6],[22,3.6]]:[[12,3.6],[24,3.6]]):
+  s.area==='village'?[[10,11],[24,12],[17,20],[29,14],[6,13]]:
+  s.area==='route1'?[[5,11],[28,11],[14,5]]:
+  s.area==='town'?[[8,11],[22,11],[25,16]]:
+  s.area==='garden'?[[6,13],[20,15]]:[];
+ const strength=inside?1.2:Math.max(.15,darkness/.52);
+ if(strength>.1)for(const [x,y] of lamps){
+  const sx=x*S+S*.5-ox,sy=y*S+S*.2-oy;
+  if(sx<-115||sy<-115||sx>w+115||sy>h+115)continue;
+  atmosphericLight(sx,sy,inside?92:85,strength);
+  ctx.fillStyle='#fff0be';ctx.fillRect(sx-2,sy-3,4,7);
+  ctx.fillStyle='#b77e49';ctx.fillRect(sx-4,sy+3,8,3);
+ }
+ // A light halo keeps the player legible at night without negating darkness.
+ if(!inside&&darkness>.25){
+  const px=visual.x*S+16-ox,py=visual.y*S+15-oy;
+  atmosphericLight(px,py,62,Math.min(.95,darkness));
+ }
+}
+function drawAtmosphereHUD(){
+ const h=worldHour(),hours=Math.floor(h),minutes=Math.floor((h-hours)*60);
+ const clock=String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0');
+ const label='Day '+(s.worldDay||1)+' · '+clock+' · '+worldPhase();
+ ctx.font='bold 11px system-ui';
+ const width=ctx.measureText?ctx.measureText(label).width+18:166;
+ const x=Math.max(5,C.width/Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)))-width-8);
+ ctx.fillStyle='#162d36e3';ctx.fillRect(x,6,width,24);
+ ctx.fillStyle='#f4e3b1';ctx.fillText(label,x+8,22);
+}
+
 function resizeGameCanvas(){
  const width=Math.max(1,Math.round(C.clientWidth||C.getBoundingClientRect().width));
  const height=Math.max(1,Math.round(C.clientHeight||C.getBoundingClientRect().height));
@@ -949,6 +1074,7 @@ function resizeGameCanvas(){
 function draw(){
  if(screen!=='game'||!s)return;
  resizeGameCanvas();
+ tickAtmosphere();
  updateVisual();
  const zoom=Math.max(0.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const viewportWidth=C.width/zoom,viewportHeight=C.height/zoom;
@@ -965,6 +1091,7 @@ function draw(){
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
  if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
+ drawAtmosphericMotion(ox,oy,viewportWidth,viewportHeight,performance.now());
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
  const x=p.x*S+16-ox,y=p.y*S+32-oy;
@@ -978,7 +1105,9 @@ function draw(){
  const isMoving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const walkFrame=isMoving?Math.floor(performance.now()/105)%4:0;
  sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
- ctx.fillStyle='#1c3835dc';ctx.fillRect(5,5,330,28);ctx.fillStyle='#fff1ca';ctx.font='bold 13px system-ui';ctx.fillText(s.name+' · '+(s.starter||'Visit lab')+' · '+s.money+' ◇ · '+s.badges+' Badge',11,23)
+ drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
+ ctx.fillStyle='#1c3835dc';ctx.fillRect(5,5,330,28);ctx.fillStyle='#fff1ca';ctx.font='bold 13px system-ui';ctx.fillText(s.name+' · '+(s.starter||'Visit lab')+' · '+s.money+' ◇ · '+s.badges+' Badge',11,23);
+ drawAtmosphereHUD()
 }
 function region(area,x,y,textLine){doorTransition=null;s.area=area;s.x=x;s.y=y;build();save();if(textLine)say([textLine])}
 function move(d){
