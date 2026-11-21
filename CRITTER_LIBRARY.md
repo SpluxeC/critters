@@ -5,7 +5,7 @@ The master roster is live at `data/critters.json`. It contains exactly **200 dra
 ## Files
 
 - `data/critters.json`: authoritative catalog. Each object in `species` is one Critter.
-- `data/moves.json`: existing 264-move library. Use its stable move IDs in each Critter's `levelUp`.
+- `data/moves.json`: expanded 312-move library. Use its stable move IDs in each Critter's `levelUp`.
 - `data/critter-learnset-template.json`: starter schema when creating another Critter later.
 - `game.js`: loads the registry, renders the searchable catalog, and uses habitat records to choose wild encounters.
 - Original art: upload sprites to `assets/critters/`, then set the matching species' `art` to `{"status":"ready","spritePath":"assets/critters/your-id.png"}`.
@@ -113,7 +113,7 @@ The Critter Index keeps permanent **Unseen → Seen → Captured** progress for 
 
 **Migration:** Previously saved party/storage entries and capture-log entries with valid `speciesId` values are credited as captured, without inventing missing encounter details. Legacy records containing only a generic type cannot be confidently assigned to an individual species. Those are preserved as existing save records but do not count toward the 200 unique species. Milestone rewards can be claimed retroactively in the Index if the backfilled unique count qualifies.
 
-**No unrelated gameplay changes:** Battles, team turns, type strengths, encounter frequency, party capacity, home storage, original-art placeholders, and the 264-move library remain unchanged.
+**No unrelated gameplay changes:** Battles, team turns, type strengths, encounter frequency, party capacity, home storage, original-art placeholders, and the 312-move library remain unchanged.
 
 ## Evolution and progression (v30)
 
@@ -186,7 +186,7 @@ Keep the `habitats` area ID as one of `route1`, `route2`, `forest`, `route3`, `g
 
 ## Mobile usability polish (v32, no art changes)
 
-This phase changes only interface behavior and responsive presentation. All 200 draft species, original art placeholders, 264 moves, six-stat battles, dual-type effectiveness, 1v1/2v2 actions, capture records, evolution, rarity, and encounter tuning remain intact.
+This phase changes only interface behavior and responsive presentation. All 200 draft species, original art placeholders, 312 moves, six-stat battles, dual-type effectiveness, 1v1/2v2 actions, capture records, evolution, rarity, and encounter tuning remain intact.
 
 - **Controls:** virtual movement joystick deadzone is slightly larger, and repeated movement uses a consistent 135 ms cadence. Thumb position resets on pointer release, cancel, and loss of capture.
 - **Usability:** battle and Critter Index modal panels scroll within the visible phone viewport, with sticky headings and safer spacing for display notches. Index rerenders keep the scroll position when browsing long move/collection lists.
@@ -195,7 +195,7 @@ This phase changes only interface behavior and responsive presentation. All 200 
 - **Recovery:** page hiding/backgrounding saves the current adventure and releases input; the same happens on pagehide. The normal save button continues to work unchanged.
 - **No visual creature assets** were created or altered; the original-art upload workflow is still pending Cody and Kyle.
 
-Testing was performed in a simulated DOM with a short landscape-sized canvas. Joystick press/move/cancel, preservation of modal scroll, background save, loading the 200 species and 264 moves, opening a 2v2 battle, and JavaScript syntax passed. **A real-phone manual smoke test is still recommended**, especially across browsers and rotated displays.
+Testing was performed in a simulated DOM with a short landscape-sized canvas. Joystick press/move/cancel, preservation of modal scroll, background save, loading the 200 species and 312 moves, opening a 2v2 battle, and JavaScript syntax passed. **A real-phone manual smoke test is still recommended**, especially across browsers and rotated displays.
 
 ## First-adventure onboarding polish (v33)
 
@@ -210,7 +210,7 @@ This phase polishes the game's first 15–20 minutes **without adding art, chang
 - The first Route 1 trainer now uses an ordinary Flying-type placeholder instead of generic Beast, protecting the one-only Beast species rule. Trainer hints describe switching, guarding, and healing.
 - Old saves are migrated conservatively: first-Route-1 capture/encounter flags can be inferred from species-specific historical capture and discovery records. New state is stored in `s.earlyJourney`, under the same existing local save key; nothing is reset.
 
-Validation: new-game starter and tutorial path, 200 species/264 moves loading, tutorial healing, Route 1 encounter markers, battle hints, first trainer type, old-save migration, and JavaScript syntax. A real-device touch walkthrough is still recommended.
+Validation: new-game starter and tutorial path, 200 species/312 moves loading, tutorial healing, Route 1 encounter markers, battle hints, first trainer type, old-save migration, and JavaScript syntax. A real-device touch walkthrough is still recommended.
 
 ## Trainer AI and battle feedback (v35)
 
@@ -223,6 +223,20 @@ The battle system retains the approved structure: all player-team actions resolv
 - **Readable history:** the battle interface now shows a collapsible, scrollable **Last turn** record, with individual events rather than solely a long paragraph. On mobile, the log has a smaller maximum height so attack choices remain accessible.
 - **Reserved types:** a generic Beast placeholder has been removed from the later rival's team; the one-only Beast species rule remains unchanged.
 
-No art was generated or edited; no objective tracker was restored. All 200 Critters, 264 moves, stats, types, evolution families, collection records, and encounter regions are preserved.
+No art was generated or edited; no objective tracker was restored. All 200 Critters, 312 moves, stats, types, evolution families, collection records, and encounter regions are preserved.
 
 Regression checks should include 1v1 and 2v2 trainer battles, wild battles, move PP exhaustion, type-advantaged attacks, status/support selection, scrolling the new log, and old save loading. Test observations come from a simulated runtime; physical mobile QA is still useful.
+
+## Three new elemental types (v36)
+
+**Normal, Steel and Ground** join the 15 established Critter types, for **18 total creature types**. This update revises **52 draft species**, without adding any new species or artwork. Permanent species IDs, evolution links, habitats, saved levels, and the Dragon/Primordial/Beast single-species restrictions are preserved.
+
+| New type | Critters updated | In-game combat identity |
+| --- | ---: | --- |
+| Normal | 21 | Broadly neutral offense; Fighting weakness |
+| Steel | 15 | Strong versus Rock/Ice; vulnerable to Fire/Fighting/Ground |
+| Ground | 16 | Strong versus Electric/Steel/Venom; vulnerable to Water/Grass/Ice |
+
+Every updated species has three new-type level-up attacks or support moves in the authoritative `levelUp` data, plus five retained original move entries. The Index now offers all three types as filter choices, and their moves appear under dedicated move-encyclopedia type filters. Only the source JSON determines species moves, types, and level requirements; no art uploads are needed.
+
+Combined defensive type effectiveness still multiplies the two type matchups (4×, 2×, 1×, ½× and ¼× possible). No type immunities were introduced. Normal is distinct from the move-only Typeless category.
