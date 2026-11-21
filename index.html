@@ -25,9 +25,45 @@ input,textarea{user-select:text;-webkit-user-select:text;touch-action:manipulati
 .joystick.active .joystick-thumb{background:linear-gradient(140deg,#83ae96,#447d73)}
 .mobile{align-items:center}
 @media(max-width:680px){.mobile{gap:10px;min-height:156px}.joystick{width:min(150px,38vw);height:auto}.actions{min-width:100px}.actions button{touch-action:manipulation}}
+
+/* Fullscreen, fixed game viewport and overlay controls. */
+html,body{margin:0;width:100%;height:100%;height:100dvh;max-height:100dvh;overflow:hidden!important;overscroll-behavior:none;touch-action:none}
+body{display:block;position:fixed;inset:0}
+.app{width:100%;height:100%;max-width:none;padding:0;overflow:hidden}
+.screen{width:100%;height:100%}
+#title.show,#selection.show{display:grid;place-items:center;padding:12px;overflow:hidden}
+#title .panel,#selection .panel{max-width:min(680px,96vw);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+#game.show{display:block;position:fixed;inset:0;overflow:hidden;touch-action:none}
+#game .frame{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:0;overflow:hidden;touch-action:none;background:#234d38}
+#world{position:absolute;inset:0;display:block;width:100%;height:100%;aspect-ratio:auto;object-fit:fill;touch-action:none}
+#game .hud{position:absolute;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;pointer-events:none}
+#game .hud>div{background:#152d32d9;border:1px solid #bda06d;padding:7px 10px;border-radius:10px;max-width:66vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(11px,2.6vw,15px)}
+#game .hud button{pointer-events:auto;background:#294b49e8}
+#game .mobile{display:flex;position:absolute;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:3;align-items:flex-end;justify-content:space-between;margin:0;padding:0;gap:12px;pointer-events:none;touch-action:none}
+#game .joystick,#game .actions{pointer-events:auto}
+#game .joystick{width:clamp(108px,29vw,150px);height:clamp(108px,29vw,150px);max-width:none;max-height:none;flex-shrink:0}
+#game .actions{display:grid;gap:10px;min-width:105px}
+#game .actions button{min-height:55px;background:#325d54e8;font-size:14px;padding:8px 12px}
+#game .actions button.primary{background:#a45d48ee}
+#game .dialog{position:absolute;z-index:4;bottom:calc(max(14px,env(safe-area-inset-bottom)) + clamp(108px,29vw,150px) + 10px);left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));min-height:70px;max-height:35dvh;overflow:auto;margin:0}
+#shade{z-index:9;overflow:hidden}
+#shade .modal{max-height:86dvh;overscroll-behavior:contain;touch-action:pan-y}
+button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+@media(max-width:440px){#game .hud>div{max-width:69vw}#game .actions{min-width:95px}#game .actions button{min-height:50px}#game .dialog{font-size:14px}}
+@media(max-height:500px){#game .joystick{width:100px;height:100px}#game .mobile{bottom:8px}#game .dialog{bottom:114px;max-height:28dvh}#game .actions button{min-height:44px}}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
-<section id="game" class="screen"><div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span></div><button id="index" class="btn">⌚ Critter Index</button></div><div class="frame"><canvas id="world" width="640" height="480"></canvas><div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div></div><div class="below"><small class="muted">Arrows/WASD move · E interact · I Index</small><button class="btn" id="save">Save Game</button></div><div class="mobile"><div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div><div class="actions"><button class="btn primary" id="talk">Talk / Use</button><button class="btn" id="index2">Index</button></div></div></section>
+<section id="game" class="screen" aria-label="Critters game">
+  <div class="frame" id="gameFrame">
+    <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
+    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span></div><button class="btn" id="save" type="button">Save</button></div>
+    <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
+    <div class="mobile">
+      <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
+      <div class="actions"><button class="btn primary" id="talk" type="button">Talk / Use</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
+    </div>
+  </div>
+</section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=8" defer></script></body></html>
+</main><script src="game.js?v=9" defer></script></body></html>
