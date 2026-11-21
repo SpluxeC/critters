@@ -90,3 +90,27 @@ The roster is draft content for art collaboration—not 200 finished, approved v
 - Team-turn rules are preserved: players choose one action per active Critter, their team resolves actions, and then the opposing team acts. Speed and move priority order actions **within** each team.
 - Older saves remain compatible. When a registered species' stats or types are edited in `data/critters.json`, the game refreshes its metadata on load while retaining saved HP and party arrangements.
 
+
+## Discovery and Collection (v29)
+
+The Critter Index keeps permanent **Unseen → Seen → Captured** progress for the 200 registered species. The progress key is the stable `speciesId`, **not** the display name or Pokédex-style number, so Cody and Kyle can rename a species or replace its artwork without resetting collection progress.
+
+- **Unseen**: no recorded encounter. The reference encyclopedia still lists draft species and their planned habitats so collaborators can review the entire roster.
+- **Seen**: the player has encountered that species as a wild Critter or in a trainer's team. The save stores first-seen area/day, last-seen area, and recorded encounter count.
+- **Captured**: the player successfully used the Critter Index capture beam; the save stores first-capture area/day/level and capture count. Duplicate catches update the count but never increase **unique species** progress.
+- **Collection filters**: the Critters tab supports All, Unseen, Seen only, and Captured, alongside type, habitat, and text search. Individual species pages include a discovery-history panel.
+- **Progress**: Records shows `seen/200`, `captured/200`, percentage, and milestone rewards. Rewards are **manually claimed** and permanently recorded in `s.collection.claimedMilestones`. Claiming again is blocked, including after loading an old save.
+
+| Unique captured species | Credits | Potions | Revives |
+| ---: | ---: | ---: | ---: |
+| 5 | 100 | 2 | 0 |
+| 10 | 200 | 3 | 0 |
+| 25 | 400 | 4 | 1 |
+| 50 | 800 | 5 | 2 |
+| 100 | 1,600 | 8 | 3 |
+| 150 | 2,400 | 10 | 4 |
+| 200 | 4,000 | 15 | 5 |
+
+**Migration:** Previously saved party/storage entries and capture-log entries with valid `speciesId` values are credited as captured, without inventing missing encounter details. Legacy records containing only a generic type cannot be confidently assigned to an individual species. Those are preserved as existing save records but do not count toward the 200 unique species. Milestone rewards can be claimed retroactively in the Index if the backfilled unique count qualifies.
+
+**No unrelated gameplay changes:** Battles, team turns, type strengths, encounter frequency, party capacity, home storage, original-art placeholders, and the 264-move library remain unchanged.
