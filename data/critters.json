@@ -3486,7 +3486,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-053-craggle",
-        "minLevel": 12
+        "minLevel": 12,
+        "stone": "Ground Stone"
       }
     },
     {
@@ -3836,7 +3837,8 @@
         "condition": {
           "kind": "badge",
           "minimum": 1
-        }
+        },
+        "stone": "Steel Stone"
       }
     },
     {
@@ -4981,7 +4983,8 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-075-flashbun",
-        "minLevel": 23
+        "minLevel": 23,
+        "stone": "Normal Stone"
       }
     },
     {
