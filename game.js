@@ -701,6 +701,127 @@ function drawVillageDetails(ox,oy,viewW,viewH){
 
 // Seamless indoor art pass: architectural walls, shoji windows, tatami, wood
 // flooring, and furniture. Uses the exact same object footprints as collision.
+
+// Route 1's continuous Japanese countryside art: all decoration is based
+// on the route tile map and ROuTE1_SITES solid/interactable locations.
+function drawRoute1Details(ox,oy,viewW,viewH){
+ if(s.area!=='route1')return;
+ const px=x=>x*S-ox,py=y=>y*S-oy;
+ const block=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(px(x),py(y),w*S,h*S)};
+ const stroke=(x,y,x2,y2,width,color)=>{
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(px(x),py(y));ctx.lineTo(px(x2),py(y2));ctx.stroke();
+ };
+ // Soft field-scale shading makes the route read as a single landscape.
+ for(const [x,y,rx,ry] of [[5,6,110,72],[22,5,145,79],[4,19,100,75],[27,20,120,74]]){
+  ctx.fillStyle='#3869462b';ctx.beginPath();ctx.ellipse(px(x),py(y),rx,ry,.14,0,Math.PI*2);ctx.fill();
+ }
+ // Rice fields: horizontal irrigation ridges, water glints, stalk clusters.
+ // Lines only run through rice cells, never across paths or road.
+ for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
+  const type=tiles[y][x],bx=px(x),by=py(y);
+  if(type===T.rice){
+   ctx.fillStyle='#7e9e56a8';ctx.fillRect(bx,by+S-4,S,4);
+   ctx.fillStyle='#c1c782a8';ctx.fillRect(bx+2,by+8,Math.max(5,S-5),2);
+   for(let i=0;i<4;i++){
+    const sx=bx+5+i*7+(x*3+y)%3,sy=by+10+(i%2)*3;
+    ctx.strokeStyle='#5e854d';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(sx,sy+12);ctx.lineTo(sx-3,sy);ctx.stroke();
+    ctx.strokeStyle='#c8ba72';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(sx-4,sy+1);ctx.lineTo(sx,sy+5);ctx.stroke();
+   }
+  }else if(type===T.tall){
+   ctx.fillStyle='#416d4290';
+   for(let i=0;i<3;i++){
+    const sx=bx+4+i*10+(y%3),sy=by+22-(i%2)*4;
+    ctx.fillRect(sx,sy-9,2,10);ctx.fillRect(sx+2,sy-12,2,10);
+   }
+  }else if(type===T.water){
+   ctx.fillStyle='#6aafa8';ctx.fillRect(bx,by,S+1,S+1);
+   ctx.fillStyle='#b9d7bd99';ctx.fillRect(bx+((x*7)%12),by+10,12,2);
+   ctx.fillStyle='#436e6b';ctx.fillRect(bx,by+S-4,S,3);
+  }
+ }
+ // Road shoulders blend with surrounding field edges and weathered gravel.
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(tiles[y][x]===T.path){
+  const bx=px(x),by=py(y),seed=(x*73+y*41)%19;
+  ctx.fillStyle='#957e5b55';ctx.fillRect(bx+4+seed,by+5+seed%15,3,2);
+  ctx.fillStyle='#efce9666';ctx.beginPath();ctx.ellipse(bx+10+seed%8,by+13,11,4,.3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#79975e90';
+  if(tiles[y]?.[x-1]===T.grass||tiles[y]?.[x-1]===T.rice)ctx.fillRect(bx,by+6,3,23);
+  if(tiles[y]?.[x+1]===T.grass||tiles[y]?.[x+1]===T.rice)ctx.fillRect(bx+S-3,by+6,3,23);
+  if([T.grass,T.rice].includes(tiles[y-1]?.[x]))ctx.fillRect(bx+4,by,24,3);
+  if([T.grass,T.rice].includes(tiles[y+1]?.[x]))ctx.fillRect(bx+4,by+S-3,24,3);
+ }
+ // Long bands follow the channels, leaving every crossing footprint clear.
+ for(const [x1,x2,y] of [[3,10,9],[15,30,9],[3,13,19],[26,30,19]]){
+  stroke(x1,y+.06,x2+1,y+.06,4,'#465c44');
+  stroke(x1,y+.87,x2+1,y+.87,4,'#557b59');
+ }
+ // Raised wooden footbridges are decorative and align to safe path tiles.
+ for(const [x,y,w] of [[11,9,3],[22,19,3]]){
+  block(x,y,w,1,'#7d6548');
+  for(let k=0;k<w*3;k++)block(x+k/3,y+.09,.025,.82,'#453c33aa');
+  stroke(x,y+.14,x+w,y+.14,3,'#c8a375');
+  stroke(x,y+.85,x+w,y+.85,3,'#433931');
+ }
+ // Post-and-rail farm fencing stays beside trails, not over passages.
+ function fence(x1,y1,x2,y2){
+  stroke(x1,y1,x2,y2,4,'#5a4631');
+  stroke(x1,y1-.22,x2,y2-.22,3,'#c0a172');
+  const count=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)*2));
+  for(let i=0;i<=count;i++){
+   const t=i/count,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
+   ctx.fillStyle='#77583b';ctx.fillRect(px(x)-2,py(y)-11,4,21);
+   ctx.fillStyle='#d1b081';ctx.fillRect(px(x)-2,py(y)-11,4,3);
+  }
+ }
+ for(const args of [[3,11.7,7,11.7],[24.8,10.8,29.6,10.8],[3.4,16.0,10.3,16.0],[25.6,22.4,30.7,22.4]])fence(...args);
+ // Orchard flowers, wild reed clusters, and flat stone details.
+ for(const [x,y] of [[8,7],[16,5],[25,7],[6,17],[12,22],[27,18],[31,16]]){
+  if(tiles[Math.floor(y)]?.[Math.floor(x)]===T.path)continue;
+  const bx=px(x),by=py(y);
+  ctx.fillStyle='#466f4a';ctx.beginPath();ctx.ellipse(bx,by+7,12,6,0,0,Math.PI*2);ctx.fill();
+  for(let i=0;i<3;i++){
+   ctx.fillStyle=['#dfb6af','#e8d39d','#f1c7a7'][i];
+   ctx.fillRect(bx-7+i*6,by-3+(i%2)*2,4,4);
+  }
+ }
+ // Site art uses same coordinates as collision. No visual-only blockers.
+ for(const o of ROUTE1_SITES){
+  const bx=px(o.x),by=py(o.y);
+  const already=!!s.discoveries?.[o.id];
+  ctx.fillStyle='#203e315e';ctx.beginPath();ctx.ellipse(bx+16,by+29,14,6,0,0,Math.PI*2);ctx.fill();
+  if(o.kind==='sign'||o.kind==='notice'){
+   ctx.fillStyle='#604a35';ctx.fillRect(bx+13,by+7,6,25);
+   ctx.fillStyle='#d1ab71';ctx.fillRect(bx+3,by+5,26,14);
+   ctx.fillStyle='#533e30';ctx.fillRect(bx+3,by+5,26,3);
+   ctx.fillStyle='#675442';ctx.fillRect(bx+6,by+12,18,2);
+   ctx.fillRect(bx+8,by+16,13,2);
+  }else if(o.kind==='shrine'){
+   ctx.fillStyle='#77756e';ctx.fillRect(bx+8,by+18,18,14);
+   ctx.fillStyle='#b6b2a3';ctx.fillRect(bx+4,by+11,26,9);
+   ctx.fillStyle='#55574f';ctx.fillRect(bx+3,by+8,28,5);
+   ctx.fillStyle='#d7c6a8';ctx.fillRect(bx+12,by+17,9,7);
+   ctx.fillStyle='#e4d3bb';ctx.fillRect(bx+15,by+20,3,2);
+  }else if(o.kind==='satchel'){
+   ctx.fillStyle='#6c593d';ctx.fillRect(bx+13,by+6,5,26);
+   ctx.fillStyle=already?'#8b806b':'#aa7652';ctx.fillRect(bx+8,by+16,17,14);
+   ctx.fillStyle='#5d4739';ctx.fillRect(bx+11,by+14,12,4);
+   ctx.fillStyle='#ddbf87';ctx.fillRect(bx+15,by+22,4,3);
+  }else if(o.kind==='chest'){
+   ctx.fillStyle=already?'#766955':'#987450';ctx.fillRect(bx+4,by+13,25,17);
+   ctx.fillStyle='#554333';ctx.fillRect(bx+5,by+13,23,4);
+   ctx.fillStyle='#e0bd75';ctx.fillRect(bx+15,by+18,4,8);
+  }
+  if(!already&&o.reward){
+   ctx.fillStyle='#fff2b0';ctx.beginPath();ctx.arc(bx+25,by+7,3,0,Math.PI*2);ctx.fill();
+  }
+ }
+ // A gentle warm haze across the fields keeps the countryside cohesive.
+ ctx.fillStyle='#efce8910';ctx.fillRect(0,0,viewW,viewH);
+}
+
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(!isInterior(s.area))return;
  const wx=(x)=>x*S-ox,wy=(y)=>y*S-oy;
@@ -843,6 +964,7 @@ function draw(){
  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
+ if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
  const x=p.x*S+16-ox,y=p.y*S+32-oy;
