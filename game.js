@@ -1409,7 +1409,7 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 // Phase 4 — Index is a read-only wrist device outside a Critter Center.
 // Party swapping and module configuration remain Center-exclusive.
 let indexTab='clock',indexSelection=0;
-const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['critters','◈ Critters'],['tools','⚙ Tools']];
+const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['critters','◈ Critters'],['sprites','Sprite Gallery'],['tools','⚙ Tools']];
 let moveBookType='Water';
 let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
 
@@ -1699,7 +1699,44 @@ function indexCritters(){
    +'<span>Page '+(critterBookPage+1)+' / '+(maxPage+1)+'</span>'
    +'<button type="button" class="btn" id="critterNext" '+(critterBookPage>=maxPage?'disabled':'')+'>Next</button></div>';
  }
- return '<div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div><p class="muted">Each species has one home region. Additional wild species gradually appear as you explore that region; rare encounters remain uncommon.</p>'+search+body;
+ return '<button type="button" class="btn spriteGalleryShortcut" data-watch-tab="sprites">View Sprite Gallery</button><div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div><p class="muted">Each species has one home region. Additional wild species gradually appear as you explore that region; rare encounters remain uncommon.</p>'+search+body;
+}
+
+// This gallery is presentation data: it never registers creatures or updates saves.
+const SPRITE_GALLERY_FAMILIES=[
+ ['Rock starter','Rock','rock-starter',3,'Rock'],
+ ['Water starter','Water','water-starter',3,'Water'],
+ ['Electric starter','Electric','electric-starter',3,'Electric'],
+ ['Australian Shepherd (Blue Merle)','Fighting','aussie-blue-merle',3],
+ ['Australian Shepherd (Red Merle)','Fighting','aussie-red-merle',3],
+ ['Pronghorn','Electric','electric-pronghorn',2],
+ ['Red Panda','Fire','fire-red-panda',1],
+ ['Microraptor','Flying','flying-microraptor',2],
+ ['Phantom Cat','Ghost','ghost-cat',2],
+ ['Glyptodont','Grass','grass-glyptodont',2],
+ ['Winter Stoat','Ice','ice-winter-stoat',1],
+ ['Aye-Aye','Psychic','psychic-aye-aye',2],
+ ['Mastodon','Rock','rock-mastodon',2],
+ ['Borzoi','Shadow','shadow-borzoi',2],
+ ['Thorny Devil','Venom','venom-thorny-devil',1],
+ ['Otter','Water / Venom','water-venom-otter',3],
+];
+function indexSpriteGallery(){
+ const frameCount=SPRITE_GALLERY_FAMILIES.reduce((sum,family)=>sum+family[3],0);
+ const groups=SPRITE_GALLERY_FAMILIES.map(([label,type,prefix,count,starter])=>{
+  const cards=Array.from({length:count},(_,i)=>{
+   const stage=i+1,inBattle=!!starter&&stage===1;
+   const src=inBattle?STARTER_SPRITES[starter]:'assets/critters/gallery/'+prefix+'-stage-'+stage+'.png';
+   return '<figure class="gallerySprite"><img width="96" height="96" loading="lazy" src="'+src+'" alt="'+escapeHtml(label)+' stage '+stage+'">'
+    +'<figcaption><strong>Stage '+stage+'</strong><small>'+(inBattle?'Starter battle art':'Gallery only')+'</small></figcaption></figure>';
+  }).join('');
+  return '<section class="spriteGalleryFamily"><div class="watchSectionTitle"><span>'+escapeHtml(label)+'</span><small>'+escapeHtml(type)+'</small></div>'
+   +(starter?'':'<p class="muted galleryNote">No species or evolution assigned</p>')
+   +'<div class="spriteGalleryFrames">'+cards+'</div></section>';
+ }).join('');
+ return '<div class="watchSectionTitle">Sprite Gallery <small>'+frameCount+' sprites</small></div>'
+  +'<p class="muted">Look through the current battle art. Gallery-only forms are previews, not available species or evolutions.</p>'
+  +'<div class="spriteGalleryFamilies">'+groups+'</div>';
 }
 
 function indexTools(){
@@ -1715,7 +1752,7 @@ function indexTools(){
 function renderIndex(){
  if(!s||screen!=='game'||battle)return;
  const tabs=INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+label+'</button>').join('');
- let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTab==='critters'?indexCritters():indexTools();
+ let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTab==='critters'?indexCritters():indexTab==='sprites'?indexSpriteGallery():indexTools();
  open('Critter Index','<div class="watchShell"><div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
   +'<div class="watchStats"><span>◇ '+s.money+' credits</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
   +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>'

@@ -332,6 +332,18 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 .starterSprite.combatSymbol{width:min(72px,18vw);height:min(72px,18vw)}
 .starterSprite.indexStarterSprite{width:30px;height:30px;vertical-align:middle}
 .starterSprite[hidden],.starterSpriteFallback[hidden]{display:none}
+/* The Sprite Gallery uses each artist-approved PNG's original pixel grid. */
+.spriteGalleryShortcut{margin-bottom:8px}
+.spriteGalleryFamilies{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,246px),1fr));gap:10px}
+.spriteGalleryFamily{min-width:0;padding:8px;border:1px solid #557a73;border-radius:9px;background:#203b3e}
+.spriteGalleryFamily .watchSectionTitle{gap:6px;line-height:1.25}
+.spriteGalleryFamily .watchSectionTitle small{text-align:right}
+.galleryNote{margin:0 0 7px}
+.spriteGalleryFrames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.gallerySprite{display:grid;gap:4px;min-width:0;margin:0;padding:4px 2px;background:#172e34;border-radius:5px;text-align:center}
+.gallerySprite img{display:block;width:100%;height:auto;max-width:96px;margin:auto;object-fit:contain;image-rendering:pixelated}
+.gallerySprite figcaption{display:grid;gap:2px;font-size:10px;color:#f1d8a9}
+.gallerySprite figcaption small{color:#c5d7cd;font-size:9px}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
@@ -347,4 +359,4 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=46-starter-art-20261121" defer></script></body></html>
+</main><script src="game.js?v=46-sprite-gallery-20261121" defer></script></body></html>
