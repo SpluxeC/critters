@@ -1,6 +1,6 @@
-# Critters — Live Move System (v26)
+# Critters — Live Move System (v36)
 
-**Status: INTEGRATED INTO BATTLES.** `data/moves.json` contains **264 original moves**: 16 each for the approved 15 Critter types, plus 24 Typeless/universal skills. This library is loaded directly at runtime. No need to edit `game.js` to change existing move names, descriptions, stats or effects supported by the engine.
+**Status: INTEGRATED INTO BATTLES.** `data/moves.json` contains **312 original moves**: 16 each across all 18 Critter types (including Normal, Steel, and Ground), plus 24 Typeless/universal skills. This library is loaded directly at runtime. No need to edit `game.js` to change existing move names, descriptions, stats or effects supported by the engine.
 
 The playable game fetches `data/moves.json` and `data/critters.json` with no-store caching at startup. Refresh the browser after deploying edits. If the data is temporarily inaccessible, combat uses safe fallback moves and does not destroy the save.
 
@@ -82,3 +82,15 @@ Where present, `chance` is a percentage. Stat stages are bounded, and timed terr
 Fire, Water, Grass, Rock, Electric, Ice, Flying, Shadow, Ghost, Dragon, Venom, Beast, Primordial, Psychic, Fighting. `Typeless` is a universal move tag, not a sixteenth elemental Critter type.
 
 The approved starter triangle remains **Water beats Rock; Rock beats Electric; Electric beats Water**. The complete existing type chart is still defined in `game.js`.
+
+## Normal, Steel and Ground expansion (v36)
+
+All three are **real Critter types**, not aliases for Typeless. The encyclopedia includes their moves under separate type buttons. The previous 15 type strengths and weaknesses and the Water → Rock → Electric → Water starter triangle have not been changed.
+
+- **Normal:** broadly neutral, with a weakness to Fighting. Straightforward physical attacks, sound-based special attacks, and small self-support options. New examples: Quick Nudge, Tail Flick, Paw Tap, Echo Bark.
+- **Steel:** strong attacking Rock and Ice; vulnerable to Fire, Fighting, and Ground. Heavy physical strikes, beams, armor, and defensive support. New examples: Tin Tap, Chrome Beam, Steel Hammer.
+- **Ground:** strong attacking Electric, Steel, and Venom; vulnerable to Water, Grass, and Ice. Burrowing attacks, earth impacts, and terrain-themed support. New examples: Dust Kick, Clay Shot, Quake Stomp, Faultline.
+
+The 200-Critter registry assigns at least one of these three types to **52 species**: 21 with Normal, 15 with Steel, and 16 with Ground. Each affected species has **three curated moves** of its new type at level-up thresholds, and the remaining original move assignments stay available. Stats, PP, effects, and levels can still be revised in JSON; permanent species IDs and evolution chains should be preserved.
+
+**Typeless stays move-only.** It does not become a Critter type and it does not have an elemental multiplier. Original-art placeholders are untouched.
