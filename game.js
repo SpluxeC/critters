@@ -203,10 +203,40 @@ function inspectInterior(o){
  return say(o.description);
 }
 
+
+// Phase 3 — Route 1 countryside locations use the same coordinates for art,
+// collision and interaction. One-time finds are recorded in s.discoveries.
+const ROUTE1_SITES=[
+ {id:'r1-sign',x:5,y:11,kind:'sign',title:'Countryside Trail Sign',
+  text:['← Starting Village       Small Town →','NORTH: Farmer’s Lookout     SOUTH: Irrigation Paddies']},
+ {id:'r1-shrine',x:14,y:5,kind:'shrine',title:'Roadside Stone Shrine',
+  text:['A tiny countryside shrine is decorated with folded paper streamers.','Someone has left fresh flowers as a wish for safe travels.']},
+ {id:'r1-lookout',x:10,y:5,kind:'sign',title:'Farmer’s Lookout',
+  text:['A carved wooden sign reads: The valley is at its greenest after the rain.','From here you can see rice paddies stretching toward the first town.']},
+ {id:'r1-satchel',x:25,y:20,kind:'satchel',title:'Forgotten Field Satchel',
+  text:['A farmer’s satchel hangs from a short wooden post.'],reward:'Potion'},
+ {id:'r1-journal',x:28,y:11,kind:'notice',title:'Route 1 Field Journal',
+  text:['Field Journal: Wild Critters are attracted to tall grass and flooded rice paddies.','Travelers should keep a supply of Potions and check their Critter Index.']},
+ {id:'r1-cache',x:7,y:21,kind:'chest',title:'Weathered Supply Crate',
+  text:['A small crate tucked behind the southern paddies.'],reward:'Revive'}
+];
+let route1Blocked=new Set();
+function route1SiteAt(x,y){return s.area==='route1'?ROUTE1_SITES.find(o=>o.x===x&&o.y===y):null}
+function inspectRoute1Site(o){
+ if(o.reward){
+  s.discoveries=s.discoveries||{};
+  if(s.discoveries[o.id])return say(['The '+o.title.toLowerCase()+' is empty.']);
+  s.discoveries[o.id]=true;s.inventory[o.reward]=(s.inventory[o.reward]||0)+1;
+  save();return say([o.text[0],'You found '+o.reward+' ×1! It was added to your inventory.']);
+ }
+ return say(o.text);
+}
+
 function solidAt(x,y){
  if(x<0||y<0||x>=W||y>=H)return true;
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
  if(isInterior(s.area)&&interiorBlocked.has(key(x,y)))return true;
+ if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
  return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
 }
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
@@ -257,7 +287,7 @@ function houses(list){list.forEach(([x,y,w=7,h=5])=>{rect(x,y,w,h,T.roof);rect(x
 function roads(){rect(1,12,32,3,T.path)}
 function nature(seed,area){for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(tiles[y][x]===T.grass){const n=(x*43+y*59+x*y*7+seed)%113;if(n<area)put(x,y,T.tall);else if(n===44||n===79)put(x,y,T.flower)}}
 function build(){
- migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();
+ migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
  case 'village':
  // One art system: original house roof/wall tiles are NOT placed in the village.
@@ -297,11 +327,45 @@ function build(){
  npc(21,10,['Lab Assistant: I help maintain the Critter Index and calibrate its capture beam.','The researcher has three starter Critters ready for you.'],'labassistant');
  break;
  case 'route1':
+ // A winding countryside road with connected side trails and terrace paddies.
  borders();roads();
- for(let y=11;y<=15;y++){put(0,y,y>=12&&y<=14?T.path:T.grass);put(1,y,y>=12&&y<=14?T.path:T.grass)}rect(11,7,2,6,T.path);rect(22,14,2,7,T.path);
- for(let y=2;y<12;y++)for(let x=3;x<31;x++)if(x!==11&&x!==12&&(x*7+y*11)%5!==0)put(x,y,(x+y)%4===0?T.rice:T.tall);
- for(let y=16;y<24;y++)for(let x=3;x<31;x++)if(x!==22&&x!==23&&(x*9+y*5)%6!==0)put(x,y,(x+y)%3===0?T.rice:T.tall);
- npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','Use the Index beam when their HP is low.']);npc(20,13,['Want to test your team against mine?'],'routetrainer','rt1');
+ // Western and eastern portals are three tiles wide; no trees sit above them.
+ for(const edge of [0,1,W-2,W-1])for(let y=11;y<=15;y++)
+  put(edge,y,y>=12&&y<=14?T.path:T.grass);
+ // North farmer lookout branch and south irrigation exploration loop.
+ rect(11,5,3,8,T.path);
+ rect(9,5,5,2,T.path);
+ rect(22,14,3,8,T.path);
+ rect(18,20,7,2,T.path);
+ rect(17,17,2,5,T.path);
+ rect(14,16,5,2,T.path);
+ // Rice terraces in coherent fields rather than randomly interleaved squares.
+ for(let y=3;y<=10;y++)for(let x=3;x<=30;x++){
+  if(tiles[y][x]!==T.grass)continue;
+  if((x<=9&&y>=5)||(x>=15&&x<=29&&y<=10))
+   put(x,y,((x*7+y*3)%11<8)?T.rice:T.tall);
+ }
+ for(let y=16;y<=23;y++)for(let x=3;x<=30;x++){
+  if(tiles[y][x]!==T.grass)continue;
+  if(x<=13||x>=19)put(x,y,((x*5+y*7)%10<7)?T.rice:T.tall);
+ }
+ // Shallow irrigation channels. Crossings are explicitly kept walkable.
+ for(let x=3;x<=10;x++)put(x,9,T.water);
+ for(let x=15;x<=30;x++)put(x,9,T.water);
+ for(let x=3;x<=13;x++)put(x,19,T.water);
+ for(let x=26;x<=30;x++)put(x,19,T.water);
+ // Clear walking routes and little crossings on the agricultural side trails.
+ rect(11,5,3,8,T.path);rect(22,14,3,8,T.path);
+ rect(18,20,7,2,T.path);rect(17,17,2,5,T.path);rect(14,16,5,2,T.path);
+ rect(1,12,32,3,T.path);
+ // Organic groves and ancient stones away from main road, houses and portals.
+ for(const [x,y] of [[3,3],[5,3],[7,4],[17,3],[19,4],[27,3],[30,4],[4,23],[10,23],[28,23],[31,21],[31,23]])put(x,y,T.tree);
+ for(const [x,y] of [[15,7],[29,16],[5,16],[9,22]])if(tiles[y][x]===T.grass)put(x,y,T.rock);
+ // Distinct interactive landmarks; their own footprint is always solid.
+ for(const o of ROUTE1_SITES){put(o.x,o.y,T.grass);route1Blocked.add(key(o.x,o.y))}
+ // Keep the two existing NPCs and the trainer’s battle progression.
+ npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','The northern lookout and southern paddies are worth exploring.']);
+ npc(20,13,['Want to test your team against mine?'],'routetrainer','rt1');
  break;
  case 'town':
  borders();roads();rect(16,8,2,5,T.path);rect(16,15,2,7,T.path);houses([[4,5,8,5],[21,5,9,5],[4,17,8,4],[21,17,9,4]]);
@@ -849,6 +913,8 @@ function interact(){
  }
  const object=interiorObjects.find(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h);
  if(object&&isInterior(s.area))return inspectInterior(object);
+ const routeSite=route1SiteAt(x,y);
+ if(routeSite)return inspectRoute1Site(routeSite);
  if(s.area==='garden'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&x===17&&y===25)return region('garden',24,12);
 }
