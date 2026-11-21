@@ -1062,8 +1062,9 @@ function drawAtmosphereHUD(){
  ctx.font='bold 11px system-ui';
  const width=ctx.measureText?ctx.measureText(label).width+18:166;
  const x=Math.max(5,C.width/Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)))-width-8);
- ctx.fillStyle='#162d36e3';ctx.fillRect(x,6,width,24);
- ctx.fillStyle='#f4e3b1';ctx.fillText(label,x+8,22);
+ const y=x<340?39:6; // On narrow phones, keep the clock below the main HUD.
+ ctx.fillStyle='#162d36e3';ctx.fillRect(x,y,width,24);
+ ctx.fillStyle='#f4e3b1';ctx.fillText(label,x+8,y+16);
 }
 
 function resizeGameCanvas(){
