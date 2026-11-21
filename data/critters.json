@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 4,
-  "description": "200 original draft species in six balanced map encounter habitats. Edited species retain existing IDs, types, moves, stats, artwork placeholders, and evolution families. Map habitats, rarity and levels are editable.",
+  "schemaVersion": 5,
+  "description": "200 editable Critters with 18 types, including Normal, Steel and Ground, using 312 original moves. All special-type restrictions, evolution IDs and habitats remain intact.",
   "species": [
     {
       "speciesId": "cr-001-mosslilt",
@@ -289,7 +289,8 @@
       "number": 5,
       "name": "Sapshrew",
       "types": [
-        "Grass"
+        "Grass",
+        "Normal"
       ],
       "role": "swift",
       "baseStats": {
@@ -316,7 +317,7 @@
         },
         {
           "level": 4,
-          "moveId": "ironwood-crash"
+          "moveId": "paw-tap"
         },
         {
           "level": 8,
@@ -324,7 +325,7 @@
         },
         {
           "level": 13,
-          "moveId": "verdant-field"
+          "moveId": "sidestep"
         },
         {
           "level": 20,
@@ -332,7 +333,7 @@
         },
         {
           "level": 27,
-          "moveId": "clover-gust"
+          "moveId": "rushing-steps"
         },
         {
           "level": 36,
@@ -347,7 +348,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-004-cloverkin"
     },
     {
@@ -753,6 +754,7 @@
       "number": 12,
       "name": "Junibun",
       "types": [
+        "Normal",
         "Grass"
       ],
       "role": "attacker",
@@ -780,7 +782,7 @@
         },
         {
           "level": 4,
-          "moveId": "briar-swipe"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -788,7 +790,7 @@
         },
         {
           "level": 13,
-          "moveId": "rootbound-tempo"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -796,7 +798,7 @@
         },
         {
           "level": 27,
-          "moveId": "canopy-ray"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -811,7 +813,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-013-leaflume",
@@ -1146,7 +1148,7 @@
       "name": "Puddlepip",
       "types": [
         "Water",
-        "Rock"
+        "Ground"
       ],
       "role": "defender",
       "baseStats": {
@@ -1173,7 +1175,7 @@
         },
         {
           "level": 4,
-          "moveId": "undertow-grip"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -1181,7 +1183,7 @@
         },
         {
           "level": 13,
-          "moveId": "riverstep"
+          "moveId": "dune-spear"
         },
         {
           "level": 20,
@@ -1189,7 +1191,7 @@
         },
         {
           "level": 27,
-          "moveId": "stone-resolve"
+          "moveId": "terra-ward"
         },
         {
           "level": 36,
@@ -1204,7 +1206,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-019-brinefin",
         "minLevel": 12
@@ -2086,7 +2088,7 @@
       "name": "Marshling",
       "types": [
         "Water",
-        "Ice"
+        "Ground"
       ],
       "role": "attacker",
       "baseStats": {
@@ -2113,7 +2115,7 @@
         },
         {
           "level": 4,
-          "moveId": "current-lash"
+          "moveId": "clay-shot"
         },
         {
           "level": 8,
@@ -2121,7 +2123,7 @@
         },
         {
           "level": 13,
-          "moveId": "mist-curtain"
+          "moveId": "mud-snare"
         },
         {
           "level": 20,
@@ -2129,7 +2131,7 @@
         },
         {
           "level": 27,
-          "moveId": "chillbind"
+          "moveId": "gravel-crush"
         },
         {
           "level": 36,
@@ -2144,7 +2146,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-033-dewfin",
@@ -2352,7 +2354,7 @@
       "name": "Flarefox",
       "types": [
         "Fire",
-        "Ice"
+        "Normal"
       ],
       "role": "balanced",
       "baseStats": {
@@ -2379,7 +2381,7 @@
         },
         {
           "level": 4,
-          "moveId": "cinder-tap"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -2387,7 +2389,7 @@
         },
         {
           "level": 13,
-          "moveId": "wildfire-rhythm"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -2395,7 +2397,7 @@
         },
         {
           "level": 27,
-          "moveId": "cold-focus"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -2410,7 +2412,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-035-cindlet",
       "evolvesTo": {
         "speciesId": "cr-037-coalbit",
@@ -2561,6 +2563,7 @@
       "number": 39,
       "name": "Glowpup",
       "types": [
+        "Normal",
         "Fire"
       ],
       "role": "support",
@@ -2588,7 +2591,7 @@
         },
         {
           "level": 4,
-          "moveId": "pyre-talon"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -2596,7 +2599,7 @@
         },
         {
           "level": 13,
-          "moveId": "singe-mark"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -2604,7 +2607,7 @@
         },
         {
           "level": 27,
-          "moveId": "embercoil"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -2619,7 +2622,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-038-emberling"
     },
     {
@@ -3090,6 +3093,7 @@
       "number": 47,
       "name": "Furnacat",
       "types": [
+        "Normal",
         "Fire"
       ],
       "role": "attacker",
@@ -3117,7 +3121,7 @@
         },
         {
           "level": 4,
-          "moveId": "furnace-claw"
+          "moveId": "paw-tap"
         },
         {
           "level": 8,
@@ -3125,7 +3129,7 @@
         },
         {
           "level": 13,
-          "moveId": "heat-haze"
+          "moveId": "sidestep"
         },
         {
           "level": 20,
@@ -3133,7 +3137,7 @@
         },
         {
           "level": 27,
-          "moveId": "flare-torrent"
+          "moveId": "rushing-steps"
         },
         {
           "level": 36,
@@ -3148,7 +3152,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-048-sootsprite",
@@ -3417,8 +3421,8 @@
       "number": 52,
       "name": "Pebblit",
       "types": [
-        "Rock",
-        "Ice"
+        "Ground",
+        "Rock"
       ],
       "role": "attacker",
       "baseStats": {
@@ -3445,7 +3449,7 @@
         },
         {
           "level": 4,
-          "moveId": "crag-tackle"
+          "moveId": "sand-veil"
         },
         {
           "level": 8,
@@ -3453,7 +3457,7 @@
         },
         {
           "level": 13,
-          "moveId": "bedrock-brace"
+          "moveId": "dust-cloud"
         },
         {
           "level": 20,
@@ -3461,7 +3465,7 @@
         },
         {
           "level": 27,
-          "moveId": "whiteout"
+          "moveId": "silt-wave"
         },
         {
           "level": 36,
@@ -3476,7 +3480,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-053-craggle",
         "minLevel": 12
@@ -3487,8 +3491,8 @@
       "number": 53,
       "name": "Craggle",
       "types": [
-        "Rock",
-        "Flying"
+        "Ground",
+        "Rock"
       ],
       "role": "defender",
       "baseStats": {
@@ -3515,7 +3519,7 @@
         },
         {
           "level": 4,
-          "moveId": "flint-hammer"
+          "moveId": "clay-shot"
         },
         {
           "level": 8,
@@ -3523,7 +3527,7 @@
         },
         {
           "level": 13,
-          "moveId": "seismic-ridge"
+          "moveId": "mud-snare"
         },
         {
           "level": 20,
@@ -3531,7 +3535,7 @@
         },
         {
           "level": 27,
-          "moveId": "aerial-rhythm"
+          "moveId": "gravel-crush"
         },
         {
           "level": 36,
@@ -3546,7 +3550,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesFrom": "cr-052-pebblit",
       "evolvesTo": {
         "speciesId": "cr-054-shardlet",
@@ -3558,6 +3562,7 @@
       "number": 54,
       "name": "Shardlet",
       "types": [
+        "Steel",
         "Rock"
       ],
       "role": "support",
@@ -3585,7 +3590,7 @@
         },
         {
           "level": 4,
-          "moveId": "obsidian-edge"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -3593,7 +3598,7 @@
         },
         {
           "level": 13,
-          "moveId": "mountain-stance"
+          "moveId": "mirror-shield"
         },
         {
           "level": 20,
@@ -3601,7 +3606,7 @@
         },
         {
           "level": 27,
-          "moveId": "quartz-ray"
+          "moveId": "tempered-edge"
         },
         {
           "level": 36,
@@ -3616,7 +3621,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesFrom": "cr-053-craggle"
     },
     {
@@ -3624,6 +3629,7 @@
       "number": 55,
       "name": "Bouldibble",
       "types": [
+        "Ground",
         "Rock"
       ],
       "role": "swift",
@@ -3651,7 +3657,7 @@
         },
         {
           "level": 4,
-          "moveId": "boulderfall"
+          "moveId": "sand-veil"
         },
         {
           "level": 8,
@@ -3659,7 +3665,7 @@
         },
         {
           "level": 13,
-          "moveId": "stone-resolve"
+          "moveId": "dust-cloud"
         },
         {
           "level": 20,
@@ -3667,7 +3673,7 @@
         },
         {
           "level": 27,
-          "moveId": "shardbeam"
+          "moveId": "silt-wave"
         },
         {
           "level": 36,
@@ -3682,7 +3688,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-056-flintpaw",
         "minLevel": 18
@@ -3693,6 +3699,7 @@
       "number": 56,
       "name": "Flintpaw",
       "types": [
+        "Ground",
         "Rock"
       ],
       "role": "balanced",
@@ -3720,7 +3727,7 @@
         },
         {
           "level": 4,
-          "moveId": "pebble-knock"
+          "moveId": "clay-shot"
         },
         {
           "level": 8,
@@ -3728,7 +3735,7 @@
         },
         {
           "level": 13,
-          "moveId": "grit-cloud"
+          "moveId": "mud-snare"
         },
         {
           "level": 20,
@@ -3736,7 +3743,7 @@
         },
         {
           "level": 27,
-          "moveId": "geode-burst"
+          "moveId": "gravel-crush"
         },
         {
           "level": 36,
@@ -3751,7 +3758,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesFrom": "cr-055-bouldibble"
     },
     {
@@ -3760,7 +3767,7 @@
       "name": "Granipup",
       "types": [
         "Rock",
-        "Psychic"
+        "Steel"
       ],
       "role": "attacker",
       "baseStats": {
@@ -3787,7 +3794,7 @@
         },
         {
           "level": 4,
-          "moveId": "crag-tackle"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -3795,7 +3802,7 @@
         },
         {
           "level": 13,
-          "moveId": "gravel-snare"
+          "moveId": "mirror-shield"
         },
         {
           "level": 20,
@@ -3803,7 +3810,7 @@
         },
         {
           "level": 27,
-          "moveId": "thoughtwall"
+          "moveId": "tempered-edge"
         },
         {
           "level": 36,
@@ -3818,7 +3825,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-058-geodillo",
         "minLevel": 23,
@@ -3833,6 +3840,7 @@
       "number": 58,
       "name": "Geodillo",
       "types": [
+        "Ground",
         "Rock"
       ],
       "role": "defender",
@@ -3860,7 +3868,7 @@
         },
         {
           "level": 4,
-          "moveId": "flint-hammer"
+          "moveId": "sand-veil"
         },
         {
           "level": 8,
@@ -3868,7 +3876,7 @@
         },
         {
           "level": 13,
-          "moveId": "bedrock-brace"
+          "moveId": "dust-cloud"
         },
         {
           "level": 20,
@@ -3876,7 +3884,7 @@
         },
         {
           "level": 27,
-          "moveId": "continental-split"
+          "moveId": "silt-wave"
         },
         {
           "level": 36,
@@ -3891,7 +3899,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesFrom": "cr-057-granipup"
     },
     {
@@ -3900,7 +3908,7 @@
       "name": "Quartzling",
       "types": [
         "Rock",
-        "Grass"
+        "Steel"
       ],
       "role": "support",
       "baseStats": {
@@ -3927,7 +3935,7 @@
         },
         {
           "level": 4,
-          "moveId": "obsidian-edge"
+          "moveId": "chrome-beam"
         },
         {
           "level": 8,
@@ -3935,7 +3943,7 @@
         },
         {
           "level": 13,
-          "moveId": "seismic-ridge"
+          "moveId": "gear-grind"
         },
         {
           "level": 20,
@@ -3943,7 +3951,7 @@
         },
         {
           "level": 27,
-          "moveId": "rootbound-tempo"
+          "moveId": "silver-torrent"
         },
         {
           "level": 36,
@@ -3958,13 +3966,14 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-060-slatetail",
       "number": 60,
       "name": "Slatetail",
       "types": [
+        "Steel",
         "Rock"
       ],
       "role": "swift",
@@ -3992,7 +4001,7 @@
         },
         {
           "level": 4,
-          "moveId": "boulderfall"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -4000,7 +4009,7 @@
         },
         {
           "level": 13,
-          "moveId": "mountain-stance"
+          "moveId": "mirror-shield"
         },
         {
           "level": 20,
@@ -4008,7 +4017,7 @@
         },
         {
           "level": 27,
-          "moveId": "shardbeam"
+          "moveId": "tempered-edge"
         },
         {
           "level": 36,
@@ -4023,7 +4032,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-061-obsiduck",
@@ -4031,7 +4040,7 @@
       "name": "Obsiduck",
       "types": [
         "Rock",
-        "Fire"
+        "Steel"
       ],
       "role": "balanced",
       "baseStats": {
@@ -4058,7 +4067,7 @@
         },
         {
           "level": 4,
-          "moveId": "pebble-knock"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 8,
@@ -4066,7 +4075,7 @@
         },
         {
           "level": 13,
-          "moveId": "stone-resolve"
+          "moveId": "alloy-rush"
         },
         {
           "level": 20,
@@ -4074,7 +4083,7 @@
         },
         {
           "level": 27,
-          "moveId": "ash-veil"
+          "moveId": "steel-hammer"
         },
         {
           "level": 36,
@@ -4089,13 +4098,14 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-062-marblisk",
       "number": 62,
       "name": "Marblisk",
       "types": [
+        "Steel",
         "Rock"
       ],
       "role": "attacker",
@@ -4123,7 +4133,7 @@
         },
         {
           "level": 4,
-          "moveId": "crag-tackle"
+          "moveId": "chrome-beam"
         },
         {
           "level": 8,
@@ -4131,7 +4141,7 @@
         },
         {
           "level": 13,
-          "moveId": "grit-cloud"
+          "moveId": "gear-grind"
         },
         {
           "level": 20,
@@ -4139,7 +4149,7 @@
         },
         {
           "level": 27,
-          "moveId": "crystal-fault"
+          "moveId": "silver-torrent"
         },
         {
           "level": 36,
@@ -4154,13 +4164,14 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-063-cliffmole",
       "number": 63,
       "name": "Cliffmole",
       "types": [
+        "Ground",
         "Rock"
       ],
       "role": "defender",
@@ -4188,7 +4199,7 @@
         },
         {
           "level": 4,
-          "moveId": "flint-hammer"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -4196,7 +4207,7 @@
         },
         {
           "level": 13,
-          "moveId": "gravel-snare"
+          "moveId": "dune-spear"
         },
         {
           "level": 20,
@@ -4204,7 +4215,7 @@
         },
         {
           "level": 27,
-          "moveId": "continental-split"
+          "moveId": "terra-ward"
         },
         {
           "level": 36,
@@ -4219,13 +4230,14 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-064-rubblit",
       "number": 64,
       "name": "Rubblit",
       "types": [
+        "Ground",
         "Rock"
       ],
       "role": "support",
@@ -4253,7 +4265,7 @@
         },
         {
           "level": 4,
-          "moveId": "obsidian-edge"
+          "moveId": "sand-veil"
         },
         {
           "level": 8,
@@ -4261,7 +4273,7 @@
         },
         {
           "level": 13,
-          "moveId": "bedrock-brace"
+          "moveId": "dust-cloud"
         },
         {
           "level": 20,
@@ -4269,7 +4281,7 @@
         },
         {
           "level": 27,
-          "moveId": "quartz-ray"
+          "moveId": "silt-wave"
         },
         {
           "level": 36,
@@ -4284,7 +4296,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-065-stonewisp",
@@ -4357,8 +4369,8 @@
       "number": 66,
       "name": "Rockoon",
       "types": [
-        "Rock",
-        "Shadow"
+        "Ground",
+        "Rock"
       ],
       "role": "balanced",
       "baseStats": {
@@ -4385,7 +4397,7 @@
         },
         {
           "level": 4,
-          "moveId": "pebble-knock"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -4393,7 +4405,7 @@
         },
         {
           "level": 13,
-          "moveId": "mountain-stance"
+          "moveId": "dune-spear"
         },
         {
           "level": 20,
@@ -4401,7 +4413,7 @@
         },
         {
           "level": 27,
-          "moveId": "quiet-resolve"
+          "moveId": "terra-ward"
         },
         {
           "level": 36,
@@ -4416,13 +4428,14 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-067-gravelark",
       "number": 67,
       "name": "Gravelark",
       "types": [
+        "Ground",
         "Rock"
       ],
       "role": "attacker",
@@ -4450,7 +4463,7 @@
         },
         {
           "level": 4,
-          "moveId": "crag-tackle"
+          "moveId": "sand-veil"
         },
         {
           "level": 8,
@@ -4458,7 +4471,7 @@
         },
         {
           "level": 13,
-          "moveId": "stone-resolve"
+          "moveId": "dust-cloud"
         },
         {
           "level": 20,
@@ -4466,7 +4479,7 @@
         },
         {
           "level": 27,
-          "moveId": "crystal-fault"
+          "moveId": "silt-wave"
         },
         {
           "level": 36,
@@ -4481,14 +4494,15 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-068-gemhorn",
       "number": 68,
       "name": "Gemhorn",
       "types": [
-        "Rock"
+        "Rock",
+        "Steel"
       ],
       "role": "defender",
       "baseStats": {
@@ -4515,7 +4529,7 @@
         },
         {
           "level": 4,
-          "moveId": "flint-hammer"
+          "moveId": "chrome-beam"
         },
         {
           "level": 8,
@@ -4523,7 +4537,7 @@
         },
         {
           "level": 13,
-          "moveId": "grit-cloud"
+          "moveId": "gear-grind"
         },
         {
           "level": 20,
@@ -4531,7 +4545,7 @@
         },
         {
           "level": 27,
-          "moveId": "continental-split"
+          "moveId": "silver-torrent"
         },
         {
           "level": 36,
@@ -4546,7 +4560,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-069-zappet",
@@ -4624,7 +4638,7 @@
       "name": "Sparkleap",
       "types": [
         "Electric",
-        "Shadow"
+        "Normal"
       ],
       "role": "swift",
       "baseStats": {
@@ -4651,7 +4665,7 @@
         },
         {
           "level": 4,
-          "moveId": "overcurrent"
+          "moveId": "calm-posture"
         },
         {
           "level": 8,
@@ -4659,7 +4673,7 @@
         },
         {
           "level": 13,
-          "moveId": "grounding-field"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 20,
@@ -4667,7 +4681,7 @@
         },
         {
           "level": 27,
-          "moveId": "long-shadow"
+          "moveId": "rally-breath"
         },
         {
           "level": 36,
@@ -4682,7 +4696,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-069-zappet",
       "evolvesTo": {
         "speciesId": "cr-071-voltrit",
@@ -4763,7 +4777,8 @@
       "number": 72,
       "name": "Coilfin",
       "types": [
-        "Electric"
+        "Electric",
+        "Steel"
       ],
       "role": "attacker",
       "baseStats": {
@@ -4790,7 +4805,7 @@
         },
         {
           "level": 4,
-          "moveId": "arc-talon"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -4798,7 +4813,7 @@
         },
         {
           "level": 13,
-          "moveId": "surge-cycle"
+          "moveId": "mirror-shield"
         },
         {
           "level": 20,
@@ -4806,7 +4821,7 @@
         },
         {
           "level": 27,
-          "moveId": "skywire-flash"
+          "moveId": "tempered-edge"
         },
         {
           "level": 36,
@@ -4821,7 +4836,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-073-arcquill",
         "minLevel": 18
@@ -4832,7 +4847,8 @@
       "number": 73,
       "name": "Arcquill",
       "types": [
-        "Electric"
+        "Electric",
+        "Steel"
       ],
       "role": "defender",
       "baseStats": {
@@ -4859,7 +4875,7 @@
         },
         {
           "level": 4,
-          "moveId": "ion-rush"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 8,
@@ -4867,7 +4883,7 @@
         },
         {
           "level": 13,
-          "moveId": "coil-charge"
+          "moveId": "alloy-rush"
         },
         {
           "level": 20,
@@ -4875,7 +4891,7 @@
         },
         {
           "level": 27,
-          "moveId": "tempest-conduit"
+          "moveId": "steel-hammer"
         },
         {
           "level": 36,
@@ -4890,7 +4906,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesFrom": "cr-072-coilfin"
     },
     {
@@ -4899,7 +4915,7 @@
       "name": "Staticat",
       "types": [
         "Electric",
-        "Fighting"
+        "Normal"
       ],
       "role": "support",
       "baseStats": {
@@ -4926,7 +4942,7 @@
         },
         {
           "level": 4,
-          "moveId": "thunderhook"
+          "moveId": "paw-tap"
         },
         {
           "level": 8,
@@ -4934,7 +4950,7 @@
         },
         {
           "level": 13,
-          "moveId": "static-blur"
+          "moveId": "sidestep"
         },
         {
           "level": 20,
@@ -4942,7 +4958,7 @@
         },
         {
           "level": 27,
-          "moveId": "pressure-lock"
+          "moveId": "rushing-steps"
         },
         {
           "level": 36,
@@ -4957,7 +4973,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-075-flashbun",
         "minLevel": 23
@@ -4968,6 +4984,7 @@
       "number": 75,
       "name": "Flashbun",
       "types": [
+        "Normal",
         "Electric"
       ],
       "role": "swift",
@@ -4995,7 +5012,7 @@
         },
         {
           "level": 4,
-          "moveId": "overcurrent"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -5003,7 +5020,7 @@
         },
         {
           "level": 13,
-          "moveId": "nerve-jolt"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -5011,7 +5028,7 @@
         },
         {
           "level": 27,
-          "moveId": "voltstream"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -5026,7 +5043,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-074-staticat"
     },
     {
@@ -5165,8 +5182,8 @@
       "number": 78,
       "name": "Circuitip",
       "types": [
-        "Electric",
-        "Rock"
+        "Steel",
+        "Electric"
       ],
       "role": "defender",
       "baseStats": {
@@ -5193,7 +5210,7 @@
         },
         {
           "level": 4,
-          "moveId": "ion-rush"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -5201,7 +5218,7 @@
         },
         {
           "level": 13,
-          "moveId": "surge-cycle"
+          "moveId": "mirror-shield"
         },
         {
           "level": 20,
@@ -5209,7 +5226,7 @@
         },
         {
           "level": 27,
-          "moveId": "stone-resolve"
+          "moveId": "tempered-edge"
         },
         {
           "level": 36,
@@ -5224,7 +5241,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-079-joltling",
@@ -5493,7 +5510,7 @@
       "name": "Wirewhisk",
       "types": [
         "Electric",
-        "Ghost"
+        "Steel"
       ],
       "role": "defender",
       "baseStats": {
@@ -5520,7 +5537,7 @@
         },
         {
           "level": 4,
-          "moveId": "ion-rush"
+          "moveId": "chrome-beam"
         },
         {
           "level": 8,
@@ -5528,7 +5545,7 @@
         },
         {
           "level": 13,
-          "moveId": "storm-net"
+          "moveId": "gear-grind"
         },
         {
           "level": 20,
@@ -5536,7 +5553,7 @@
         },
         {
           "level": 27,
-          "moveId": "afterimage-waltz"
+          "moveId": "silver-torrent"
         },
         {
           "level": 36,
@@ -5551,7 +5568,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-084-ohmlet",
@@ -5759,7 +5776,7 @@
       "name": "Glacibun",
       "types": [
         "Ice",
-        "Ghost"
+        "Normal"
       ],
       "role": "attacker",
       "baseStats": {
@@ -5786,7 +5803,7 @@
         },
         {
           "level": 4,
-          "moveId": "rime-claw"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -5794,7 +5811,7 @@
         },
         {
           "level": 13,
-          "moveId": "chillbind"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -5802,7 +5819,7 @@
         },
         {
           "level": 27,
-          "moveId": "graveglass-ward"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -5817,7 +5834,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-086-frostip",
       "evolvesTo": {
         "speciesId": "cr-088-sleetlet",
@@ -5899,7 +5916,8 @@
       "number": 89,
       "name": "Rimesnout",
       "types": [
-        "Ice"
+        "Ice",
+        "Ground"
       ],
       "role": "support",
       "baseStats": {
@@ -5926,7 +5944,7 @@
         },
         {
           "level": 4,
-          "moveId": "icicle-rend"
+          "moveId": "clay-shot"
         },
         {
           "level": 8,
@@ -5934,7 +5952,7 @@
         },
         {
           "level": 13,
-          "moveId": "whiteout"
+          "moveId": "mud-snare"
         },
         {
           "level": 20,
@@ -5942,7 +5960,7 @@
         },
         {
           "level": 27,
-          "moveId": "snowmelt-ray"
+          "moveId": "gravel-crush"
         },
         {
           "level": 36,
@@ -5957,7 +5975,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
         "speciesId": "cr-090-snowwhisk",
         "minLevel": 18
@@ -5968,7 +5986,8 @@
       "number": 90,
       "name": "Snowwhisk",
       "types": [
-        "Ice"
+        "Ice",
+        "Normal"
       ],
       "role": "swift",
       "baseStats": {
@@ -5995,7 +6014,7 @@
         },
         {
           "level": 4,
-          "moveId": "avalanche-rush"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -6003,7 +6022,7 @@
         },
         {
           "level": 13,
-          "moveId": "winter-stillness"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -6011,7 +6030,7 @@
         },
         {
           "level": 27,
-          "moveId": "glacier-lance"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -6026,7 +6045,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-089-rimesnout"
     },
     {
@@ -6104,7 +6123,8 @@
       "number": 92,
       "name": "Crystip",
       "types": [
-        "Ice"
+        "Ice",
+        "Steel"
       ],
       "role": "attacker",
       "baseStats": {
@@ -6131,7 +6151,7 @@
         },
         {
           "level": 4,
-          "moveId": "rime-claw"
+          "moveId": "chrome-beam"
         },
         {
           "level": 8,
@@ -6139,7 +6159,7 @@
         },
         {
           "level": 13,
-          "moveId": "hail-screen"
+          "moveId": "gear-grind"
         },
         {
           "level": 20,
@@ -6147,7 +6167,7 @@
         },
         {
           "level": 27,
-          "moveId": "frozen-arc"
+          "moveId": "silver-torrent"
         },
         {
           "level": 36,
@@ -6162,7 +6182,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesFrom": "cr-091-chillume"
     },
     {
@@ -6497,7 +6517,8 @@
       "number": 98,
       "name": "Hailhorn",
       "types": [
-        "Ice"
+        "Ice",
+        "Steel"
       ],
       "role": "defender",
       "baseStats": {
@@ -6524,7 +6545,7 @@
         },
         {
           "level": 4,
-          "moveId": "sleet-slash"
+          "moveId": "chrome-beam"
         },
         {
           "level": 8,
@@ -6532,7 +6553,7 @@
         },
         {
           "level": 13,
-          "moveId": "hail-screen"
+          "moveId": "gear-grind"
         },
         {
           "level": 20,
@@ -6540,7 +6561,7 @@
         },
         {
           "level": 27,
-          "moveId": "polar-crown"
+          "moveId": "silver-torrent"
         },
         {
           "level": 36,
@@ -6555,7 +6576,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-099-polarip",
@@ -6904,7 +6925,8 @@
       "number": 104,
       "name": "Skylarkit",
       "types": [
-        "Flying"
+        "Flying",
+        "Normal"
       ],
       "role": "support",
       "baseStats": {
@@ -6931,7 +6953,7 @@
         },
         {
           "level": 4,
-          "moveId": "raptor-dive"
+          "moveId": "paw-tap"
         },
         {
           "level": 8,
@@ -6939,7 +6961,7 @@
         },
         {
           "level": 13,
-          "moveId": "dustwing"
+          "moveId": "sidestep"
         },
         {
           "level": 20,
@@ -6947,7 +6969,7 @@
         },
         {
           "level": 27,
-          "moveId": "gale-whisper"
+          "moveId": "rushing-steps"
         },
         {
           "level": 36,
@@ -6962,7 +6984,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-103-plumehop"
     },
     {
@@ -7506,6 +7528,7 @@
       "number": 113,
       "name": "Aerobun",
       "types": [
+        "Normal",
         "Flying"
       ],
       "role": "defender",
@@ -7533,7 +7556,7 @@
         },
         {
           "level": 4,
-          "moveId": "skyhook"
+          "moveId": "paw-tap"
         },
         {
           "level": 8,
@@ -7541,7 +7564,7 @@
         },
         {
           "level": 13,
-          "moveId": "crosswind"
+          "moveId": "sidestep"
         },
         {
           "level": 20,
@@ -7549,7 +7572,7 @@
         },
         {
           "level": 27,
-          "moveId": "horizon-break"
+          "moveId": "rushing-steps"
         },
         {
           "level": 36,
@@ -7564,14 +7587,15 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-114-soarwhisk",
       "number": 114,
       "name": "Soarwhisk",
       "types": [
-        "Flying"
+        "Flying",
+        "Normal"
       ],
       "role": "support",
       "baseStats": {
@@ -7598,7 +7622,7 @@
         },
         {
           "level": 4,
-          "moveId": "raptor-dive"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -7606,7 +7630,7 @@
         },
         {
           "level": 13,
-          "moveId": "aerial-rhythm"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -7614,7 +7638,7 @@
         },
         {
           "level": 27,
-          "moveId": "gale-whisper"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -7629,7 +7653,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-115-flitwing",
@@ -7904,7 +7928,7 @@
       "name": "Shadepaw",
       "types": [
         "Shadow",
-        "Psychic"
+        "Normal"
       ],
       "role": "support",
       "baseStats": {
@@ -7931,7 +7955,7 @@
         },
         {
           "level": 4,
-          "moveId": "nocturne-rend"
+          "moveId": "paw-tap"
         },
         {
           "level": 8,
@@ -7939,7 +7963,7 @@
         },
         {
           "level": 13,
-          "moveId": "long-shadow"
+          "moveId": "sidestep"
         },
         {
           "level": 20,
@@ -7947,7 +7971,7 @@
         },
         {
           "level": 27,
-          "moveId": "clairvoyant-beat"
+          "moveId": "rushing-steps"
         },
         {
           "level": 36,
@@ -7962,7 +7986,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-118-dusklet",
       "evolvesTo": {
         "speciesId": "cr-120-gloomink",
@@ -8109,7 +8133,8 @@
       "number": 122,
       "name": "Noctibun",
       "types": [
-        "Shadow"
+        "Shadow",
+        "Normal"
       ],
       "role": "attacker",
       "baseStats": {
@@ -8136,7 +8161,7 @@
         },
         {
           "level": 4,
-          "moveId": "umbral-talon"
+          "moveId": "paw-tap"
         },
         {
           "level": 8,
@@ -8144,7 +8169,7 @@
         },
         {
           "level": 13,
-          "moveId": "blindfold-mist"
+          "moveId": "sidestep"
         },
         {
           "level": 20,
@@ -8152,7 +8177,7 @@
         },
         {
           "level": 27,
-          "moveId": "void-lantern"
+          "moveId": "rushing-steps"
         },
         {
           "level": 36,
@@ -8167,7 +8192,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-121-umbrapip"
     },
     {
@@ -10041,7 +10066,7 @@
       "name": "Toxipup",
       "types": [
         "Venom",
-        "Grass"
+        "Normal"
       ],
       "role": "balanced",
       "baseStats": {
@@ -10068,7 +10093,7 @@
         },
         {
           "level": 4,
-          "moveId": "toxin-pin"
+          "moveId": "calm-posture"
         },
         {
           "level": 8,
@@ -10076,7 +10101,7 @@
         },
         {
           "level": 13,
-          "moveId": "bitter-focus"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 20,
@@ -10084,7 +10109,7 @@
         },
         {
           "level": 27,
-          "moveId": "frond-screen"
+          "moveId": "rally-breath"
         },
         {
           "level": 36,
@@ -10099,7 +10124,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-150-mirelet",
       "evolvesTo": {
         "speciesId": "cr-152-sporefang",
@@ -10390,7 +10415,8 @@
       "number": 156,
       "name": "Acidillo",
       "types": [
-        "Venom"
+        "Venom",
+        "Ground"
       ],
       "role": "balanced",
       "baseStats": {
@@ -10417,7 +10443,7 @@
         },
         {
           "level": 4,
-          "moveId": "toxin-pin"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -10425,7 +10451,7 @@
         },
         {
           "level": 13,
-          "moveId": "viral-surge"
+          "moveId": "dune-spear"
         },
         {
           "level": 20,
@@ -10433,7 +10459,7 @@
         },
         {
           "level": 27,
-          "moveId": "sporegas"
+          "moveId": "terra-ward"
         },
         {
           "level": 36,
@@ -10448,7 +10474,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesFrom": "cr-155-fumefin"
     },
     {
@@ -10653,6 +10679,7 @@
       "number": 160,
       "name": "Bitterbun",
       "types": [
+        "Normal",
         "Venom"
       ],
       "role": "swift",
@@ -10680,7 +10707,7 @@
         },
         {
           "level": 4,
-          "moveId": "acidfall"
+          "moveId": "calm-posture"
         },
         {
           "level": 8,
@@ -10688,7 +10715,7 @@
         },
         {
           "level": 13,
-          "moveId": "antidote-skin"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 20,
@@ -10696,7 +10723,7 @@
         },
         {
           "level": 27,
-          "moveId": "venom-hiss"
+          "moveId": "rally-breath"
         },
         {
           "level": 36,
@@ -10711,14 +10738,15 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-161-sludgekip",
       "number": 161,
       "name": "Sludgekip",
       "types": [
-        "Venom"
+        "Venom",
+        "Ground"
       ],
       "role": "balanced",
       "baseStats": {
@@ -10745,7 +10773,7 @@
         },
         {
           "level": 4,
-          "moveId": "toxin-pin"
+          "moveId": "clay-shot"
         },
         {
           "level": 8,
@@ -10753,7 +10781,7 @@
         },
         {
           "level": 13,
-          "moveId": "poison-marsh"
+          "moveId": "mud-snare"
         },
         {
           "level": 20,
@@ -10761,7 +10789,7 @@
         },
         {
           "level": 27,
-          "moveId": "sporegas"
+          "moveId": "gravel-crush"
         },
         {
           "level": 36,
@@ -10776,7 +10804,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-162-poisonip",
@@ -11190,7 +11218,8 @@
       "number": 168,
       "name": "Dreamquill",
       "types": [
-        "Psychic"
+        "Psychic",
+        "Normal"
       ],
       "role": "defender",
       "baseStats": {
@@ -11217,7 +11246,7 @@
         },
         {
           "level": 4,
-          "moveId": "willbreaker"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -11225,7 +11254,7 @@
         },
         {
           "level": 13,
-          "moveId": "clairvoyant-beat"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -11233,7 +11262,7 @@
         },
         {
           "level": 27,
-          "moveId": "infinite-focus"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -11248,7 +11277,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-167-mindlet"
     },
     {
@@ -11461,7 +11490,8 @@
       "number": 172,
       "name": "Lucibun",
       "types": [
-        "Psychic"
+        "Psychic",
+        "Normal"
       ],
       "role": "attacker",
       "baseStats": {
@@ -11488,7 +11518,7 @@
         },
         {
           "level": 4,
-          "moveId": "psyche-push"
+          "moveId": "calm-posture"
         },
         {
           "level": 8,
@@ -11496,7 +11526,7 @@
         },
         {
           "level": 13,
-          "moveId": "thoughtwall"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 20,
@@ -11504,7 +11534,7 @@
         },
         {
           "level": 27,
-          "moveId": "starlit-idea"
+          "moveId": "rally-breath"
         },
         {
           "level": 36,
@@ -11519,7 +11549,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-171-prismew"
     },
     {
@@ -11854,7 +11884,8 @@
       "number": 178,
       "name": "Clairling",
       "types": [
-        "Psychic"
+        "Psychic",
+        "Steel"
       ],
       "role": "defender",
       "baseStats": {
@@ -11881,7 +11912,7 @@
         },
         {
           "level": 4,
-          "moveId": "willbreaker"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 8,
@@ -11889,7 +11920,7 @@
         },
         {
           "level": 13,
-          "moveId": "thoughtwall"
+          "moveId": "alloy-rush"
         },
         {
           "level": 20,
@@ -11897,7 +11928,7 @@
         },
         {
           "level": 27,
-          "moveId": "infinite-focus"
+          "moveId": "steel-hammer"
         },
         {
           "level": 36,
@@ -11912,7 +11943,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-179-astralkip",
@@ -12257,7 +12288,8 @@
       "number": 184,
       "name": "Knucklepup",
       "types": [
-        "Fighting"
+        "Fighting",
+        "Normal"
       ],
       "role": "support",
       "baseStats": {
@@ -12284,7 +12316,7 @@
         },
         {
           "level": 4,
-          "moveId": "comet-uppercut"
+          "moveId": "calm-posture"
         },
         {
           "level": 8,
@@ -12292,7 +12324,7 @@
         },
         {
           "level": 13,
-          "moveId": "iron-guard"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 20,
@@ -12300,7 +12332,7 @@
         },
         {
           "level": 27,
-          "moveId": "spirit-thrust"
+          "moveId": "rally-breath"
         },
         {
           "level": 36,
@@ -12315,7 +12347,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-183-strikeling"
     },
     {
@@ -12392,7 +12424,8 @@
       "number": 186,
       "name": "Dashkick",
       "types": [
-        "Fighting"
+        "Fighting",
+        "Ground"
       ],
       "role": "balanced",
       "baseStats": {
@@ -12419,7 +12452,7 @@
         },
         {
           "level": 4,
-          "moveId": "training-jab"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -12427,7 +12460,7 @@
         },
         {
           "level": 13,
-          "moveId": "second-wind"
+          "moveId": "dune-spear"
         },
         {
           "level": 20,
@@ -12435,7 +12468,7 @@
         },
         {
           "level": 27,
-          "moveId": "kinetic-wave"
+          "moveId": "terra-ward"
         },
         {
           "level": 36,
@@ -12450,7 +12483,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesFrom": "cr-185-sparlet"
     },
     {
@@ -12791,6 +12824,7 @@
       "number": 192,
       "name": "Roundpaw",
       "types": [
+        "Normal",
         "Fighting"
       ],
       "role": "attacker",
@@ -12818,7 +12852,7 @@
         },
         {
           "level": 4,
-          "moveId": "breaker-kick"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -12826,7 +12860,7 @@
         },
         {
           "level": 13,
-          "moveId": "second-wind"
+          "moveId": "wide-swipe"
         },
         {
           "level": 20,
@@ -12834,7 +12868,7 @@
         },
         {
           "level": 27,
-          "moveId": "focused-impact"
+          "moveId": "resonant-call"
         },
         {
           "level": 36,
@@ -12849,13 +12883,14 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-193-parryfin",
       "number": 193,
       "name": "Parryfin",
       "types": [
+        "Steel",
         "Fighting"
       ],
       "role": "defender",
@@ -12883,7 +12918,7 @@
         },
         {
           "level": 4,
-          "moveId": "spiral-elbow"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 8,
@@ -12891,7 +12926,7 @@
         },
         {
           "level": 13,
-          "moveId": "battle-breath"
+          "moveId": "alloy-rush"
         },
         {
           "level": 20,
@@ -12899,7 +12934,7 @@
         },
         {
           "level": 27,
-          "moveId": "victory-burst"
+          "moveId": "steel-hammer"
         },
         {
           "level": 36,
@@ -12914,7 +12949,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-194-martialet",
@@ -12987,7 +13022,7 @@
       "name": "Grapplet",
       "types": [
         "Fighting",
-        "Fire"
+        "Ground"
       ],
       "role": "swift",
       "baseStats": {
@@ -13014,7 +13049,7 @@
         },
         {
           "level": 4,
-          "moveId": "final-roundhouse"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -13022,7 +13057,7 @@
         },
         {
           "level": 13,
-          "moveId": "pressure-lock"
+          "moveId": "dune-spear"
         },
         {
           "level": 20,
@@ -13030,7 +13065,7 @@
         },
         {
           "level": 27,
-          "moveId": "coalguard"
+          "moveId": "terra-ward"
         },
         {
           "level": 36,
@@ -13045,7 +13080,7 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
     },
     {
       "speciesId": "cr-196-comboon",
