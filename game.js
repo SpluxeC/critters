@@ -892,54 +892,214 @@ function startTrainer(id){
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
  startBattle({kind,enemies,name,award,id},name+' challenges you!')
 }
-function startBattle(data,msg){battle={...data,enemyIndex:0,allyIndex:firstAlive(),participants:[firstAlive()],defending:false};renderBattle(msg)}
+
+// Battle Phase 2: each side takes a complete team turn. Trainer doubles are
+// two active Critters per side; wild, tutorial, rival, and first gym stay 1v1.
+function startBattle(data,msg){
+ const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
+ const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
+ battle={...data,mode:doubles?2:1,allySlots,enemySlots:data.enemies.map((p,i)=>i).slice(0,doubles?2:1),
+  nextEnemy:doubles?2:1,participants:[...allySlots],pending:[],acting:0,turn:1,phase:'choose',
+  guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null};
+ renderBattle(msg);
+}
 function itemQty(name){return s.inventory[name]||0}
-function selectPoke(){const options=s.party.map((p,i)=>'<button class="btn" data-poke="'+i+'" '+(p.hp<=0?'disabled':'')+'>'+symbols[p.type]+' '+p.type+' Lv'+p.level+' HP '+p.hp+'/'+p.maxHp+'</button>').join('');renderBattle('Switch your active Critter:<div class="options">'+options+'</div>');document.querySelectorAll('[data-poke]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.poke);if(!s.party[i]||s.party[i].hp<=0)return;battle.allyIndex=i;if(!battle.participants.includes(i))battle.participants.push(i);enemyTurn('You switched Critters!')})}
+function activeAllies(){return battle.allySlots.filter(i=>s.party[i]&&s.party[i].hp>0)}
+function activeEnemies(){return battle.enemySlots.filter(i=>battle.enemies[i]&&battle.enemies[i].hp>0)}
+function activeEnemyDefault(){return activeEnemies()[0]}
+function claimParticipant(i){if(!battle.participants.includes(i))battle.participants.push(i)}
+function hpCard(p,side,active=false){
+ if(!p)return '';
+ const pct=Math.max(0,Math.round(100*p.hp/Math.max(1,p.maxHp))),low=pct<=25;
+ return '<div class="combatCard '+side+(active?' active':'')+(p.hp<=0?' fainted':'')+'">'
+  +'<div class="combatCardHead"><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+'</strong><small>Lv '+p.level+'</small></div>'
+  +'<div class="health"><div class="'+(low?'low':'')+'" style="width:'+pct+'%"></div></div>'
+  +'<div class="combatCardFoot">HP '+p.hp+'/'+p.maxHp+(p.hp===0?' · Fainted':'')+'</div></div>';
+}
+function sceneFigure(p,side,i){
+ if(!p||p.hp<=0)return '';
+ return '<div class="combatFigure '+side+' '+(battle.impact===side&&battle.lastTarget===i?'hit':'')+'" aria-label="'+escapeHtml(p.type)+'">'
+  +'<span class="combatAura"></span><span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>'
+  +'<small>'+escapeHtml(p.type)+'</small></div>';
+}
+function battleHeader(){
+ const ally=battle.allySlots.map((i,slot)=>hpCard(s.party[i],'ally',battle.phase==='choose'&&slot===battle.acting)).join('');
+ const foe=battle.enemySlots.map(i=>hpCard(battle.enemies[i],'enemy')).join('');
+ const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
+ const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
+  +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div><div><div class="rosterTitle">YOUR TEAM</div>'+ally+'</div></div>'
+  +'<div class="combatArena"><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div></div>';
+}
+function battleMessage(msg){return '<div class="combatMessage" role="status">'+escapeHtml(msg||battle.feedback||'Choose your actions.')+'</div>'}
 function renderBattle(message){
- if(!battle)return;const foe=battle.enemies[battle.enemyIndex],p=s.party[battle.allyIndex];if(!p)return blackout();
- const actions='<div class="options" style="grid-template-columns:1fr 1fr"><button class="btn" id="strike">Strike</button><button class="btn" id="pulse">'+p.type+' Pulse</button><button class="btn" id="guard">Guard</button><button class="btn" id="focus">Focus</button><button class="btn" id="switch">Switch</button><button class="btn" id="potion" '+(!itemQty('Potion')?'disabled':'')+'>Potion ('+itemQty('Potion')+')</button><button class="btn" id="revive" '+(!itemQty('Revive')||!s.party.some(q=>q.hp===0)?'disabled':'')+'>Revive ('+itemQty('Revive')+')</button>'+ (battle.kind==='wild'?'<button class="btn" id="capture">Capture Beam</button><button class="btn" id="run">Run</button>':'')+'</div>';
- open(battle.kind==='wild'?'Wild Encounter':battle.name,
- '<div class="battleNames"><div><b>'+escapeHtml(foe.type)+' · Lv '+foe.level+'</b><div class="health"><div style="width:'+Math.max(0,100*foe.hp/foe.maxHp)+'%"></div></div>HP '+foe.hp+'/'+foe.maxHp+'</div><div><b>'+escapeHtml(p.type)+' · Lv '+p.level+'</b><div class="health"><div style="width:'+Math.max(0,100*p.hp/p.maxHp)+'%"></div></div>HP '+p.hp+'/'+p.maxHp+'</div></div><div class="battleScene"><span>'+(symbols[foe.type]||'◇')+'</span><span>'+(symbols[p.type]||'✦')+'</span></div><p>'+message+'</p>'+actions+'<p class="muted" style="font-size:12px">Type advantages and participant-only experience are active. Species art, abilities and final balancing await the original roster.</p>');
- $('close').hidden=true;
- $('strike').onclick=()=>playerMove('Strike');$('pulse').onclick=()=>playerMove('Pulse');$('guard').onclick=()=>{battle.defending=true;enemyTurn('Your Critter braced for the next attack.')};$('focus').onclick=()=>{battle.focus=(battle.focus||0)+0.2;enemyTurn('Your Critter focused its strength.')};
- $('switch').onclick=selectPoke;$('revive').onclick=()=>{const down=s.party.find(q=>q.hp===0);if(!down||!itemQty('Revive'))return;s.inventory.Revive--;down.hp=Math.max(1,Math.floor(down.maxHp/2));enemyTurn('Revive restored '+down.type+' to half HP.')};$('potion').onclick=()=>{if(!itemQty('Potion'))return;s.inventory.Potion--;p.hp=Math.min(p.maxHp,p.hp+20);enemyTurn('You used a Potion and restored 20 HP.')};
- if(battle.kind==='wild'){$('capture').onclick=capture;$('run').onclick=()=>Math.random()<0.82?endBattle(true,'You escaped safely.',false):enemyTurn('You could not escape!')}
-}
-function playerMove(move){
- const p=s.party[battle.allyIndex],foe=battle.enemies[battle.enemyIndex];
- const typed=move==='Pulse',factor=typed?mult(p.type,foe.type):1;
- const dmg=Math.max(1,Math.floor((typed?7:6)+(p.level-foe.level)*0.6)*factor*activeModifier('ally')*(1+(battle.focus||0)));
- foe.hp=Math.max(0,foe.hp-dmg);battle.focus=0;
- const detail=(factor>1?' Super effective!':factor<1?' Not very effective.':'');
- if(foe.hp<=0){const message='Your '+p.type+' Critter dealt '+dmg+' damage.'+detail;return foeDefeated(message)}
- enemyTurn('Your '+p.type+' Critter dealt '+dmg+' damage.'+detail)
-}
-function foeDefeated(msg){
- const enemy=battle.enemies[battle.enemyIndex];
- const participants=[...new Set(battle.participants)].filter(i=>s.party[i]);const gain=Math.floor((enemy.level*13)/Math.max(1,participants.length));
- participants.forEach(i=>awardExperience(s.party[i],gain));
- battle.enemyIndex++;
- if(battle.enemyIndex>=battle.enemies.length)return endBattle(true,msg+' Victory!',true);
- battle.defending=false;renderBattle(msg+' Experience gained by participants. '+battle.name+' sends the next Critter!')
-}
-function enemyTurn(msg){
- const foe=battle.enemies[battle.enemyIndex];let p=s.party[battle.allyIndex];if(!foe||!p)return;
- const usedType=Math.random()<0.7;const factor=usedType?mult(foe.type,p.type):1;
- const dmg=Math.max(1,Math.floor((usedType?5:4)+(foe.level-p.level)*0.5)*factor*activeModifier('enemy')*(battle.defending?0.5:1));
- battle.defending=false;p.hp=Math.max(0,p.hp-dmg);save();
- if(p.hp<=0){const alive=firstAlive();if(alive<0)return blackout();
- battle.allyIndex=alive;if(!battle.participants.includes(alive))battle.participants.push(alive);p=s.party[alive];return renderBattle(msg+' The opponent dealt '+dmg+' damage. Your Critter fainted! '+p.type+' enters the battle.')}
- renderBattle(msg+' The opponent struck for '+dmg+' damage.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''))
-}
-function capture(){
- if(!battle||battle.kind!=='wild')return;
- const foe=battle.enemies[0],chance=0.14+0.74*(1-foe.hp/foe.maxHp);
- if(Math.random()<chance){
-  const caught={...foe,hp:Math.max(1,foe.hp),xp:0};if(s.party.length<8)s.party.push(caught);else s.storage.push(caught);
-  s.captureCount++;return endBattle(true,'Capture successful! '+foe.type+' joined '+(s.party.includes(caught)?'your party.':'home storage.'),false)
+ if(!battle)return;
+ if(typeof message==='string')battle.feedback=message;
+ const i=battle.allySlots[battle.acting],actor=s.party[i],activeTargets=activeEnemies();
+ const queued=battle.pending.map(q=>s.party[q.actor]?.type+' → '+(q.kind==='attack'?q.move+' vs '+battle.enemies[q.target]?.type:q.kind)).join(' · ');
+ let actions='';
+ if(battle.phase==='choose'&&actor&&actor.hp>0){
+  const targetButtons=battle.mode===2?'<div class="targetHint">Choose opponent target when attacking</div>':'';
+  const attackButtons=activeTargets.map((enemyIndex,n)=>'<button class="btn combatAttack" data-hit="'+enemyIndex+'" data-attack="Strike">Strike → '+escapeHtml(battle.enemies[enemyIndex].type)+'</button>'
+   +'<button class="btn combatAttack special" data-hit="'+enemyIndex+'" data-attack="Pulse">'+escapeHtml(actor.type)+' Pulse → '+escapeHtml(battle.enemies[enemyIndex].type)+'</button>').join('');
+  actions='<div class="combatChoice"><b>'+escapeHtml(actor.type)+' · Choose action '+(battle.acting+1)+'/'+battle.allySlots.length+'</b>'
+   +targetButtons+'<div class="combatActions">'+attackButtons
+   +'<button class="btn" id="guard">Guard</button><button class="btn" id="focus">Focus</button>'
+   +'<button class="btn" id="switch">Switch</button>'
+   +'<button class="btn" id="potion" '+(!itemQty('Potion')?'disabled':'')+'>Potion ('+itemQty('Potion')+')</button>'
+   +'<button class="btn" id="revive" '+(!itemQty('Revive')||!s.party.some(q=>q.hp===0)?'disabled':'')+'>Revive ('+itemQty('Revive')+')</button>'
+   +(battle.kind==='wild'?'<button class="btn" id="capture">Capture Beam</button><button class="btn" id="run">Run</button>':'')
+   +'</div></div>';
+ }else if(battle.phase==='resolve'){
+  actions='<div class="combatProcessing">Resolving team turn…</div>';
  }
- enemyTurn('The Critter Index beam missed the capture! Lower the target’s HP for better odds.')
+ open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader()+battleMessage(battle.feedback)+(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')+actions
+  +'<p class="muted combatNote">Player team acts first, then opposing team. Type advantages remain active; only participants earn experience.</p>');
+ $('close').hidden=true;
+ if(battle.phase!=='choose')return;
+ document.querySelectorAll('[data-hit]').forEach(el=>el.onclick=()=>{
+  const target=Number(el.dataset.hit),move=el.dataset.attack;
+  queueBattleAction({kind:'attack',move,target});
+ });
+ $('guard').onclick=()=>queueBattleAction({kind:'guard'});
+ $('focus').onclick=()=>queueBattleAction({kind:'focus'});
+ $('switch').onclick=selectPoke;
+ $('potion').onclick=()=>{if(itemQty('Potion'))queueBattleAction({kind:'potion',target:i})};
+ $('revive').onclick=()=>{if(itemQty('Revive')&&s.party.some(q=>q.hp===0))selectRevive()};
+ if(battle.kind==='wild'){
+  $('capture').onclick=()=>queueBattleAction({kind:'capture'});
+  $('run').onclick=()=>queueBattleAction({kind:'run'});
+ }
 }
+function queueBattleAction(action){
+ if(!battle||battle.phase!=='choose')return;
+ const actor=battle.allySlots[battle.acting];
+ if(actor==null||!s.party[actor]||s.party[actor].hp<=0)return;
+ battle.pending.push({...action,actor});
+ battle.acting++;
+ if(battle.acting<activeAllies().length){
+  renderBattle(s.party[actor].type+' is ready. Choose the next Critter’s move.');
+ }else resolveTeamTurn();
+}
+function selectPoke(){
+ if(!battle||battle.phase!=='choose')return;
+ const candidates=s.party.map((p,i)=>({p,i})).filter(({p,i})=>p.hp>0&&!battle.allySlots.includes(i));
+ const html=candidates.map(({p,i})=>'<button class="btn" data-poke="'+i+'">'+(symbols[p.type]||'◇')+' '+p.type+' Lv'+p.level+' · HP '+p.hp+'/'+p.maxHp+'</button>').join('');
+ if(!html){renderBattle('No available bench Critter to switch into.');return}
+ open(battle.name,battleHeader()+battleMessage('Choose a healthy reserve Critter.')+'<div class="options">'+html+'<button class="btn" id="cancelSelection">Cancel</button></div>');
+ $('close').hidden=true;
+ document.querySelectorAll('[data-poke]').forEach(el=>el.onclick=()=>queueBattleAction({kind:'switch',target:Number(el.dataset.poke)}));
+ $('cancelSelection').onclick=()=>renderBattle('Choose an action.');
+}
+function selectRevive(){
+ if(!battle||battle.phase!=='choose')return;
+ const html=s.party.map((p,i)=>p.hp===0?'<button class="btn" data-revive="'+i+'">'+escapeHtml(p.type)+' · Lv '+p.level+'</button>':'').join('');
+ open(battle.name,battleHeader()+battleMessage('Choose a fainted Critter to revive.')+'<div class="options">'+html+'<button class="btn" id="cancelSelection">Cancel</button></div>');
+ $('close').hidden=true;
+ document.querySelectorAll('[data-revive]').forEach(el=>el.onclick=()=>queueBattleAction({kind:'revive',target:Number(el.dataset.revive)}));
+ $('cancelSelection').onclick=()=>renderBattle('Choose an action.');
+}
+function defeatFoe(i,log){
+ const enemy=battle.enemies[i];if(!enemy)return;
+ const recipients=[...new Set(battle.participants)].filter(index=>s.party[index]);
+ const gain=Math.floor(enemy.level*13/Math.max(1,recipients.length));
+ recipients.forEach(index=>awardExperience(s.party[index],gain));
+ log.push(enemy.type+' fainted! Your participating Critters gain '+gain+' XP each.');
+}
+function performPlayerAction(action,log){
+ if(!battle)return;
+ const actor=s.party[action.actor];if(!actor||actor.hp<=0){log.push('A fainted Critter cannot act.');return}
+ switch(action.kind){
+  case 'attack':{
+   let target=action.target;
+   if(!battle.enemies[target]||battle.enemies[target].hp<=0)target=activeEnemyDefault();
+   if(target==null)return;
+   const foe=battle.enemies[target],typed=action.move==='Pulse',factor=typed?mult(actor.type,foe.type):1;
+   const focus=battle.focus[action.actor]||0;
+   const base=Math.max(1,(typed?7:6)+(actor.level-foe.level)*0.6);
+   const dmg=Math.max(1,Math.floor(base*factor*activeModifier('ally')*(1+focus)));
+   battle.focus[action.actor]=0;foe.hp=Math.max(0,foe.hp-dmg);
+   battle.impact='enemy';battle.lastTarget=target;
+   log.push(actor.type+' used '+(typed?actor.type+' Pulse':'Strike')+' for '+dmg+' damage.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''));
+   if(foe.hp<=0)defeatFoe(target,log);
+   return;
+  }
+  case 'guard':battle.guards[action.actor]=true;log.push(actor.type+' braces for the opponent team.');return;
+  case 'focus':battle.focus[action.actor]=Math.min(0.8,(battle.focus[action.actor]||0)+0.2);log.push(actor.type+' focuses its energy.');return;
+  case 'switch':{
+   const to=action.target;if(!s.party[to]||s.party[to].hp<=0||battle.allySlots.includes(to)){log.push('Switch cancelled — that Critter is unavailable.');return}
+   const slot=battle.allySlots.indexOf(action.actor);
+   if(slot>=0){battle.allySlots[slot]=to;claimParticipant(to);log.push(actor.type+' switched out for '+s.party[to].type+'.')}
+   return;
+  }
+  case 'potion':if(itemQty('Potion')){s.inventory.Potion--;const healed=Math.min(20,actor.maxHp-actor.hp);actor.hp+=healed;log.push(actor.type+' recovered '+healed+' HP.')}return;
+  case 'revive':if(itemQty('Revive')&&s.party[action.target]?.hp===0){s.inventory.Revive--;const q=s.party[action.target];q.hp=Math.max(1,Math.floor(q.maxHp/2));log.push(q.type+' was revived with '+q.hp+' HP.')}return;
+  case 'capture':if(battle.kind==='wild'){
+    const foe=battle.enemies[0],chance=0.14+0.74*(1-foe.hp/foe.maxHp);
+    if(Math.random()<chance){
+     const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
+     if(s.party.length<8)s.party.push(caught);else s.storage.push(caught);
+     s.captureCount++;
+     endBattle(true,'Capture successful! '+foe.type+' joined '+(s.party.includes(caught)?'your party.':'home storage.'),false);
+    }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
+   }return;
+  case 'run':if(battle.kind==='wild'){
+   if(Math.random()<0.82)endBattle(true,'You escaped safely.',false);
+   else log.push('Could not escape!');
+  }return;
+ }
+}
+function refillEnemyTeam(){
+ while(battle.enemySlots.length<battle.mode&&battle.nextEnemy<battle.enemies.length){
+  const i=battle.nextEnemy++;
+  if(battle.enemies[i]?.hp>0)battle.enemySlots.push(i);
+ }
+}
+function refillAllyTeam(log){
+ battle.allySlots=battle.allySlots.filter(i=>s.party[i]?.hp>0);
+ for(let i=0;i<s.party.length&&battle.allySlots.length<battle.mode;i++){
+  if(s.party[i].hp>0&&!battle.allySlots.includes(i)){
+   battle.allySlots.push(i);claimParticipant(i);log.push(s.party[i].type+' joins your active team.');
+  }
+ }
+}
+function resolveTeamTurn(){
+ if(!battle)return;
+ const log=[];
+ battle.phase='resolve';battle.impact='';battle.lastTarget=null;
+ const actions=battle.pending.slice();battle.pending=[];
+ // Team order: one player action per deployed Critter, followed by all living enemies.
+ for(const action of actions){
+  if(!battle)return;
+  performPlayerAction(action,log);
+ }
+ if(!battle)return; // capture / escape can end the battle mid-phase
+ const livingEnemy=battle.enemies.some(p=>p.hp>0);
+ if(!livingEnemy)return endBattle(true,log.join(' ')+' Victory!',true);
+ // Every living opposing active Critter now takes one turn. A defeated one never acts.
+ for(const enemyIndex of activeEnemies()){
+  if(!battle)return;
+  const foe=battle.enemies[enemyIndex],allies=activeAllies();
+  if(!allies.length)break;
+  // Prefer the weakest active opponent so doubles remain tactically meaningful.
+  const target=allies.reduce((best,i)=>s.party[i].hp<s.party[best].hp?i:best,allies[0]);
+  const p=s.party[target],typed=Math.random()<0.7,factor=typed?mult(foe.type,p.type):1;
+  const base=Math.max(1,(typed?5:4)+(foe.level-p.level)*0.5);
+  const dmg=Math.max(1,Math.floor(base*factor*activeModifier('enemy')*(battle.guards[target]?0.5:1)));
+  p.hp=Math.max(0,p.hp-dmg);
+  battle.impact='ally';battle.lastTarget=target;
+  log.push('Enemy '+foe.type+' dealt '+dmg+' to '+p.type+'.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''));
+  if(p.hp===0)log.push(p.type+' fainted!');
+ }
+ battle.guards={};
+ if(!s.party.some(p=>p.hp>0))return blackout();
+ battle.enemySlots=battle.enemySlots.filter(i=>battle.enemies[i]?.hp>0);
+ refillEnemyTeam();refillAllyTeam(log);
+ battle.turn++;battle.acting=0;battle.phase='choose';
+ save();
+ renderBattle(log.join(' '));
+}
+function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capture'})}
 function awardExperience(p,xp){if(!p)return;p.xp=(p.xp||0)+xp;while(p.xp>=p.level*12){p.xp-=p.level*12;p.level++;p.maxHp+=4;p.hp=Math.min(p.maxHp,p.hp+4)}}
 function endBattle(won,message,defeated){
  const b=battle;battle=null;$('close').hidden=false;
