@@ -262,6 +262,7 @@ function show(page){releaseMovement();document.querySelectorAll('.screen').forEa
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
+const PARTY_LIMIT=8;
 const moveRegistry=new Map(),speciesRegistry=new Map();
 const moveFallbacks=[
  {id:'opening-flick',name:'Opening Flick',type:'Typeless',category:'physical',power:30,accuracy:100,pp:35,target:'enemy',priority:1},
@@ -358,8 +359,10 @@ function migrate(){
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(s.starter,5)]:[];
- s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))).slice(0,8);
+ s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
  if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p})));
+ // Preserve excess Critters from older saves instead of silently dropping them.
+ if(s.party.length>PARTY_LIMIT)s.storage.push(...s.party.splice(PARTY_LIMIT));
  s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];collectionData();s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
@@ -1874,7 +1877,7 @@ function renderBattle(message){
    +'<button class="btn" id="switch">Switch</button>'
    +'<button class="btn" id="potion" '+(!itemQty('Potion')?'disabled':'')+'>Potion ('+itemQty('Potion')+')</button>'
    +'<button class="btn" id="revive" '+(!itemQty('Revive')||!s.party.some(q=>q.hp===0)?'disabled':'')+'>Revive ('+itemQty('Revive')+')</button>'
-   +(battle.kind==='wild'?'<button class="btn" id="capture">Capture Beam</button><button class="btn" id="run">Run</button>':'')
+   +(battle.kind==='wild'?'<button class="btn" id="capture">⌚ Capture Beam · '+Math.round(captureChance(battle.enemies[0])*100)+'% estimated</button><button class="btn" id="run">Run</button>':'')
    +'</div></div>';
  }else if(battle.phase==='resolve')actions='<div class="combatProcessing">Resolving team turn…</div>';
  open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader()+battleMessage(battle.feedback)
@@ -2121,6 +2124,15 @@ function endOfTeamTurn(log){
  if(battle.terrain&&--battle.terrain.turns<=0)battle.terrain=null;
 }
 
+function captureChance(foe){
+ if(!foe||!Number.isFinite(foe.maxHp)||foe.maxHp<=0)return 0;
+ return Math.min(.88,Math.max(.14,.14+.74*(1-Math.max(0,foe.hp)/foe.maxHp)));
+}
+function addCapturedCritter(caught){
+ const destination=s.party.length<PARTY_LIMIT?'Party':'Home';
+ if(destination==='Party')s.party.push(caught);else s.storage.push(caught);
+ return destination;
+}
 function performPlayerAction(action,log){
  if(!battle)return;
  const actor=s.party[action.actor];if(!actor||actor.hp<=0){log.push('A fainted Critter cannot act.');return}
@@ -2141,12 +2153,12 @@ function performPlayerAction(action,log){
   case 'potion':if(itemQty('Potion')){s.inventory.Potion--;const healed=Math.min(20,actor.maxHp-actor.hp);actor.hp+=healed;log.push(actor.type+' recovered '+healed+' HP.')}return;
   case 'revive':if(itemQty('Revive')&&s.party[action.target]?.hp===0){s.inventory.Revive--;const q=s.party[action.target];q.hp=Math.max(1,Math.floor(q.maxHp/2));log.push(q.type+' was revived with '+q.hp+' HP.')}return;
   case 'capture':if(battle.kind==='wild'){
-    const foe=battle.enemies[0],chance=0.14+0.74*(1-foe.hp/foe.maxHp);
+    const foe=battle.enemies[0],chance=captureChance(foe);
     if(Math.random()<chance){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
-     if(s.party.length<8)s.party.push(caught);else s.storage.push(caught);
-     s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:s.party.includes(caught)?'Party':'Home'});s.captureLog=s.captureLog.slice(-80);
-     endBattle(true,'Capture successful! '+(foe.name||foe.type)+' joined '+(s.party.includes(caught)?'your party.':'home storage.'),false);
+     const destination=addCapturedCritter(caught);
+     s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:destination});s.captureLog=s.captureLog.slice(-80);
+     endBattle(true,'Capture successful! '+(foe.name||foe.type)+(destination==='Party'?' joined your party ('+s.party.length+'/'+PARTY_LIMIT+').':' was automatically sent to home storage ('+s.storage.length+' stored).'),false);
     }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
    }return;
   case 'run':if(battle.kind==='wild'){
@@ -2407,11 +2419,29 @@ function center(){
  $('manageParty').onclick=manageParty;$('manageModules').onclick=manageModules;$('centerDone').onclick=close
 }
 function manageParty(){
- const list=s.party.map((p,i)=>'<div><b>'+i+': '+p.type+' Lv'+p.level+'</b> HP '+p.hp+'/'+p.maxHp+' <button class="btn" data-store="'+i+'" '+(s.party.length<=1?'disabled':'')+'>Send Home</button></div>').join('');
- const stored=s.storage.map((p,i)=>'<div>'+p.type+' Lv'+p.level+' <button class="btn" data-retrieve="'+i+'" '+(s.party.length>=8?'disabled':'')+'>Add to Party</button></div>').join('')||'<p class="muted">No Critters at home.</p>';
- open('Critter Center · Party Maintenance','<p>Active party ('+s.party.length+'/8)</p><div class="options">'+list+'</div><h3>Home Storage</h3><div class="options">'+stored+'</div><button class="btn" id="partyBack">Back</button>');
- document.querySelectorAll('[data-store]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.store);if(s.party.length<=1)return;s.storage.push(s.party.splice(i,1)[0]);save();manageParty()});
- document.querySelectorAll('[data-retrieve]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.retrieve);if(s.party.length>=8)return;s.party.push(s.storage.splice(i,1)[0]);save();manageParty()});$('partyBack').onclick=center
+ const list=s.party.map((p,i)=>'<div class="centerPartyRow"><b>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
+  +'<button class="btn" data-party-up="'+i+'" '+(!i?'disabled':'')+'>↑</button> '
+  +'<button class="btn" data-party-down="'+i+'" '+(i===s.party.length-1?'disabled':'')+'>↓</button> '
+  +'<button class="btn" data-store="'+i+'" '+(s.party.length<=1?'disabled':'')+'>Send Home</button></div>').join('');
+ const stored=s.storage.map((p,i)=>'<div class="centerPartyRow"><b>'+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+'</small> '
+  +'<button class="btn" data-retrieve="'+i+'" '+(s.party.length>=PARTY_LIMIT?'disabled':'')+'>Add to Party</button></div>').join('')||'<p class="muted">No Critters at home.</p>';
+ open('Critter Center · Party Maintenance','<p>Active party ('+s.party.length+'/'+PARTY_LIMIT+') · Home storage ('+s.storage.length+')</p>'
+  +'<p class="muted">Reorder your lead Critter with ↑/↓, or send and retrieve Critters here. Captures beyond eight go home automatically.</p>'
+  +'<div class="options">'+list+'</div><h3>Home Storage</h3><div class="options">'+stored+'</div><button class="btn" id="partyBack">Back</button>');
+ document.querySelectorAll('[data-party-up],[data-party-down]').forEach(b=>b.onclick=()=>{
+  const i=Number(b.dataset.partyUp??b.dataset.partyDown),j=b.hasAttribute('data-party-up')?i-1:i+1;
+  if(i<0||j<0||i>=s.party.length||j>=s.party.length)return;
+  [s.party[i],s.party[j]]=[s.party[j],s.party[i]];save();manageParty();
+ });
+ document.querySelectorAll('[data-store]').forEach(b=>b.onclick=()=>{
+  const i=Number(b.dataset.store);if(s.party.length<=1||i<0||i>=s.party.length)return;
+  s.storage.push(s.party.splice(i,1)[0]);save();manageParty()
+ });
+ document.querySelectorAll('[data-retrieve]').forEach(b=>b.onclick=()=>{
+  const i=Number(b.dataset.retrieve);if(s.party.length>=PARTY_LIMIT||i<0||i>=s.storage.length)return;
+  s.party.push(s.storage.splice(i,1)[0]);save();manageParty()
+ });
+ $('partyBack').onclick=center
 }
 function manageModules(){
  const names=['Power Coil','Guard Plate','Weakening Field'];let list='<p>All basic modules work automatically. Up to four modules may be installed.</p>';
