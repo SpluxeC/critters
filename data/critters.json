@@ -21,10 +21,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -167,7 +167,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -230,10 +230,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "uncommon"
         }
       ],
@@ -305,7 +305,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 18,
-          "maxLevel": 19,
+          "maxLevel": 20,
           "rarity": "rare"
         }
       ],
@@ -369,10 +369,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -441,7 +441,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 23,
-          "maxLevel": 26,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -505,10 +505,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -570,10 +570,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -636,10 +636,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "uncommon"
         }
       ],
@@ -701,10 +701,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -766,10 +766,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -831,10 +831,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "uncommon"
         }
       ],
@@ -1159,10 +1159,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -1229,10 +1229,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
           "minLevel": 12,
-          "maxLevel": 19,
+          "maxLevel": 14,
           "rarity": "uncommon"
         }
       ],
@@ -1306,7 +1306,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -1369,10 +1369,10 @@
       },
       "habitats": [
         {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -1438,10 +1438,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 18,
-          "maxLevel": 19,
+          "maxLevel": 20,
           "rarity": "uncommon"
         }
       ],
@@ -1574,10 +1574,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
           "minLevel": 23,
-          "maxLevel": 26,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -1641,10 +1641,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "common"
         }
       ],
@@ -1837,10 +1837,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -1902,10 +1902,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "uncommon"
         }
       ],
@@ -2295,10 +2295,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -2442,7 +2442,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -2505,10 +2505,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -2713,7 +2713,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "rare"
         }
       ],
@@ -2777,10 +2777,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "uncommon"
         }
       ],
@@ -2842,10 +2842,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -2908,10 +2908,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -2973,10 +2973,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "uncommon"
         }
       ],
@@ -3038,10 +3038,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -3431,10 +3431,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "uncommon"
         }
       ],
@@ -3501,10 +3501,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 12,
+          "maxLevel": 14,
           "rarity": "rare"
         }
       ],
@@ -3571,10 +3571,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -3637,10 +3637,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "uncommon"
         }
       ],
@@ -3773,10 +3773,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "common"
         }
       ],
@@ -3849,7 +3849,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -3913,10 +3913,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -3978,10 +3978,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -4044,10 +4044,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "uncommon"
         }
       ],
@@ -4567,10 +4567,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -4713,7 +4713,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -4776,10 +4776,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -4912,10 +4912,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "uncommon"
         }
       ],
@@ -4984,7 +4984,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -5048,10 +5048,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -5113,10 +5113,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "uncommon"
         }
       ],
@@ -5179,10 +5179,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -5244,10 +5244,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 10,
-          "maxLevel": 17,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "common"
         }
       ],
@@ -5702,10 +5702,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -5772,10 +5772,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 12,
+          "maxLevel": 17,
           "rarity": "uncommon"
         }
       ],
@@ -5849,7 +5849,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -5912,10 +5912,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -5981,10 +5981,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 18,
-          "maxLevel": 24,
+          "maxLevel": 20,
           "rarity": "uncommon"
         }
       ],
@@ -6048,10 +6048,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -6117,10 +6117,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -6184,10 +6184,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "uncommon"
         }
       ],
@@ -6249,10 +6249,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -6315,10 +6315,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 15,
-          "maxLevel": 24,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -6773,10 +6773,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -6843,10 +6843,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 12,
-          "maxLevel": 19,
+          "maxLevel": 17,
           "rarity": "uncommon"
         }
       ],
@@ -6920,7 +6920,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -6983,10 +6983,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -7058,7 +7058,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 18,
-          "maxLevel": 19,
+          "maxLevel": 20,
           "rarity": "uncommon"
         }
       ],
@@ -7122,10 +7122,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -7191,10 +7191,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -7323,10 +7323,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "common"
         }
       ],
@@ -7454,10 +7454,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "route1",
+          "areaName": "Route 1 — Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
           "rarity": "rare"
         }
       ],
@@ -7519,10 +7519,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -7847,10 +7847,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -7990,7 +7990,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -8053,10 +8053,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -8189,10 +8189,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -8261,7 +8261,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -8325,10 +8325,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "uncommon"
         }
       ],
@@ -8390,10 +8390,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -8456,10 +8456,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -8521,10 +8521,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "rare"
         }
       ],
@@ -8914,10 +8914,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -9060,7 +9060,7 @@
           "areaId": "forest",
           "areaName": "Hidden Forest",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -9123,10 +9123,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -9331,7 +9331,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -9460,10 +9460,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -9526,10 +9526,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -9591,10 +9591,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "rare"
         }
       ],
@@ -9656,10 +9656,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -9984,10 +9984,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -10128,10 +10128,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -10194,10 +10194,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "common"
         }
       ],
@@ -10266,7 +10266,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 18,
-          "maxLevel": 19,
+          "maxLevel": 20,
           "rarity": "uncommon"
         }
       ],
@@ -10330,10 +10330,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -10406,7 +10406,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -10470,10 +10470,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "uncommon"
         }
       ],
@@ -10535,10 +10535,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -10666,10 +10666,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "rare"
         }
       ],
@@ -10731,10 +10731,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "forest",
+          "areaName": "Hidden Forest",
+          "minLevel": 7,
+          "maxLevel": 13,
           "rarity": "common"
         }
       ],
@@ -11059,10 +11059,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 7,
-          "maxLevel": 13,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -11129,10 +11129,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
+          "minLevel": 15,
+          "maxLevel": 24,
           "rarity": "uncommon"
         }
       ],
@@ -11206,7 +11206,7 @@
           "areaId": "forest",
           "areaName": "Hidden Forest",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -11341,7 +11341,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 18,
-          "maxLevel": 19,
+          "maxLevel": 20,
           "rarity": "uncommon"
         }
       ],
@@ -11477,7 +11477,7 @@
           "areaId": "cave",
           "areaName": "Mountain Cave",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -11606,10 +11606,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -11672,10 +11672,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -11802,10 +11802,10 @@
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
+          "areaId": "route2",
+          "areaName": "Route 2 — Bamboo Forest",
+          "minLevel": 5,
+          "maxLevel": 10,
           "rarity": "common"
         }
       ],
@@ -12270,10 +12270,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
+          "areaId": "cave",
+          "areaName": "Mountain Cave",
           "minLevel": 28,
-          "maxLevel": 31,
+          "maxLevel": 32,
           "rarity": "rare"
         }
       ],
@@ -12408,7 +12408,7 @@
           "areaId": "garden",
           "areaName": "Garden Town Outskirts",
           "minLevel": 18,
-          "maxLevel": 19,
+          "maxLevel": 20,
           "rarity": "uncommon"
         }
       ],
@@ -12541,10 +12541,10 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
           "minLevel": 23,
-          "maxLevel": 24,
+          "maxLevel": 25,
           "rarity": "uncommon"
         }
       ],
@@ -12673,10 +12673,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "common"
         }
       ],
@@ -12739,10 +12739,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "garden",
+          "areaName": "Garden Town Outskirts",
+          "minLevel": 12,
+          "maxLevel": 19,
           "rarity": "common"
         }
       ],
@@ -12804,10 +12804,10 @@
       },
       "habitats": [
         {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
+          "areaId": "route3",
+          "areaName": "Route 3 — Mountain Foothills",
+          "minLevel": 10,
+          "maxLevel": 17,
           "rarity": "rare"
         }
       ],
@@ -13199,8 +13199,8 @@
         {
           "areaId": "cave",
           "areaName": "Mountain Cave",
-          "minLevel": 25,
-          "maxLevel": 28,
+          "minLevel": 23,
+          "maxLevel": 29,
           "rarity": "legendary"
         }
       ],
@@ -13265,8 +13265,8 @@
         {
           "areaId": "forest",
           "areaName": "Hidden Forest",
-          "minLevel": 23,
-          "maxLevel": 26,
+          "minLevel": 15,
+          "maxLevel": 18,
           "rarity": "legendary"
         }
       ],
@@ -13331,8 +13331,8 @@
         {
           "areaId": "route3",
           "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 25,
-          "maxLevel": 28,
+          "minLevel": 18,
+          "maxLevel": 22,
           "rarity": "legendary"
         }
       ],
@@ -13377,5 +13377,5 @@
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
     }
   ],
-  "encounterBalanceVersion": 1
+  "encounterBalanceVersion": 2
 }
