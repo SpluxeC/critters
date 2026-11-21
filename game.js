@@ -2483,12 +2483,33 @@ function manageParty(){
  $('partyBack').onclick=center
 }
 function manageModules(){
- const names=['Power Coil','Guard Plate','Weakening Field'];let list='<p>All basic modules work automatically. Up to four modules may be installed.</p>';
- names.forEach(n=>{const owned=s.modules.filter(m=>m===n).length,installed=s.installed.filter(m=>m===n).length;list+='<div><b>'+n+'</b> · owned '+owned+', installed '+installed+' <button class="btn" data-install="'+n+'" '+(owned<=installed||s.installed.length>=4?'disabled':'')+'>Install</button></div>'});
- list+='<h3>Installed ('+s.installed.length+'/4)</h3>'+s.installed.map((n,i)=>'<div>'+n+' <button class="btn" data-remove="'+i+'">Remove</button></div>').join('');
+ const names=['Power Coil','Guard Plate','Weakening Field'];
+ const descriptions={
+  'Power Coil':'Increases your team’s attack damage.',
+  'Guard Plate':'Reduces incoming damage to your team.',
+  'Weakening Field':'Improves your team’s damage output.'
+ };
+ let list='<p>Technicians maintain your Critter Index here. Equipped modules apply automatically in combat; four sockets are available.</p>';
+ names.forEach(n=>{
+  const owned=s.modules.filter(m=>m===n).length,installed=s.installed.filter(m=>m===n).length;
+  list+='<div class="centerPartyRow"><b>'+escapeHtml(n)+'</b> · owned '+owned+', equipped '+installed
+   +'<small>'+escapeHtml(descriptions[n])+'</small> '
+   +'<button class="btn" data-install="'+escapeHtml(n)+'" '+(owned<=installed||s.installed.length>=4?'disabled':'')+'>Install</button></div>'
+ });
+ list+='<h3>Watch module sockets ('+s.installed.length+'/4)</h3>'
+  +Array.from({length:4},(_,i)=>'<div class="centerPartyRow"><b>Socket '+(i+1)+': '+escapeHtml(s.installed[i]||'Empty')+'</b> '
+   +(s.installed[i]?'<button class="btn" data-remove="'+i+'">Remove</button>':'<small>Available for an owned module</small>')+'</div>').join('');
  open('Critter Index · Module Maintenance','<div class="options">'+list+'</div><button class="btn" id="modulesBack">Back</button>');
- document.querySelectorAll('[data-install]').forEach(b=>b.onclick=()=>{const n=b.dataset.install;if(s.installed.length<4&&s.modules.filter(m=>m===n).length>s.installed.filter(m=>m===n).length){s.installed.push(n);save();manageModules()}});
- document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{s.installed.splice(Number(b.dataset.remove),1);save();manageModules()});$('modulesBack').onclick=center
+ document.querySelectorAll('[data-install]').forEach(b=>b.onclick=()=>{
+  const n=b.dataset.install;
+  if(!names.includes(n)||s.installed.length>=4||s.modules.filter(m=>m===n).length<=s.installed.filter(m=>m===n).length)return;
+  s.installed.push(n);save();manageModules();
+ });
+ document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{
+  const i=Number(b.dataset.remove);if(!Number.isInteger(i)||i<0||i>=s.installed.length)return;
+  s.installed.splice(i,1);save();manageModules()
+ });
+ $('modulesBack').onclick=center
 }
 function shop(){
  const goods=[['Potion',30],['Revive',90],['Power Coil',120],['Guard Plate',120],['Weakening Field',150]];
