@@ -177,6 +177,47 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 .watchMoveStats{font-size:10px;color:#a8d5c2;margin-top:4px}
 .watchMoveRow p{font-size:11px;color:#d3e0d7;margin:5px 0 0;line-height:1.4}
 @media(max-width:450px){.watchTab{font-size:8px}.watchTabs{gap:2px}.watchTypeButton{font-size:10px;padding:6px}}
+
+/* 200-Critter encyclopedia, compact on portrait mobile, scrollable tab strip. */
+.watchTabs{display:flex;grid-template-columns:none;overflow-x:auto;gap:5px;scrollbar-width:thin;overscroll-behavior-x:contain;padding-bottom:5px;-webkit-overflow-scrolling:touch}
+.watchTab{flex:0 0 auto;min-width:75px;padding:10px 9px;font-size:11px;white-space:nowrap}
+.speciesFilters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:7px 0}
+.speciesFilters label{color:#bdd2c7;font-size:10px;display:grid;gap:4px;font-weight:700}
+.speciesFilters select,.speciesSearch input{width:100%;min-width:0;border:1px solid #68958d;border-radius:7px;background:#1e3c44;color:#f2ebda;padding:9px;font-size:12px;outline-offset:2px}
+.speciesSearch{display:flex;gap:5px;margin-bottom:10px}
+.speciesSearch input{flex:1;min-width:0}
+.speciesSearch .btn{font-size:11px;padding:7px 9px}
+.speciesResults{font-size:11px;color:#a9d0c0;margin:7px 0}
+.speciesGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.speciesTile{border:1px solid #557e76;background:#26474a;border-radius:9px;color:#f5eddb;padding:9px;display:flex;align-items:center;text-align:left;gap:8px;min-width:0;cursor:pointer;touch-action:manipulation}
+.speciesTile:hover,.speciesTile:focus-visible{border-color:#e3c583;background:#375c59}
+.speciesMiniIcon{font-size:25px;background:#18363b;border:1px solid #5c8579;border-radius:8px;width:38px;height:42px;flex:0 0 38px;display:grid;place-items:center}
+.speciesTile>span:nth-child(2){display:grid;gap:2px;min-width:0;flex:1}
+.speciesTile strong{font-size:13px;overflow-wrap:anywhere}
+.speciesTile small{font-size:10px;color:#c1d2c6}
+.speciesTile em{font-style:normal;font-size:10px;color:#f0d29c}
+.speciesArrow{font-size:19px;color:#d3b979}
+.speciesPager{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-top:11px;font-size:11px}
+.speciesPager .btn{font-size:11px;padding:8px 12px}
+.speciesBack{font-size:11px;padding:8px 10px;margin:0 0 10px}
+.speciesIdentity{display:grid;grid-template-columns:100px minmax(0,1fr);gap:13px;align-items:center;padding:10px;background:#27494b;border-radius:9px;border:1px solid #618780}
+.speciesSilhouette{width:100%;aspect-ratio:1;border-radius:9px;background:radial-gradient(#527674,#233d43);border:1px dashed #82988a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.speciesSilhouette span{font-size:43px;opacity:.7}.speciesSilhouette small{font-size:8px;color:#d8d3ba}
+.speciesPortrait{display:block;width:100%;aspect-ratio:1;object-fit:contain;image-rendering:pixelated}
+.speciesIdentity h3{font-size:20px;margin:5px 0 2px;color:#f3e3ae}
+.speciesIdentity p{font-size:13px;color:#cfe6d9;margin:0 0 8px}
+.speciesIdentity small{font-size:10px;color:#d1c4aa}
+.speciesNumber{color:#f6d38c;font-weight:800;font-size:12px}
+.speciesStatGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.speciesStat{padding:8px;background:#234449;border:1px solid #4d716e;border-radius:8px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:5px}
+.speciesStat span{font-size:11px;color:#d2e0d5}.speciesStat strong{font-size:13px;color:#f1ddb0;font-variant-numeric:tabular-nums}
+.speciesStatTrack{grid-column:1/-1;height:5px;border-radius:9px;background:#132e37;overflow:hidden}
+.speciesStatTrack i{height:100%;display:block;background:linear-gradient(90deg,#569d86,#d8c18c);border-radius:9px}
+.speciesHabitats{padding:8px 12px 8px 25px;background:#224146;border-radius:8px;font-size:12px;line-height:1.7;margin:0}
+.speciesMoveLine{display:grid;grid-template-columns:45px minmax(0,1fr) 65px;gap:6px;align-items:center;padding:9px;border-bottom:1px solid #53766d;font-size:12px}
+.speciesMoveLine span{color:#edc98a}.speciesMoveLine strong{font-size:12px}.speciesMoveLine small{text-align:right;color:#9fd4bf}
+@media(max-width:520px){.watchTab{min-width:70px;font-size:10px;padding:10px 6px}.speciesGrid{grid-template-columns:1fr 1fr}.speciesTile{padding:6px;gap:5px}.speciesMiniIcon{width:29px;height:34px;flex-basis:29px;font-size:19px}.speciesTile strong{font-size:11px}.speciesTile small{font-size:9px}.speciesIdentity{grid-template-columns:85px minmax(0,1fr)}}
+@media(max-width:360px){.speciesGrid{grid-template-columns:1fr}.speciesIdentity{grid-template-columns:75px 1fr}}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
