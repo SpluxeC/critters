@@ -10,7 +10,7 @@ const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/mal
 let s=null,screen='title',tiles=[],npcs=[],dialog=[],dialogDone=null,modal=false,battle=null,frame=0,held={},last=0,editing=false;
 const read=()=>{try{return JSON.parse(localStorage.getItem('critters-v1'))}catch{return null}};
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page}
+function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game')resizeGameCanvas()}
 function critter(type,level=5){const hp=20+level*4;return {type,level,hp,maxHp:hp,xp:0,status:'',moves:['Strike',type+' Pulse','Guard','Focus']}}
 function migrate(){
  if(!s)return;
@@ -130,10 +130,20 @@ function drawTile(t,x,y,a,b){
  if(t===T.water){ctx.fillStyle='#bee7e5';ctx.fillRect(x+4,y+7,12,3);ctx.fillRect(x+15,y+20,12,3)}
  if(t===T.stone){ctx.fillStyle='#cac0ab';ctx.fillRect(x+3,y+11,16,2)}
 }
+function resizeGameCanvas(){
+ const width=Math.max(1,Math.round(C.clientWidth||C.getBoundingClientRect().width));
+ const height=Math.max(1,Math.round(C.clientHeight||C.getBoundingClientRect().height));
+ if(C.width!==width||C.height!==height){C.width=width;C.height=height;ctx.imageSmoothingEnabled=false}
+}
 function draw(){
  if(screen!=='game'||!s)return;
- const ox=Math.max(0,Math.min(W*S-640,s.x*S-320)),oy=Math.max(0,Math.min(H*S-480,s.y*S-240));
- for(let y=Math.floor(oy/S);y<Math.min(H,Math.ceil((oy+480)/S));y++)for(let x=Math.floor(ox/S);x<Math.min(W,Math.ceil((ox+640)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
+ resizeGameCanvas();
+ const zoom=Math.max(0.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
+ const viewportWidth=C.width/zoom,viewportHeight=C.height/zoom;
+ const ox=W*S<=viewportWidth?(W*S-viewportWidth)/2:Math.max(0,Math.min(W*S-viewportWidth,s.x*S-viewportWidth/2));
+ const oy=H*S<=viewportHeight?(H*S-viewportHeight)/2:Math.max(0,Math.min(H*S-viewportHeight,s.y*S-viewportHeight/2));
+ ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#315b40';ctx.fillRect(0,0,C.width,C.height);ctx.setTransform(zoom,0,0,zoom,0,0);
+ for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  for(const p of npcs){let x=p.x*S+16-ox,y=p.y*S+32-oy;ctx.fillStyle='#e2ad80';ctx.fillRect(x-9,y-25,18,24);ctx.fillStyle=p.kind==='researcher'?'#f2e7cd':p.kind==='center'?'#9ad4dc':p.kind==='leader'?'#5b944b':'#965b78';ctx.fillRect(x-8,y-11,16,11);ctx.fillStyle='#4a302c';ctx.fillRect(x-10,y-30,20,10);if(p.kind==='gymtrainer'&&s.defeated[p.id])continue;ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-36)}
  sprite(s.gender,s.x*S+16-ox,s.y*S+32-oy,s.face,frame,1.25);
  ctx.fillStyle='#1c3835dc';ctx.fillRect(5,5,330,28);ctx.fillStyle='#fff1ca';ctx.font='bold 13px system-ui';ctx.fillText(s.name+' · '+(s.starter||'Visit lab')+' · '+s.money+' ◇ · '+s.badges+' Badge',11,23)
@@ -186,7 +196,7 @@ function interact(){
 }
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
 function enterGym(){if(!s.rivalPassed){s.rivalPassed=true;save();return say(['Your childhood rival is waiting at the Grass Gym entrance!'],()=>startTrainer('rival'))}return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
-function open(title,body){modal=true;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('shade').classList.add('show')}
+function open(title,body){releaseMovement();modal=true;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('shade').classList.add('show')}
 function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false}
 function firstAlive(){return s.party.findIndex(p=>p.hp>0)}
 function lead(){return s.party[firstAlive()]}
@@ -322,7 +332,7 @@ $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,'
  s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4};
  save();build();show('game');say(['Welcome, '+name+'!','Visit the research laboratory in the northeast of the village to receive your Critter Index and starter.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
-$('index').onclick=index;$('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
+$('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
 window.addEventListener('keydown',e=>{if(document.activeElement.tagName==='INPUT')return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>120){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
 window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});// Mobile joystick uses a pointer captured by the joystick base; keyboard controls stay unchanged.
 const stick=$('joystick'),thumb=$('joystickThumb');
@@ -365,6 +375,12 @@ window.addEventListener('pointercancel',e=>endStick(e.pointerId));
 window.addEventListener('blur',releaseMovement);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseMovement()});
 window.addEventListener('pagehide',releaseMovement);
+
+document.addEventListener('touchmove',e=>{
+ if(screen==='game'&&!e.target.closest('#shade'))e.preventDefault();
+},{passive:false});
+document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault()},{passive:false});
+window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
 function loop(){if(screen==='game'){if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>145){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
