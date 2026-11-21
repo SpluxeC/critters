@@ -54,10 +54,20 @@ function build(){
  migrate();tiles=Array.from({length:H},()=>Array(W).fill(s.area==='lab'||s.area==='gym'?T.wood:T.grass));npcs=[];
  switch(s.area){
  case 'village':
- borders();roads();rect(16,12,3,13,T.path);rect(7,8,2,5,T.path);rect(24,9,2,4,T.path);houses([[3,3,9,5],[20,3,10,6]]);
- for(let y=17;y<23;y++)for(let x=2;x<12;x++)if((x+y)%5!==0)put(x,y,T.rice);
- for(let y=2;y<11;y++)for(let x=12;x<20;x++)if((x+3*y)%5===0)put(x,y,T.tree);
- nature(8,0);npc(12,14,['Welcome to the valley! The scientist works in the northeast laboratory.']);npc(22,15,['Follow the eastern road toward Route 1!']);
+ // Village layout remains fully playable: central trail, lab and route exit stay connected.
+ borders();roads();rect(16,12,3,13,T.path);rect(7,8,2,5,T.path);rect(24,9,2,4,T.path);
+ houses([[3,3,9,5],[20,3,10,6],[23,17,8,4]]);
+ // A loop of worn footpaths connects the homes, research lab and farm plots.
+ rect(11,11,6,2,T.path);rect(9,10,3,2,T.path);
+ rect(22,14,6,2,T.path);rect(27,15,2,9,T.path);rect(25,23,4,1,T.path);
+ rect(13,19,3,2,T.path);rect(12,20,2,3,T.path);
+ // Terraced paddies with softened borders and a clear walking track at x=12.
+ for(let y=17;y<23;y++)for(let x=2;x<11;x++)if((x+y)%11!==0)put(x,y,T.rice);
+ for(let y=2;y<11;y++)for(let x=12;x<20;x++)if((x+3*y)%7===0)put(x,y,T.tree);
+ // Keep footpaths and building approaches clear of randomly generated foliage.
+ nature(8,0);
+ npc(12,14,['Welcome to the valley! The scientist works in the northeast laboratory.']);
+ npc(22,15,['Follow the eastern road toward Route 1!']);
  break;
  case 'lab':
  borders(T.wall);rect(4,7,7,3,T.desk);rect(23,7,7,3,T.desk);rect(13,8,8,4,T.mat);put(17,25,T.door);
@@ -241,6 +251,94 @@ function drawTile(t,x,y,a,b){
  if(t===T.water){ctx.fillStyle='#bee7e5';ctx.fillRect(x+4,y+7,12,3);ctx.fillRect(x+15,y+20,12,3)}
  if(t===T.stone){ctx.fillStyle='#cac0ab';ctx.fillRect(x+3,y+11,16,2)}
 }
+// Art direction prototype for the starting village. These features are deliberately
+// decorative; existing exits, NPCs and interaction hitboxes stay unchanged.
+function drawVillageDetails(ox,oy,viewW,viewH){
+ if(s.area!=='village')return;
+ const world=(x,y)=>[x*S-ox,y*S-oy];
+ const rectWorld=(x,y,w,h,color)=>{const p=world(x,y);ctx.fillStyle=color;ctx.fillRect(p[0],p[1],w*S,h*S)};
+ const line=(x1,y1,x2,y2,width,color)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x1*S-ox,y1*S-oy);ctx.lineTo(x2*S-ox,y2*S-oy);ctx.stroke()};
+ // Irregular grass beside pathways, never geometric outlines on the walking surface.
+ const patches=[[2.6,11.3],[4.7,14.9],[11.3,16.3],[13.2,4.5],[19.2,19.1],[30.8,10.3],[29.8,23.4],[10.7,23.6]];
+ for(const [x,y] of patches){const [px,py]=world(x,y);ctx.fillStyle='#40794366';ctx.beginPath();ctx.ellipse(px,py,23,13,.2,0,Math.PI*2);ctx.fill()}
+ // Rice terraces: narrow embankments and irrigation channels with alternating rows.
+ for(let y=17;y<=22;y++){
+  line(1.75,y+.07,11.1,y+.07,3.2,'#537747');
+  if(y%2===0)line(1.85,y+.17,10.9,y+.17,1.6,'#84b9b0');
+ }
+ line(1.7,16.9,1.7,23.05,3,'#85b9b9');
+ line(11.05,17.0,11.05,23.0,3,'#689c9d');
+ for(let y=17;y<23;y++)for(let x=2;x<11;x++){
+  if((x*5+y*3)%6!==0)continue;
+  const p=world(x+.18,y+.18);ctx.fillStyle='#d7cf8a';ctx.fillRect(p[0],p[1],2.3,6);
+ }
+ // Stone-lined wells, low timber fences and bamboo stakes placed outside the road.
+ function fence(ax,ay,bx,by){
+  const [x1,y1]=world(ax,ay),[x2,y2]=world(bx,by);
+  ctx.strokeStyle='#594736';ctx.lineWidth=3;ctx.lineCap='butt';
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.strokeStyle='#b29366';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(x1,y1-6);ctx.lineTo(x2,y2-6);ctx.stroke();
+  const length=Math.hypot(x2-x1,y2-y1),count=Math.max(1,Math.floor(length/26));
+  for(let i=0;i<=count;i++){let t=i/count,px=x1+(x2-x1)*t,py=y1+(y2-y1)*t;ctx.fillStyle='#66503b';ctx.fillRect(px-2,py-11,4,18);ctx.fillStyle='#cfb082';ctx.fillRect(px-2,py-11,4,2)}
+ }
+ fence(2.5,16.7,10.9,16.7);fence(2.4,23.1,10.9,23.1);
+ fence(2.6,9.5,6.5,9.5);fence(9.5,9.5,11.3,9.5);
+ fence(21.1,16.6,26.7,16.6);fence(29.4,16.6,31.3,16.6);
+ // Lanterns sit beside roads and entrances, rather than over the walking tiles.
+ function lantern(x,y){
+  const [px,py]=world(x,y);
+  ctx.fillStyle='#4b4c43';ctx.fillRect(px-2,py-8,4,19);
+  ctx.fillStyle='#b9a78a';ctx.fillRect(px-7,py-11,14,4);
+  ctx.fillStyle='#f0d69c';ctx.fillRect(px-5,py-23,10,13);
+  ctx.fillStyle='#605549';ctx.fillRect(px-8,py-25,16,4);ctx.fillRect(px-6,py-10,12,3);
+  ctx.fillStyle='#fdf0b655';ctx.beginPath();ctx.arc(px,py-17,12,0,Math.PI*2);ctx.fill();
+ }
+ [[12.1,12.1],[19.6,12.0],[22.9,10.6],[26.8,10.6],[22.3,15.9],[29.6,15.6],[13.3,23.6]].forEach(p=>lantern(...p));
+ // Little seasonal flowers and mossy stones add organic edges near the rice plots.
+ for(const [x,y] of [[3,11],[4,15.4],[11.5,18],[14.2,23.5],[21.3,17],[30.7,22.5],[18.8,7.4],[2.2,9.4]]){
+  const [px,py]=world(x,y);
+  ctx.fillStyle='#d1a4a6';ctx.fillRect(px,py,4,4);ctx.fillStyle='#f2d7bc';ctx.fillRect(px+1,py-2,2,7);
+  ctx.fillStyle='#5f8a4b';ctx.fillRect(px+1,py+4,2,5)
+ }
+ // Continuous traditional roof silhouettes: dark tiled ridges, eaves, roof seams.
+ function roof(x,y,w,h,lab=false){
+  const [px,py]=world(x,y),ww=w*S,hh=h*S;
+  ctx.fillStyle='#2e302b99';ctx.fillRect(px+5,py+hh-4,ww-10,14);
+  ctx.fillStyle=lab?'#4c5660':'#57514c';
+  ctx.beginPath();ctx.moveTo(px-9,py+13);ctx.lineTo(px+ww/2,py-17);
+  ctx.lineTo(px+ww+9,py+13);ctx.lineTo(px+ww+3,py+hh-7);
+  ctx.lineTo(px-4,py+hh-7);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lab?'#78818a':'#9e7663';
+  ctx.beginPath();ctx.moveTo(px-4,py+15);ctx.lineTo(px+ww/2,py-10);
+  ctx.lineTo(px+ww+4,py+15);ctx.lineTo(px+ww-4,py+hh-14);
+  ctx.lineTo(px+4,py+hh-14);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#584740';ctx.lineWidth=3;
+  for(let i=1;i<7;i++){
+   const ry=py+18+(hh-36)*i/7;
+   ctx.beginPath();ctx.moveTo(px+4,ry);ctx.lineTo(px+ww-4,ry);ctx.stroke()
+  }
+  ctx.fillStyle='#363937';ctx.fillRect(px-9,py+hh-13,ww+18,8);
+  // Traditional light wooden panels are drawn in the wall strip below the eaves.
+  ctx.fillStyle='#e3d2af';ctx.fillRect(px+9,py+hh+1,ww-18,32);
+  ctx.fillStyle='#775c4e';
+  for(let i=0;i<4;i++)ctx.fillRect(px+11+i*(ww-22)/3,py+hh+1,4,32);
+  ctx.fillStyle='#e7d6ad';ctx.fillRect(px+ww*.18,py+hh+9,ww*.18,15);
+  ctx.fillStyle='#bfa77d';ctx.fillRect(px+ww*.19,py+hh+10,ww*.16,13);
+  // Original entry collision tile remains visible and usable.
+  const doorway=px+Math.floor(w/2)*S;
+  ctx.fillStyle='#372f2b';ctx.fillRect(doorway+5,py+hh+8,22,27);
+  ctx.fillStyle='#d2ad67';ctx.fillRect(doorway+24,py+hh+21,3,3);
+  if(lab){
+    ctx.fillStyle='#e8d3a8';ctx.fillRect(px+ww/2-44,py+hh-9,88,18);
+    ctx.fillStyle='#413c35';ctx.font='bold 12px system-ui';ctx.fillText('RESEARCH',px+ww/2-36,py+hh+4);
+  }
+ }
+ // Buildings draw on the decorative pass so their original rooftops don't show tile seams.
+ roof(3,3,9,5);
+ roof(20,3,10,6,true);
+ roof(23,17,8,4);
+}
 function resizeGameCanvas(){
  const width=Math.max(1,Math.round(C.clientWidth||C.getBoundingClientRect().width));
  const height=Math.max(1,Math.round(C.clientHeight||C.getBoundingClientRect().height));
@@ -262,6 +360,7 @@ function draw(){
    ctx.beginPath();ctx.ellipse(cx,cy,62,43,0,0,Math.PI*2);ctx.fill();
  }
  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
+ if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  for(const p of npcs){let x=p.x*S+16-ox,y=p.y*S+32-oy;ctx.fillStyle='#e2ad80';ctx.fillRect(x-9,y-25,18,24);ctx.fillStyle=p.kind==='researcher'?'#f2e7cd':p.kind==='center'?'#9ad4dc':p.kind==='leader'?'#5b944b':'#965b78';ctx.fillRect(x-8,y-11,16,11);ctx.fillStyle='#4a302c';ctx.fillRect(x-10,y-30,20,10);if(p.kind==='gymtrainer'&&s.defeated[p.id])continue;ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-36)}
  const isMoving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const walkFrame=isMoving?Math.floor(performance.now()/105)%4:0;
