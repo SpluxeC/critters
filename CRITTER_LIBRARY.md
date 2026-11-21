@@ -196,3 +196,18 @@ This phase changes only interface behavior and responsive presentation. All 200 
 - **No visual creature assets** were created or altered; the original-art upload workflow is still pending Cody and Kyle.
 
 Testing was performed in a simulated DOM with a short landscape-sized canvas. Joystick press/move/cancel, preservation of modal scroll, background save, loading the 200 species and 264 moves, opening a 2v2 battle, and JavaScript syntax passed. **A real-phone manual smoke test is still recommended**, especially across browsers and rotated displays.
+
+## First-adventure onboarding polish (v33)
+
+This phase polishes the game's first 15–20 minutes **without adding art, changing the type chart, or changing the overall world progression**.
+
+- The opening message explains movement, interaction, and how to find the northeast research lab.
+- The researcher provides starter selection context (Rock / Water / Electric), then immediately launches the existing friendly tutorial match.
+- The friendly match now restores **HP, conditions, and all move PP** after completion. Its tutorial tips teach the attack menu without changing battle or experience rules.
+- A compact **First Adventure** objective display tracks finding the researcher, tutorial match, Route 1, first wild sighting, first capture, first Route 1 trainer, and onward travel to town. Tap **?** beside the objective for guidance. Objectives are advisory, not permanent gates, and players retain freedom to explore and skip capture attempts.
+- To prevent a new player walking around endlessly without seeing a wild Critter, Route 1 gives a wild encounter after five eligible rice-field steps if the first Route 1 encounter hasn't happened already. After that, the existing v31 rarity and encounter rates work normally.
+- The wild battle screen offers one-time-context capture guidance while the first Route 1 capture is outstanding. Successful captures update the onboarding state and show the actual Critter species name.
+- The first Route 1 trainer now uses an ordinary Flying-type placeholder instead of generic Beast, protecting the one-only Beast species rule. Trainer hints describe switching, guarding, and healing.
+- Old saves are migrated conservatively: first-Route-1 capture/encounter flags can be inferred from species-specific historical capture and discovery records. New state is stored in `s.earlyJourney`, under the same existing local save key; nothing is reset.
+
+Validation: new-game starter and tutorial path, 200 species/264 moves loading, tutorial healing, Route 1 encounter markers, battle hints, first trainer type, old-save migration, and JavaScript syntax. A real-device touch walkthrough is still recommended.
