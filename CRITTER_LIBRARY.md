@@ -152,3 +152,34 @@ Evolution preserves the individual Critter object (including XP, move PP where m
 Evolution also registers the resulting form as **obtained** in the 200-species collection and counts it toward unique-species milestones, without increasing the capture-beam total or recording a fictional beam capture. An evolution-acquired form's `captures` is 0 and its `obtainedBy` is `evolution`. All original (pre-evolution) entries remain recorded.
 
 The whole evolution graph is editable. If a chain is revised, use stable `speciesId` targets and matching `evolvesFrom` backlinks, avoid cycles, and preserve the one-only rule for Dragon, Primordial and Beast. Species not assigned a chain remain standalone, so no new species or new artwork is required.
+
+## World and encounter balance (v31)
+
+Every one of the 200 draft Critters remains in the same registry, with permanent IDs, six base stats, moves, evolution lines, and art placeholders unchanged. Its `habitats[0]` entry defines its currently supported **wild** area, minimum and maximum wild levels, and rarity. Editing `data/critters.json` changes that game's encounter pool after refresh. The balance values are in `WILD_AREA_BALANCE` within `game.js`.
+
+| Area | Species | Encounter chance per eligible terrain step | General level range | Environment |
+|---|---:|---:|---|---|
+| Route 1 — Rice Fields | 18 | 7.5% | 2–5 | Grass, Water, Rock, Electric, Flying, Fire |
+| Route 2 — Bamboo Forest | 30 | 10% | 5–10 | Grass, Flying, Venom, Fighting, Psychic, Shadow |
+| Hidden Forest | 32 | 11.5% | 7–13 for typical forms | Shadow, Ghost, Grass, Psychic, Venom |
+| Route 3 — Mountain Foothills | 42 | 11% | 10–17 for typical forms | Fire, Rock, Electric, Fighting, Ice, Flying |
+| Garden Town Outskirts | 35 | 8.5% | 12–19 for typical forms | Water, Grass, Psychic, Venom, Fighting |
+| Mountain Cave | 43 | 12% | 15–24 for typical forms | Ice, Ghost, Rock, Shadow, Fire, Electric |
+
+The individual `habitats` entries are authoritative. Advanced evolved forms can appear at **higher levels than a region's general range**; these are much rarer, especially a final-stage form (at least level 28). The three unique restricted-type creatures remain extraordinarily rare and will **not** appear before the first Gym badge.
+
+Encounter frequency is independent of the number of creatures in a region. An encounter roll occurs only on the existing appropriate tall-grass, rice, stone, or Garden Town flower tiles, after the laboratory tutorial is complete. Ordinary terrain, towns, paths, and interior tiles remain safe. The original player-controlled encounter flow and 1v1 wild battles are preserved.
+
+### Weighted encounter selection
+
+Each potential species receives a weight based on area, rarity tier, and a modest activity modifier. Roughly:
+- **Common** species: most encounters, especially on early routes.
+- **Uncommon** species: occasional.
+- **Rare** species: infrequent, with comparatively better representation in the cave.
+- **Legendary** (Dragon, Primordial, Beast): extraordinarily infrequent, and only after earning the first badge.
+
+There is **no guaranteed rare encounter** or manipulation of battle outcomes. To reduce repetitive farming, an **unseen** species receives a slight encounter weight boost (typically 1.4–1.6× its normal weight). A **captured** species receives a small reduction (0.9×). This modifies relative probabilities, not the chance of a wild battle occurring. Night hours (20:00–05:00) slightly favor Shadow and Ghost; during other hours Grass and Flying receive a modest bonus.
+
+### Safe editing
+
+Keep the `habitats` area ID as one of `route1`, `route2`, `forest`, `route3`, `garden`, or `cave`. Ensure `minLevel` and `maxLevel` are finite integers and `maxLevel >= minLevel`. Use one of `common`, `uncommon`, `rare`, or `legendary`. Preserve the existing unique Dragon, Primordial and Beast rule and do not rename permanent `speciesId` values. Existing saves retain their party, caught species, and individual levels regardless of where species are moved in the wild.
