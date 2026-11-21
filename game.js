@@ -634,6 +634,128 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  // Warm afternoon color-grading, mild enough to preserve readable gameplay.
  ctx.fillStyle='#f1c88509';ctx.fillRect(0,0,viewW,viewH);
 }
+
+// Seamless indoor art pass: architectural walls, shoji windows, tatami, wood
+// flooring, and furniture. Uses the exact same object footprints as collision.
+function drawInteriorDetails(ox,oy,viewW,viewH){
+ if(!isInterior(s.area))return;
+ const wx=(x)=>x*S-ox,wy=(y)=>y*S-oy;
+ const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x),wy(y),w*S,h*S)};
+ const pixel=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x)+w*.0,wy(y),w,h)};
+ const line=(x1,y1,x2,y2,color,width=2)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(wx(x1),wy(y1));ctx.lineTo(wx(x2),wy(y2));ctx.stroke()};
+ // Continuous plank flooring rather than visually isolated square wood tiles.
+ box(0,0,W,H,'#8e7258');
+ for(let y=0;y<H;y+=1.22)line(0,y,W,y,'#6c523f',2);
+ for(let x=0;x<W;x+=6)line(x,0,x,H,'#ae9170',1.5);
+ for(let y=0;y<H;y+=2.44)for(let x=((y*7)%2)*3;x<W;x+=6)line(x,y,x,y+1.22,'#74563f',1.5);
+ // Tatami lounge sections and softly shaded edge bindings.
+ const tatami=s.area==='lab'?[[12,15,9,5]]:[[11,6,11,6],[12,15,9,5]];
+ for(const [x,y,w,h] of tatami){
+  box(x,y,w,h,'#b9ad83');
+  box(x+.10,y+.10,w-.20,h-.20,'#d9c99b');
+  for(let k=0;k<w;k+=2.2)line(x+k,y+.2,x+k,y+h-.2,'#a99f76',1);
+  line(x+.12,y+h-.2,x+w-.12,y+h-.2,'#687d69',4);
+ }
+ // Window-wall, waist-high joinery, wooden uprights and overhead beams.
+ box(0,0,W,2.4,'#463b37');
+ box(0,2.4,W,1.0,'#b7a186');
+ box(0,3.25,W,.25,'#44382e');
+ box(0,24.8,W,1.2,'#57493c');
+ box(0,24.85,16.45,.18,'#ad8969');box(17.55,24.85,16.45,.18,'#ad8969');
+ box(0,0,.9,H,'#4b3b33');box(W-.9,0,.9,H,'#4b3b33');
+ for(let x=4;x<W;x+=6)box(x-.12,0,.24,3.5,'#695040');
+ // Shoji paper windows along upper wall, framed with dark wooden lattice.
+ for(const x of [4,23]){
+  box(x,1.55,6,2,'#4a3930');box(x+.18,1.7,5.64,1.65,'#e7dfc5');
+  for(let j=1;j<5;j++)box(x+j*1.1,1.7,.09,1.65,'#795842');
+  box(x+.18,2.47,5.64,.1,'#795842');
+ }
+ // Hanging paper lamps spill a restrained golden glow.
+ for(const x of s.area==='lab'?[12,22]:[12,24]){
+  const cx=wx(x),cy=wy(3.6);
+  ctx.fillStyle='#ffe4a31e';ctx.beginPath();ctx.ellipse(cx,cy,30,18,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#3f392f';ctx.fillRect(cx-7,cy-9,14,3);
+  ctx.fillStyle='#f2dab0';ctx.fillRect(cx-6,cy-6,12,12);
+  ctx.fillStyle='#5e4b3a';ctx.fillRect(cx-7,cy+5,14,3);
+ }
+ // Two side wall columns framing the entrance.
+ box(15.7,23.95,.3,1,'#644b3a');box(18.98,23.95,.3,1,'#644b3a');
+ box(16.92,25,.16,.9,'#2a2e33');box(17.6,25,.15,.9,'#2a2e33');
+ box(17.08,25,.52,1,'#48342b');
+ for(const o of interiorObjects){
+  const {x,y,w,h,kind}=o,px=wx(x),py=wy(y),ww=w*S,hh=h*S;
+  // Cast shadow and contact shadow before drawing the actual solid furniture.
+  ctx.fillStyle='#201b1c66';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.48,Math.max(5,hh*.13),0,0,Math.PI*2);ctx.fill();
+  if(kind==='bed'){
+   box(x+.05,y+.2,w-.1,h-.25,'#604639');
+   box(x+.25,y+.12,w-.5,h-.5,'#e6ded0');
+   box(x+.4,y+.2,w-.8,1.05,'#f7efde');
+   box(x+.4,y+1.4,w-.8,h-1.9,'#a4b0a6');
+   line(x+.5,y+1.4,x+w-.5,y+1.4,'#d9dfd0',4);
+   box(x+.6,y+h-.4,w-1.2,.25,'#55433a');
+  }else if(kind==='bookshelf'){
+   box(x+.05,y+.12,w-.1,h-.12,'#503c32');
+   box(x+.23,y+.3,w-.46,h-.56,'#ad845c');
+   for(let k=0;k<3;k++){
+    const yy=y+.48+(h-.9)*(k+.2)/3;
+    box(x+.23,yy,w-.46,.16,'#4d3a30');
+    for(let j=0;j<Math.floor(w*3);j++){
+     const xx=x+.36+j*(w-.82)/Math.max(1,Math.floor(w*3));
+     box(xx,yy-.4,.14,.38,['#647786','#b78568','#a8a380','#d4bca4','#76776e'][(j+k)%5]);
+    }
+   }
+  }else if(kind==='counter'||kind==='desk'){
+   box(x+.12,y+.35,w-.24,h-.4,'#59443c');
+   box(x+.02,y+.1,w-.04,h-.5,'#a27a57');
+   box(x+.22,y+.23,w-.44,h-.8,'#b99068');
+   for(let j=0;j<Math.min(4,w-1);j++)box(x+.55+j*1.2,y+.55,.45,.6,['#c6d5cd','#647f7d','#d8c28e','#535f71'][j]);
+   line(x+.15,y+h-.33,x+w-.15,y+h-.33,'#493831',3);
+   if(kind==='desk'){box(x+w*.52,y+.36,1,.75,'#e5d8b8');line(x+w*.52,y+.42,x+w*.52+.9,y+.42,'#746b66',1);}
+  }else if(kind==='terminal'){
+   box(x+.2,y+.35,w-.4,h-.5,'#4a5554');
+   box(x+.3,y+.15,w-.6,h-.9,'#708682');
+   box(x+.46,y+.32,w-.92,h-1.45,'#203e48');
+   for(let j=0;j<4;j++)box(x+.65,y+.55+j*.35,w-1.3,.08,j%2?'#6fc0a9':'#a4dacf');
+   box(x+.48,y+h-.55,w-.96,.23,'#c4c6ae');
+  }else if(kind==='display'){
+   box(x+.12,y+.25,w-.24,h-.32,'#705441');
+   box(x+.22,y+.08,w-.44,h-.5,'#d4bb8e');
+   if(o.id==='lab-starters'){
+    for(let j=0;j<3;j++){
+     const cx=x+.9+j*(w-1.8)/2;
+     box(cx-.38,y+.23,.78,.85,['#9d968b','#568ec2','#ddb652'][j]);
+     box(cx-.2,y+.4,.4,.35,'#e3e9dc');
+    }
+   }else box(x+.5,y+.3,w-1,.33,'#a3ae9e');
+  }else if(kind==='chest'){
+   box(x+.1,y+.4,w-.2,h-.45,'#483b32');
+   box(x+.13,y+.1,w-.26,h-.65,'#9f7550');
+   box(x+.13,y+.1,w-.26,.27,'#c39464');
+   for(let j=0;j<3;j++)box(x+.4+j*(w-.8)/2,y+.1,.12,h-.7,'#5f4c40');
+   box(x+w/2-.14,y+h/2-.14,.28,.38,'#e6c887');
+  }else if(kind==='table'){
+   box(x+.15,y+.35,w-.3,h-.4,'#5a4031');
+   box(x+.12,y+.1,w-.24,h-.65,'#ae825d');
+   box(x+.5,y+.35,.8,.55,'#e3e0ce');
+   box(x+1.65,y+.35,.7,.55,'#eee3c9');
+   box(x+2.4,y+.48,.3,.45,'#4b8071');
+  }else if(kind==='board'){
+   box(x+.12,y+.04,w-.24,h-.1,'#46382f');
+   box(x+.23,y+.14,w-.46,h-.32,'#ddd2b5');
+   for(let j=0;j<Math.min(5,w-1);j++)box(x+.55+j*1.2,y+.27,.7,.08,'#817263');
+  }
+  // Brief sparkle on the object's edge when it's immediately inspectable.
+  const near=s&&s.area&&Math.abs(s.x-(x+w/2))<=w/2+1&&Math.abs(s.y-(y+h/2))<=h/2+1;
+  if(near){
+   const blink=Math.floor(performance.now()/450)%2;
+   ctx.fillStyle=blink?'#f9e6a4':'#fff7d3';
+   ctx.beginPath();ctx.arc(px+ww-8,py+9,3,0,Math.PI*2);ctx.fill();
+  }
+ }
+ // Light overall warmth; avoid affecting legibility of character sprites.
+ ctx.fillStyle='#edc99308';ctx.fillRect(0,0,viewW,viewH);
+}
+
 function resizeGameCanvas(){
  const width=Math.max(1,Math.round(C.clientWidth||C.getBoundingClientRect().width));
  const height=Math.max(1,Math.round(C.clientHeight||C.getBoundingClientRect().height));
@@ -656,6 +778,7 @@ function draw(){
  }
  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
+ if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
  const x=p.x*S+16-ox,y=p.y*S+32-oy;
