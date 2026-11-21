@@ -4,8 +4,8 @@ const $=id=>document.getElementById(id),C=$('world'),ctx=C.getContext('2d');ctx.
 const S=32,W=34,H=26;
 const T={grass:0,path:1,tree:2,roof:3,wall:4,door:5,rice:6,flower:7,wood:8,desk:9,mat:10,tall:11,rock:12,water:13,hedge:14,gate:15,stone:16};
 const palette=['#75a65e','#c6ae82','#38683d','#88684f','#baa78a','#403127','#b7bd6a','#88a961','#b38c6d','#856348','#d9c595','#507e41','#867c6b','#5a9aa5','#397b3e','#7b5c39','#b6b1a0'];
-const strengths={Fire:['Grass','Ice'],Water:['Fire','Rock'],Grass:['Water','Shadow'],Rock:['Electric','Venom'],Electric:['Water','Flying'],Ice:['Dragon','Ghost'],Flying:['Beast','Fighting'],Shadow:['Ghost','Psychic'],Ghost:['Psychic','Primordial'],Dragon:['Electric','Primordial'],Venom:['Grass','Flying'],Beast:['Dragon','Shadow'],Primordial:['Beast','Fire'],Psychic:['Fighting','Venom'],Fighting:['Rock','Ice']};
-const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧'};
+const strengths={Fire:['Grass','Ice','Steel'],Water:['Fire','Rock','Ground'],Grass:['Water','Shadow','Ground'],Rock:['Electric','Venom'],Electric:['Water','Flying'],Ice:['Dragon','Ghost','Ground'],Flying:['Beast','Fighting'],Shadow:['Ghost','Psychic'],Ghost:['Psychic','Primordial'],Dragon:['Electric','Primordial'],Venom:['Grass','Flying'],Beast:['Dragon','Shadow'],Primordial:['Beast','Fire'],Psychic:['Fighting','Venom'],Fighting:['Rock','Ice','Normal','Steel'],Normal:[],Steel:['Rock','Ice'],Ground:['Electric','Steel','Venom']};
+const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧',Normal:'◯',Steel:'⚙',Ground:'⏚'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
 const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
 // Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
@@ -325,7 +325,7 @@ function getMove(p,id){
 function refillMovePP(p){normalizeMoves(p);for(const id of p.moves)p.movePP[id]=getMove(p,id).pp}
 async function loadCritterMoveData(){
  try{
-  const res=await fetch('data/moves.json?v=26',{cache:'no-store'});
+  const res=await fetch('data/moves.json?v=36',{cache:'no-store'});
   if(!res.ok)throw Error('moves HTTP '+res.status);
   const data=await res.json();
   if(!Array.isArray(data.moves))throw Error('move catalog missing moves');
@@ -333,7 +333,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=31',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=36',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
