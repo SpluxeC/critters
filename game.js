@@ -10,10 +10,11 @@ const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/mal
 const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
 // Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
 const npcResearcher=new Image();npcResearcher.src='assets/npc-researcher.png?v=18';
+const npcLabAssistant=new Image();npcLabAssistant.src='assets/npc-lab-assistant.png?v=19';
 const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant','Center Nurse','Center Clerk','Village Elder','School Teacher','Merchant','Item Shopkeeper','Gear Shopkeeper','Rice Farmer','Fisherman','Ranger','Samurai','Shrine Maiden','Monk','Blacksmith','Guard','Rival Trainer','Gym Trainer','Gym Leader','Village Child','Traveler','Festival Dancer','Mountain Hermit','Ninja','Scholar'];
 const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
- const special={researcher:2,center:4,shop:9,leader:21,switch:27};
+ const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
  if(kind in special)return special[kind];
  if(kind==='gymtrainer')return 20;
  if(kind==='routetrainer')return (x+y)%2?19:13;
@@ -36,6 +37,14 @@ function pickNpcSprite(x,y,kind='',id=''){
  return arr[Math.abs((x*17+y*29+area.length*13))%arr.length];
 }
 function drawNpc(p,x,y){
+ // Dedicated lab assistant asset: same 4x4, 32px layout and feet anchor as researcher.
+ if(p.kind==='labassistant'&&npcLabAssistant.complete&&npcLabAssistant.naturalWidth===128){
+  const row={down:0,up:1,left:2,right:3}[p.face||'down']??0;
+  const size=59;
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(npcLabAssistant,0,row*32,32,32,x-size/2,y-size+4,size,size);
+  return;
+ }
  // Researcher has a dedicated 16-frame transparent PNG matching the player's
  // directional sheet layout. Align at the feet and avoid sideways frame drift.
  if(p.kind==='researcher'&&npcResearcher.complete&&npcResearcher.naturalWidth===128){
@@ -189,6 +198,7 @@ function build(){
  case 'lab':
  borders(T.wall);rect(4,7,7,3,T.desk);rect(23,7,7,3,T.desk);rect(13,8,8,4,T.mat);put(17,25,T.door);
  npc(17,7,['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],'researcher');
+ npc(21,10,['Lab Assistant: I help maintain the Critter Index and calibrate its capture beam.','The researcher has three starter Critters ready for you.'],'labassistant');
  break;
  case 'route1':
  borders();roads();
