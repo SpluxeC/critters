@@ -342,7 +342,7 @@ async function loadCritterMoveData(){
      speciesRegistry.set(sp.speciesId,sp);
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
- if(s){for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
+ if(s){for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
@@ -360,7 +360,7 @@ function migrate(){
  if(!Array.isArray(s.party))s.party=s.starter?[critter(s.starter,5)]:[];
  s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))).slice(0,8);
  if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p})));
- s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];s.money=Number.isFinite(s.money)?s.money:250;
+ s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];collectionData();s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
  s.rivalPassed=!!s.rivalPassed;s.introComplete=!!s.introComplete;
@@ -1337,6 +1337,7 @@ let indexTab='clock',indexSelection=0;
 const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['critters','◈ Critters'],['tools','⚙ Tools']];
 let moveBookType='Water';
 let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
+
 function index(){
  if(screen!=='game'||battle)return;
  indexTab='clock';indexSelection=0;renderIndex();
@@ -1403,6 +1404,109 @@ function indexItems(){
   +'<div class="watchSectionTitle">Available modules</div>'+(owned||'<div class="watchEmpty">No uninstalled modules owned.</div>')
   +'<div class="watchReadOnly">Items are usable during battles; modules are installed at Critter Centers.</div>';
 }
+
+// Collection phase: species IDs are the permanent keys, not editable names.
+// Older saves backfill only provable captured species, never guessed type placeholders.
+const COLLECTION_MILESTONES=[
+ {count:5,credits:100,potions:2,revives:0},
+ {count:10,credits:200,potions:3,revives:0},
+ {count:25,credits:400,potions:4,revives:1},
+ {count:50,credits:800,potions:5,revives:2},
+ {count:100,credits:1600,potions:8,revives:3},
+ {count:150,credits:2400,potions:10,revives:4},
+ {count:200,credits:4000,potions:15,revives:5}
+];
+const COLLECTION_STATUS=['all','unseen','seen','captured'];
+let critterBookDiscovery='all';
+function collectionData(){
+ if(!s)return {seen:{},caught:{},claimedMilestones:[]};
+ if(!s.collection||typeof s.collection!=='object'||Array.isArray(s.collection))s.collection={};
+ const c=s.collection;
+ if(!c.seen||typeof c.seen!=='object'||Array.isArray(c.seen))c.seen={};
+ if(!c.caught||typeof c.caught!=='object'||Array.isArray(c.caught))c.caught={};
+ if(!Array.isArray(c.claimedMilestones))c.claimedMilestones=[];
+ c.claimedMilestones=[...new Set(c.claimedMilestones.filter(n=>Number.isInteger(n)&&COLLECTION_MILESTONES.some(m=>m.count===n)))];
+ return c;
+}
+function validCollectionSpecies(id){return typeof id==='string'&&id.length>0&&speciesRegistry.has(id)}
+function discoveryStatus(id){
+ if(!validCollectionSpecies(id))return 'unseen';
+ const c=collectionData();
+ return c.caught[id]?'captured':c.seen[id]?'seen':'unseen';
+}
+function collectionCounts(){
+ const c=collectionData(),ids=[...speciesRegistry.keys()];
+ return {total:ids.length,seen:ids.filter(id=>!!c.seen[id]||!!c.caught[id]).length,captured:ids.filter(id=>!!c.caught[id]).length};
+}
+function encounterStamp(){return {day:Number.isFinite(s?.worldDay)?Math.max(1,Math.floor(s.worldDay)):1,area:s?.area||'unknown'}}
+function noteCritterSeen(p){
+ const id=p?.speciesId;
+ if(!validCollectionSpecies(id))return false;
+ const c=collectionData(),stamp=encounterStamp();
+ if(!c.seen[id]){
+  c.seen[id]={firstArea:stamp.area,firstDay:stamp.day,encounters:1,lastArea:stamp.area};
+  return true;
+ }
+ c.seen[id].encounters=Math.max(0,Number(c.seen[id].encounters)||0)+1;
+ c.seen[id].lastArea=stamp.area;
+ return false;
+}
+function noteCritterCaptured(p){
+ const id=p?.speciesId;
+ if(!validCollectionSpecies(id))return false;
+ const c=collectionData(),stamp=encounterStamp();
+ if(!c.seen[id])noteCritterSeen(p);
+ if(!c.caught[id]){
+  c.caught[id]={firstArea:stamp.area,firstDay:stamp.day,firstLevel:p.level||1,captures:1};
+  return true;
+ }
+ c.caught[id].captures=Math.max(1,Number(c.caught[id].captures)||1)+1;
+ return false;
+}
+function migrateCollection(){
+ const c=collectionData();
+ // A stored Critter proves capture; an old capture-log entry proves capture.
+ // We cannot infer identity from legacy type-only records or defeated trainers.
+ const known=[];
+ for(const p of [...(s.party||[]),...(s.storage||[])])if(p?.speciesId)known.push({speciesId:p.speciesId,level:p.level,area:s.area});
+ for(const entry of s.captureLog||[])if(entry?.speciesId)known.push({speciesId:entry.speciesId,level:entry.level,area:entry.area});
+ for(const p of known){
+  if(!validCollectionSpecies(p.speciesId))continue;
+  const entry=c.seen[p.speciesId]||{firstArea:p.area||'unknown',firstDay:null,encounters:0,lastArea:p.area||'unknown'};
+  c.seen[p.speciesId]=entry;
+  c.caught[p.speciesId]=c.caught[p.speciesId]||{firstArea:p.area||'unknown',firstDay:null,firstLevel:p.level||1,captures:1,imported:true};
+ }
+}
+function milestonePrize(m){
+ return [m.credits+' credits',m.potions?m.potions+' Potions':'',m.revives?m.revives+' Revives':''].filter(Boolean).join(' · ');
+}
+function claimCollectionMilestone(count){
+ const m=COLLECTION_MILESTONES.find(x=>x.count===count),c=collectionData();
+ if(!m||c.claimedMilestones.includes(count)||collectionCounts().captured<count)return false;
+ c.claimedMilestones.push(count);
+ s.money+=m.credits;
+ s.inventory=s.inventory||{};
+ s.inventory.Potion=(s.inventory.Potion||0)+m.potions;
+ s.inventory.Revive=(s.inventory.Revive||0)+m.revives;
+ save();
+ return true;
+}
+function collectionProgressUI(){
+ const count=collectionCounts(),pct=count.total?Math.round(count.captured/count.total*100):0;
+ return '<div class="collectionProgress"><div class="collectionProgressNums"><strong>'+count.captured+' captured</strong><span>'+count.seen+' seen · '+count.total+' total</span></div>'
+   +'<div class="watchMeter"><div style="width:'+pct+'%"></div></div><small>'+pct+'% collection complete</small></div>';
+}
+function collectionMilestonesUI(){
+ const count=collectionCounts().captured,c=collectionData();
+ return '<div class="watchSectionTitle">Collection milestones</div>'
+  +'<div class="collectionMilestones">'+COLLECTION_MILESTONES.map(m=>{
+   const claimed=c.claimedMilestones.includes(m.count),unlocked=count>=m.count;
+   return '<div class="collectionMilestone"><div><strong>'+m.count+' unique species</strong><small>'+escapeHtml(milestonePrize(m))+'</small></div>'
+    +(claimed?'<span class="collectionClaimed">Claimed</span>':unlocked?'<button class="btn" type="button" data-collection-claim="'+m.count+'">Claim reward</button>'
+      :'<span class="collectionLocked">'+count+'/'+m.count+'</span>')+'</div>';
+  }).join('')+'</div>';
+}
+
 function indexRecords(){
  const log=(s.captureLog||[]).slice(-12).reverse();
  const history=log.length?log.map(q=>'<div class="watchRow"><span>'+(symbols[q.type]||'◇')+' '+escapeHtml(q.name||q.type)+' <small>Lv '+Number(q.level||1)+'</small></span><span class="watchRecordLocation">'+escapeHtml(q.area||'Unknown')+' · '+escapeHtml(q.storage||'Party')+'</span></div>').join('')
@@ -1412,7 +1516,8 @@ function indexRecords(){
   +'<div><strong>'+s.storage.length+'</strong><span>Home storage</span></div>'
   +'<div><strong>'+s.badges+'</strong><span>Badges</span></div>'
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
-  +'<div class="watchReadOnly">New Critters are cataloged by species name; original art will be added as Cody and Kyle upload it.</div>';
+  +collectionProgressUI()+collectionMilestonesUI()
+  +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
  const types=Object.keys(strengths).concat('Typeless');
@@ -1446,6 +1551,17 @@ function critterStatTable(sp){
   return '<div class="speciesStat"><span>'+label+'</span><strong>'+val+'</strong><div class="speciesStatTrack"><i style="width:'+Math.min(100,Math.max(0,val/50*100))+'%"></i></div></div>';
  }).join('')+'</div>';
 }
+function collectionSpeciesHistory(id){
+ const c=collectionData(),seen=c.seen[id],caught=c.caught[id];
+ if(!seen&&!caught)return '<div class="watchReadOnly">Not encountered yet. Explore the listed habitat to discover this species.</div>';
+ const a=seen?.firstArea||caught?.firstArea||'unknown';
+ return '<div class="collectionHistory"><strong>Discovery record</strong><span>First sighting: '+escapeHtml(CRITTER_AREA_LABELS[a]||a)
+  +(seen?.firstDay?' · Day '+seen.firstDay:'')+'</span>'
+  +'<span>Encounters recorded: '+(seen?.encounters||0)+'</span>'
+  +(caught?'<span>First capture: '+escapeHtml(CRITTER_AREA_LABELS[caught.firstArea]||caught.firstArea)
+   +' · Lv '+(caught.firstLevel||'?')+'</span><span>Captures recorded: '+(caught.captures||1)+'</span>':'<span>Not captured yet</span>')
+  +'</div>';
+}
 function indexCritters(){
  const all=[...speciesRegistry.values()].sort((a,b)=>(a.number||999)-(b.number||999));
  const filtered=all.filter(sp=>{
@@ -1453,13 +1569,15 @@ function indexCritters(){
   const byArea=critterBookArea==='all'||sp.habitats?.some(h=>h.areaId===critterBookArea);
   const term=critterBookSearch.trim().toLowerCase();
   const bySearch=!term||String(sp.name).toLowerCase().includes(term)||String(sp.number).includes(term)||String(sp.speciesId).includes(term);
-  return byType&&byArea&&bySearch;
+  return byType&&byArea&&bySearch&&(critterBookDiscovery==='all'||discoveryStatus(sp.speciesId)===critterBookDiscovery);
  });
  const selection=critterBookSelected?speciesRegistry.get(critterBookSelected):null;
  const types=Object.keys(strengths);
  const typeFilters=['All',...types].map(type=>'<option value="'+escapeHtml(type)+'" '+(critterBookType===type?'selected':'')+'>'+escapeHtml(type)+'</option>').join('');
  const areaFilters=Object.entries(CRITTER_AREA_LABELS).map(([id,name])=>'<option value="'+id+'" '+(critterBookArea===id?'selected':'')+'>'+escapeHtml(name)+'</option>').join('');
- const search='<div class="speciesFilters"><label>Type<select id="critterTypeFilter" aria-label="Filter Critter type">'+typeFilters+'</select></label>'
+ const collectionOptions=[['all','All discoveries'],['unseen','Unseen'],['seen','Seen only'],['captured','Captured']].map(([id,label])=>'<option value="'+id+'" '+(critterBookDiscovery===id?'selected':'')+'>'+label+'</option>').join('');
+ const search='<div class="collectionDiscoverFilter"><label>Discovery status<select id="critterDiscoveryFilter" aria-label="Filter discovery status">'+collectionOptions+'</select></label></div>'
+  +'<div class="speciesFilters"><label>Type<select id="critterTypeFilter" aria-label="Filter Critter type">'+typeFilters+'</select></label>'
   +'<label>Habitat<select id="critterAreaFilter" aria-label="Filter habitat">'+areaFilters+'</select></label></div>'
   +'<div class="speciesSearch"><input id="critterSearch" aria-label="Search Critters" placeholder="Search name or number" value="'+escapeHtml(critterBookSearch)+'">'
   +'<button type="button" class="btn" id="critterSearchGo">Find</button><button type="button" class="btn" id="critterReset">Reset</button></div>';
@@ -1474,8 +1592,10 @@ function indexCritters(){
   body='<button class="btn speciesBack" type="button" id="critterBack">← Back to all Critters</button>'
    +'<div class="speciesIdentity">'+critterArtwork(selection)+'<div><span class="speciesNumber">#'+String(selection.number||0).padStart(3,'0')+'</span>'
    +'<h3>'+escapeHtml(selection.name)+'</h3><p>'+selection.types.map(escapeHtml).join(' / ')+'</p>'
-   +'<small>'+escapeHtml(selection.role||'balanced')+' · '+(selection.art?.status==='ready'?'Art uploaded':'Awaiting original art')+'</small></div></div>'
+   +'<small>'+escapeHtml(selection.role||'balanced')+' · '+(selection.art?.status==='ready'?'Art uploaded':'Awaiting original art')+'</small>'
+   +'<div class="collectionStatus '+discoveryStatus(selection.speciesId)+'">'+discoveryStatus(selection.speciesId).toUpperCase()+'</div></div></div>'
    +'<div class="watchSectionTitle">Level 1 base stats</div>'+critterStatTable(selection)
+   +collectionSpeciesHistory(selection.speciesId)
    +'<div class="watchSectionTitle">Where to find it</div><ul class="speciesHabitats">'+locations+'</ul>'
    +'<div class="watchSectionTitle">Level-up learnset</div><div class="speciesLearnset">'+moveRows+'</div>'
    +'<div class="watchReadOnly">Draft species. Cody and Kyle can revise its name, types, stats, habitat and learnset in the species registry.</div>';
@@ -1487,9 +1607,10 @@ function indexCritters(){
    const first=sp.habitats?.[0];
    return '<button type="button" class="speciesTile" data-critter-id="'+escapeHtml(sp.speciesId)+'">'
     +'<span class="speciesMiniIcon">'+(symbols[sp.types?.[0]]||'◇')+'</span><span><small>#'+String(sp.number||0).padStart(3,'0')+'</small><strong>'+escapeHtml(sp.name)+'</strong>'
-    +'<em>'+sp.types.map(escapeHtml).join(' / ')+'</em><small>'+escapeHtml(first?.areaName||'Undiscovered area')+'</small></span><span class="speciesArrow">›</span></button>';
+    +'<em>'+sp.types.map(escapeHtml).join(' / ')+'</em><small>'+escapeHtml(first?.areaName||'Undiscovered area')+'</small>'
+    +'<small class="collectionStatus '+discoveryStatus(sp.speciesId)+'">'+discoveryStatus(sp.speciesId).toUpperCase()+'</small></span><span class="speciesArrow">›</span></button>';
   }).join('')||'<div class="watchEmpty">No Critters match these filters.</div>';
-  body='<div class="speciesResults">Showing '+filtered.length+' of '+all.length+' Critters</div>'
+  body='<div class="speciesResults">Showing '+filtered.length+' of '+all.length+' Critters</div>'+collectionProgressUI()
    +'<div class="speciesGrid">'+list+'</div>'
    +'<div class="speciesPager"><button type="button" class="btn" id="critterPrev" '+(!critterBookPage?'disabled':'')+'>Previous</button>'
    +'<span>Page '+(critterBookPage+1)+' / '+(maxPage+1)+'</span>'
@@ -1530,6 +1651,8 @@ function renderIndex(){
   if(!speciesRegistry.has(b.dataset.critterId))return;
   critterBookSelected=b.dataset.critterId;renderIndex();
  });
+ const discoveryFilter=$('critterDiscoveryFilter');
+ if(discoveryFilter)discoveryFilter.onchange=()=>{if(!COLLECTION_STATUS.includes(discoveryFilter.value))return;critterBookDiscovery=discoveryFilter.value;critterBookPage=0;critterBookSelected=null;renderIndex()};
  const crType=$('critterTypeFilter'),crArea=$('critterAreaFilter');
  if(crType)crType.onchange=()=>{critterBookType=crType.value;critterBookPage=0;critterBookSelected=null;renderIndex()};
  if(crArea)crArea.onchange=()=>{critterBookArea=crArea.value;critterBookPage=0;critterBookSelected=null;renderIndex()};
@@ -1538,7 +1661,8 @@ function renderIndex(){
  const searchBtn=$('critterSearchGo'),resetBtn=$('critterReset');
  if(searchBtn)searchBtn.onclick=doSearch;
  if(searchInput)searchInput.onkeydown=e=>{if(e.key==='Enter')doSearch()};
- if(resetBtn)resetBtn.onclick=()=>{critterBookSearch='';critterBookArea='all';critterBookType='All';critterBookPage=0;critterBookSelected=null;renderIndex()};
+ if(resetBtn)resetBtn.onclick=()=>{critterBookSearch='';critterBookArea='all';critterBookType='All';critterBookDiscovery='all';critterBookPage=0;critterBookSelected=null;renderIndex()};
+ document.querySelectorAll('[data-collection-claim]').forEach(b=>b.onclick=()=>{if(claimCollectionMilestone(Number(b.dataset.collectionClaim)))renderIndex()});
  const back=$('critterBack');if(back)back.onclick=()=>{critterBookSelected=null;renderIndex()};
  const prev=$('critterPrev');if(prev)prev.onclick=()=>{critterBookPage=Math.max(0,critterBookPage-1);renderIndex()};
  const next=$('critterNext');if(next)next.onclick=()=>{critterBookPage++;renderIndex()};
@@ -1592,7 +1716,8 @@ function startTrainer(id){
 function startBattle(data,msg){
  const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
  const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
- data.enemies.forEach(p=>normalizeMoves(refreshSpeciesMetadata(p)));
+ data.enemies.forEach(p=>{normalizeMoves(refreshSpeciesMetadata(p));noteCritterSeen(p)});
+ save();
  battle={...data,mode:doubles?2:1,allySlots,enemySlots:data.enemies.map((p,i)=>i).slice(0,doubles?2:1),
   nextEnemy:doubles?2:1,participants:[...allySlots],pending:[],acting:0,turn:1,phase:'choose',
   guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null};
@@ -1923,7 +2048,7 @@ function performPlayerAction(action,log){
     if(Math.random()<chance){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
      if(s.party.length<8)s.party.push(caught);else s.storage.push(caught);
-     s.captureCount++;s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:s.party.includes(caught)?'Party':'Home'});s.captureLog=s.captureLog.slice(-80);
+     s.captureCount++;noteCritterCaptured(caught);s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:s.party.includes(caught)?'Party':'Home'});s.captureLog=s.captureLog.slice(-80);
      endBattle(true,'Capture successful! '+foe.type+' joined '+(s.party.includes(caught)?'your party.':'home storage.'),false);
     }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
    }return;
