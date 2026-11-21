@@ -309,23 +309,15 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 @media(max-width:340px){#shade .speciesGrid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){#shade .watchTabs{scroll-behavior:auto}#shade .combatFigure,#shade .combatSymbol{animation:none!important}}
 
-/* v33 opening quest cue and introductory battle help; no sprite or art changes */
-#game .journeyHud{position:absolute;top:calc(max(8px,env(safe-area-inset-top)) + 57px);left:max(10px,env(safe-area-inset-left));z-index:5;max-width:min(340px,54vw);border:1px solid #e3c685;border-radius:10px;background:#1c3840e8;padding:7px 9px;color:#f6e9c8;display:flex;align-items:center;gap:10px;box-shadow:0 4px 12px #0005;pointer-events:none}
-#game .journeyHud[hidden]{display:none!important}
-#game .journeyHud span{display:grid;gap:2px;min-width:0}
-#game .journeyHud small{font-size:9px;letter-spacing:.8px;color:#b5ddc7;font-weight:700}
-#game .journeyHud strong{font-size:12px;line-height:1.2;font-weight:800}
-#game .journeyHud button{pointer-events:auto;border:1px solid #f4dc9e;background:#3e625a;color:white;border-radius:50%;width:35px;height:35px;flex:0 0 35px;font-weight:900;touch-action:manipulation}
 .openingTip{margin:7px 0;padding:9px 11px;border-left:3px solid #e4be7c;background:#35554a;color:#f5e8c5;border-radius:6px;font-size:12px;line-height:1.4}
-@media(max-height:550px) and (orientation:landscape){#game .journeyHud{top:calc(max(3px,env(safe-area-inset-top)) + 43px);max-width:38vw;padding:5px 7px}#game .journeyHud strong{font-size:10px}#game .journeyHud button{width:30px;height:30px;flex-basis:30px}.openingTip{font-size:11px;padding:6px 8px}}
-@media(max-width:440px) and (orientation:portrait){#game .journeyHud{max-width:70vw}#game .journeyHud strong{font-size:11px}}
+@media(max-height:550px) and (orientation:landscape){.openingTip{font-size:11px;padding:6px 8px}}
+
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
 <section id="game" class="screen" aria-label="Critters game">
   <div class="frame" id="gameFrame">
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
-    <div id="journeyHud" class="journeyHud" aria-live="polite" hidden></div>
     <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v33</small></div><button class="btn" id="save" type="button">Save</button></div>
     <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
     <div class="mobile">
