@@ -1265,8 +1265,15 @@ function interact(){
 }
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
 function enterGym(){if(!s.rivalPassed){s.rivalPassed=true;save();return say(['Your childhood rival is waiting at the Grass Gym entrance!'],()=>startTrainer('rival'))}return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
-function open(title,body){releaseMovement();modal=true;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('shade').classList.add('show')}
-function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false}
+function open(title,body){
+ releaseMovement();modal=true;
+ const host=$('shade'),panel=host.querySelector('.modal'),watch=body.includes('class="watchShell"');
+ const preserve=watch&&panel&&host.classList.contains('show')&&panel.dataset?.screenMode==='watch';
+ const previous=preserve?panel.scrollTop:0;
+ $('modalTitle').textContent=title;$('modalBody').innerHTML=body;host.classList.add('show');
+ if(panel){panel.dataset.screenMode=watch?'watch':'other';panel.scrollTop=preserve?previous:0}
+}
+function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false;releaseMovement()}
 function firstAlive(){return s.party.findIndex(p=>p.hp>0)}
 function lead(){return s.party[firstAlive()]}
 // Phase 1 battle-stat engine: every Critter has an independent six-stat profile.
@@ -1667,7 +1674,7 @@ function renderIndex(){
  const doSearch=()=>{critterBookSearch=searchInput?.value||'';critterBookPage=0;critterBookSelected=null;renderIndex()};
  const searchBtn=$('critterSearchGo'),resetBtn=$('critterReset');
  if(searchBtn)searchBtn.onclick=doSearch;
- if(searchInput)searchInput.onkeydown=e=>{if(e.key==='Enter')doSearch()};
+ if(searchInput)searchInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();doSearch()}};
  if(resetBtn)resetBtn.onclick=()=>{critterBookSearch='';critterBookArea='all';critterBookType='All';critterBookDiscovery='all';critterBookPage=0;critterBookSelected=null;renderIndex()};
  document.querySelectorAll('[data-collection-claim]').forEach(b=>b.onclick=()=>{if(claimCollectionMilestone(Number(b.dataset.collectionClaim)))renderIndex()});
  const back=$('critterBack');if(back)back.onclick=()=>{critterBookSelected=null;renderIndex()};
@@ -2311,16 +2318,16 @@ $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,'
  save();build();show('game');say(['Welcome, '+name+'!','Visit the research laboratory in the northeast of the village to receive your Critter Index and starter.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
 $('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
-window.addEventListener('keydown',e=>{if(document.activeElement.tagName==='INPUT')return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>120){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
+window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>120){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
 window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});// Mobile joystick uses a pointer captured by the joystick base; keyboard controls stay unchanged.
 const stick=$('joystick'),thumb=$('joystickThumb');
-let stickPointer=null,stickDirection=null,stickActive=false;
+let stickPointer=null,stickDirection=null,stickActive=false,stickRepeatAt=0;
 function positionStick(dx=0,dy=0){
  thumb.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)';
 }
 function endStick(pointerId){
  if(pointerId!==undefined&&stickPointer!==pointerId)return;
- stickPointer=null;stickDirection=null;stickActive=false;
+ stickPointer=null;stickDirection=null;stickActive=false;stickRepeatAt=0;
  stick.classList.remove('active');positionStick();
 }
 function releaseMovement(){held={};endStick()}
@@ -2332,14 +2339,15 @@ function aimStick(e){
  const length=distance?Math.min(1,range/distance):0;
  positionStick(dx*length,dy*length);
  // Deliberate neutral deadzone avoids accidental steps when the stick is released.
- if(distance<Math.min(r.width,r.height)*0.15){stickDirection=null;return}
- stickDirection=Math.abs(dx)>=Math.abs(dy)?(dx>=0?'right':'left'):(dy>=0?'down':'up');
+ if(distance<Math.min(r.width,r.height)*0.18){stickDirection=null;return}
+ const next=Math.abs(dx)>=Math.abs(dy)?(dx>=0?'right':'left'):(dy>=0?'down':'up');
+ if(next!==stickDirection){stickDirection=next;stickRepeatAt=0}
 }
 stick.addEventListener('pointerdown',e=>{
  if(screen!=='game'||modal||stickPointer!==null)return;
  if(e.pointerType==='mouse'&&e.button!==0)return;
  e.preventDefault();
- stickPointer=e.pointerId;stickActive=true;stick.classList.add('active');
+ stickPointer=e.pointerId;stickActive=true;stickRepeatAt=0;stick.classList.add('active');
  if(stick.setPointerCapture)try{stick.setPointerCapture(e.pointerId)}catch(err){}
  aimStick(e);
 });
@@ -2351,16 +2359,17 @@ stick.addEventListener('contextmenu',e=>e.preventDefault());
 window.addEventListener('pointerup',e=>endStick(e.pointerId));
 window.addEventListener('pointercancel',e=>endStick(e.pointerId));
 window.addEventListener('blur',releaseMovement);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseMovement()});
-window.addEventListener('pagehide',releaseMovement);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseMovement();if(s&&screen==='game')save()}});
+window.addEventListener('pagehide',()=>{releaseMovement();if(s&&screen==='game')save()});
 
 document.addEventListener('touchmove',e=>{
  if(screen==='game'&&!e.target.closest('#shade'))e.preventDefault();
 },{passive:false});
 document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault()},{passive:false});
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>=120){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+135;last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
