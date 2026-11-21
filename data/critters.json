@@ -317,7 +317,7 @@
         },
         {
           "level": 4,
-          "moveId": "paw-tap"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -325,7 +325,7 @@
         },
         {
           "level": 13,
-          "moveId": "sidestep"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -333,7 +333,7 @@
         },
         {
           "level": 27,
-          "moveId": "rushing-steps"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -782,7 +782,7 @@
         },
         {
           "level": 4,
-          "moveId": "tail-flick"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -790,7 +790,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -798,7 +798,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -1175,7 +1175,7 @@
         },
         {
           "level": 4,
-          "moveId": "burrow-jab"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -1183,7 +1183,7 @@
         },
         {
           "level": 13,
-          "moveId": "dune-spear"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -1191,7 +1191,7 @@
         },
         {
           "level": 27,
-          "moveId": "terra-ward"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -2115,7 +2115,7 @@
         },
         {
           "level": 4,
-          "moveId": "clay-shot"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -2123,7 +2123,7 @@
         },
         {
           "level": 13,
-          "moveId": "mud-snare"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -2131,7 +2131,7 @@
         },
         {
           "level": 27,
-          "moveId": "gravel-crush"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -2381,7 +2381,7 @@
         },
         {
           "level": 4,
-          "moveId": "tail-flick"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -2389,7 +2389,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -2397,7 +2397,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -2599,7 +2599,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -2607,7 +2607,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -3121,7 +3121,7 @@
         },
         {
           "level": 4,
-          "moveId": "paw-tap"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -3129,7 +3129,7 @@
         },
         {
           "level": 13,
-          "moveId": "sidestep"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -3137,7 +3137,7 @@
         },
         {
           "level": 27,
-          "moveId": "rushing-steps"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -3449,7 +3449,7 @@
         },
         {
           "level": 4,
-          "moveId": "sand-veil"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -3457,7 +3457,7 @@
         },
         {
           "level": 13,
-          "moveId": "dust-cloud"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -3465,7 +3465,7 @@
         },
         {
           "level": 27,
-          "moveId": "silt-wave"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -3519,7 +3519,7 @@
         },
         {
           "level": 4,
-          "moveId": "clay-shot"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -3527,7 +3527,7 @@
         },
         {
           "level": 13,
-          "moveId": "mud-snare"
+          "moveId": "clay-shot"
         },
         {
           "level": 20,
@@ -3535,7 +3535,7 @@
         },
         {
           "level": 27,
-          "moveId": "gravel-crush"
+          "moveId": "dust-cloud"
         },
         {
           "level": 36,
@@ -3590,7 +3590,7 @@
         },
         {
           "level": 4,
-          "moveId": "rivet-jab"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -3598,7 +3598,7 @@
         },
         {
           "level": 13,
-          "moveId": "mirror-shield"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -3606,7 +3606,7 @@
         },
         {
           "level": 27,
-          "moveId": "tempered-edge"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -3657,7 +3657,7 @@
         },
         {
           "level": 4,
-          "moveId": "sand-veil"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -3665,7 +3665,7 @@
         },
         {
           "level": 13,
-          "moveId": "dust-cloud"
+          "moveId": "clay-shot"
         },
         {
           "level": 20,
@@ -3673,7 +3673,7 @@
         },
         {
           "level": 27,
-          "moveId": "silt-wave"
+          "moveId": "dust-cloud"
         },
         {
           "level": 36,
@@ -3727,7 +3727,7 @@
         },
         {
           "level": 4,
-          "moveId": "clay-shot"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -3735,7 +3735,7 @@
         },
         {
           "level": 13,
-          "moveId": "mud-snare"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -3743,7 +3743,7 @@
         },
         {
           "level": 27,
-          "moveId": "gravel-crush"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -3802,7 +3802,7 @@
         },
         {
           "level": 13,
-          "moveId": "mirror-shield"
+          "moveId": "chrome-beam"
         },
         {
           "level": 20,
@@ -3810,7 +3810,7 @@
         },
         {
           "level": 27,
-          "moveId": "tempered-edge"
+          "moveId": "alloy-rush"
         },
         {
           "level": 36,
@@ -3868,7 +3868,7 @@
         },
         {
           "level": 4,
-          "moveId": "sand-veil"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -3876,7 +3876,7 @@
         },
         {
           "level": 13,
-          "moveId": "dust-cloud"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -3884,7 +3884,7 @@
         },
         {
           "level": 27,
-          "moveId": "silt-wave"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -3935,7 +3935,7 @@
         },
         {
           "level": 4,
-          "moveId": "chrome-beam"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -3943,7 +3943,7 @@
         },
         {
           "level": 13,
-          "moveId": "gear-grind"
+          "moveId": "chrome-beam"
         },
         {
           "level": 20,
@@ -3951,7 +3951,7 @@
         },
         {
           "level": 27,
-          "moveId": "silver-torrent"
+          "moveId": "alloy-rush"
         },
         {
           "level": 36,
@@ -4001,7 +4001,7 @@
         },
         {
           "level": 4,
-          "moveId": "rivet-jab"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -4009,7 +4009,7 @@
         },
         {
           "level": 13,
-          "moveId": "mirror-shield"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -4017,7 +4017,7 @@
         },
         {
           "level": 27,
-          "moveId": "tempered-edge"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -4067,7 +4067,7 @@
         },
         {
           "level": 4,
-          "moveId": "steel-iron-guard"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -4075,7 +4075,7 @@
         },
         {
           "level": 13,
-          "moveId": "alloy-rush"
+          "moveId": "chrome-beam"
         },
         {
           "level": 20,
@@ -4083,7 +4083,7 @@
         },
         {
           "level": 27,
-          "moveId": "steel-hammer"
+          "moveId": "alloy-rush"
         },
         {
           "level": 36,
@@ -4133,7 +4133,7 @@
         },
         {
           "level": 4,
-          "moveId": "chrome-beam"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -4141,7 +4141,7 @@
         },
         {
           "level": 13,
-          "moveId": "gear-grind"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -4149,7 +4149,7 @@
         },
         {
           "level": 27,
-          "moveId": "silver-torrent"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -4207,7 +4207,7 @@
         },
         {
           "level": 13,
-          "moveId": "dune-spear"
+          "moveId": "clay-shot"
         },
         {
           "level": 20,
@@ -4215,7 +4215,7 @@
         },
         {
           "level": 27,
-          "moveId": "terra-ward"
+          "moveId": "dust-cloud"
         },
         {
           "level": 36,
@@ -4265,7 +4265,7 @@
         },
         {
           "level": 4,
-          "moveId": "sand-veil"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -4273,7 +4273,7 @@
         },
         {
           "level": 13,
-          "moveId": "dust-cloud"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -4281,7 +4281,7 @@
         },
         {
           "level": 27,
-          "moveId": "silt-wave"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -4397,7 +4397,7 @@
         },
         {
           "level": 4,
-          "moveId": "burrow-jab"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -4405,7 +4405,7 @@
         },
         {
           "level": 13,
-          "moveId": "dune-spear"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -4413,7 +4413,7 @@
         },
         {
           "level": 27,
-          "moveId": "terra-ward"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -4463,7 +4463,7 @@
         },
         {
           "level": 4,
-          "moveId": "sand-veil"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -4471,7 +4471,7 @@
         },
         {
           "level": 13,
-          "moveId": "dust-cloud"
+          "moveId": "clay-shot"
         },
         {
           "level": 20,
@@ -4479,7 +4479,7 @@
         },
         {
           "level": 27,
-          "moveId": "silt-wave"
+          "moveId": "dust-cloud"
         },
         {
           "level": 36,
@@ -4529,7 +4529,7 @@
         },
         {
           "level": 4,
-          "moveId": "chrome-beam"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -4537,7 +4537,7 @@
         },
         {
           "level": 13,
-          "moveId": "gear-grind"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -4545,7 +4545,7 @@
         },
         {
           "level": 27,
-          "moveId": "silver-torrent"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -4665,7 +4665,7 @@
         },
         {
           "level": 4,
-          "moveId": "calm-posture"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -4673,7 +4673,7 @@
         },
         {
           "level": 13,
-          "moveId": "steady-rhythm"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -4681,7 +4681,7 @@
         },
         {
           "level": 27,
-          "moveId": "rally-breath"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -4805,7 +4805,7 @@
         },
         {
           "level": 4,
-          "moveId": "rivet-jab"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -4813,7 +4813,7 @@
         },
         {
           "level": 13,
-          "moveId": "mirror-shield"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -4821,7 +4821,7 @@
         },
         {
           "level": 27,
-          "moveId": "tempered-edge"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -4875,7 +4875,7 @@
         },
         {
           "level": 4,
-          "moveId": "steel-iron-guard"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -4883,7 +4883,7 @@
         },
         {
           "level": 13,
-          "moveId": "alloy-rush"
+          "moveId": "chrome-beam"
         },
         {
           "level": 20,
@@ -4891,7 +4891,7 @@
         },
         {
           "level": 27,
-          "moveId": "steel-hammer"
+          "moveId": "alloy-rush"
         },
         {
           "level": 36,
@@ -4942,7 +4942,7 @@
         },
         {
           "level": 4,
-          "moveId": "paw-tap"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -4950,7 +4950,7 @@
         },
         {
           "level": 13,
-          "moveId": "sidestep"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -4958,7 +4958,7 @@
         },
         {
           "level": 27,
-          "moveId": "rushing-steps"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -5020,7 +5020,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -5028,7 +5028,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -5210,7 +5210,7 @@
         },
         {
           "level": 4,
-          "moveId": "rivet-jab"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -5218,7 +5218,7 @@
         },
         {
           "level": 13,
-          "moveId": "mirror-shield"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -5226,7 +5226,7 @@
         },
         {
           "level": 27,
-          "moveId": "tempered-edge"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -5537,7 +5537,7 @@
         },
         {
           "level": 4,
-          "moveId": "chrome-beam"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -5545,7 +5545,7 @@
         },
         {
           "level": 13,
-          "moveId": "gear-grind"
+          "moveId": "chrome-beam"
         },
         {
           "level": 20,
@@ -5553,7 +5553,7 @@
         },
         {
           "level": 27,
-          "moveId": "silver-torrent"
+          "moveId": "alloy-rush"
         },
         {
           "level": 36,
@@ -5811,7 +5811,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -5819,7 +5819,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -5944,7 +5944,7 @@
         },
         {
           "level": 4,
-          "moveId": "clay-shot"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -5952,7 +5952,7 @@
         },
         {
           "level": 13,
-          "moveId": "mud-snare"
+          "moveId": "clay-shot"
         },
         {
           "level": 20,
@@ -5960,7 +5960,7 @@
         },
         {
           "level": 27,
-          "moveId": "gravel-crush"
+          "moveId": "dust-cloud"
         },
         {
           "level": 36,
@@ -6014,7 +6014,7 @@
         },
         {
           "level": 4,
-          "moveId": "tail-flick"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -6022,7 +6022,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -6030,7 +6030,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -6151,7 +6151,7 @@
         },
         {
           "level": 4,
-          "moveId": "chrome-beam"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -6159,7 +6159,7 @@
         },
         {
           "level": 13,
-          "moveId": "gear-grind"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -6167,7 +6167,7 @@
         },
         {
           "level": 27,
-          "moveId": "silver-torrent"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -6545,7 +6545,7 @@
         },
         {
           "level": 4,
-          "moveId": "chrome-beam"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -6553,7 +6553,7 @@
         },
         {
           "level": 13,
-          "moveId": "gear-grind"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -6561,7 +6561,7 @@
         },
         {
           "level": 27,
-          "moveId": "silver-torrent"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -6953,7 +6953,7 @@
         },
         {
           "level": 4,
-          "moveId": "paw-tap"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -6961,7 +6961,7 @@
         },
         {
           "level": 13,
-          "moveId": "sidestep"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -6969,7 +6969,7 @@
         },
         {
           "level": 27,
-          "moveId": "rushing-steps"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -7556,7 +7556,7 @@
         },
         {
           "level": 4,
-          "moveId": "paw-tap"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -7564,7 +7564,7 @@
         },
         {
           "level": 13,
-          "moveId": "sidestep"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -7572,7 +7572,7 @@
         },
         {
           "level": 27,
-          "moveId": "rushing-steps"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -7622,7 +7622,7 @@
         },
         {
           "level": 4,
-          "moveId": "tail-flick"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -7630,7 +7630,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -7638,7 +7638,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -7955,7 +7955,7 @@
         },
         {
           "level": 4,
-          "moveId": "paw-tap"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -7963,7 +7963,7 @@
         },
         {
           "level": 13,
-          "moveId": "sidestep"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -7971,7 +7971,7 @@
         },
         {
           "level": 27,
-          "moveId": "rushing-steps"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -8161,7 +8161,7 @@
         },
         {
           "level": 4,
-          "moveId": "paw-tap"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -8169,7 +8169,7 @@
         },
         {
           "level": 13,
-          "moveId": "sidestep"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -8177,7 +8177,7 @@
         },
         {
           "level": 27,
-          "moveId": "rushing-steps"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -10093,7 +10093,7 @@
         },
         {
           "level": 4,
-          "moveId": "calm-posture"
+          "moveId": "tail-flick"
         },
         {
           "level": 8,
@@ -10101,7 +10101,7 @@
         },
         {
           "level": 13,
-          "moveId": "steady-rhythm"
+          "moveId": "paw-tap"
         },
         {
           "level": 20,
@@ -10109,7 +10109,7 @@
         },
         {
           "level": 27,
-          "moveId": "rally-breath"
+          "moveId": "steady-rhythm"
         },
         {
           "level": 36,
@@ -10443,7 +10443,7 @@
         },
         {
           "level": 4,
-          "moveId": "burrow-jab"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -10451,7 +10451,7 @@
         },
         {
           "level": 13,
-          "moveId": "dune-spear"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -10459,7 +10459,7 @@
         },
         {
           "level": 27,
-          "moveId": "terra-ward"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -10707,7 +10707,7 @@
         },
         {
           "level": 4,
-          "moveId": "calm-posture"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -10715,7 +10715,7 @@
         },
         {
           "level": 13,
-          "moveId": "steady-rhythm"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -10723,7 +10723,7 @@
         },
         {
           "level": 27,
-          "moveId": "rally-breath"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -10773,7 +10773,7 @@
         },
         {
           "level": 4,
-          "moveId": "clay-shot"
+          "moveId": "burrow-jab"
         },
         {
           "level": 8,
@@ -10781,7 +10781,7 @@
         },
         {
           "level": 13,
-          "moveId": "mud-snare"
+          "moveId": "clay-shot"
         },
         {
           "level": 20,
@@ -10789,7 +10789,7 @@
         },
         {
           "level": 27,
-          "moveId": "gravel-crush"
+          "moveId": "dust-cloud"
         },
         {
           "level": 36,
@@ -11246,7 +11246,7 @@
         },
         {
           "level": 4,
-          "moveId": "tail-flick"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -11254,7 +11254,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -11262,7 +11262,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -11518,7 +11518,7 @@
         },
         {
           "level": 4,
-          "moveId": "calm-posture"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -11526,7 +11526,7 @@
         },
         {
           "level": 13,
-          "moveId": "steady-rhythm"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -11534,7 +11534,7 @@
         },
         {
           "level": 27,
-          "moveId": "rally-breath"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -11912,7 +11912,7 @@
         },
         {
           "level": 4,
-          "moveId": "steel-iron-guard"
+          "moveId": "tin-tap"
         },
         {
           "level": 8,
@@ -11920,7 +11920,7 @@
         },
         {
           "level": 13,
-          "moveId": "alloy-rush"
+          "moveId": "steel-iron-guard"
         },
         {
           "level": 20,
@@ -11928,7 +11928,7 @@
         },
         {
           "level": 27,
-          "moveId": "steel-hammer"
+          "moveId": "mirror-shield"
         },
         {
           "level": 36,
@@ -12316,7 +12316,7 @@
         },
         {
           "level": 4,
-          "moveId": "calm-posture"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -12324,7 +12324,7 @@
         },
         {
           "level": 13,
-          "moveId": "steady-rhythm"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -12332,7 +12332,7 @@
         },
         {
           "level": 27,
-          "moveId": "rally-breath"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -12452,7 +12452,7 @@
         },
         {
           "level": 4,
-          "moveId": "burrow-jab"
+          "moveId": "dust-kick"
         },
         {
           "level": 8,
@@ -12460,7 +12460,7 @@
         },
         {
           "level": 13,
-          "moveId": "dune-spear"
+          "moveId": "sand-veil"
         },
         {
           "level": 20,
@@ -12468,7 +12468,7 @@
         },
         {
           "level": 27,
-          "moveId": "terra-ward"
+          "moveId": "dune-spear"
         },
         {
           "level": 36,
@@ -12852,7 +12852,7 @@
         },
         {
           "level": 4,
-          "moveId": "tail-flick"
+          "moveId": "quick-nudge"
         },
         {
           "level": 8,
@@ -12860,7 +12860,7 @@
         },
         {
           "level": 13,
-          "moveId": "wide-swipe"
+          "moveId": "calm-posture"
         },
         {
           "level": 20,
@@ -12868,7 +12868,7 @@
         },
         {
           "level": 27,
-          "moveId": "resonant-call"
+          "moveId": "wide-swipe"
         },
         {
           "level": 36,
@@ -12918,7 +12918,7 @@
         },
         {
           "level": 4,
-          "moveId": "steel-iron-guard"
+          "moveId": "rivet-jab"
         },
         {
           "level": 8,
@@ -12926,7 +12926,7 @@
         },
         {
           "level": 13,
-          "moveId": "alloy-rush"
+          "moveId": "chrome-beam"
         },
         {
           "level": 20,
@@ -12934,7 +12934,7 @@
         },
         {
           "level": 27,
-          "moveId": "steel-hammer"
+          "moveId": "alloy-rush"
         },
         {
           "level": 36,
@@ -13057,7 +13057,7 @@
         },
         {
           "level": 13,
-          "moveId": "dune-spear"
+          "moveId": "clay-shot"
         },
         {
           "level": 20,
@@ -13065,7 +13065,7 @@
         },
         {
           "level": 27,
-          "moveId": "terra-ward"
+          "moveId": "dust-cloud"
         },
         {
           "level": 36,
