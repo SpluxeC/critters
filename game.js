@@ -333,7 +333,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=26',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=27',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -342,15 +342,15 @@ async function loadCritterMoveData(){
      speciesRegistry.set(sp.speciesId,sp);
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
- if(s){for(const p of [...s.party,...s.storage])normalizeMoves(p);save()}
+ if(s){for(const p of [...s.party,...s.storage])normalizeMoves(p);save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
 function critter(type,level=5){
  const spec=speciesRegistry.get(type);
  const primary=spec?.types?.[0]||type;
- const hp=20+level*4;
- const p={type:primary,speciesId:spec?spec.speciesId:null,name:spec?.name||primary,level,hp,maxHp:hp,xp:0,status:'',moves:[],movePP:{}};
+ const hp=spec?.baseStats?.hp?Math.max(1,spec.baseStats.hp+(level-1)*4):20+level*4;
+ const p={type:primary,types:spec?.types||[primary],speciesId:spec?spec.speciesId:null,name:spec?.name||primary,baseStats:spec?.baseStats||null,level,hp,maxHp:hp,xp:0,status:'',moves:[],movePP:{}};
  return normalizeMoves(p);
 }
 function migrate(){
@@ -1237,7 +1237,7 @@ function move(d){
  if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
  if((s.steps=(s.steps||0)+1)%10===0)save();
- if(['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)&&s.introComplete&&Math.random()<0.11)startWild()
+ if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete&&Math.random()<0.11)startWild()
 }
 function interact(){
  if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
@@ -1275,8 +1275,9 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 // Phase 4 — Index is a read-only wrist device outside a Critter Center.
 // Party swapping and module configuration remain Center-exclusive.
 let indexTab='clock',indexSelection=0;
-const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['tools','⚙ Tools']];
+const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['critters','◈ Critters'],['tools','⚙ Tools']];
 let moveBookType='Water';
+let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
 function index(){
  if(screen!=='game'||battle)return;
  indexTab='clock';indexSelection=0;renderIndex();
@@ -1351,7 +1352,7 @@ function indexRecords(){
   +'<div><strong>'+s.storage.length+'</strong><span>Home storage</span></div>'
   +'<div><strong>'+s.badges+'</strong><span>Badges</span></div>'
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
-  +'<div class="watchReadOnly">Species remain labeled by type until the 25 original Critter designs are added.</div>';
+  +'<div class="watchReadOnly">New Critters are cataloged by species name; original art will be added as Cody and Kyle upload it.</div>';
 }
 function indexMoves(){
  const types=Object.keys(strengths).concat('Typeless');
@@ -1364,6 +1365,77 @@ function indexMoves(){
  return '<div class="watchSectionTitle">Move library <small>'+moveRegistry.size+' registered</small></div>'
   +'<div class="watchTypeButtons">'+buttons+'</div>'+content
   +'<div class="watchReadOnly">This is a reference catalog. Each species learns its own curated moves at specific levels. Move editing happens in the repository.</div>';
+}
+
+// The 200-species library is a view of the live registry, not a hard-coded
+// duplicate. Names, artwork, habitat and learnsets update from critters.json.
+const CRITTER_AREA_LABELS={all:'All areas',route1:'Route 1 · Rice Fields',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town Outskirts'};
+const LIBRARY_PAGE_SIZE=16;
+function critterArtwork(sp){
+ // Art is never fabricated. Original sprites appear after Cody/Kyle uploads.
+ if(sp?.art?.status==='ready'&&typeof sp.art.spritePath==='string'&&/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(sp.art.spritePath)){
+  return '<img class="speciesPortrait" alt="Artwork for '+escapeHtml(sp.name)+'" src="'+escapeHtml(sp.art.spritePath)+'" loading="lazy">';
+ }
+ return '<div class="speciesSilhouette" role="img" aria-label="Artwork pending"><span>◇</span><small>ART PENDING</small></div>';
+}
+function critterStatTable(sp){
+ const fields=[['hp','HP'],['attack','Attack'],['defense','Defense'],['specialAttack','Sp. Atk'],['specialDefense','Sp. Def'],['speed','Speed']];
+ const stats=sp.baseStats||{};
+ return '<div class="speciesStatGrid">'+fields.map(([key,label])=>{
+  const val=Number.isFinite(stats[key])?stats[key]:0;
+  return '<div class="speciesStat"><span>'+label+'</span><strong>'+val+'</strong><div class="speciesStatTrack"><i style="width:'+Math.min(100,Math.max(0,val/50*100))+'%"></i></div></div>';
+ }).join('')+'</div>';
+}
+function indexCritters(){
+ const all=[...speciesRegistry.values()].sort((a,b)=>(a.number||999)-(b.number||999));
+ const filtered=all.filter(sp=>{
+  const byType=critterBookType==='All'||sp.types?.includes(critterBookType);
+  const byArea=critterBookArea==='all'||sp.habitats?.some(h=>h.areaId===critterBookArea);
+  const term=critterBookSearch.trim().toLowerCase();
+  const bySearch=!term||String(sp.name).toLowerCase().includes(term)||String(sp.number).includes(term)||String(sp.speciesId).includes(term);
+  return byType&&byArea&&bySearch;
+ });
+ const selection=critterBookSelected?speciesRegistry.get(critterBookSelected):null;
+ const types=Object.keys(strengths);
+ const typeFilters=['All',...types].map(type=>'<option value="'+escapeHtml(type)+'" '+(critterBookType===type?'selected':'')+'>'+escapeHtml(type)+'</option>').join('');
+ const areaFilters=Object.entries(CRITTER_AREA_LABELS).map(([id,name])=>'<option value="'+id+'" '+(critterBookArea===id?'selected':'')+'>'+escapeHtml(name)+'</option>').join('');
+ const search='<div class="speciesFilters"><label>Type<select id="critterTypeFilter" aria-label="Filter Critter type">'+typeFilters+'</select></label>'
+  +'<label>Habitat<select id="critterAreaFilter" aria-label="Filter habitat">'+areaFilters+'</select></label></div>'
+  +'<div class="speciesSearch"><input id="critterSearch" aria-label="Search Critters" placeholder="Search name or number" value="'+escapeHtml(critterBookSearch)+'">'
+  +'<button type="button" class="btn" id="critterSearchGo">Find</button><button type="button" class="btn" id="critterReset">Reset</button></div>';
+ let body='';
+ if(selection){
+  const locations=(selection.habitats||[]).map(h=>'<li>'+escapeHtml(h.areaName||CRITTER_AREA_LABELS[h.areaId]||h.areaId)
+   +' · Lv '+h.minLevel+'–'+h.maxLevel+' · '+escapeHtml(h.rarity||'common')+'</li>').join('');
+  const moveRows=registeredLearnset(selection).map(e=>{
+   const move=validMove(e.moveId);
+   return '<div class="speciesMoveLine"><span>Lv '+e.level+'</span><strong>'+escapeHtml(move?.name||e.moveId)+'</strong><small>'+escapeHtml(move?.type||'Unknown')+'</small></div>';
+  }).join('');
+  body='<button class="btn speciesBack" type="button" id="critterBack">← Back to all Critters</button>'
+   +'<div class="speciesIdentity">'+critterArtwork(selection)+'<div><span class="speciesNumber">#'+String(selection.number||0).padStart(3,'0')+'</span>'
+   +'<h3>'+escapeHtml(selection.name)+'</h3><p>'+selection.types.map(escapeHtml).join(' / ')+'</p>'
+   +'<small>'+escapeHtml(selection.role||'balanced')+' · '+(selection.art?.status==='ready'?'Art uploaded':'Awaiting original art')+'</small></div></div>'
+   +'<div class="watchSectionTitle">Level 1 base stats</div>'+critterStatTable(selection)
+   +'<div class="watchSectionTitle">Where to find it</div><ul class="speciesHabitats">'+locations+'</ul>'
+   +'<div class="watchSectionTitle">Level-up learnset</div><div class="speciesLearnset">'+moveRows+'</div>'
+   +'<div class="watchReadOnly">Draft species. Cody and Kyle can revise its name, types, stats, habitat and learnset in the species registry.</div>';
+ }else{
+  const maxPage=Math.max(0,Math.ceil(filtered.length/LIBRARY_PAGE_SIZE)-1);
+  critterBookPage=Math.min(Math.max(0,critterBookPage),maxPage);
+  const slice=filtered.slice(critterBookPage*LIBRARY_PAGE_SIZE,(critterBookPage+1)*LIBRARY_PAGE_SIZE);
+  const list=slice.map(sp=>{
+   const first=sp.habitats?.[0];
+   return '<button type="button" class="speciesTile" data-critter-id="'+escapeHtml(sp.speciesId)+'">'
+    +'<span class="speciesMiniIcon">'+(symbols[sp.types?.[0]]||'◇')+'</span><span><small>#'+String(sp.number||0).padStart(3,'0')+'</small><strong>'+escapeHtml(sp.name)+'</strong>'
+    +'<em>'+sp.types.map(escapeHtml).join(' / ')+'</em><small>'+escapeHtml(first?.areaName||'Undiscovered area')+'</small></span><span class="speciesArrow">›</span></button>';
+  }).join('')||'<div class="watchEmpty">No Critters match these filters.</div>';
+  body='<div class="speciesResults">Showing '+filtered.length+' of '+all.length+' Critters</div>'
+   +'<div class="speciesGrid">'+list+'</div>'
+   +'<div class="speciesPager"><button type="button" class="btn" id="critterPrev" '+(!critterBookPage?'disabled':'')+'>Previous</button>'
+   +'<span>Page '+(critterBookPage+1)+' / '+(maxPage+1)+'</span>'
+   +'<button type="button" class="btn" id="critterNext" '+(critterBookPage>=maxPage?'disabled':'')+'>Next</button></div>';
+ }
+ return '<div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div>'+search+body;
 }
 
 function indexTools(){
@@ -1379,7 +1451,7 @@ function indexTools(){
 function renderIndex(){
  if(!s||screen!=='game'||battle)return;
  const tabs=INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+label+'</button>').join('');
- let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTools();
+ let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTab==='critters'?indexCritters():indexTools();
  open('Critter Index','<div class="watchShell"><div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
   +'<div class="watchStats"><span>◇ '+s.money+' credits</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
   +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>'
@@ -1394,6 +1466,22 @@ function renderIndex(){
   if(!Object.keys(strengths).concat('Typeless').includes(b.dataset.moveType))return;
   moveBookType=b.dataset.moveType;renderIndex();
  });
+ document.querySelectorAll('[data-critter-id]').forEach(b=>b.onclick=()=>{
+  if(!speciesRegistry.has(b.dataset.critterId))return;
+  critterBookSelected=b.dataset.critterId;renderIndex();
+ });
+ const crType=$('critterTypeFilter'),crArea=$('critterAreaFilter');
+ if(crType)crType.onchange=()=>{critterBookType=crType.value;critterBookPage=0;critterBookSelected=null;renderIndex()};
+ if(crArea)crArea.onchange=()=>{critterBookArea=crArea.value;critterBookPage=0;critterBookSelected=null;renderIndex()};
+ const searchInput=$('critterSearch');
+ const doSearch=()=>{critterBookSearch=searchInput?.value||'';critterBookPage=0;critterBookSelected=null;renderIndex()};
+ const searchBtn=$('critterSearchGo'),resetBtn=$('critterReset');
+ if(searchBtn)searchBtn.onclick=doSearch;
+ if(searchInput)searchInput.onkeydown=e=>{if(e.key==='Enter')doSearch()};
+ if(resetBtn)resetBtn.onclick=()=>{critterBookSearch='';critterBookArea='all';critterBookType='All';critterBookPage=0;critterBookSelected=null;renderIndex()};
+ const back=$('critterBack');if(back)back.onclick=()=>{critterBookSelected=null;renderIndex()};
+ const prev=$('critterPrev');if(prev)prev.onclick=()=>{critterBookPage=Math.max(0,critterBookPage-1);renderIndex()};
+ const next=$('critterNext');if(next)next.onclick=()=>{critterBookPage++;renderIndex()};
  document.querySelectorAll('[data-index-slot]').forEach(b=>b.onclick=()=>{
   const n=Number(b.dataset.indexSlot);if(!Number.isInteger(n)||n<0||n>=12)return;
   indexSelection=n;renderIndex();
@@ -1412,9 +1500,20 @@ function starterMenu(){
 function areaTypes(){return {route1:['Grass','Beast','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Beast'],route3:['Rock','Electric','Beast'],cave:['Rock','Ghost','Ice']}[s.area]||['Grass']}
 function startWild(){
  if(firstAlive()<0)return blackout();
+ const wildSpecies=[...speciesRegistry.values()].filter(sp=>sp.habitats?.some(h=>h.areaId===s.area));
+ if(wildSpecies.length){
+  const weight={common:14,uncommon:5,rare:2,legendary:0.5};
+  const sum=wildSpecies.reduce((acc,sp)=>acc+(weight[sp.habitats.find(h=>h.areaId===s.area)?.rarity]||2),0);
+  let roll=Math.random()*sum,chosen=wildSpecies[wildSpecies.length-1];
+  for(const sp of wildSpecies){roll-=weight[sp.habitats.find(h=>h.areaId===s.area)?.rarity]||2;if(roll<=0){chosen=sp;break}}
+  const loc=chosen.habitats.find(h=>h.areaId===s.area);
+  const lvl=loc.minLevel+Math.floor(Math.random()*(loc.maxLevel-loc.minLevel+1));
+  const foe=critter(chosen.speciesId,lvl);
+  return startBattle({kind:'wild',enemies:[foe],name:'Wild Critter',award:0},'A wild '+chosen.name+' appeared!');
+ }
  const types=areaTypes(),type=types[Math.floor(Math.random()*types.length)];
  const l=s.area==='route1'?2+Math.floor(Math.random()*3):s.area==='route2'||s.area==='forest'?5+Math.floor(Math.random()*4):8+Math.floor(Math.random()*4);
- startBattle({kind:'wild',enemies:[critter(type,l)],name:'Wild Critter',award:0},'A wild '+type+' type placeholder appeared!')
+ startBattle({kind:'wild',enemies:[critter(type,l)],name:'Wild Critter',award:0},'A wild '+type+' type Critter appeared!')
 }
 function startTrainer(id){
  if(firstAlive()<0)return blackout();
