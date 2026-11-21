@@ -88,3 +88,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Stones are stored in the Critter Index item inventory. Twelve authored draft Critter evolution paths now require the original minimum level **and** the corresponding stone: Thistlehop (Grass, Lv 23), Driftkip (Water, Lv 18), Emberling (Fire, Lv 18), Bouldibble (Rock, Lv 18), Coilfin (Electric, Lv 18), Rimesnout (Ice, Lv 18), Breezlet (Flying, Lv 12), Umbrapip (Shadow, Lv 18), Booquill (Ghost, Lv 18), Mirelet (Venom, Lv 12), Oracub (Psychic, Lv 18), and Sparlet (Fighting, Lv 18).
 - To evolve, reach the specified minimum level, own the matching stone, and select **Use Stone & Evolve** in the Critter Index Party screen. One stone is consumed only on a successful evolution. Automatic level-up evolution cannot use a stone. All other evolution paths and conditions remain unchanged.
 - The expanded shop keeps healing items and modules available; modules still require a Critter Center for installation. Existing save inventories are compatible.
+
+## v46 — Normal, Steel and Ground evolution stones
+- Added Normal Stone, Steel Stone, and Ground Stone to both existing Critter Shops for 220 credits each, bringing the current stone catalog to 15 types.
+- Staticat requires Normal Stone and Lv 23; Granipup requires Steel Stone, Lv 23 and the first badge; Pebblit requires Ground Stone and Lv 12. These are editable draft evolution assignments.
+- Existing evolution conditions remain cumulative: a stone never bypasses its minimum level, time, place, or badge requirements. All 200 species and existing inventory/save rules are preserved.
