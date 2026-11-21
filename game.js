@@ -259,14 +259,107 @@ function beginStep(x,y){
 const read=()=>{try{return JSON.parse(localStorage.getItem('critters-v1'))}catch{return null}};
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
 function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){snapVisual();resizeGameCanvas()}}
-function critter(type,level=5){const hp=20+level*4;return {type,level,hp,maxHp:hp,xp:0,status:'',moves:['Strike',type+' Pulse','Guard','Focus']}}
+
+// Editable Critter moves and species: authored in data/moves.json and data/critters.json.
+// Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
+const moveRegistry=new Map(),speciesRegistry=new Map();
+const moveFallbacks=[
+ {id:'opening-flick',name:'Opening Flick',type:'Typeless',category:'physical',power:30,accuracy:100,pp:35,target:'enemy',priority:1},
+ {id:'brace-up',name:'Brace Up',type:'Typeless',category:'status',power:0,accuracy:100,pp:20,target:'self',priority:0,effect:{id:'raise_stat',stat:'defense',stages:1,chance:100}}
+];
+moveFallbacks.forEach(m=>moveRegistry.set(m.id,m));
+let moveDataReady=false,speciesDataReady=false;
+const moveSlug=v=>String(v||'').toLowerCase().replace(/['’]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const isKnownType=t=>Object.prototype.hasOwnProperty.call(strengths,t);
+const defaultMoveIds=(type,level)=>{
+ const options=[...moveRegistry.values()].filter(m=>m.type===type&&m.requiredLevelGuide<=level&&m.target==='enemy');
+ const basic=options.filter(m=>m.category==='physical')[0],special=options.find(m=>m.category==='special');
+ const ids=['opening-flick'];if(basic)ids.push(basic.id);if(special&&level>=5)ids.push(special.id);
+ if(level>=9)ids.push('brace-up');
+ return [...new Set(ids)].slice(0,4);
+};
+function validMove(id){return moveRegistry.get(id)||null}
+function speciesFor(p){return p?.speciesId?speciesRegistry.get(p.speciesId):null}
+function registeredLearnset(spec){
+ return Array.isArray(spec?.levelUp)?spec.levelUp.filter(q=>Number.isInteger(q.level)&&q.level>=1&&typeof q.moveId==='string')
+  .sort((a,b)=>a.level-b.level):[];
+}
+function legalLearnedMoves(p){
+ const species=speciesFor(p),list=registeredLearnset(species).filter(e=>e.level<=p.level&&validMove(e.moveId)).map(e=>e.moveId);
+ if(species&&list.length)return [...new Set(list)].slice(-4);
+ return defaultMoveIds(p.type,p.level);
+}
+function normalizeMoves(p){
+ if(!p)return p;
+ const current=Array.isArray(p.moves)?p.moves:[];
+ const legacy=new Set(['Strike','Guard','Focus',p.type+' Pulse','Pulse']);
+ const mapped=current.map(v=>typeof v==='string'?(validMove(v)?v:moveSlug(v)):null)
+   .filter(id=>id&&validMove(id)&&!legacy.has(id));
+ const target=legalLearnedMoves(p);
+ // Species learnsets are authoritative on registration; upgrades won't erase equipped
+ // valid moves except when the four-slot capacity is exceeded.
+ let ids=speciesFor(p)?target:[...new Set([...mapped,...target])].slice(-4);
+ if(!ids.length)ids=['opening-flick'];
+ if(!ids.some(id=>validMove(id)?.target==='enemy'))ids=['opening-flick',...ids.filter(id=>id!=='opening-flick')].slice(0,4);
+ const prevPP=p.movePP&&typeof p.movePP==='object'?p.movePP:{};
+ p.moves=ids;
+ p.movePP=Object.fromEntries(ids.map(id=>[id,Math.min(validMove(id)?.pp||35,Math.max(0,Number.isFinite(prevPP[id])?Math.floor(prevPP[id]):validMove(id)?.pp||35))]));
+ p.status=typeof p.status==='string'?p.status:'';
+ return p;
+}
+function gainLevelMoves(p){
+ const spec=speciesFor(p);
+ const options=registeredLearnset(spec).filter(e=>e.level===p.level&&validMove(e.moveId));
+ for(const event of options){
+  p.moves=Array.isArray(p.moves)?p.moves:[];
+  p.moves=[...p.moves.filter(id=>id!==event.moveId),event.moveId].slice(-4);
+  p.movePP=p.movePP||{};p.movePP[event.moveId]=validMove(event.moveId).pp;
+ }
+ if(!spec)normalizeMoves(p);
+}
+function getMove(p,id){
+ const move=validMove(id);
+ if(move)return move;
+ return moveFallbacks[0];
+}
+function refillMovePP(p){normalizeMoves(p);for(const id of p.moves)p.movePP[id]=getMove(p,id).pp}
+async function loadCritterMoveData(){
+ try{
+  const res=await fetch('data/moves.json?v=26',{cache:'no-store'});
+  if(!res.ok)throw Error('moves HTTP '+res.status);
+  const data=await res.json();
+  if(!Array.isArray(data.moves))throw Error('move catalog missing moves');
+  for(const m of data.moves)if(m?.id&&typeof m.name==='string'&&typeof m.type==='string'&&Number.isFinite(m.pp)&&m.pp>0&&['physical','special','status'].includes(m.category))moveRegistry.set(m.id,m);
+  moveDataReady=true;
+ }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
+ try{
+  const res=await fetch('data/critters.json?v=26',{cache:'no-store'});
+  if(!res.ok)throw Error('species HTTP '+res.status);
+  const data=await res.json();
+  if(Array.isArray(data.species))for(const sp of data.species)
+   if(typeof sp.speciesId==='string'&&sp.speciesId&&!speciesRegistry.has(sp.speciesId)
+    &&Array.isArray(sp.types)&&sp.types.length&&sp.types.every(isKnownType))
+     speciesRegistry.set(sp.speciesId,sp);
+  speciesDataReady=true;
+ }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
+ if(s){for(const p of [...s.party,...s.storage])normalizeMoves(p);save()}
+ if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
+}
+
+function critter(type,level=5){
+ const spec=speciesRegistry.get(type);
+ const primary=spec?.types?.[0]||type;
+ const hp=20+level*4;
+ const p={type:primary,speciesId:spec?spec.speciesId:null,name:spec?.name||primary,level,hp,maxHp:hp,xp:0,status:'',moves:[],movePP:{}};
+ return normalizeMoves(p);
+}
 function migrate(){
  if(!s)return;
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(s.starter,5)]:[];
- s.party=s.party.map(p=>({...critter(p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36})).slice(0,8);
- if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>({...critter(p.type||'Grass',p.level||3),...p}));
+ s.party=s.party.map(p=>normalizeMoves({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36})).slice(0,8);
+ if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves({...critter(p.speciesId||p.type||'Grass',p.level||3),...p}));
  s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
@@ -1524,7 +1617,7 @@ function resolveTeamTurn(){
  renderBattle(log.join(' '));
 }
 function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capture'})}
-function awardExperience(p,xp){if(!p)return;p.xp=(p.xp||0)+xp;while(p.xp>=p.level*12){p.xp-=p.level*12;p.level++;p.maxHp+=4;p.hp=Math.min(p.maxHp,p.hp+4)}}
+function awardExperience(p,xp){if(!p)return;p.xp=(p.xp||0)+xp;while(p.xp>=p.level*12){p.xp-=p.level*12;p.level++;p.maxHp+=4;p.hp=Math.min(p.maxHp,p.hp+4);gainLevelMoves(p)}}
 function endBattle(won,message,defeated){
  const b=battle;battle=null;$('close').hidden=false;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>p.hp=p.maxHp)}
@@ -1542,7 +1635,7 @@ function blackout(){
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
- s.lastCenter=s.area;s.party.forEach(p=>{p.hp=p.maxHp;p.status=''});save();
+ s.lastCenter=s.area;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)});save();
  open('Critter Center','<p>Your Critters were fully healed! The technician can also manage party storage and install modules.</p><div class="options"><button class="btn" id="manageParty">Manage Party / Home Storage</button><button class="btn" id="manageModules">Install Critter Index Modules</button><button class="btn" id="centerDone">Leave</button></div>');
  $('manageParty').onclick=manageParty;$('manageModules').onclick=manageModules;$('centerDone').onclick=close
 }
@@ -1625,5 +1718,6 @@ document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
 function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>=120){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
