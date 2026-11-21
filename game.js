@@ -108,9 +108,105 @@ function buildVillageColliders(){
  for(const [x,y] of VILLAGE_LANTERNS)villageCollider(x,y);
  for(const [x,y] of VILLAGE_STONES)villageCollider(x,y);
 }
+
+// Phase 1: curated indoor scenes. Objects share one definition for rendering,
+// inspection and solid footprints. No party swapping/module work outside Centers.
+let interiorObjects=[],interiorBlocked=new Set();
+const isInterior=area=>['home','neighbor','lab'].includes(area);
+function addInteriorObject(id,x,y,w,h,kind,title,description,action=''){
+ const o={id,x,y,w,h,kind,title,description,action};
+ interiorObjects.push(o);
+ for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)interiorBlocked.add(key(xx,yy));
+ return o;
+}
+function furnishInterior(area){
+ interiorObjects=[];interiorBlocked=new Set();
+ // Always maintain a free central aisle and unobstructed exit at (17,25).
+ if(area==='lab'){
+  addInteriorObject('lab-left',4,5,7,4,'counter','Field Research Bench',[
+   'Sample jars, carefully labeled leaf specimens and a magnifying lens fill the workbench.',
+   'The researchers are studying how different environments affect Critter behavior.'
+  ]);
+  addInteriorObject('lab-right',24,5,6,4,'counter','Testing Workbench',[
+   'Several instruments hum softly beside an unfinished Critter Index component.'
+  ]);
+  addInteriorObject('lab-terminal',27,11,3,3,'terminal','Index Calibration Terminal',[
+   'Diagnostic screens show capture-beam strength, watch stability and module slots.',
+   'The lab assistant has already checked the calibration.'
+  ]);
+  addInteriorObject('lab-books',5,13,3,5,'bookshelf','Research Archive',[
+   'Field journals describe the rural routes, the bamboo forest and the mountain foothills.',
+   'A note recommends returning to the research lab after earning the first badge.'
+  ]);
+  addInteriorObject('lab-tools',23,16,5,3,'counter','Parts Assembly Table',[
+   'Tools, small circuit boards and spare wristwatch straps are arranged in neat rows.'
+  ]);
+  addInteriorObject('lab-starters',13,12,6,2,'display','Starter Display',[
+   'Three secure display stands are labeled Rock, Water and Electric.',
+   'The researcher will let you choose your partner.'
+  ]);
+  addInteriorObject('lab-board',13,3,8,1,'board','Research Noticeboard',[
+   'TODAY: Inspect the Index, complete starter registration, and prepare the Route 1 field survey.'
+  ]);
+ }else if(area==='home'){
+  addInteriorObject('home-bed',5,6,6,4,'bed','Your Bed',[
+   'Your familiar bed is neatly made. The adventure starts just outside your door.'
+  ]);
+  addInteriorObject('home-desk',24,6,6,3,'desk','Writing Desk',[
+   'A map of the village sits beneath a handwritten note: Visit the research laboratory.'
+  ]);
+  addInteriorObject('home-bookcase',5,16,4,4,'bookshelf','Family Bookshelf',[
+   'Old field guides and stories about the three legendary Critters fill the shelves.'
+  ]);
+  addInteriorObject('home-tea',22,12,5,3,'table','Family Tea Table',[
+   'There is a fresh pot of green tea and two ceramic cups.'
+  ]);
+  addInteriorObject('home-storage',26,19,4,2,'chest','Home Storage Chest',[
+   'Your extra captured Critters are registered to home storage.',
+   'To change your active party, visit a Critter Center technician.'
+  ]);
+  addInteriorObject('home-keepsake',12,5,4,2,'display','Family Keepsakes',[
+   'A framed family portrait and an old Critter Index watch rest on the shelf.'
+  ]);
+  addInteriorObject('home-supplies',7,12,3,2,'chest','Travel Supply Box',[
+   'A small box is packed for your first adventure.'
+  ],'potion');
+ }else if(area==='neighbor'){
+  addInteriorObject('neighbor-bed',5,6,6,4,'bed','Guest Futon',[
+   'A folded futon sits beside a traditional paper-screen window.'
+  ]);
+  addInteriorObject('neighbor-tea',22,11,5,3,'table','Low Dining Table',[
+   'The smell of tea and freshly cooked rice fills the room.'
+  ]);
+  addInteriorObject('neighbor-cupboard',26,17,4,3,'bookshelf','Kitchen Cupboard',[
+   'Bowls, polished wooden trays, and jars of rice are stacked neatly.'
+  ]);
+  addInteriorObject('neighbor-bamboo',5,16,4,3,'display','Bamboo Arrangement',[
+   'A beautifully arranged bamboo branch welcomes visitors.'
+  ]);
+  addInteriorObject('neighbor-scroll',13,5,7,1,'board','Village Painting',[
+   'A painting shows the village beneath the mountains during spring.'
+  ]);
+ }
+}
+function inspectInterior(o){
+ if(o.action==='potion'){
+  s.discoveries=s.discoveries||{};
+  if(!s.discoveries[o.id]){
+   s.discoveries[o.id]=true;
+   s.inventory.Potion=(s.inventory.Potion||0)+1;
+   save();
+   return say(['Inside the supply box is a Potion!','Potion ×1 added to your inventory.']);
+  }
+  return say(['The travel supply box is empty. You already collected its Potion.']);
+ }
+ return say(o.description);
+}
+
 function solidAt(x,y){
  if(x<0||y<0||x>=W||y>=H)return true;
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
+ if(isInterior(s.area)&&interiorBlocked.has(key(x,y)))return true;
  return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
 }
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
@@ -145,6 +241,7 @@ function migrate(){
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
  s.rivalPassed=!!s.rivalPassed;s.introComplete=!!s.introComplete;
+ s.discoveries=s.discoveries&&typeof s.discoveries==='object'?s.discoveries:{};
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
  s.x=Math.max(1,Math.min(W-2,s.x));s.y=Math.max(1,Math.min(H-2,s.y));
 }
@@ -160,7 +257,7 @@ function houses(list){list.forEach(([x,y,w=7,h=5])=>{rect(x,y,w,h,T.roof);rect(x
 function roads(){rect(1,12,32,3,T.path)}
 function nature(seed,area){for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(tiles[y][x]===T.grass){const n=(x*43+y*59+x*y*7+seed)%113;if(n<area)put(x,y,T.tall);else if(n===44||n===79)put(x,y,T.flower)}}
 function build(){
- migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();
+ migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();
  switch(s.area){
  case 'village':
  // One art system: original house roof/wall tiles are NOT placed in the village.
@@ -189,14 +286,13 @@ function build(){
  break;
  case 'home':
  case 'neighbor':
- borders(T.wall);
- rect(9,5,16,4,T.mat);rect(6,9,5,3,T.desk);
- rect(24,10,4,4,T.desk);rect(13,16,8,3,T.mat);
- rect(16,22,3,4,T.wood);put(17,25,T.door);
- npc(14,11,s.area==='home'?['Your family keeps the house warm while you explore.']:['Welcome! The village is peaceful today.']);
+ borders(T.wall);put(17,25,T.door);
+ furnishInterior(s.area);
+ npc(14,11,s.area==='home'?['Your family is happy you came home.','The research lab has been preparing for your first journey.']:['Welcome! We have tea if you want to rest a moment.','The rice paddies look beautiful at sunset.']);
  break;
  case 'lab':
- borders(T.wall);rect(4,7,7,3,T.desk);rect(23,7,7,3,T.desk);rect(13,8,8,4,T.mat);put(17,25,T.door);
+ borders(T.wall);put(17,25,T.door);
+ furnishInterior('lab');
  npc(17,7,['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],'researcher');
  npc(21,10,['Lab Assistant: I help maintain the Critter Index and calibrate its capture beam.','The researcher has three starter Critters ready for you.'],'labassistant');
  break;
@@ -628,6 +724,8 @@ function interact(){
   const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);
   return region('village',h.door,h.y+h.h+2);
  }
+ const object=interiorObjects.find(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h);
+ if(object&&isInterior(s.area))return inspectInterior(object);
  if(s.area==='garden'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&x===17&&y===25)return region('garden',24,12);
 }
