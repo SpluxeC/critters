@@ -2401,7 +2401,7 @@ function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capt
 // v30 Evolution progression. Chains are authored in data/critters.json.
 // Evolutions consume no items or credits, cannot affect opponents, and
 // re-use the existing 200 species (three restricted types remain standalone).
-const EVOLUTION_STONE_TYPES=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting'];
+const EVOLUTION_STONE_TYPES=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting','Normal','Steel','Ground'];
 const EVOLUTION_STONES=Object.fromEntries(EVOLUTION_STONE_TYPES.map(type=>[type+' Stone',type]));
 function evolutionRule(p){return speciesFor(p)?.evolvesTo||null}
 function evolutionTarget(rule){return rule?.speciesId?speciesRegistry.get(rule.speciesId):null}
