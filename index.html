@@ -254,6 +254,60 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 .evoNotices strong{display:block;font-size:15px;letter-spacing:.4px}
 .evoNotices p{margin:6px 0;font-size:12px;line-height:1.4}
 @media(max-width:440px){.evoStage{align-items:start;flex-direction:column;gap:3px}.evoStage small{text-align:left}.evoPartyRow{flex-wrap:wrap}.evoPartyRow .btn{margin-left:auto}}
+
+/* v32 Mobile gameplay polish — safe controls, compact landscape and scrollable panels */
+:root{--mobile-safe-top:max(8px,env(safe-area-inset-top));--mobile-safe-bottom:max(8px,env(safe-area-inset-bottom))}
+#game .hud{top:var(--mobile-safe-top);z-index:5}
+#game .hud .btn{min-width:65px;min-height:42px}
+#game .mobile{bottom:var(--mobile-safe-bottom);z-index:5}
+#game .joystick{min-width:80px;min-height:80px}
+#game .actions button{min-width:102px;min-height:48px;font-weight:800}
+#game .dialog{z-index:6}
+#shade{padding:max(6px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+#shade .modal{max-width:100%;width:min(100%,720px);max-height:calc(100dvh - max(15px,env(safe-area-inset-top)) - max(15px,env(safe-area-inset-bottom)));overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;scrollbar-gutter:stable}
+#shade .modalHead{position:sticky;top:-2px;background:#1b3439f4;z-index:2;padding:5px 0 8px;margin-bottom:4px}
+#shade .modalHead .btn{min-width:68px;min-height:42px;flex-shrink:0}
+#shade .modal .btn{touch-action:manipulation}
+#shade .combatActions .btn{min-height:46px}
+#shade .combatAttack{min-height:57px!important}
+#shade .watchScreen{min-width:0}
+#shade .speciesTile{min-height:60px}
+#shade .watchTabs{scroll-behavior:smooth;scroll-padding-inline:8px}
+#shade select,#shade input{min-height:42px;touch-action:manipulation}
+#shade button:focus-visible{outline:2px solid #ffe09a;outline-offset:2px}
+@media(max-height:550px) and (orientation:landscape){
+ #game .hud{top:max(3px,env(safe-area-inset-top));gap:5px}
+ #game .hud>div{padding:4px 8px;font-size:11px}
+ #game .hud .btn{padding:5px 10px;min-height:36px}
+ #game .mobile{bottom:max(5px,env(safe-area-inset-bottom));gap:8px}
+ #game .joystick{width:clamp(76px,22dvh,112px);height:clamp(76px,22dvh,112px)}
+ #game .actions{gap:5px;min-width:95px}
+ #game .actions button{min-height:36px;font-size:12px;padding:4px 9px}
+ #game .dialog{bottom:calc(max(5px,env(safe-area-inset-bottom)) + clamp(76px,22dvh,112px) + 4px);left:12px;right:12px;min-height:45px;max-height:26dvh;padding:8px 11px;font-size:12px}
+ #shade .modal{max-height:calc(100dvh - 12px);padding:9px}
+ #shade:has(.combatTop) .modal{max-height:calc(100dvh - 12px)}
+ .combatArena{height:75px;margin:3px 0 5px}
+ .combatRoster{gap:5px}
+ .combatCard{min-height:44px;padding:4px 7px;margin-bottom:3px}
+ .combatCardHead{font-size:11px}
+ .combatCardFoot{font-size:9px;padding-top:2px}
+ .rosterTitle{margin-bottom:2px}
+ .combatTop{margin-bottom:4px}
+ .combatActions{gap:5px;margin-top:4px}
+ #shade .combatActions .btn{min-height:40px;padding:5px}
+ #shade .combatAttack{min-height:48px!important}
+ #shade .watchScreen{min-height:0;padding:9px}
+}
+@media(max-width:440px) and (orientation:portrait){
+ #game .joystick{width:clamp(88px,29vw,125px);height:clamp(88px,29vw,125px)}
+ #game .actions{min-width:98px}
+ #game .actions button{min-height:46px;font-size:12px}
+ #game .dialog{bottom:calc(var(--mobile-safe-bottom) + clamp(88px,29vw,125px) + 7px);padding:10px;max-height:30dvh}
+ #game .hud>div{max-width:calc(100vw - 118px);padding:6px 7px}
+ #shade .speciesGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:340px){#shade .speciesGrid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){#shade .watchTabs{scroll-behavior:auto}#shade .combatFigure,#shade .combatSymbol{animation:none!important}}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
