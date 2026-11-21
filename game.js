@@ -1452,31 +1452,48 @@ function battleMessage(msg){return '<div class="combatMessage" role="status">'+e
 function renderBattle(message){
  if(!battle)return;
  if(typeof message==='string')battle.feedback=message;
- const i=battle.allySlots[battle.acting],actor=s.party[i],activeTargets=activeEnemies();
- const queued=battle.pending.map(q=>s.party[q.actor]?.type+' → '+(q.kind==='attack'?q.move+' vs '+battle.enemies[q.target]?.type:q.kind)).join(' · ');
+ const i=battle.allySlots[battle.acting],actor=s.party[i];
+ const targets=activeEnemies();
+ const queued=battle.pending.map(q=>{
+  const p=s.party[q.actor];return (p?.name||p?.type||'Critter')+' → '+(q.kind==='move'?getMove(p,q.moveId).name:q.kind)
+ }).join(' · ');
  let actions='';
  if(battle.phase==='choose'&&actor&&actor.hp>0){
-  const targetButtons=battle.mode===2?'<div class="targetHint">Choose opponent target when attacking</div>':'';
-  const attackButtons=activeTargets.map((enemyIndex,n)=>'<button class="btn combatAttack" data-hit="'+enemyIndex+'" data-attack="Strike">Strike → '+escapeHtml(battle.enemies[enemyIndex].type)+'</button>'
-   +'<button class="btn combatAttack special" data-hit="'+enemyIndex+'" data-attack="Pulse">'+escapeHtml(actor.type)+' Pulse → '+escapeHtml(battle.enemies[enemyIndex].type)+'</button>').join('');
-  actions='<div class="combatChoice"><b>'+escapeHtml(actor.type)+' · Choose action '+(battle.acting+1)+'/'+battle.allySlots.length+'</b>'
-   +targetButtons+'<div class="combatActions">'+attackButtons
+  normalizeMoves(actor);
+  const allMoves=actor.moves.filter(id=>validMove(id));
+  const moveButtons=allMoves.map(id=>{
+   const m=getMove(actor,id),remaining=actor.movePP[id]||0;
+   const targetsForMove=m.target==='enemy'?targets:
+    m.target==='ally'?activeAllies().filter(a=>a!==i):
+    [i];
+   const choices=targetsForMove.length?targetsForMove:[i];
+   return choices.map(target=>{
+    const who=m.target==='enemy'?battle.enemies[target]?.type:m.target==='ally'?s.party[target]?.type:'';
+    return '<button class="btn combatAttack '+(m.category==='special'?'special':'')+'" data-use-move="'+escapeHtml(id)+'" data-move-target="'+target+'" '
+      +(remaining===0?'disabled':'')+' title="'+escapeHtml(m.description||'')+'">'
+      +escapeHtml(m.name)+(who?' → '+escapeHtml(who):'')+' <small>'+remaining+'/'+m.pp+' PP</small>'
+      +'<em>'+escapeHtml(m.type)+' · '+(m.category==='status'?'Support':m.power+' power')+'</em></button>';
+   }).join('');
+  }).join('');
+  actions='<div class="combatChoice"><b>'+escapeHtml(actor.name||actor.type)+' · Action '+(battle.acting+1)+'/'+battle.allySlots.length+'</b>'
+   +(battle.mode===2?'<div class="targetHint">Choose a move and its target</div>':'')
+   +'<div class="combatActions">'+moveButtons
    +'<button class="btn" id="guard">Guard</button><button class="btn" id="focus">Focus</button>'
    +'<button class="btn" id="switch">Switch</button>'
    +'<button class="btn" id="potion" '+(!itemQty('Potion')?'disabled':'')+'>Potion ('+itemQty('Potion')+')</button>'
    +'<button class="btn" id="revive" '+(!itemQty('Revive')||!s.party.some(q=>q.hp===0)?'disabled':'')+'>Revive ('+itemQty('Revive')+')</button>'
    +(battle.kind==='wild'?'<button class="btn" id="capture">Capture Beam</button><button class="btn" id="run">Run</button>':'')
    +'</div></div>';
- }else if(battle.phase==='resolve'){
-  actions='<div class="combatProcessing">Resolving team turn…</div>';
- }
- open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader()+battleMessage(battle.feedback)+(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')+actions
-  +'<p class="muted combatNote">Player team acts first, then opposing team. Type advantages remain active; only participants earn experience.</p>');
+ }else if(battle.phase==='resolve')actions='<div class="combatProcessing">Resolving team turn…</div>';
+ open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader()+battleMessage(battle.feedback)
+  +(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')
+  +actions+'<p class="muted combatNote">Each team chooses its turn. Move accuracy, PP, effects, and type strengths apply.</p>');
  $('close').hidden=true;
  if(battle.phase!=='choose')return;
- document.querySelectorAll('[data-hit]').forEach(el=>el.onclick=()=>{
-  const target=Number(el.dataset.hit),move=el.dataset.attack;
-  queueBattleAction({kind:'attack',move,target});
+ document.querySelectorAll('[data-use-move]').forEach(el=>el.onclick=()=>{
+  const moveId=el.dataset.useMove,target=Number(el.dataset.moveTarget);
+  if((actor.movePP[moveId]||0)<1||!validMove(moveId))return;
+  queueBattleAction({kind:'move',moveId,target});
  });
  $('guard').onclick=()=>queueBattleAction({kind:'guard'});
  $('focus').onclick=()=>queueBattleAction({kind:'focus'});
@@ -1492,6 +1509,7 @@ function queueBattleAction(action){
  if(!battle||battle.phase!=='choose')return;
  const actor=battle.allySlots[battle.acting];
  if(actor==null||!s.party[actor]||s.party[actor].hp<=0)return;
+ if(action.kind==='move'&&(!validMove(action.moveId)||(s.party[actor].movePP?.[action.moveId]||0)<=0))return;
  battle.pending.push({...action,actor});
  battle.acting++;
  if(battle.acting<activeAllies().length){
@@ -1527,18 +1545,9 @@ function performPlayerAction(action,log){
  if(!battle)return;
  const actor=s.party[action.actor];if(!actor||actor.hp<=0){log.push('A fainted Critter cannot act.');return}
  switch(action.kind){
-  case 'attack':{
-   let target=action.target;
-   if(!battle.enemies[target]||battle.enemies[target].hp<=0)target=activeEnemyDefault();
-   if(target==null)return;
-   const foe=battle.enemies[target],typed=action.move==='Pulse',factor=typed?mult(actor.type,foe.type):1;
-   const focus=battle.focus[action.actor]||0;
-   const base=Math.max(1,(typed?7:6)+(actor.level-foe.level)*0.6);
-   const dmg=Math.max(1,Math.floor(base*factor*activeModifier('ally')*(1+focus)));
-   battle.focus[action.actor]=0;foe.hp=Math.max(0,foe.hp-dmg);
-   battle.impact='enemy';battle.lastTarget=target;
-   log.push(actor.type+' used '+(typed?actor.type+' Pulse':'Strike')+' for '+dmg+' damage.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''));
-   if(foe.hp<=0)defeatFoe(target,log);
+  case 'move':{
+   const m=getMove(actor,action.moveId);
+   performMove(actor,m,'ally',action.actor,action.target,log);
    return;
   }
   case 'guard':battle.guards[action.actor]=true;log.push(actor.type+' braces for the opponent team.');return;
@@ -1593,20 +1602,18 @@ function resolveTeamTurn(){
  if(!battle)return; // capture / escape can end the battle mid-phase
  const livingEnemy=battle.enemies.some(p=>p.hp>0);
  if(!livingEnemy)return endBattle(true,log.join(' ')+' Victory!',true);
- // Every living opposing active Critter now takes one turn. A defeated one never acts.
+ // The opposing team uses exactly the same move executor and PP rules.
  for(const enemyIndex of activeEnemies()){
   if(!battle)return;
   const foe=battle.enemies[enemyIndex],allies=activeAllies();
   if(!allies.length)break;
-  // Prefer the weakest active opponent so doubles remain tactically meaningful.
+  normalizeMoves(foe);
+  const legal=foe.moves.filter(id=>(foe.movePP?.[id]||0)>0&&validMove(id));
+  const pool=legal.filter(id=>getMove(foe,id).target==='enemy');
+  const choice=(pool.length?pool:legal)[Math.floor(Math.random()*(pool.length?pool.length:legal.length))];
+  const move=choice?getMove(foe,choice):moveFallbacks[0];
   const target=allies.reduce((best,i)=>s.party[i].hp<s.party[best].hp?i:best,allies[0]);
-  const p=s.party[target],typed=Math.random()<0.7,factor=typed?mult(foe.type,p.type):1;
-  const base=Math.max(1,(typed?5:4)+(foe.level-p.level)*0.5);
-  const dmg=Math.max(1,Math.floor(base*factor*activeModifier('enemy')*(battle.guards[target]?0.5:1)));
-  p.hp=Math.max(0,p.hp-dmg);
-  battle.impact='ally';battle.lastTarget=target;
-  log.push('Enemy '+foe.type+' dealt '+dmg+' to '+p.type+'.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''));
-  if(p.hp===0)log.push(p.type+' fainted!');
+  performMove(foe,move,'enemy',enemyIndex,move.target==='enemy'?target:enemyIndex,log);
  }
  battle.guards={};
  if(!s.party.some(p=>p.hp>0))return blackout();
