@@ -1461,7 +1461,7 @@ function noteCritterCaptured(p){
   c.caught[id]={firstArea:stamp.area,firstDay:stamp.day,firstLevel:p.level||1,captures:1};
   return true;
  }
- c.caught[id].captures=Math.max(1,Number(c.caught[id].captures)||1)+1;
+ c.caught[id].captures=Math.max(0,Number(c.caught[id].captures)||0)+1;
  return false;
 }
 function migrateCollection(){
@@ -1559,8 +1559,8 @@ function collectionSpeciesHistory(id){
  return '<div class="collectionHistory"><strong>Discovery record</strong><span>First sighting: '+escapeHtml(CRITTER_AREA_LABELS[a]||a)
   +(seen?.firstDay?' · Day '+seen.firstDay:'')+'</span>'
   +'<span>Encounters recorded: '+(seen?.encounters||0)+'</span>'
-  +(caught?'<span>First capture: '+escapeHtml(CRITTER_AREA_LABELS[caught.firstArea]||caught.firstArea)
-   +' · Lv '+(caught.firstLevel||'?')+'</span><span>Captures recorded: '+(caught.captures||1)+'</span>':'<span>Not captured yet</span>')
+  +(caught?'<span>'+(caught.obtainedBy==='evolution'?'First obtained through evolution':'First capture')+': '+escapeHtml(CRITTER_AREA_LABELS[caught.firstArea]||caught.firstArea)
+   +' · Lv '+(caught.firstLevel||'?')+'</span><span>Capture-beam catches recorded: '+Math.max(0,caught.captures||0)+'</span>':'<span>Not captured yet</span>')
   +'</div>';
 }
 function indexCritters(){
