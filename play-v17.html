@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Critters — The Beginning</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(#31534b,#101f27);color:#f8efd6;font:16px system-ui;min-height:100dvh;display:grid;place-items:center}button,input{font:inherit}button{cursor:pointer}.app{width:min(100%,900px);padding:12px}.panel{background:#1b3439;border:3px solid #c3a172;border-radius:15px;padding:20px;box-shadow:0 12px 30px #0006}h1{text-align:center;font-size:clamp(36px,9vw,65px);letter-spacing:4px;margin:8px 0}h2{margin:0 0 12px}.muted{color:#b9c8c2}.btn{border:2px solid #d6b87c;border-radius:10px;padding:11px 18px;background:#3b6c61;color:#fff;font-weight:700}.btn:hover{background:#538779}.primary{background:#ab654d}.primary:hover{background:#c07858}.btn:disabled{opacity:.5}.screen{display:none}.screen.show{display:block}.intro{text-align:center;max-width:620px;margin:auto}.intro p{line-height:1.6;margin:20px auto}.choose{max-width:680px;margin:auto}.characters{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}.character{border:3px solid #587d77;border-radius:12px;background:#26444a;display:grid;justify-items:center;gap:8px;padding:12px;color:white}.character.selected{border-color:#f2cc79;background:#345b55}.portrait{width:110px;height:136px;image-rendering:pixelated}.name{display:grid;gap:10px;max-width:420px;margin:auto}.name input{padding:12px;background:#f6e8cb;border:2px solid #c9a776;border-radius:8px;color:#192d2c}.hud{display:flex;justify-content:space-between;gap:9px;align-items:center;padding:0 0 8px}.frame{position:relative;border:4px solid #b79562;border-radius:12px;overflow:hidden;background:#1a342d}#world{display:block;width:100%;aspect-ratio:4/3;image-rendering:pixelated}.dialog{display:none;position:absolute;bottom:10px;left:10px;right:10px;background:#10282ff2;border:3px solid #d2b678;border-radius:10px;padding:13px;min-height:78px;line-height:1.45}.dialog.show{display:block}.dialog small{display:block;text-align:right;color:#dac587}.mobile{display:none;justify-content:space-between;gap:8px;margin-top:8px;touch-action:none}.pad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,44px);gap:3px}.pad button{background:#416a65;border:2px solid #c8b489;color:white;border-radius:8px;font-size:20px;touch-action:none}.pad [data-dir=up]{grid-area:1/2}.pad [data-dir=down]{grid-area:3/2}.pad [data-dir=left]{grid-area:2/1}.pad [data-dir=right]{grid-area:2/3}.actions{display:grid;gap:8px;align-content:center}.actions button{min-height:58px}.below{display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:6px}.shade{display:none;position:fixed;inset:0;background:#08171bc9;place-items:center;padding:14px;z-index:10}.shade.show{display:grid}.modal{width:min(100%,560px);max-height:90dvh;overflow:auto}.modalHead{display:flex;justify-content:space-between;align-items:center;gap:8px}.options{display:grid;gap:9px;margin-top:16px}.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:15px 0}.slot{padding:9px 4px;text-align:center;background:#365057;border:1px solid #819d91;border-radius:8px;font-size:11px;min-height:66px}.slot.module{background:#5b4839}.health{background:#3c4440;height:12px;border-radius:6px;overflow:hidden}.health div{height:100%;background:#5cc281}.battleNames{display:grid;grid-template-columns:1fr 1fr;gap:15px}.battleScene{background:linear-gradient(#81adb1 70%,#82a46c 70%);height:138px;display:flex;justify-content:space-around;align-items:center;font-size:45px;border-radius:8px;margin:15px 0;color:#17302c}@media(max-width:680px){body{display:block}.app{padding:5px}.panel{padding:13px}.mobile{display:flex}.below .muted{display:none}.portrait{width:88px;height:112px}.character{padding:8px}.hud{font-size:13px}.btn{padding:9px 12px}}
+
+/* Mobile game input: prevent long-press selection, overscroll and accidental zoom. */
+html,body{width:100%;min-height:100%;overflow-x:hidden;overscroll-behavior:none}
+body{touch-action:pan-y}
+button,.btn,.character,.pad,.actions,#world,#dialog{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation;appearance:none;-webkit-appearance:none;outline-offset:2px}
+button:focus:not(:focus-visible){outline:none}
+button:focus-visible{outline:2px solid #f2cc79}
+button:active,.pad button.pressed{filter:brightness(1.12)}
+.pad,.pad button,.actions,#world{touch-action:none;overscroll-behavior:contain}
+.pad button{transition:none;min-width:48px;min-height:44px;display:grid;place-items:center}
+.mobile{user-select:none;-webkit-user-select:none;align-items:end}
+.frame{touch-action:none;overscroll-behavior:contain}
+input,textarea{user-select:text;-webkit-user-select:text;touch-action:manipulation}
+@media(max-width:680px){.app{width:100%;max-width:100%;overflow:hidden}.hud{min-height:40px}.frame{width:100%}.mobile{padding-bottom:max(7px,env(safe-area-inset-bottom))}.actions button{min-width:100px}.pad{flex-shrink:0}}
+
+/* Mobile analog-style movement control: no focus, selection, page drag, or gesture zoom. */
+.joystick{width:150px;height:150px;max-width:38vw;max-height:38vw;aspect-ratio:1;position:relative;flex:none;align-self:center;border-radius:50%;border:3px solid #a4c5b4;background:radial-gradient(circle at 50% 45%,#3f766f,#213c43);box-shadow:inset 0 4px 14px #0a1d2288,0 4px 12px #081a1f88;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:contain}
+.joystick-ring{position:absolute;inset:22%;border:2px solid #87af9e77;border-radius:50%;pointer-events:none}
+.joystick-thumb{width:43%;height:43%;position:absolute;top:28.5%;left:28.5%;border:3px solid #e2d3a1;border-radius:50%;background:linear-gradient(140deg,#63958a,#365d60);box-shadow:0 4px 10px #071b2588;pointer-events:none;will-change:transform}
+.joystick.active .joystick-thumb{background:linear-gradient(140deg,#83ae96,#447d73)}
+.mobile{align-items:center}
+@media(max-width:680px){.mobile{gap:10px;min-height:156px}.joystick{width:min(150px,38vw);height:auto}.actions{min-width:100px}.actions button{touch-action:manipulation}}
+
+/* Fullscreen, fixed game viewport and overlay controls. */
+html,body{margin:0;width:100%;height:100%;height:100dvh;max-height:100dvh;overflow:hidden!important;overscroll-behavior:none;touch-action:none}
+body{display:block;position:fixed;inset:0}
+.app{width:100%;height:100%;max-width:none;padding:0;overflow:hidden}
+.screen{width:100%;height:100%}
+#title.show,#selection.show{display:grid;place-items:center;padding:12px;overflow:hidden}
+#title .panel,#selection .panel{max-width:min(680px,96vw);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+#game.show{display:block;position:fixed;inset:0;overflow:hidden;touch-action:none}
+#game .frame{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:0;overflow:hidden;touch-action:none;background:#234d38}
+#world{position:absolute;inset:0;display:block;width:100%;height:100%;aspect-ratio:auto;object-fit:fill;touch-action:none}
+#game .hud{position:absolute;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;pointer-events:none}
+#game .hud>div{background:#152d32d9;border:1px solid #bda06d;padding:7px 10px;border-radius:10px;max-width:66vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(11px,2.6vw,15px)}
+#game .hud button{pointer-events:auto;background:#294b49e8}
+#game .mobile{display:flex;position:absolute;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:3;align-items:flex-end;justify-content:space-between;margin:0;padding:0;gap:12px;pointer-events:none;touch-action:none}
+#game .joystick,#game .actions{pointer-events:auto}
+#game .joystick{width:clamp(108px,29vw,150px);height:clamp(108px,29vw,150px);max-width:none;max-height:none;flex-shrink:0}
+#game .actions{display:grid;gap:10px;min-width:105px}
+#game .actions button{min-height:55px;background:#325d54e8;font-size:14px;padding:8px 12px}
+#game .actions button.primary{background:#a45d48ee}
+#game .dialog{position:absolute;z-index:4;bottom:calc(max(14px,env(safe-area-inset-bottom)) + clamp(108px,29vw,150px) + 10px);left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));min-height:70px;max-height:35dvh;overflow:auto;margin:0}
+#shade{z-index:9;overflow:hidden}
+#shade .modal{max-height:86dvh;overscroll-behavior:contain;touch-action:pan-y}
+button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+@media(max-width:440px){#game .hud>div{max-width:69vw}#game .actions{min-width:95px}#game .actions button{min-height:50px}#game .dialog{font-size:14px}}
+@media(max-height:500px){#game .joystick{width:100px;height:100px}#game .mobile{bottom:8px}#game .dialog{bottom:114px;max-height:28dvh}#game .actions button{min-height:44px}}
+.build-label{display:inline-block;font-size:10px;vertical-align:middle;border:1px solid #bda06d91;padding:1px 4px;border-radius:4px;color:#fae5b3}
+#game,#gameFrame,#world,#joystick,#game .mobile{touch-action:none!important;overscroll-behavior:none!important}
+@media(max-width:680px){#game .hud>div{max-width:75vw}}
+</style></head><body><main class="app">
+<section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
+<section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
+<section id="game" class="screen" aria-label="Critters game">
+  <div class="frame" id="gameFrame">
+    <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
+    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v17</small></div><button class="btn" id="save" type="button">Save</button></div>
+    <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
+    <div class="mobile">
+      <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
+      <div class="actions"><button class="btn primary" id="talk" type="button">Talk / Use</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
+    </div>
+  </div>
+</section>
+<div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
+</main><script src="game.js?v=17-npc-sprites-20261121" defer></script></body></html>
