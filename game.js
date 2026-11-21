@@ -986,8 +986,8 @@ function move(d){
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(s.area==='village'&&d==='right'&&x>=W-2&&tiles[y]?.[W-1]!==T.tree&&!solidAt(W-2,y)){if(!s.introComplete)return say(['Complete the laboratory tutorial before exploring Route 1.']);return region('route1',2,y,'Route 1 — Rice Fields. Wild Critters hide in tall grass.')}
  if(s.area==='route1'&&d==='left'&&x<=1&&tiles[y]?.[0]!==T.tree&&!solidAt(1,y))return region('village',31,y);
- if(s.area==='route1'&&d==='right'&&x>=32&&[13,14].includes(y))return region('town',2,y,'You arrive at the first small town. Heal and shop here!');
- if(s.area==='town'&&d==='left'&&x<=1&&[13,14].includes(y))return region('route1',31,y);
+ if(s.area==='route1'&&d==='right'&&x>=32&&[12,13,14].includes(y)&&tiles[y]?.[W-2]===T.path)return region('town',2,y,'You arrive at the first small town. Heal and shop here!');
+ if(s.area==='town'&&d==='left'&&x<=1&&[12,13,14].includes(y))return region('route1',31,y);
  if(s.area==='town'&&d==='right'&&x>=32&&[13,14].includes(y))return region('route2',2,y,'Route 2 — Bamboo Forest.');
  if(s.area==='route2'&&d==='left'&&x<=1&&[13,14].includes(y))return region('town',31,y);
  if(s.area==='route2'&&d==='right'&&x>=32&&[13,14].includes(y))return region('route3',2,y,'Route 3 — Mountain Foothills.');
