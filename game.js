@@ -15,14 +15,14 @@ function updateVisual(now=performance.now()){
  if(!s)return;
  if(!visual.ready){snapVisual();return}
  const t=Math.min(1,Math.max(0,(now-visual.start)/visual.duration));
- const smooth=t*t*(3-2*t);
- visual.x=visual.fromX+(visual.toX-visual.fromX)*smooth;
- visual.y=visual.fromY+(visual.toY-visual.fromY)*smooth;
+ // Linear interpolation produces a constant walking speed without slow-down at each tile.
+ visual.x=visual.fromX+(visual.toX-visual.fromX)*t;
+ visual.y=visual.fromY+(visual.toY-visual.fromY)*t;
 }
 function beginStep(x,y){
  updateVisual();visual.fromX=visual.x;visual.fromY=visual.y;
  visual.toX=x;visual.toY=y;visual.start=performance.now();
- visual.duration=125;
+ visual.duration=120;
 }
 
 const read=()=>{try{return JSON.parse(localStorage.getItem('critters-v1'))}catch{return null}};
@@ -127,12 +127,56 @@ function build(){
 }
 function say(lines,callback){dialog=lines.slice();dialogDone=callback||null;advance()}
 function advance(){if(dialog.length){$('dialogText').textContent=dialog.shift();$('dialog').classList.add('show')}else{$('dialog').classList.remove('show');const fn=dialogDone;dialogDone=null;if(fn)fn()}}
+// Extract each sprite's visible alpha bounds once. Different walk frames contain
+// different transparent padding; cropping and centering on feet eliminates the
+// apparent sideways drifting and keeps every frame on the same ground line.
+const spriteFrames={male:null,female:null};
+function spriteMetrics(gender){
+ if(spriteFrames[gender])return spriteFrames[gender];
+ const im=sprites[gender];if(!im.complete||!im.naturalWidth)return null;
+ const rows=gender==='female'?3:4,cellW=Math.floor(im.naturalWidth/4),cellH=Math.floor(im.naturalHeight/rows);
+ const canvas=document.createElement('canvas');
+ canvas.width=im.naturalWidth;canvas.height=im.naturalHeight;
+ const g=canvas.getContext('2d',{willReadFrequently:true});
+ if(!g)return null;
+ g.drawImage(im,0,0);
+ const data=g.getImageData(0,0,canvas.width,canvas.height).data;
+ const result=[];
+ for(let row=0;row<rows;row++){
+  const frames=[];
+  for(let col=0;col<4;col++){
+   let minX=cellW,minY=cellH,maxX=-1,maxY=-1,feetX=0,feetN=0;
+   for(let y=0;y<cellH;y++)for(let x=0;x<cellW;x++){
+    const alpha=data[((row*cellH+y)*canvas.width+col*cellW+x)*4+3];
+    if(alpha<24)continue;
+    if(x<minX)minX=x;if(y<minY)minY=y;
+    if(x>maxX)maxX=x;if(y>maxY)maxY=y;
+   }
+   if(maxX<0){frames.push({sx:col*cellW,sy:row*cellH,sw:cellW,sh:cellH,anchorX:cellW/2});continue}
+   // Find the feet position from opaque pixels near the bottom of each frame.
+   for(let y=Math.max(minY,maxY-2);y<=maxY;y++)for(let x=minX;x<=maxX;x++){
+    if(data[((row*cellH+y)*canvas.width+col*cellW+x)*4+3]>=100){feetX+=x;feetN++}
+   }
+   const center=feetN?feetX/feetN:(minX+maxX)/2;
+   frames.push({sx:col*cellW+minX,sy:row*cellH+minY,sw:maxX-minX+1,sh:maxY-minY+1,anchorX:center-minX});
+  }
+  result.push(frames);
+ }
+ spriteFrames[gender]=result;
+ return result;
+}
 function sprite(gender,x,y,d,f,scale=1){
- const im=sprites[gender];if(!im.complete||!im.naturalWidth){ctx.fillStyle='#c9685e';ctx.fillRect(x-10,y-28,20,28);return}
+ const im=sprites[gender];
+ if(!im.complete||!im.naturalWidth){ctx.fillStyle='#c9685e';ctx.fillRect(x-10,y-28,20,28);return}
  const girl=gender==='female';let row={down:0,up:1,left:2,right:3}[d],col=f;
- if(girl&&d==='left'){row=2;col=f%2}if(girl&&d==='right'){row=2;col=2+f%2}
- const sw=im.width/4,sh=im.height/(girl?3:4),w=32*scale,h=42*scale;
- ctx.drawImage(im,col*sw,row*sh,sw,sh,x-w/2,y-h,w,h)
+ if(girl&&d==='left'){row=2;col=f%2}
+ if(girl&&d==='right'){row=2;col=2+f%2}
+ const frameData=spriteMetrics(gender)?.[row]?.[col];
+ if(!frameData)return;
+ const {sx,sy,sw,sh,anchorX}=frameData;
+ // The character's feet stay on the same world coordinate in all frames.
+ const pixelScale=1.58*scale;
+ ctx.drawImage(im,sx,sy,sw,sh,x-anchorX*pixelScale,y-sh*pixelScale,sw*pixelScale,sh*pixelScale);
 }
 function drawTile(t,x,y,a,b){
  // All natural terrain shares a single continuous grass surface. Tile cells now
@@ -217,7 +261,9 @@ function draw(){
  }
  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  for(const p of npcs){let x=p.x*S+16-ox,y=p.y*S+32-oy;ctx.fillStyle='#e2ad80';ctx.fillRect(x-9,y-25,18,24);ctx.fillStyle=p.kind==='researcher'?'#f2e7cd':p.kind==='center'?'#9ad4dc':p.kind==='leader'?'#5b944b':'#965b78';ctx.fillRect(x-8,y-11,16,11);ctx.fillStyle='#4a302c';ctx.fillRect(x-10,y-30,20,10);if(p.kind==='gymtrainer'&&s.defeated[p.id])continue;ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-36)}
- sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,frame,1.25);
+ const isMoving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
+ const walkFrame=isMoving?Math.floor(performance.now()/105)%4:0;
+ sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
  ctx.fillStyle='#1c3835dc';ctx.fillRect(5,5,330,28);ctx.fillStyle='#fff1ca';ctx.font='bold 13px system-ui';ctx.fillText(s.name+' · '+(s.starter||'Visit lab')+' · '+s.money+' ◇ · '+s.badges+' Badge',11,23)
 }
 function region(area,x,y,textLine){s.area=area;s.x=x;s.y=y;build();save();if(textLine)say([textLine])}
@@ -396,7 +442,7 @@ function shop(){
  open('Village Shop','<p>Money: '+s.money+' ◇</p><div class="options">'+goods.map(([name,price])=>'<button class="btn" data-buy="'+name+'" '+(s.money<price?'disabled':'')+'>'+name+' — '+price+' ◇</button>').join('')+'</div><p class="muted">Basic modules can be bought now. Install them at a Critter Center.</p>');
  document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const name=b.dataset.buy,price=goods.find(g=>g[0]===name)[1];if(s.money<price)return;s.money-=price;if(['Potion','Revive'].includes(name))s.inventory[name]=(s.inventory[name]||0)+1;else s.modules.push(name);save();shop()})
 }
-function preview(id,g){const im=sprites[g],c=$(id),p=c.getContext('2d');p.imageSmoothingEnabled=false;function draw(){if(im.naturalWidth){p.clearRect(0,0,c.width,c.height);p.drawImage(im,0,0,im.width/4,im.height/(g==='male'?4:3),0,0,c.width,c.height)}}im.addEventListener('load',draw);draw()}
+function preview(id,g){const im=sprites[g],c=$(id),p=c.getContext('2d');p.imageSmoothingEnabled=false;function draw(){if(!im.naturalWidth)return;const m=spriteMetrics(g)?.[0]?.[0];if(!m)return;p.clearRect(0,0,c.width,c.height);const k=Math.min(c.width/(m.sw+10),c.height/(m.sh+8));p.drawImage(im,m.sx,m.sy,m.sw,m.sh,(c.width-m.sw*k)/2,c.height-m.sh*k-4,m.sw*k,m.sh*k)}im.addEventListener('load',draw);draw()}
 preview('malePreview','male');preview('femalePreview','female');
 $('new').onclick=()=>show('selection');
 $('continue').onclick=()=>{s=read();if(!s)return;migrate();build();show('game')};
@@ -454,6 +500,6 @@ document.addEventListener('touchmove',e=>{
 document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault()},{passive:false});
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>145){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){if(screen==='game'){if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>=120){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 })();
