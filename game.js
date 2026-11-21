@@ -93,6 +93,15 @@ function build(){
  for(let y=17;y<23;y++)for(let x=2;x<11;x++)if((x+y)%11!==0)put(x,y,T.rice);
  for(let y=2;y<11;y++)for(let x=12;x<20;x++)if((x+3*y)%7===0)put(x,y,T.tree);
  nature(8,0);
+ // Clear the entire east/west trail opening and its visible shoulders.
+ // Border trees used to be painted over the path at x=0 and x=W-1.
+ for(const edge of [0,W-1]){
+  for(let y=11;y<=16;y++)put(edge,y,T.grass);
+  for(let y=12;y<=14;y++)put(edge,y,T.path);
+ }
+ // The portal checks at x=32 remain unchanged, but the art now meets the edge.
+ for(let x=1;x<=3;x++)for(let y=12;y<=14;y++)put(x,y,T.path);
+ for(let x=W-4;x<W-1;x++)for(let y=12;y<=14;y++)put(x,y,T.path);
  buildVillageColliders();
  npc(12,14,['Welcome to the valley! The scientist works in the northeast laboratory.']);
  npc(22,15,['Follow the eastern road toward Route 1!']);
@@ -276,10 +285,23 @@ function drawTile(t,x,y,a,b){
    }
  }
  if(t===T.tree){
-   ctx.fillStyle='#23492d';ctx.fillRect(x+12,y+15,9,18);
-   ctx.fillStyle='#234e36';ctx.beginPath();ctx.arc(x+16,y+15,16,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle='#4c8851';ctx.beginPath();ctx.arc(x+12,y+11,11,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle='#6b9a57';ctx.fillRect(x+6,y+6,10,5)
+   if(s.area==='village'){
+     // Natural rounded foliage rather than square tree stamps; never place
+     // ornamental canopy outside of its solid tree footprint onto paths.
+     ctx.fillStyle='#294b32';ctx.beginPath();ctx.ellipse(x+16,y+18,15,13,0,0,Math.PI*2);ctx.fill();
+     ctx.fillStyle='#675642';ctx.fillRect(x+14,y+17,5,14);
+     const variety=(a*37+b*19)%3;
+     ctx.fillStyle=['#356847','#3b7248','#477c4b'][variety];
+     ctx.beginPath();ctx.arc(x+13,y+12,11,0,Math.PI*2);ctx.fill();
+     ctx.beginPath();ctx.arc(x+22,y+12,9,0,Math.PI*2);ctx.fill();
+     ctx.fillStyle='#62975c';ctx.beginPath();ctx.ellipse(x+14,y+8,9,5,-.3,0,Math.PI*2);ctx.fill();
+     ctx.fillStyle='#86a86b';ctx.fillRect(x+9,y+5,6,2);
+   }else{
+     ctx.fillStyle='#23492d';ctx.fillRect(x+12,y+15,9,18);
+     ctx.fillStyle='#234e36';ctx.beginPath();ctx.arc(x+16,y+15,16,0,Math.PI*2);ctx.fill();
+     ctx.fillStyle='#4c8851';ctx.beginPath();ctx.arc(x+12,y+11,11,0,Math.PI*2);ctx.fill();
+     ctx.fillStyle='#6b9a57';ctx.fillRect(x+6,y+6,10,5);
+   }
  }
  if(t===T.rock){ctx.fillStyle='#66615a';ctx.beginPath();ctx.ellipse(x+17,y+21,13,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#aa9e89';ctx.fillRect(x+9,y+12,14,5)}
  if(t===T.roof){
@@ -323,6 +345,32 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   if(tiles[y]?.[x+1]===T.grass)ctx.fillRect(px+S-3,py+seed,3,18);
   if(tiles[y-1]?.[x]===T.grass)ctx.fillRect(px+seed,py,20,3);
   if(tiles[y+1]?.[x]===T.grass)ctx.fillRect(px+seed,py+S-3,20,3);
+ }
+ // Dirt paths feel worn-in rather than stamped squares. Keep the main road
+ // footprint open and place subtle texture *within* the existing path cells.
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+  if(tiles[y][x]!==T.path)continue;
+  const [px,py]=pos(x,y),seed=(x*43+y*71)%23;
+  ctx.fillStyle='#e0bd8e42';
+  ctx.beginPath();ctx.ellipse(px+8+seed%11,py+7+(seed*3)%17,9,4,.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#947f6155';ctx.fillRect(px+2+seed,py+12+(seed%9),3,1.5);
+ }
+ // Long, wind-shaped vegetation clumps on grass, avoiding every impassable
+ // tree, road, entrance, lantern, fence and rock position.
+ for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
+  if(tiles[y][x]!==T.grass||villageObstacles.has(key(x,y)))continue;
+  const n=(x*29+y*47+x*y*3)%41;
+  if(n>3)continue;
+  const [px,py]=pos(x+.42,y+.64);
+  ctx.fillStyle=n===0?'#6d9855':'#4c8153';
+  ctx.beginPath();ctx.ellipse(px,py,9+n,4.5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#a5b674';ctx.fillRect(px-2,py-7,2,6);
+  if(n===1){ctx.fillStyle='#edc5ac';ctx.fillRect(px+6,py-8,3,3)}
+ }
+ // Warm light patches around the dwellings and the village's winding road.
+ for(const [x,y,w,h] of [[5.1,10,3,1.5],[17,15.9,3,1.4],[28.8,12,2,1.2]]){
+  const [px,py]=pos(x,y);
+  ctx.fillStyle='#ebcc8a12';ctx.beginPath();ctx.ellipse(px,py,w*S,h*S,0,0,Math.PI*2);ctx.fill();
  }
  // Paddies: parallel ridges, flooded irrigation, staggered rice rows.
  for(let y=17;y<23;y++){
@@ -372,6 +420,15 @@ function drawVillageDetails(ox,oy,viewW,viewH){
    ctx.beginPath();ctx.moveTo(px+11,ry);ctx.lineTo(px+ww-11,ry);ctx.stroke();
   }
   ctx.fillStyle='#344041';ctx.fillRect(px-3,base-15,ww+6,10);
+  // Fine roof tile highlights and soft eave shadow.
+  ctx.strokeStyle='#ceb79844';ctx.lineWidth=1;
+  for(let stripe=0;stripe<5;stripe++){
+   const ry=py+20+stripe*(roofH-46)/5;
+   ctx.beginPath();ctx.moveTo(px+13,ry);ctx.lineTo(px+ww-14,ry);ctx.stroke();
+  }
+  ctx.fillStyle='#151b2080';ctx.fillRect(px+4,base-6,ww-8,8);
+  // Stone doorstep: visually matches the retained entrance/doorway cell.
+  ctx.fillStyle='#a69b83';ctx.fillRect(px+4,base+64,ww-8,5);
   // The visible door uses exactly the same x coordinate as the collision opening.
   const doorway=pos(door,0)[0];
   ctx.fillStyle='#332d28';ctx.fillRect(doorway+3,base+12,26,52);
