@@ -1325,7 +1325,7 @@ function indexParty(){
   const p=s.party[i];
   if(!p)return '<div class="watchPartyCard empty"><span>Slot '+(i+1)+'</span><strong>◇ Empty</strong></div>';
   const pct=Math.round(100*p.hp/Math.max(1,p.maxHp));
-  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+'</strong>'
+  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div></div>';
@@ -1595,7 +1595,11 @@ function runMoveEffect(effect,side,actorIndex,targetSide,targetIndex,log){
    log.push(name+"'s "+stat.replace(/_/g,' ')+' '+(sign>0?'rose!':'fell!'));return;
   }
   case 'ailment':
-   if(!target.status){target.status=effect.name||'affected';log.push(name+' is afflicted with '+target.status+'!');}
+   if(!target.status){
+    target.status=effect.name||'affected';
+    if(target.status==='entangle')stats.speed=Math.max(-STAGE_LIMIT,(stats.speed||0)-1);
+    log.push(name+' is afflicted with '+target.status+'!');
+   }
    return;
   case 'heal':{
    const healed=Math.min(target.maxHp-target.hp,Math.max(1,Math.floor(target.maxHp*(effect.fraction||.25))));
@@ -1676,6 +1680,9 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  }else if(move.target==='ally'&&(!target||target.hp<=0)){targetIndex=actorIndex;target=actor}
  if(!target||target.hp<=0)return;
  const name=actor.name||actor.type;
+ // Conditions can disrupt a turn without consuming PP.
+ const interruption={jolt:.20,chill:.17,stagger:.18,confuse:.22,disorient:.15,entangle:.08}[actor.status]||0;
+ if(interruption&&Math.random()<interruption){log.push(name+' cannot act because of '+actor.status+'!');return}
  log.push(name+' used '+move.name+'.');
  const hitChance=Math.min(100,Math.max(5,(move.accuracy??100)*
   statFactor(side,actorIndex,'accuracy')/statFactor(targetSide,targetIndex,'evasion')));
@@ -1689,20 +1696,22 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
   const focus=side==='ally'?(battle.focus?.[actorIndex]||0):0;
   const terrain=battle.terrain?.type===move.type?1.12:1;
   const reduced=targetSide==='ally'?!!battle.guards?.[targetIndex]:!!battle.enemyGuards?.[targetIndex];
+  const ailmentAttack=['dread','intimidate'].includes(actor.status)?.85:1;
+  const ailmentDefense=['drench','fracture'].includes(target.status)?1.12:1;
   const base=Math.max(1,move.power/11+(actor.level-target.level)*.6);
   const mod=side==='ally'?activeModifier('ally'):activeModifier('enemy');
-  const dmg=Math.max(1,Math.floor(base*factor*offense/defense*mod*(1+focus)*terrain*(reduced?.5:1)));
+  const dmg=Math.max(1,Math.floor(base*factor*offense/defense*mod*(1+focus)*terrain*ailmentAttack*ailmentDefense*(reduced?.5:1)));
   target.hp=Math.max(0,target.hp-dmg);
   if(side==='ally')battle.focus[actorIndex]=0;
   battle.impact=targetSide;battle.lastTarget=targetIndex;
   log.push(dmg+' damage.'+(factor>1?' Super effective!':factor<1?' Not very effective.':''));
-  if(target.hp===0){recordFaint(targetSide,targetIndex,log);return}
+  if(target.hp===0)recordFaint(targetSide,targetIndex,log);
  }
  if(move.effect){
   // Recoil and recharge refer to the user. Field effects use the battlefield.
   const selfEffect=['recoil','recharge','terrain','switch','team_buff','team_guard','reveal'].includes(move.effect.id)&&move.effect.id!=='reveal';
   const effSide=selfEffect?side:targetSide,effIndex=selfEffect?actorIndex:targetIndex;
-  runMoveEffect(move.effect,side,actorIndex,effSide,effIndex,log);
+  if(target.hp>0||selfEffect)runMoveEffect(move.effect,side,actorIndex,effSide,effIndex,log);
  }
 }
 function endOfTeamTurn(log){
@@ -1711,7 +1720,7 @@ function endOfTeamTurn(log){
   const roster=getRoster(side),slots=side==='ally'?battle.allySlots:battle.enemySlots;
   for(const i of slots){
    const p=roster[i];if(!p||p.hp<=0)continue;
-   if(['poison','scorch','bleed','miasma','plague'].includes(p.status)){
+   if(['poison','scorch','bleed','haunt','miasma','plague'].includes(p.status)){
     const dmg=Math.max(1,Math.floor(p.maxHp/16));
     p.hp=Math.max(0,p.hp-dmg);
     log.push((p.name||p.type)+' lost '+dmg+' HP to '+p.status+'.');
@@ -1776,6 +1785,13 @@ function resolveTeamTurn(){
  battle.phase='resolve';battle.impact='';battle.lastTarget=null;
  const actions=battle.pending.slice();battle.pending=[];
  // Team order: one player action per deployed Critter, followed by all living enemies.
+ // Resolve priority within a team without changing the approved team-turn order.
+ actions.sort((a,b)=>{
+  const ma=a.kind==='move'?validMove(a.moveId):null,mb=b.kind==='move'?validMove(b.moveId):null;
+  const pa=ma?.priority||0,pb=mb?.priority||0;
+  return pb-pa||(s.party[b.actor]?.level||0)*statFactor('ally',b.actor,'speed')
+     -(s.party[a.actor]?.level||0)*statFactor('ally',a.actor,'speed');
+ });
  for(const action of actions){
   if(!battle)return;
   performPlayerAction(action,log);
@@ -1784,7 +1800,9 @@ function resolveTeamTurn(){
  const livingEnemy=battle.enemies.some(p=>p.hp>0);
  if(!livingEnemy)return endBattle(true,log.join(' ')+' Victory!',true);
  // The opposing team uses exactly the same move executor and PP rules.
- for(const enemyIndex of activeEnemies()){
+ for(const enemyIndex of activeEnemies().sort((a,b)=>
+  (battle.enemies[b]?.level||0)*statFactor('enemy',b,'speed')
+  -(battle.enemies[a]?.level||0)*statFactor('enemy',a,'speed'))){
   if(!battle)return;
   const foe=battle.enemies[enemyIndex],allies=activeAllies();
   if(!allies.length)break;
