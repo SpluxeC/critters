@@ -145,7 +145,7 @@ function spriteMetrics(gender){
  for(let row=0;row<rows;row++){
   const frames=[];
   for(let col=0;col<4;col++){
-   let minX=cellW,minY=cellH,maxX=-1,maxY=-1,feetX=0,feetN=0;
+   let minX=cellW,minY=cellH,maxX=-1,maxY=-1,torsoX=0,torsoN=0;
    for(let y=0;y<cellH;y++)for(let x=0;x<cellW;x++){
     const alpha=data[((row*cellH+y)*canvas.width+col*cellW+x)*4+3];
     if(alpha<24)continue;
@@ -153,11 +153,13 @@ function spriteMetrics(gender){
     if(x>maxX)maxX=x;if(y>maxY)maxY=y;
    }
    if(maxX<0){frames.push({sx:col*cellW,sy:row*cellH,sw:cellW,sh:cellH,anchorX:cellW/2});continue}
-   // Find the feet position from opaque pixels near the bottom of each frame.
-   for(let y=Math.max(minY,maxY-2);y<=maxY;y++)for(let x=minX;x<=maxX;x++){
-    if(data[((row*cellH+y)*canvas.width+col*cellW+x)*4+3]>=100){feetX+=x;feetN++}
+   // Anchor horizontal position to the upper body, not to swinging legs.
+   const torsoTop=minY+Math.floor((maxY-minY)*0.2);
+   const torsoBottom=minY+Math.floor((maxY-minY)*0.65);
+   for(let y=torsoTop;y<=torsoBottom;y++)for(let x=minX;x<=maxX;x++){
+    if(data[((row*cellH+y)*canvas.width+col*cellW+x)*4+3]>=100){torsoX+=x;torsoN++}
    }
-   const center=feetN?feetX/feetN:(minX+maxX)/2;
+   const center=torsoN?torsoX/torsoN:(minX+maxX)/2;
    frames.push({sx:col*cellW+minX,sy:row*cellH+minY,sw:maxX-minX+1,sh:maxY-minY+1,anchorX:center-minX});
   }
   result.push(frames);
