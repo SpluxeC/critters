@@ -324,24 +324,48 @@ $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,'
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
 $('index').onclick=index;$('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
 window.addEventListener('keydown',e=>{if(document.activeElement.tagName==='INPUT')return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>120){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
-window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});function releaseMovement(){held={};document.querySelectorAll('[data-dir]').forEach(b=>b.classList.remove('pressed'))}
+window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});// Mobile joystick uses a pointer captured by the joystick base; keyboard controls stay unchanged.
+const stick=$('joystick'),thumb=$('joystickThumb');
+let stickPointer=null,stickDirection=null,stickActive=false;
+function positionStick(dx=0,dy=0){
+ thumb.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)';
+}
+function endStick(pointerId){
+ if(pointerId!==undefined&&stickPointer!==pointerId)return;
+ stickPointer=null;stickDirection=null;stickActive=false;
+ stick.classList.remove('active');positionStick();
+}
+function releaseMovement(){held={};endStick()}
+function aimStick(e){
+ if(stickPointer!==e.pointerId)return;
+ const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+ const dx=e.clientX-cx,dy=e.clientY-cy;
+ const distance=Math.hypot(dx,dy),range=Math.min(r.width,r.height)*0.29;
+ const length=distance?Math.min(1,range/distance):0;
+ positionStick(dx*length,dy*length);
+ // Deliberate neutral deadzone avoids accidental steps when the stick is released.
+ if(distance<Math.min(r.width,r.height)*0.15){stickDirection=null;return}
+ stickDirection=Math.abs(dx)>=Math.abs(dy)?(dx>=0?'right':'left'):(dy>=0?'down':'up');
+}
+stick.addEventListener('pointerdown',e=>{
+ if(screen!=='game'||modal||stickPointer!==null)return;
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ e.preventDefault();
+ stickPointer=e.pointerId;stickActive=true;stick.classList.add('active');
+ if(stick.setPointerCapture)try{stick.setPointerCapture(e.pointerId)}catch(err){}
+ aimStick(e);
+});
+stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();aimStick(e)}});
+for(const event of ['pointerup','pointercancel','lostpointercapture']){
+ stick.addEventListener(event,e=>{if(stickPointer===e.pointerId){e.preventDefault();endStick(e.pointerId)}});
+}
+stick.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('pointerup',e=>endStick(e.pointerId));
+window.addEventListener('pointercancel',e=>endStick(e.pointerId));
 window.addEventListener('blur',releaseMovement);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseMovement()});
 window.addEventListener('pagehide',releaseMovement);
-document.querySelectorAll('[data-dir]').forEach(b=>{
- const d=b.dataset.dir;
- b.addEventListener('pointerdown',e=>{
-  if(e.pointerType==='mouse'&&e.button!==0)return;
-  e.preventDefault();releaseMovement();held[d]=true;b.classList.add('pressed');
-  if(b.setPointerCapture)try{b.setPointerCapture(e.pointerId)}catch(err){}
-  move(d)
- });
- for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{held[d]=false;b.classList.remove('pressed')});
- b.addEventListener('contextmenu',e=>e.preventDefault())
-});
-window.addEventListener('pointerup',releaseMovement);
-window.addEventListener('pointercancel',releaseMovement);
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}draw()}requestAnimationFrame(loop)}
+function loop(){if(screen==='game'){if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>145){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 })();
