@@ -50,7 +50,7 @@ The example explains the shape, not the complete actual Mosslilt entry; consult 
 
 ## Base statistics
 
-`baseStats` is the species' **level-one reference** with six attributes: HP, Attack, Defense, Special Attack, Special Defense, Speed. The current game derives the new species' HP as its base HP plus four per level gained. Other base stats are exposed for browsing and later balancing, without replacing the existing damage formula. This avoids silently changing approved battles during the catalog rollout.
+`baseStats` is the species' **level-one reference** with six attributes: HP, Attack, Defense, Special Attack, Special Defense, Speed. The game derives new species' maximum HP as its level-one HP plus four per gained level. Attack, Defense, Special Attack, Special Defense, and Speed are now **active battle stats**: each grows approximately 1.25 per level. Physical move damage uses Attack versus Defense; special move damage uses Special Attack versus Special Defense. Speed determines action order **within** each team's turn, while move priority still takes precedence. Existing saved HP is preserved during migration, and older type-only Critters receive neutral default stats.
 
 ## Habitats and encounters
 
@@ -69,7 +69,7 @@ The existing encounter chance while entering encounter terrain is preserved; onc
 
 Every draft Critter has eight level-up assignments through level 45. The game automatically equips the latest four legal learned moves at the Critter's level. Edit a learnset to adjust moves or learning levels, using the exact stable move IDs from `data/moves.json`. If you remove or rename an ID, provide a replacement in the species file; the game has a fallback for retired moves.
 
-Wild Critters are instantiated from the registered species, so their names, first type, basic HP, and level-appropriate moves will be reflected in encounters. A second type is currently displayed as species metadata; the approved single-type weakness calculation has not been expanded to combined dual-type effectiveness.
+Wild Critters are instantiated from the registered species, so their names, first type, basic HP, and level-appropriate moves will be reflected in encounters. Both listed types now participate in defensive weakness and resistance calculation. Each type's original single-type effectiveness (2×, 0.5×, or 1×) is multiplied, allowing **4×, 2×, 1×, 0.5×, and 0.25×** results. A strong matchup against one type and a resisted matchup against the second cancel to 1×. The original type chart and Water > Rock > Electric > Water starter triangle are unchanged.
 
 ## Collaboration workflow
 
@@ -81,3 +81,12 @@ Wild Critters are instantiated from the registered species, so their names, firs
 6. Keep the special three-type uniqueness rule intact when rebalancing the roster.
 
 The roster is draft content for art collaboration—not 200 finished, approved visual designs.
+
+## Battle-stat rollout (v28)
+
+- Each of the six base statistics is the reference value at **level 1**. Higher levels add +4 maximum HP and approximately +1.25 to Attack, Defense, Special Attack, Special Defense, and Speed per level (subject to rounding).
+- Damage uses the relevant offensive and defensive stats; battlefield stat stages and existing Power Coil / Guard Plate / Weakening Field bonuses still apply.
+- For dual-type defense, calculate effectiveness separately against each of the defender's two types, then multiply. There are no automatic immunities or new type advantages.
+- Team-turn rules are preserved: players choose one action per active Critter, their team resolves actions, and then the opposing team acts. Speed and move priority order actions **within** each team.
+- Older saves remain compatible. When a registered species' stats or types are edited in `data/critters.json`, the game refreshes its metadata on load while retaining saved HP and party arrangements.
+
