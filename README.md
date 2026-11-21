@@ -76,3 +76,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - In the Critter Index Party screen, each active Critter now displays its current XP, XP required for the next level, a visual progress bar, and its next authored level-up move (when one exists).
 - Defeating a Critter now reports level-ups, newly learned moves, and evolutions in the battle log.
 - Existing XP rewards, level thresholds (level × 12), per-level HP growth (+4), four equipped moves, and authored conditional evolution chains are preserved. The eight-Critter party limit and old save schema are unchanged.
+
+## Phase 15 — Exploration and world discoveries (v44)
+- Added optional glowing landmark discovery markers on Route 2 (Bamboo Wayfinder), Hidden Forest (Shrine), Route 3 (Mountain Lookout), Mountain Cave (Crystal Alcove), and Garden Town outskirts (Memorial).
+- Walking over a landmark triggers a one-time description and reward (Potions, Revives, or credits) without blocking movement or modifying the maps' collision footprints.
+- Each discovery is saved in the existing `s.discoveries` collection; returning to a collected location grants no duplicate reward.
+- The Critter Index Records screen now lists landmark discoveries and completion count. Existing Route 1 finds, story progression, battles, and eight-member party cap remain unchanged.
