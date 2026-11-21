@@ -7,6 +7,44 @@ const palette=['#75a65e','#c6ae82','#38683d','#88684f','#baa78a','#403127','#b7b
 const strengths={Fire:['Grass','Ice'],Water:['Fire','Rock'],Grass:['Water','Shadow'],Rock:['Electric','Venom'],Electric:['Water','Flying'],Ice:['Dragon','Ghost'],Flying:['Beast','Fighting'],Shadow:['Ghost','Psychic'],Ghost:['Psychic','Primordial'],Dragon:['Electric','Primordial'],Venom:['Grass','Flying'],Beast:['Dragon','Shadow'],Primordial:['Beast','Fire'],Psychic:['Fighting','Venom'],Fighting:['Rock','Ice']};
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
+const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
+const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant','Center Nurse','Center Clerk','Village Elder','School Teacher','Merchant','Item Shopkeeper','Gear Shopkeeper','Rice Farmer','Fisherman','Ranger','Samurai','Shrine Maiden','Monk','Blacksmith','Guard','Rival Trainer','Gym Trainer','Gym Leader','Village Child','Traveler','Festival Dancer','Mountain Hermit','Ninja','Scholar'];
+const NPC_ROWS={down:0,left:1,right:2,up:3};
+function pickNpcSprite(x,y,kind='',id=''){
+ const special={researcher:2,center:4,shop:9,leader:21,switch:27};
+ if(kind in special)return special[kind];
+ if(kind==='gymtrainer')return 20;
+ if(kind==='routetrainer')return (x+y)%2?19:13;
+ const area=s?.area||'village';
+ const pools={
+  village:[0,1,6,7,11,12,15,22,23,24,26],
+  home:[1,6,7],
+  neighbor:[0,1,22,6],
+  lab:[3,2,27],
+  route1:[11,12,13,23,0,1],
+  town:[5,7,8,9,10,0,1,22],
+  route2:[13,14,23,25,1],
+  forest:[13,23,25,26],
+  route3:[12,17,23,25,18],
+  cave:[25,18,17],
+  garden:[15,7,1,24,22],
+  gym:[20,21,15]
+ };
+ const arr=pools[area]||pools.village;
+ return arr[Math.abs((x*17+y*29+area.length*13))%arr.length];
+}
+function drawNpc(p,x,y){
+ const im=npcSheet;
+ if(im.complete&&im.naturalWidth){
+  const i=p.sprite??0,row=NPC_ROWS[p.face||'down']??0;
+  const w=38,h=42;
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(im,i*32,row*32,32,32,x-w/2,y-h,w,h);
+ }else{
+  ctx.fillStyle='#544c55';ctx.fillRect(x-9,y-30,18,28);
+  ctx.fillStyle='#e0aa88';ctx.fillRect(x-7,y-28,14,12);
+ }
+}
 const villageBuildings={home:new Image(),lab:new Image(),neighbor:new Image()};
 for(const kind of Object.keys(villageBuildings))villageBuildings[kind].src='assets/village-'+kind+'.svg';
 let doorTransition=null;
@@ -91,7 +129,11 @@ function migrate(){
 }
 function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
 function rect(x,y,w,h,t){for(let a=x;a<x+w;a++)for(let b=y;b<y+h;b++)put(a,b,t)}
-function npc(x,y,text,kind='',id=''){npcs.push({x,y,text,kind,id})}
+function npc(x,y,text,kind='',id=''){
+ const sprite=pickNpcSprite(x,y,kind,id);
+ const face=((x*31+y*7)%7===0)?'left':((x*13+y*11)%9===0)?'right':'down';
+ npcs.push({x,y,text,kind,id,sprite,face});
+}
 function borders(type=T.tree){for(let x=0;x<W;x++){put(x,0,type);put(x,H-1,type)}for(let y=0;y<H;y++){put(0,y,type);put(W-1,y,type)}}
 function houses(list){list.forEach(([x,y,w=7,h=5])=>{rect(x,y,w,h,T.roof);rect(x,y+h,w,2,T.wall);put(x+Math.floor(w/2),y+h+1,T.door)})}
 function roads(){rect(1,12,32,3,T.path)}
@@ -496,7 +538,16 @@ function draw(){
  }
  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
- for(const p of npcs){let x=p.x*S+16-ox,y=p.y*S+32-oy;ctx.fillStyle='#e2ad80';ctx.fillRect(x-9,y-25,18,24);ctx.fillStyle=p.kind==='researcher'?'#f2e7cd':p.kind==='center'?'#9ad4dc':p.kind==='leader'?'#5b944b':'#965b78';ctx.fillRect(x-8,y-11,16,11);ctx.fillStyle='#4a302c';ctx.fillRect(x-10,y-30,20,10);if(p.kind==='gymtrainer'&&s.defeated[p.id])continue;ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-36)}
+ for(const p of npcs){
+ if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
+ const x=p.x*S+16-ox,y=p.y*S+32-oy;
+ // A soft ground shadow anchors each character to the map.
+ ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
+ drawNpc(p,x,y);
+ if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&!s.defeated[p.id]){
+  ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
+ }
+}
  const isMoving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const walkFrame=isMoving?Math.floor(performance.now()/105)%4:0;
  sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
@@ -541,6 +592,7 @@ function move(d){
 function interact(){
  if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
+ if(p)p.face={up:'down',down:'up',left:'right',right:'left'}[s.face];
  if(p){if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
