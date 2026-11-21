@@ -363,6 +363,7 @@ function migrate(){
  if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p})));
  // Preserve excess Critters from older saves instead of silently dropping them.
  if(s.party.length>PARTY_LIMIT)s.storage.push(...s.party.splice(PARTY_LIMIT));
+ s.wildStepsSinceEncounter=Number.isInteger(s.wildStepsSinceEncounter)?Math.max(0,Math.min(100,s.wildStepsSinceEncounter)):4;
  s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];collectionData();s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
@@ -1246,7 +1247,11 @@ function move(d){
  if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
  const first=s.area==='route1'&&!s.earlyJourney?.firstEncounter;
  if(first){s.earlyJourney=s.earlyJourney||{};s.earlyJourney.fieldSteps=(s.earlyJourney.fieldSteps||0)+1}
- if(first&&s.earlyJourney.fieldSteps>=5||Math.random()<wildEncounterChance(s.area))startWild();
+ // Encounter spacing is counted only on eligible wild tiles; the first Route 1
+  // encounter remains guaranteed after five steps of exploration.
+  s.wildStepsSinceEncounter=(s.wildStepsSinceEncounter||0)+1;
+  const guaranteed=first&&s.earlyJourney.fieldSteps>=5;
+  if(guaranteed||(s.wildStepsSinceEncounter>=4&&Math.random()<wildEncounterChance(s.area)))startWild();
 }
 }
 function interact(){
@@ -1721,27 +1726,44 @@ function starterMenu(){
 // World / encounter balancing (v31) — area-specific encounter density, species
 // rarity, wild level ranges, and tiny novelty/time-of-day influences.
 // None of these alter type strengths, battle turns, or party storage rules.
+// Regional pacing: early routes remain gentle, while post-badge visits gradually
+// reveal higher-level habitats. The authored species/habitat JSON is untouched.
 const WILD_AREA_BALANCE={
- route1:{stepRate:.075,weights:{common:16,uncommon:4,rare:.7,legendary:.015},novelty:1.6},
- route2:{stepRate:.10,weights:{common:14,uncommon:5,rare:1,legendary:.02},novelty:1.5},
- forest:{stepRate:.115,weights:{common:12,uncommon:5,rare:1.35,legendary:.025},novelty:1.55},
- route3:{stepRate:.11,weights:{common:12,uncommon:5.5,rare:1.5,legendary:.03},novelty:1.45},
- garden:{stepRate:.085,weights:{common:14,uncommon:4.5,rare:1.25,legendary:.02},novelty:1.5},
- cave:{stepRate:.12,weights:{common:11,uncommon:5.5,rare:1.8,legendary:.04},novelty:1.4}
+ route1:{stepRate:.075,levels:[2,5],weights:{common:16,uncommon:4,rare:.7,legendary:0},novelty:1.6},
+ route2:{stepRate:.09,levels:[5,10],weights:{common:14,uncommon:5,rare:1,legendary:0},novelty:1.5},
+ forest:{stepRate:.105,levels:[7,14],weights:{common:12,uncommon:5,rare:1.35,legendary:.025},novelty:1.55},
+ route3:{stepRate:.10,levels:[10,18],weights:{common:12,uncommon:5.5,rare:1.5,legendary:.03},novelty:1.45},
+ garden:{stepRate:.08,levels:[12,20],weights:{common:14,uncommon:4.5,rare:1.25,legendary:0},novelty:1.5},
+ cave:{stepRate:.11,levels:[15,22],weights:{common:11,uncommon:5.5,rare:1.8,legendary:.04},novelty:1.4}
 };
-function encounterSpeciesFor(area){return [...speciesRegistry.values()].filter(sp=>Array.isArray(sp.habitats)&&sp.habitats.some(h=>h.areaId===area&&Number.isFinite(h.minLevel)&&Number.isFinite(h.maxLevel)&&h.maxLevel>=h.minLevel))}
-function wildHabitat(sp,area){return sp.habitats.find(h=>h.areaId===area)}
+function activeWildLevelRange(area){
+ const config=WILD_AREA_BALANCE[area];
+ if(!config)return null;
+ // Optional wilderness revisits grow tougher after earning additional badges.
+ const bonus=Math.max(0,Math.min(12,((s?.badges||0)-1)*2));
+ return [config.levels[0],config.levels[1]+bonus];
+}
+function effectiveWildHabitat(sp,area){
+ const habitat=sp.habitats?.find(h=>h.areaId===area);
+ const range=activeWildLevelRange(area);
+ if(!habitat||!range||!Number.isFinite(habitat.minLevel)||!Number.isFinite(habitat.maxLevel))return null;
+ const min=Math.max(1,Math.ceil(habitat.minLevel),range[0]),max=Math.min(Math.floor(habitat.maxLevel),range[1]);
+ return min<=max?{...habitat,minLevel:min,maxLevel:max}:null;
+}
+function encounterSpeciesFor(area){
+ return [...speciesRegistry.values()].filter(sp=>effectiveWildHabitat(sp,area));
+}
+function wildHabitat(sp,area){return effectiveWildHabitat(sp,area)}
 function encounterWeight(sp,area){
  const config=WILD_AREA_BALANCE[area];if(!config)return 0;
  const habitat=wildHabitat(sp,area);if(!habitat)return 0;
  const rarity=habitat.rarity||'common';
  let weight=config.weights[rarity]||0;
- // Legendary types remain rare and cannot spawn before the first Gym badge.
- if(rarity==='legendary'&&s.badges<1)return 0;
+ // Legendary Critters remain rare and do not appear before the first badge.
+ if(rarity==='legendary'&&(s.badges||0)<1)return 0;
  const known=discoveryStatus(sp.speciesId);
  if(known==='unseen')weight*=config.novelty;
  else if(known==='captured')weight*=.9;
- // Natural type flavor: shadowy species are more active at night; Flying in day.
  const hour=worldHour(),night=hour>=20||hour<5;
  if(night&&sp.types.some(t=>t==='Ghost'||t==='Shadow'))weight*=1.35;
  else if(!night&&sp.types.some(t=>t==='Grass'||t==='Flying'))weight*=1.12;
@@ -1758,6 +1780,7 @@ function wildEncounterChance(area){return WILD_AREA_BALANCE[area]?.stepRate||0}
 function areaTypes(){return {route1:['Grass','Water','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Shadow'],route3:['Rock','Electric','Fighting'],cave:['Rock','Ghost','Ice'],garden:['Grass','Water','Psychic']}[s.area]||['Grass']}
 function startWild(){
  if(firstAlive()<0)return blackout();
+ s.wildStepsSinceEncounter=0;
  const choice=chooseWildSpecies(s.area);
  if(choice){
   const h=wildHabitat(choice,s.area);
