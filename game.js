@@ -8,6 +8,35 @@ const strengths={Fire:['Grass','Ice'],Water:['Fire','Rock'],Grass:['Water','Shad
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
 let s=null,screen='title',tiles=[],npcs=[],dialog=[],dialogDone=null,modal=false,battle=null,frame=0,held={},last=0,editing=false;
+const VILLAGE_HOUSES=[
+ {x:3,y:3,w:9,h:5,door:7,kind:'home'},
+ {x:20,y:3,w:10,h:6,door:24,kind:'lab'},
+ {x:23,y:17,w:8,h:4,door:27,kind:'home'}
+];
+const VILLAGE_FENCES=[
+ [2,16,11,16],[2,23,11,23],[2,9,6,9],[10,9,12,9],
+ [21,16,27,16],[29,16,32,16]
+];
+const VILLAGE_LANTERNS=[[13,10],[19,11],[22,10],[27,10],[20,16],[29,15],[13,23]];
+const VILLAGE_STONES=[[12,18],[30,12],[4,11],[30,23]];
+let villageObstacles=new Set();
+const key=(x,y)=>x+','+y;
+function villageCollider(x,y){if(x>=1&&x<W-1&&y>=1&&y<H-1)villageObstacles.add(key(x,y))}
+function buildVillageColliders(){
+ villageObstacles=new Set();
+ for(const h of VILLAGE_HOUSES)for(let y=h.y;y<=h.y+h.h+1;y++)for(let x=h.x;x<h.x+h.w;x++){
+  if(h.kind==='lab'&&x===h.door&&y===h.y+h.h+1)continue;
+  villageCollider(x,y);
+ }
+ for(const [a,y,b] of VILLAGE_FENCES)for(let x=a;x<b;x++)villageCollider(x,y);
+ for(const [x,y] of VILLAGE_LANTERNS)villageCollider(x,y);
+ for(const [x,y] of VILLAGE_STONES)villageCollider(x,y);
+}
+function solidAt(x,y){
+ if(x<0||y<0||x>=W||y>=H)return true;
+ if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
+ return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
+}
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
 let visual={x:0,y:0,fromX:0,fromY:0,toX:0,toY:0,start:0,duration:130,ready:false};
 function snapVisual(){if(!s)return;visual={x:s.x,y:s.y,fromX:s.x,fromY:s.y,toX:s.x,toY:s.y,start:performance.now(),duration:130,ready:true}}
@@ -51,21 +80,20 @@ function houses(list){list.forEach(([x,y,w=7,h=5])=>{rect(x,y,w,h,T.roof);rect(x
 function roads(){rect(1,12,32,3,T.path)}
 function nature(seed,area){for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(tiles[y][x]===T.grass){const n=(x*43+y*59+x*y*7+seed)%113;if(n<area)put(x,y,T.tall);else if(n===44||n===79)put(x,y,T.flower)}}
 function build(){
- migrate();tiles=Array.from({length:H},()=>Array(W).fill(s.area==='lab'||s.area==='gym'?T.wood:T.grass));npcs=[];
+ migrate();tiles=Array.from({length:H},()=>Array(W).fill(s.area==='lab'||s.area==='gym'?T.wood:T.grass));npcs=[];villageObstacles=new Set();
  switch(s.area){
  case 'village':
- // Village layout remains fully playable: central trail, lab and route exit stay connected.
- borders();roads();rect(16,12,3,13,T.path);rect(7,8,2,5,T.path);rect(24,9,2,4,T.path);
- houses([[3,3,9,5],[20,3,10,6],[23,17,8,4]]);
- // A loop of worn footpaths connects the homes, research lab and farm plots.
+ // One art system: original house roof/wall tiles are NOT placed in the village.
+ borders();roads();rect(16,12,3,13,T.path);rect(7,10,2,3,T.path);rect(24,11,2,2,T.path);
+ // Connected worn paths between home, farms, lab, and the village exit.
  rect(11,11,6,2,T.path);rect(9,10,3,2,T.path);
- rect(22,14,6,2,T.path);rect(27,15,2,9,T.path);rect(25,23,4,1,T.path);
- rect(13,19,3,2,T.path);rect(12,20,2,3,T.path);
- // Terraced paddies with softened borders and a clear walking track at x=12.
+ rect(21,14,7,2,T.path);rect(20,15,2,9,T.path);
+ rect(21,23,8,1,T.path);rect(13,19,3,2,T.path);rect(12,20,2,3,T.path);
+ // Terraced rice fields, irrigation channels, woodland clusters.
  for(let y=17;y<23;y++)for(let x=2;x<11;x++)if((x+y)%11!==0)put(x,y,T.rice);
  for(let y=2;y<11;y++)for(let x=12;x<20;x++)if((x+3*y)%7===0)put(x,y,T.tree);
- // Keep footpaths and building approaches clear of randomly generated foliage.
  nature(8,0);
+ buildVillageColliders();
  npc(12,14,['Welcome to the valley! The scientist works in the northeast laboratory.']);
  npc(22,15,['Follow the eastern road toward Route 1!']);
  break;
@@ -388,8 +416,8 @@ function move(d){
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&d==='down'&&x===17&&y>=25)return region('garden',24,12);
  if(x<0||y<0||x>=W||y>=H)return;
- if(npcs.some(p=>p.x===x&&p.y===y))return;
- const t=tiles[y][x];if([T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(t))return;
+ if(npcs.some(p=>p.x===x&&p.y===y)||solidAt(x,y))return;
+ const t=tiles[y][x];
  beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;
  if(s.area==='village'&&x===24&&y===10)return region('lab',17,23);
  if(s.area==='lab'&&x===17&&y===25)return region('village',24,12);
