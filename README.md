@@ -53,3 +53,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Critter Center maintenance displays species names and lets players move party members up or down, send them home, and retrieve stored Critters while preserving at least one active partner.
 - Save migration keeps any excess party entries in home storage instead of discarding them.
 - Party editing and retrieving Critters remain exclusive to Critter Centers.
+
+## Phase 12 — Critter Center storage and watch maintenance (November 2026)
+- Home storage browser supports name/type/level search, stored-order/name/level sorting, and 16-entry pages for large collections.
+- Stored Critters can swap directly with a selected party slot even with eight active members. Reordering, sending home, and retrieving remain Center-only.
+- Module maintenance now shows all four watch sockets, owned/equipped quantities, module descriptions, and safer installation/removal checks.
+- These changes reuse the existing saved party, storage, and module arrays without altering the eight-Critter party limit.
