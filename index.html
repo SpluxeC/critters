@@ -54,6 +54,47 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 .build-label{display:inline-block;font-size:10px;vertical-align:middle;border:1px solid #bda06d91;padding:1px 4px;border-radius:4px;color:#fae5b3}
 #game,#gameFrame,#world,#joystick,#game .mobile{touch-action:none!important;overscroll-behavior:none!important}
 @media(max-width:680px){#game .hud>div{max-width:75vw}}
+
+/* Phase 2: responsive team-turn battle presentation */
+#shade:has(.combatTop) .modal{width:min(96vw,680px);padding:clamp(11px,2.4vw,20px)}
+#shade:has(.combatTop) .modalHead h2{font-size:clamp(16px,3.4vw,22px)}
+.combatTop{display:flex;justify-content:space-between;align-items:center;gap:6px;font:800 11px system-ui;letter-spacing:1.1px;color:#efd6ab;margin:3px 0 9px}
+.combatTop span:last-child{color:#b3ddc8}
+.combatRoster{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rosterTitle{font-size:10px;letter-spacing:.7px;font-weight:800;color:#c7d5c6;margin-bottom:5px}
+.combatCard{background:linear-gradient(125deg,#2e4d48,#233a3c);border:1px solid #80968d;border-radius:9px;padding:7px 9px;margin-bottom:6px;min-height:59px;box-shadow:0 3px 9px #0003}
+.combatCard.active{border-color:#e5c07d;box-shadow:0 0 0 1px #e5c07d60}
+.combatCard.fainted{opacity:.45}
+.combatCardHead{display:flex;justify-content:space-between;gap:3px;align-items:center;font-size:12px}
+.combatCardHead small{font-size:10px;color:#c9d2c7;white-space:nowrap}
+.combatCardFoot{font-size:10px;color:#e5e7d5;padding-top:4px;font-variant-numeric:tabular-nums}
+.combatCard .health{height:9px;margin-top:5px;background:#15272c;border:1px solid #758780}
+.combatCard .health div{background:#65cd92;transition:width 260ms ease-out}
+.combatCard .health div.low{background:#edaa67}
+.combatArena{position:relative;height:clamp(105px,19dvh,180px);display:grid;grid-template-columns:1fr 1fr;gap:10px;border:2px solid #9eaf91;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#7fb4b5 0%,#acd2c1 48%,#80a574 50%,#597e55 100%);box-shadow:inset 0 10px 18px #ffffff22,inset 0 -12px 24px #133d2b44;margin:6px 0 9px}
+.combatArena:before,.combatArena:after{content:"";position:absolute;bottom:5px;width:37%;height:21%;border-radius:50%;background:#31543c75;z-index:0}
+.combatArena:before{left:7%}.combatArena:after{right:7%}
+.combatSide{position:relative;z-index:1;display:flex;justify-content:space-around;align-items:center;gap:2px;padding:4px}
+.combatFigure{position:relative;display:grid;place-items:center;align-content:center;min-width:0;flex:1;max-width:90px;height:94%;filter:drop-shadow(0 4px 2px #214b4b60)}
+.combatSymbol{font-size:clamp(30px,7vw,61px);line-height:1.12;z-index:1;animation:combatHover 3s ease-in-out infinite}
+.combatFigure small{font-size:10px;font-weight:800;color:#f6f0d8;background:#263f3bba;border-radius:5px;padding:2px 4px;text-shadow:0 1px #213d37}
+.combatAura{position:absolute;left:19%;right:19%;top:16%;bottom:24%;border-radius:50%;border:2px solid #e1f1d24d}
+.combatFigure.hit{animation:combatHit .36s ease-out}
+.combatFigure.hit .combatAura{border-color:#f6e5a8;box-shadow:0 0 23px #f7dc7e}
+.combatMessage{background:#203c3dcc;border-left:4px solid #c8ae79;border-radius:5px;padding:8px 10px;font-size:clamp(12px,2.6vw,14px);line-height:1.43;max-height:88px;overflow:auto;overscroll-behavior:contain}
+.combatQueue{font-size:11px;color:#e2dfba;padding-top:6px}
+.combatChoice{margin-top:9px;font-size:12px}
+.combatChoice>b{color:#f9e1a9}
+.combatActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:7px}
+.combatActions .btn{font-size:clamp(11px,2.4vw,13px);padding:9px 5px;min-height:39px;line-height:1.3;white-space:normal}
+.combatActions .special{background:#516c8b}
+.targetHint{font-size:11px;color:#bcd9c8;margin-top:3px}
+.combatNote{font-size:10px!important;margin:9px 0 0}
+.combatProcessing{padding:18px;text-align:center}
+@keyframes combatHover{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes combatHit{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}45%{transform:translateX(6px)}70%{transform:translateX(-2px)}}
+@media(max-width:450px){.combatRoster{gap:5px}.combatCard{padding:5px}.combatCardHead{font-size:11px}.combatCardFoot{font-size:9px}#shade:has(.combatTop){padding:5px}.combatArena{height:110px}.combatSymbol{font-size:38px}}
+@media(prefers-reduced-motion:reduce){.combatSymbol,.combatFigure.hit{animation:none}}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
