@@ -183,3 +183,16 @@ There is **no guaranteed rare encounter** or manipulation of battle outcomes. To
 ### Safe editing
 
 Keep the `habitats` area ID as one of `route1`, `route2`, `forest`, `route3`, `garden`, or `cave`. Ensure `minLevel` and `maxLevel` are finite integers and `maxLevel >= minLevel`. Use one of `common`, `uncommon`, `rare`, or `legendary`. Preserve the existing unique Dragon, Primordial and Beast rule and do not rename permanent `speciesId` values. Existing saves retain their party, caught species, and individual levels regardless of where species are moved in the wild.
+
+## Mobile usability polish (v32, no art changes)
+
+This phase changes only interface behavior and responsive presentation. All 200 draft species, original art placeholders, 264 moves, six-stat battles, dual-type effectiveness, 1v1/2v2 actions, capture records, evolution, rarity, and encounter tuning remain intact.
+
+- **Controls:** virtual movement joystick deadzone is slightly larger, and repeated movement uses a consistent 135 ms cadence. Thumb position resets on pointer release, cancel, and loss of capture.
+- **Usability:** battle and Critter Index modal panels scroll within the visible phone viewport, with sticky headings and safer spacing for display notches. Index rerenders keep the scroll position when browsing long move/collection lists.
+- **Landscape:** on devices with a short viewport, controls, HUD, battle roster, and action buttons use more compact sizes to retain access to all choices.
+- **Touch:** interactive buttons and inputs use explicit minimum tap targets, and the joystick suppresses touch drag/page selection. Text input focus no longer triggers movement or inventory keyboard shortcuts.
+- **Recovery:** page hiding/backgrounding saves the current adventure and releases input; the same happens on pagehide. The normal save button continues to work unchanged.
+- **No visual creature assets** were created or altered; the original-art upload workflow is still pending Cody and Kyle.
+
+Testing was performed in a simulated DOM with a short landscape-sized canvas. Joystick press/move/cancel, preservation of modal scroll, background save, loading the 200 species and 264 moves, opening a 2v2 battle, and JavaScript syntax passed. **A real-phone manual smoke test is still recommended**, especially across browsers and rotated displays.
