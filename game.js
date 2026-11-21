@@ -8,9 +8,26 @@ const strengths={Fire:['Grass','Ice'],Water:['Fire','Rock'],Grass:['Water','Shad
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
 let s=null,screen='title',tiles=[],npcs=[],dialog=[],dialogDone=null,modal=false,battle=null,frame=0,held={},last=0,editing=false;
+// Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
+let visual={x:0,y:0,fromX:0,fromY:0,toX:0,toY:0,start:0,duration:130,ready:false};
+function snapVisual(){if(!s)return;visual={x:s.x,y:s.y,fromX:s.x,fromY:s.y,toX:s.x,toY:s.y,start:performance.now(),duration:130,ready:true}}
+function updateVisual(now=performance.now()){
+ if(!s)return;
+ if(!visual.ready){snapVisual();return}
+ const t=Math.min(1,Math.max(0,(now-visual.start)/visual.duration));
+ const smooth=t*t*(3-2*t);
+ visual.x=visual.fromX+(visual.toX-visual.fromX)*smooth;
+ visual.y=visual.fromY+(visual.toY-visual.fromY)*smooth;
+}
+function beginStep(x,y){
+ updateVisual();visual.fromX=visual.x;visual.fromY=visual.y;
+ visual.toX=x;visual.toY=y;visual.start=performance.now();
+ visual.duration=125;
+}
+
 const read=()=>{try{return JSON.parse(localStorage.getItem('critters-v1'))}catch{return null}};
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game')resizeGameCanvas()}
+function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){snapVisual();resizeGameCanvas()}}
 function critter(type,level=5){const hp=20+level*4;return {type,level,hp,maxHp:hp,xp:0,status:'',moves:['Strike',type+' Pulse','Guard','Focus']}}
 function migrate(){
  if(!s)return;
@@ -105,6 +122,7 @@ function build(){
  npc(17,15,['These roots block the central path. Defeat all three trainers and activate the garden mechanism.'],'switch');
  break;
  }
+ snapVisual();
  $('location').textContent={village:'Starting Village',lab:'Research Laboratory',route1:'Route 1 · Rice Fields',town:'Small Town',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym'}[s.area];
 }
 function say(lines,callback){dialog=lines.slice();dialogDone=callback||null;advance()}
@@ -117,14 +135,61 @@ function sprite(gender,x,y,d,f,scale=1){
  ctx.drawImage(im,col*sw,row*sh,sw,sh,x-w/2,y-h,w,h)
 }
 function drawTile(t,x,y,a,b){
- ctx.fillStyle=palette[t]||palette[0];ctx.fillRect(x,y,S,S);
- if([T.grass,T.tall,T.rice,T.flower].includes(t)){ctx.fillStyle=t===T.flower?'#ecc5c8':t===T.rice?'#e6d896':t===T.tall?'#add86d':'#5c914d';for(let k=0;k<3;k++)ctx.fillRect(x+(a*13+b*5+k*9)%25+2,y+(a*7+b*11+k*7)%25+3,3,5)}
- if(t===T.tree){ctx.fillStyle='#234b36';ctx.fillRect(x+3,y+4,26,26);ctx.fillStyle='#5a9759';ctx.fillRect(x+7,y+2,19,17)}
- if(t===T.rock){ctx.fillStyle='#625d59';ctx.fillRect(x+5,y+8,23,19);ctx.fillStyle='#a7a097';ctx.fillRect(x+8,y+6,15,8)}
- if(t===T.roof){ctx.fillStyle='#b38b68';for(let k=0;k<4;k++)ctx.fillRect(x,y+k*8,32,2)}
- if(t===T.wall){ctx.fillStyle='#5c473d';ctx.fillRect(x+3,y,3,30);ctx.fillRect(x+25,y,3,30)}
- if(t===T.door){ctx.fillStyle='#322825';ctx.fillRect(x+5,y+2,22,29);ctx.fillStyle='#f5d37a';ctx.fillRect(x+23,y+17,3,3)}
- if(t===T.desk){ctx.fillStyle='#5b4436';ctx.fillRect(x+3,y+4,26,24)}
+ // All natural terrain shares a single continuous grass surface. Tile cells now
+ // describe objects/foliage rather than independent rectangular patches of color.
+ const natural=t===T.grass||t===T.tall||t===T.rice||t===T.flower;
+ if(!natural){ctx.fillStyle=palette[t]||palette[0];ctx.fillRect(x,y,S+0.5,S+0.5)}
+ const hash=(v)=>{const z=Math.sin(v*127.1+83.7)*43758.5453;return z-Math.floor(z)};
+ const variation=hash(a*3.71+b*1.91);
+ if(natural){
+   // Tiny blades and irregular clumps repeat across world space with no grid outline.
+   ctx.fillStyle='rgba(26,79,44,.14)';
+   for(let k=0;k<3;k++){
+     const u=hash((a+1)*17.23+(b+1)*2.1+k*7.1),v=hash((a+1)*5.17+(b+1)*19.9+k*3.1);
+     const px=x+3+u*25,py=y+3+v*24;
+     ctx.fillRect(px,py,2,3+variation*2);
+   }
+   if(t===T.flower){
+     ctx.fillStyle='#e5ce9c';ctx.fillRect(x+10,y+15,3,3);
+     ctx.fillStyle='#dfb3ad';ctx.fillRect(x+19,y+10,4,4);
+   }else if(t===T.tall){
+     ctx.fillStyle='#467b43';
+     for(let k=0;k<5;k++){
+       const px=x+4+(k*7+(a*3+b*5)%5)%27,py=y+11+(k*9+b*3)%15;
+       ctx.fillRect(px,py-8,2,11);ctx.fillRect(px+2,py-11,2,9);
+     }
+     ctx.fillStyle='#83b260';ctx.fillRect(x+6,y+17,9,2);
+   }else if(t===T.rice){
+     ctx.fillStyle='#87a951';
+     for(let k=0;k<4;k++){
+       const px=x+3+k*8,py=y+6+(a+b)%3;
+       ctx.fillRect(px,py,2,19);ctx.fillRect(px+2,py+5,2,10);
+       ctx.fillStyle='#d4c47c';ctx.fillRect(px+1,py+2,3,3);ctx.fillStyle='#87a951';
+     }
+   }
+ }
+ if(t===T.path){
+   // Fine shared grit softens uniform sand without drawing tile seams.
+   ctx.fillStyle='#ae9671';
+   for(let k=0;k<4;k++){
+     const dx=hash(a*17+b*3+k*19)*27,dy=hash(a*5+b*13+k*11)*27;
+     ctx.fillRect(x+dx,y+dy,2,2)
+   }
+ }
+ if(t===T.tree){
+   ctx.fillStyle='#23492d';ctx.fillRect(x+12,y+15,9,18);
+   ctx.fillStyle='#234e36';ctx.beginPath();ctx.arc(x+16,y+15,16,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#4c8851';ctx.beginPath();ctx.arc(x+12,y+11,11,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#6b9a57';ctx.fillRect(x+6,y+6,10,5)
+ }
+ if(t===T.rock){ctx.fillStyle='#66615a';ctx.beginPath();ctx.ellipse(x+17,y+21,13,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#aa9e89';ctx.fillRect(x+9,y+12,14,5)}
+ if(t===T.roof){
+   ctx.fillStyle='#ad8064';for(let k=0;k<4;k++)ctx.fillRect(x,y+k*8,S,2);
+   ctx.fillStyle='rgba(42,34,25,.15)';ctx.fillRect(x,y+28,S,4);
+ }
+ if(t===T.wall){ctx.fillStyle='#5d473b';ctx.fillRect(x+3,y,3,30);ctx.fillRect(x+25,y,3,30)}
+ if(t===T.door){ctx.fillStyle='#342b27';ctx.fillRect(x+5,y+2,23,30);ctx.fillStyle='#e9c47e';ctx.fillRect(x+23,y+17,3,3)}
+ if(t===T.desk){ctx.fillStyle='#52392b';ctx.fillRect(x+3,y+4,26,24)}
  if(t===T.hedge){ctx.fillStyle='#225832';ctx.fillRect(x+1,y+1,30,30);ctx.fillStyle='#76ad55';ctx.fillRect(x+4,y+5,24,9)}
  if(t===T.gate){ctx.fillStyle='#674a31';ctx.fillRect(x+6,y,5,32);ctx.fillRect(x+22,y,5,32)}
  if(t===T.water){ctx.fillStyle='#bee7e5';ctx.fillRect(x+4,y+7,12,3);ctx.fillRect(x+15,y+20,12,3)}
@@ -138,14 +203,21 @@ function resizeGameCanvas(){
 function draw(){
  if(screen!=='game'||!s)return;
  resizeGameCanvas();
+ updateVisual();
  const zoom=Math.max(0.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const viewportWidth=C.width/zoom,viewportHeight=C.height/zoom;
- const ox=W*S<=viewportWidth?(W*S-viewportWidth)/2:Math.max(0,Math.min(W*S-viewportWidth,s.x*S-viewportWidth/2));
- const oy=H*S<=viewportHeight?(H*S-viewportHeight)/2:Math.max(0,Math.min(H*S-viewportHeight,s.y*S-viewportHeight/2));
- ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#315b40';ctx.fillRect(0,0,C.width,C.height);ctx.setTransform(zoom,0,0,zoom,0,0);
+ const ox=W*S<=viewportWidth?(W*S-viewportWidth)/2:Math.max(0,Math.min(W*S-viewportWidth,visual.x*S-viewportWidth/2));
+ const oy=H*S<=viewportHeight?(H*S-viewportHeight)/2:Math.max(0,Math.min(H*S-viewportHeight,visual.y*S-viewportHeight/2));
+ ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#6b9e60';ctx.fillRect(0,0,C.width,C.height);ctx.setTransform(zoom,0,0,zoom,0,0);
+ // Painted world-space foliage patches extend across tile boundaries.
+ for(let y=Math.max(0,Math.floor(oy/96)-1);y<Math.min(Math.ceil(H*S/96)+1,Math.ceil((oy+viewportHeight)/96)+1);y++)for(let x=Math.max(0,Math.floor(ox/96)-1);x<Math.min(Math.ceil(W*S/96)+1,Math.ceil((ox+viewportWidth)/96)+1);x++){
+   const cx=x*96+47-ox,cy=y*96+47-oy;
+   ctx.fillStyle=(x*7+y*11)%3===0?'rgba(54,118,61,.13)':'rgba(145,181,100,.12)';
+   ctx.beginPath();ctx.ellipse(cx,cy,62,43,0,0,Math.PI*2);ctx.fill();
+ }
  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  for(const p of npcs){let x=p.x*S+16-ox,y=p.y*S+32-oy;ctx.fillStyle='#e2ad80';ctx.fillRect(x-9,y-25,18,24);ctx.fillStyle=p.kind==='researcher'?'#f2e7cd':p.kind==='center'?'#9ad4dc':p.kind==='leader'?'#5b944b':'#965b78';ctx.fillRect(x-8,y-11,16,11);ctx.fillStyle='#4a302c';ctx.fillRect(x-10,y-30,20,10);if(p.kind==='gymtrainer'&&s.defeated[p.id])continue;ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-36)}
- sprite(s.gender,s.x*S+16-ox,s.y*S+32-oy,s.face,frame,1.25);
+ sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,frame,1.25);
  ctx.fillStyle='#1c3835dc';ctx.fillRect(5,5,330,28);ctx.fillStyle='#fff1ca';ctx.font='bold 13px system-ui';ctx.fillText(s.name+' · '+(s.starter||'Visit lab')+' · '+s.money+' ◇ · '+s.badges+' Badge',11,23)
 }
 function region(area,x,y,textLine){s.area=area;s.x=x;s.y=y;build();save();if(textLine)say([textLine])}
@@ -171,7 +243,7 @@ function move(d){
  if(x<0||y<0||x>=W||y>=H)return;
  if(npcs.some(p=>p.x===x&&p.y===y))return;
  const t=tiles[y][x];if([T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(t))return;
- s.x=x;s.y=y;frame=(frame+1)%4;
+ beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;
  if(s.area==='village'&&x===24&&y===10)return region('lab',17,23);
  if(s.area==='lab'&&x===17&&y===25)return region('village',24,12);
  if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
