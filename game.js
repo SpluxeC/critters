@@ -367,6 +367,9 @@ function migrate(){
  s.worldMinutes=Number.isFinite(s.worldMinutes)?((s.worldMinutes%1440)+1440)%1440:8*60;
  s.worldDay=Number.isFinite(s.worldDay)&&s.worldDay>=1?Math.floor(s.worldDay):1;
  s.discoveries=s.discoveries&&typeof s.discoveries==='object'?s.discoveries:{};
+ s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'&&!Array.isArray(s.earlyJourney)?s.earlyJourney:{};
+ if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
+ if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
  s.x=Math.max(1,Math.min(W-2,s.x));s.y=Math.max(1,Math.min(H-2,s.y));
 }
@@ -1167,6 +1170,7 @@ function resizeGameCanvas(){
 }
 function draw(){
  if(screen!=='game'||!s)return;
+ journeyHudUpdate();
  resizeGameCanvas();
  tickAtmosphere();
  updateVisual();
@@ -1237,7 +1241,11 @@ function move(d){
  if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
  if((s.steps=(s.steps||0)+1)%10===0)save();
- if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete&&Math.random()<wildEncounterChance(s.area))startWild()
+ if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
+ const first=s.area==='route1'&&!s.earlyJourney?.firstEncounter;
+ if(first){s.earlyJourney=s.earlyJourney||{};s.earlyJourney.fieldSteps=(s.earlyJourney.fieldSteps||0)+1}
+ if(first&&s.earlyJourney.fieldSteps>=5||Math.random()<wildEncounterChance(s.area))startWild();
+}
 }
 function interact(){
  if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
@@ -1691,9 +1699,43 @@ function renderIndex(){
 }
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function earlyJourney(){
+ if(!s)return null;
+ if(!s.starter)return {title:'Find the researcher',hint:'Visit the northeast laboratory in Starting Village and speak to the researcher.',progress:0};
+ if(!s.introComplete)return {title:'Complete the friendly match',hint:'Pick a move from the battle menu. Everyone is healed after the tutorial.',progress:1};
+ if(['village','lab','home','neighbor'].includes(s.area))return {title:'Explore Route 1',hint:'Follow the eastern path out of the village into the rice fields.',progress:2};
+ if(!s.earlyJourney?.firstEncounter)return {title:'Discover a wild Critter',hint:'Walk through the rice paddies on Route 1 to find a wild Critter.',progress:3};
+ if(!s.earlyJourney?.firstCapture)return {title:'Try the capture beam',hint:'Weaken a wild Critter, then use Capture Beam during the encounter.',progress:4};
+ if(!s.defeated?.rt1)return {title:'Challenge the first trainer',hint:'Find the trainer near the eastern half of Route 1’s main path.',progress:5};
+ return {title:'First adventure complete!',hint:'Visit the next town’s Critter Center, then explore Route 2.',progress:6};
+}
+function journeyHudUpdate(){
+ const node=$('journeyHud');if(!node)return;
+ const step=earlyJourney(),show=!!(step&&screen==='game'&&!modal&&!battle);
+ node.hidden=!show;if(!show)return;
+ const key=step.progress;
+ if(node.dataset.stage!==String(key)){
+  node.dataset.stage=String(key);
+  node.innerHTML='<span><small>FIRST ADVENTURE · '+(key+1)+'/7</small><strong>'+escapeHtml(step.title)+'</strong></span><button id="journeyHelp" aria-label="Show objective details" type="button">?</button>';
+  const help=$('journeyHelp');if(help)help.onclick=()=>{const tip=earlyJourney();if(!tip)return;open('Current Objective','<p><strong>'+escapeHtml(tip.title)+'</strong></p><p>'+escapeHtml(tip.hint)+'</p><button class="btn primary" id="objectiveDone">Got it</button>');$('objectiveDone').onclick=close};
+ }
+}
+function noteOpeningEvent(key){
+ s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'?s.earlyJourney:{};
+ if(!s.earlyJourney[key]){s.earlyJourney[key]=true;save()}
+}
+function earlyBattleTip(){
+ if(!battle)return '';
+ if(battle.kind==='tutorial')return '<p class="openingTip">Training match: Try your starter’s attacks! Everyone will be healed afterward.</p>';
+ if(battle.kind==='wild'&&s.area==='route1'&&!s.earlyJourney?.firstCapture)return '<p class="openingTip">Capture hint: Lower the wild Critter’s HP, then tap Capture Beam. Attempts can fail.</p>';
+ if(battle.id==='rt1'&&!s.defeated?.rt1)return '<p class="openingTip">Trainer tip: Guard, switch Critters, or use a Potion if you need to.</p>';
+ return '';
+}
+
 function starterMenu(){
- open('Choose Your Starter','<p>These starter types are placeholders for the original species you are designing.</p><div class="options"><button class="btn" data-starter="Rock">⛰ Rock</button><button class="btn" data-starter="Water">💧 Water</button><button class="btn" data-starter="Electric">⚡ Electric</button></div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
- document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;s.party=[critter(s.starter,5)];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','Time for your first friendly match!'],()=>startTrainer('tutorial'))})
+ open('Choose Your Starter','<p>Choose your first partner. The Critter Index holds your team, inventory, and capture beam.</p><div class="options"><button class="btn" data-starter="Rock">⛰ Rock</button><button class="btn" data-starter="Water">💧 Water</button><button class="btn" data-starter="Electric">⚡ Electric</button></div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
+ document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;s.party=[critter(s.starter,5)];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
 }
 // World / encounter balancing (v31) — area-specific encounter density, species
 // rarity, wild level ranges, and tiny novelty/time-of-day influences.
@@ -1756,7 +1798,7 @@ function startTrainer(id){
  if(id==='tutorial'){enemies=[make(s.rival,5)];name='Childhood Rival';award=0;kind='tutorial'}
  else if(id==='rival'){enemies=[make(s.rival,12),make('Beast',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
- else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Beast',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
+ else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
  startBattle({kind,enemies,name,award,id},name+' challenges you!')
 }
@@ -1767,6 +1809,7 @@ function startBattle(data,msg){
  const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
  const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
  data.enemies.forEach(p=>{normalizeMoves(refreshSpeciesMetadata(p));noteCritterSeen(p)});
+ if(data.kind==='wild'&&s.area==='route1')noteOpeningEvent('firstEncounter');
  save();
  battle={...data,mode:doubles?2:1,allySlots,enemySlots:data.enemies.map((p,i)=>i).slice(0,doubles?2:1),
   nextEnemy:doubles?2:1,participants:[...allySlots],pending:[],acting:0,turn:1,phase:'choose',
@@ -1841,7 +1884,7 @@ function renderBattle(message){
  }else if(battle.phase==='resolve')actions='<div class="combatProcessing">Resolving team turn…</div>';
  open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader()+battleMessage(battle.feedback)
   +(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')
-  +actions+'<p class="muted combatNote">Each team chooses its turn. Move accuracy, PP, effects, and type strengths apply.</p>');
+  +actions+earlyBattleTip()+'<p class="muted combatNote">Each team chooses its turn. Move accuracy, PP, effects, and type strengths apply.</p>');
  $('close').hidden=true;
  if(battle.phase!=='choose')return;
  document.querySelectorAll('[data-use-move]').forEach(el=>el.onclick=()=>{
@@ -2098,8 +2141,8 @@ function performPlayerAction(action,log){
     if(Math.random()<chance){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
      if(s.party.length<8)s.party.push(caught);else s.storage.push(caught);
-     s.captureCount++;noteCritterCaptured(caught);s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:s.party.includes(caught)?'Party':'Home'});s.captureLog=s.captureLog.slice(-80);
-     endBattle(true,'Capture successful! '+foe.type+' joined '+(s.party.includes(caught)?'your party.':'home storage.'),false);
+     s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:s.party.includes(caught)?'Party':'Home'});s.captureLog=s.captureLog.slice(-80);
+     endBattle(true,'Capture successful! '+(foe.name||foe.type)+' joined '+(s.party.includes(caught)?'your party.':'home storage.'),false);
     }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
    }return;
   case 'run':if(battle.kind==='wild'){
@@ -2270,18 +2313,18 @@ function partyEvolutionControls(p,i){
 function awardExperience(p,xp){if(!p)return;p.xp=(p.xp||0)+xp;while(p.xp>=p.level*12){p.xp-=p.level*12;p.level++;p.maxHp+=4;p.hp=Math.min(p.maxHp,p.hp+4);gainLevelMoves(p);tryEvolveChain(p)}}
 function endBattle(won,message,defeated){
  const b=battle;battle=null;$('close').hidden=false;
- if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>p.hp=p.maxHp)}
+ if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)})}
  else if(defeated&&won){s.money+=b.award||0;if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
  }
  else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);s.area='town';s.x=17;s.y=15;build()}
  const evolveMessages=evolutionNotification();save();open(won?'Battle Complete':'Defeated','<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
- $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent!','Follow the eastern road to Route 1. Discover new Critters with the Index beam.']);if(b.id==='leader')build()}
+ $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader')build()}
 }
 function blackout(){
  const wasTutorial=battle?.kind==='tutorial';battle=null;$('close').hidden=false;
  if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);
- if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
+ if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>refillMovePP(p))}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
@@ -2315,7 +2358,7 @@ $('new').onclick=()=>show('selection');
 $('continue').onclick=()=>{s=read();if(!s)return;migrate();build();show('game')};
 $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,' ');if(!name){$('error').textContent='Please enter a name.';return}
  s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4};
- save();build();show('game');say(['Welcome, '+name+'!','Visit the research laboratory in the northeast of the village to receive your Critter Index and starter.'])};
+ save();build();show('game');say(['Welcome, '+name+'!','Use the left joystick to move and Talk / Use to interact.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
 $('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
 window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>120){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
