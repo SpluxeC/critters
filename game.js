@@ -1641,7 +1641,7 @@ function indexCritters(){
    +'<span>Page '+(critterBookPage+1)+' / '+(maxPage+1)+'</span>'
    +'<button type="button" class="btn" id="critterNext" '+(critterBookPage>=maxPage?'disabled':'')+'>Next</button></div>';
  }
- return '<div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div>'+search+body;
+ return '<div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div><p class="muted">Each species has one home region. Additional wild species gradually appear as you explore that region; rare encounters remain uncommon.</p>'+search+body;
 }
 
 function indexTools(){
