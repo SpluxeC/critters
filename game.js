@@ -1480,6 +1480,7 @@ function renderBattle(message){
  if(battle.phase==='choose'&&actor&&actor.hp>0){
   normalizeMoves(actor);
   const allMoves=actor.moves.filter(id=>validMove(id));
+  const noUsableMoves=!allMoves.some(id=>(actor.movePP[id]||0)>0);
   const moveButtons=allMoves.map(id=>{
    const m=getMove(actor,id),remaining=actor.movePP[id]||0;
    const targetsForMove=m.target==='enemy'?targets:
@@ -1493,7 +1494,7 @@ function renderBattle(message){
       +escapeHtml(m.name)+(who?' → '+escapeHtml(who):'')+' <small>'+remaining+'/'+m.pp+' PP</small>'
       +'<em>'+escapeHtml(m.type)+' · '+(m.category==='status'?'Support':m.power+' power')+'</em></button>';
    }).join('');
-  }).join('');
+  }).join('')+(noUsableMoves?'<button class="btn combatAttack" data-use-move="opening-flick" data-move-target="'+(targets[0]??i)+'">Last Resort <small>No PP needed</small></button>':'');
   actions='<div class="combatChoice"><b>'+escapeHtml(actor.name||actor.type)+' · Action '+(battle.acting+1)+'/'+battle.allySlots.length+'</b>'
    +(battle.mode===2?'<div class="targetHint">Choose a move and its target</div>':'')
    +'<div class="combatActions">'+moveButtons
@@ -1511,7 +1512,7 @@ function renderBattle(message){
  if(battle.phase!=='choose')return;
  document.querySelectorAll('[data-use-move]').forEach(el=>el.onclick=()=>{
   const moveId=el.dataset.useMove,target=Number(el.dataset.moveTarget);
-  if((actor.movePP[moveId]||0)<1||!validMove(moveId))return;
+  if(!validMove(moveId)||((actor.movePP[moveId]||0)<1&&!(moveId==='opening-flick'&&noUsableMoves)))return;
   queueBattleAction({kind:'move',moveId,target});
  });
  $('guard').onclick=()=>queueBattleAction({kind:'guard'});
@@ -1528,7 +1529,11 @@ function queueBattleAction(action){
  if(!battle||battle.phase!=='choose')return;
  const actor=battle.allySlots[battle.acting];
  if(actor==null||!s.party[actor]||s.party[actor].hp<=0)return;
- if(action.kind==='move'&&(!validMove(action.moveId)||(s.party[actor].movePP?.[action.moveId]||0)<=0))return;
+ if(action.kind==='move'){
+  const pp=s.party[actor].movePP||{};
+  const hasMoves=(s.party[actor].moves||[]).some(id=>(pp[id]||0)>0);
+  if(!validMove(action.moveId)||((pp[action.moveId]||0)<=0&&(action.moveId!=='opening-flick'||hasMoves)))return;
+ }
  battle.pending.push({...action,actor});
  battle.acting++;
  if(battle.acting<activeAllies().length){
@@ -1800,21 +1805,23 @@ function resolveTeamTurn(){
  const livingEnemy=battle.enemies.some(p=>p.hp>0);
  if(!livingEnemy)return endBattle(true,log.join(' ')+' Victory!',true);
  // The opposing team uses exactly the same move executor and PP rules.
- for(const enemyIndex of activeEnemies().sort((a,b)=>
-  (battle.enemies[b]?.level||0)*statFactor('enemy',b,'speed')
-  -(battle.enemies[a]?.level||0)*statFactor('enemy',a,'speed'))){
-  if(!battle)return;
-  const foe=battle.enemies[enemyIndex],allies=activeAllies();
-  if(!allies.length)break;
-  normalizeMoves(foe);
+ const enemyChoices=activeEnemies().map(enemyIndex=>{
+  const foe=battle.enemies[enemyIndex];normalizeMoves(foe);
   const legal=foe.moves.filter(id=>(foe.movePP?.[id]||0)>0&&validMove(id));
   const pool=legal.filter(id=>getMove(foe,id).target==='enemy');
-  const choice=(pool.length?pool:legal)[Math.floor(Math.random()*(pool.length?pool.length:legal.length))];
-  const move=choice?getMove(foe,choice):moveFallbacks[0];
+  const list=pool.length?pool:legal;
+  const choice=list[Math.floor(Math.random()*list.length)];
+  return {enemyIndex,move:choice?getMove(foe,choice):moveFallbacks[0]};
+ }).sort((a,b)=>(b.move.priority||0)-(a.move.priority||0)
+   ||(battle.enemies[b.enemyIndex]?.level||0)*statFactor('enemy',b.enemyIndex,'speed')
+    -(battle.enemies[a.enemyIndex]?.level||0)*statFactor('enemy',a.enemyIndex,'speed'));
+ for(const {enemyIndex,move} of enemyChoices){
+  if(!battle)return;
+  const foe=battle.enemies[enemyIndex],allies=activeAllies();
+  if(foe.hp<=0||!allies.length)continue;
   const target=allies.reduce((best,i)=>s.party[i].hp<s.party[best].hp?i:best,allies[0]);
   performMove(foe,move,'enemy',enemyIndex,move.target==='enemy'?target:enemyIndex,log);
  }
- endOfTeamTurn(log);
  battle.guards={};battle.enemyGuards={};
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  if(!s.party.some(p=>p.hp>0))return blackout();
