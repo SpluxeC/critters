@@ -211,3 +211,18 @@ This phase polishes the game's first 15–20 minutes **without adding art, chang
 - Old saves are migrated conservatively: first-Route-1 capture/encounter flags can be inferred from species-specific historical capture and discovery records. New state is stored in `s.earlyJourney`, under the same existing local save key; nothing is reset.
 
 Validation: new-game starter and tutorial path, 200 species/264 moves loading, tutorial healing, Route 1 encounter markers, battle hints, first trainer type, old-save migration, and JavaScript syntax. A real-device touch walkthrough is still recommended.
+
+## Trainer AI and battle feedback (v35)
+
+The battle system retains the approved structure: all player-team actions resolve before opponent actions; move priority and Speed order actions within each team. Wild encounters are still 1v1, while approved route trainer encounters include occasional 2v2.
+
+- **Trainer choices:** opponents evaluate the damage of their learned PP-available moves against active player Critters, taking type matchups (including dual typing), base battle stats, move accuracy, move priority and a potential knockout into account. They may use self-healing when hurt and situational support effects where appropriate. Small score variation avoids mechanically identical choices on every turn.
+- **Wild encounters and the friendly tutorial** intentionally remain basic, using a small random choice among legal damaging moves. This avoids introducing tactical difficulty during early catching or starter training.
+- **Legal moves and PP:** trainer AI only picks moves that are available to that species and have PP remaining. When no moves have PP, the existing Last Resort fallback remains intact.
+- **Targeting:** in 2v2, trainer AI chooses an enemy-targeted move against an active opposing Critter, and the normal move executor handles a target that has fainted earlier in the turn.
+- **Readable history:** the battle interface now shows a collapsible, scrollable **Last turn** record, with individual events rather than solely a long paragraph. On mobile, the log has a smaller maximum height so attack choices remain accessible.
+- **Reserved types:** a generic Beast placeholder has been removed from the later rival's team; the one-only Beast species rule remains unchanged.
+
+No art was generated or edited; no objective tracker was restored. All 200 Critters, 264 moves, stats, types, evolution families, collection records, and encounter regions are preserved.
+
+Regression checks should include 1v1 and 2v2 trainer battles, wild battles, move PP exhaustion, type-advantaged attacks, status/support selection, scrolling the new log, and old save loading. Test observations come from a simulated runtime; physical mobile QA is still useful.
