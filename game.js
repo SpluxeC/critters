@@ -1774,7 +1774,7 @@ function startTrainer(id){
  const make=(t,l)=>critter(t,l);
  let enemies,name,award,kind='trainer';
  if(id==='tutorial'){enemies=[make(s.rival,5)];name='Childhood Rival';award=0;kind='tutorial'}
- else if(id==='rival'){enemies=[make(s.rival,12),make('Beast',10),make('Flying',14)];name='Childhood Rival';award=65}
+ else if(id==='rival'){enemies=[make(s.rival,12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
  else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
