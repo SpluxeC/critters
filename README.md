@@ -46,3 +46,10 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Empty ally-target menus fall back safely to self, while enemy targeting never substitutes the acting ally.
 - Trainer AI can consider ally-targeting moves for both deployed teammates.
 - Existing type effectiveness, PP, 1v1 wild encounters and trainer-only 2v2 rules remain unchanged.
+
+## Phase 11 — Capture and party management (November 2026)
+- Maximum active party size is **8**. New captures join the party when space is available and automatically go to home storage otherwise.
+- Capture Beam displays an estimated catch percentage based on wild Critter HP; chances still use the existing formula.
+- Critter Center maintenance displays species names and lets players move party members up or down, send them home, and retrieve stored Critters while preserving at least one active partner.
+- Save migration keeps any excess party entries in home storage instead of discarding them.
+- Party editing and retrieving Critters remain exclusive to Critter Centers.
