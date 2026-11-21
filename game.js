@@ -311,12 +311,15 @@ function normalizeMoves(p){
 function gainLevelMoves(p){
  const spec=speciesFor(p);
  const options=registeredLearnset(spec).filter(e=>e.level===p.level&&validMove(e.moveId));
+ const learned=[];
  for(const event of options){
   p.moves=Array.isArray(p.moves)?p.moves:[];
   p.moves=[...p.moves.filter(id=>id!==event.moveId),event.moveId].slice(-4);
   p.movePP=p.movePP||{};p.movePP[event.moveId]=validMove(event.moveId).pp;
+  learned.push(validMove(event.moveId).name);
  }
  if(!spec)normalizeMoves(p);
+ return learned;
 }
 function getMove(p,id){
  const move=validMove(id);
@@ -1412,6 +1415,9 @@ function indexParty(){
   return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
+    +'<div class="watchPartyMeta">XP '+Math.floor(p.xp||0)+' / '+experienceToNextLevel(p)+' to Lv '+(p.level+1)+'</div>'
+    +'<div class="watchMeter"><div style="width:'+Math.min(100,Math.max(0,Math.round(100*(p.xp||0)/experienceToNextLevel(p))))+'%"></div></div>'
+    +'<div class="watchPartyMeta">'+(nextLevelMove(p)?'Next move: '+escapeHtml(getMove(p,nextLevelMove(p).moveId).name)+' at Lv '+nextLevelMove(p).level:'No further level-up moves assigned')+'</div>'
    +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
    +partyEvolutionControls(p,i)+'</div>';
@@ -2004,8 +2010,11 @@ function defeatFoe(i,log){
  const enemy=battle.enemies[i];if(!enemy)return;
  const recipients=[...new Set(battle.participants)].filter(index=>s.party[index]);
  const gain=Math.floor(enemy.level*13/Math.max(1,recipients.length));
- recipients.forEach(index=>awardExperience(s.party[index],gain));
- log.push(enemy.type+' fainted! Your participating Critters gain '+gain+' XP each.');
+ log.push((enemy.name||enemy.type)+' fainted! Participating Critters gain '+gain+' XP each.');
+ recipients.forEach(index=>{
+  const p=s.party[index],events=awardExperience(p,gain);
+  log.push(...events);
+ });
 }
 
 // One effect executor handles both player and AI; target indices are always
@@ -2454,7 +2463,29 @@ function partyEvolutionControls(p,i){
   +'<button class="btn" type="button" data-evolve-party="'+i+'" '+(!evolutionReady(p)?'disabled':'')+'>Evolve</button></div>';
 }
 
-function awardExperience(p,xp){if(!p)return;p.xp=(p.xp||0)+xp;while(p.xp>=p.level*12){p.xp-=p.level*12;p.level++;p.maxHp+=4;p.hp=Math.min(p.maxHp,p.hp+4);gainLevelMoves(p);tryEvolveChain(p)}}
+function experienceToNextLevel(p){return Math.max(12,(p?.level||1)*12)}
+function nextLevelMove(p){
+ const spec=speciesFor(p);
+ return registeredLearnset(spec).find(e=>e.level>p.level&&validMove(e.moveId))||null;
+}
+function awardExperience(p,xp){
+ if(!p)return [];
+ const events=[];
+ p.xp=Math.max(0,Number.isFinite(p.xp)?p.xp:0)+Math.max(0,Math.floor(xp));
+ // Existing level requirements and health growth remain unchanged.
+ while(p.xp>=experienceToNextLevel(p)){
+  p.xp-=experienceToNextLevel(p);
+  p.level++;
+  p.maxHp+=4;
+  p.hp=Math.min(p.maxHp,p.hp+4);
+  events.push((p.name||p.type)+' reached Lv '+p.level+'!');
+  const learned=gainLevelMoves(p);
+  if(learned.length)events.push((p.name||p.type)+' learned '+learned.join(', ')+'.');
+  const evolved=tryEvolveChain(p);
+  for(const result of evolved)events.push(result.from+' evolved into '+result.to+'!');
+ }
+ return events;
+}
 function endBattle(won,message,defeated){
  const b=battle;battle=null;$('close').hidden=false;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)})}
