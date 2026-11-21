@@ -65,3 +65,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Wild species are selected from the existing authored habitat registry, with per-region starting level bands: Route 1 (2–5), Route 2 (5–10), Hidden Forest (7–14), Route 3 (10–18), Garden outskirts (12–20), and Mountain Cave (15–22).
 - With additional badges beyond the first, the encounter-level ceiling of advanced regions increases by two levels per badge, capped at twelve extra levels. High-level species become eligible for wilderness revisits when their original habitat ranges overlap the new ceiling.
 - Existing rarity, discovery novelty, day/night type influence, and first-badge legendary gating remain intact. All 200 species records and their original habitat entries remain unchanged. The encounter cooldown counter is saved compatibly with old browser saves.
+
+## Phase 13 follow-up — smaller starting wild rosters (v42)
+- Each of the 200 authored species retains its single original home region; no species or habitat records were deleted or reassigned.
+- Instead of making every resident eligible immediately, the starting wild roster contains up to 9 species on Route 1, 12 on Route 2, 12 in Hidden Forest, 13 on Route 3, 12 near Garden Town, and 13 in Mountain Cave (subject to the area's level limits and existing legendary restrictions).
+- Every eight wild encounters within a particular region unlock four more eligible resident species for that same region. Wild-encounter progress is saved per region, so exploration gradually reveals more species without making them appear in other locations.
+- The existing weighted rarity system remains in force (rare species have far lower weights than common residents). The Critter Index describes this regional discovery behavior.
