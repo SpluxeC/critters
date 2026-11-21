@@ -1275,7 +1275,8 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 // Phase 4 — Index is a read-only wrist device outside a Critter Center.
 // Party swapping and module configuration remain Center-exclusive.
 let indexTab='clock',indexSelection=0;
-const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['tools','⚙ Tools']];
+const INDEX_TABS=[['clock','⌚ Clock'],['party','◇ Party'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['tools','⚙ Tools']];
+let moveBookType='Water';
 function index(){
  if(screen!=='game'||battle)return;
  indexTab='clock';indexSelection=0;renderIndex();
@@ -1327,7 +1328,7 @@ function indexParty(){
   return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
-   +'<div class="watchPartyMeta">'+(p.moves||['Strike',p.type+' Pulse','Guard','Focus']).map(escapeHtml).join(' · ')+'</div></div>';
+   +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div></div>';
  }).join('');
  return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
@@ -1352,6 +1353,19 @@ function indexRecords(){
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchReadOnly">Species remain labeled by type until the 25 original Critter designs are added.</div>';
 }
+function indexMoves(){
+ const types=Object.keys(strengths).concat('Typeless');
+ if(!types.includes(moveBookType))moveBookType='Water';
+ const buttons=types.map(type=>'<button type="button" class="watchTypeButton '+(moveBookType===type?'selected':'')+'" data-move-type="'+escapeHtml(type)+'">'+escapeHtml(type)+'</button>').join('');
+ const list=[...moveRegistry.values()].filter(m=>m.type===moveBookType).sort((a,b)=>(a.requiredLevelGuide||0)-(b.requiredLevelGuide||0));
+ const content=list.map(m=>'<div class="watchMoveRow"><div class="watchMoveTop"><strong>'+escapeHtml(m.name)+'</strong><span>'+escapeHtml(m.category)+' · '+(m.pp||0)+' PP</span></div>'
+ +'<div class="watchMoveStats">Power '+(m.power||'—')+' · Accuracy '+(m.accuracy??100)+'% · '+escapeHtml(m.target||'enemy')+'</div>'
+ +'<p>'+escapeHtml(m.description||'No description')+'</p></div>').join('');
+ return '<div class="watchSectionTitle">Move library <small>'+moveRegistry.size+' registered</small></div>'
+  +'<div class="watchTypeButtons">'+buttons+'</div>'+content
+  +'<div class="watchReadOnly">This is a reference catalog. Each species learns its own curated moves at specific levels. Move editing happens in the repository.</div>';
+}
+
 function indexTools(){
  const cutter=!!s.cut,level=s.badges>=5?'Rare':s.badges>=2?'Advanced':'Basic';
  let modules=Array.from({length:4},(_,i)=>'<div class="watchModuleRow"><span>'+(i+9)+' O’CLOCK</span><strong>'+escapeHtml(s.installed[i]||'Empty module socket')+'</strong></div>').join('');
@@ -1365,7 +1379,7 @@ function indexTools(){
 function renderIndex(){
  if(!s||screen!=='game'||battle)return;
  const tabs=INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+label+'</button>').join('');
- let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTools();
+ let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTools();
  open('Critter Index','<div class="watchShell"><div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
   +'<div class="watchStats"><span>◇ '+s.money+' credits</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
   +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>'
@@ -1375,6 +1389,10 @@ function renderIndex(){
  document.querySelectorAll('[data-watch-tab]').forEach(b=>b.onclick=()=>{
   if(!INDEX_TABS.some(([key])=>key===b.dataset.watchTab))return;
   indexTab=b.dataset.watchTab;renderIndex();
+ });
+ document.querySelectorAll('[data-move-type]').forEach(b=>b.onclick=()=>{
+  if(!Object.keys(strengths).concat('Typeless').includes(b.dataset.moveType))return;
+  moveBookType=b.dataset.moveType;renderIndex();
  });
  document.querySelectorAll('[data-index-slot]').forEach(b=>b.onclick=()=>{
   const n=Number(b.dataset.indexSlot);if(!Number.isInteger(n)||n<0||n>=12)return;
