@@ -113,7 +113,8 @@ function build(){
  // Clear the entire east/west trail opening and its visible shoulders.
  // Border trees used to be painted over the path at x=0 and x=W-1.
  for(const edge of [0,W-1]){
-  for(let y=11;y<=16;y++)put(edge,y,T.grass);
+  // The lower shoulder remains wooded where the fence blocks movement.
+  for(let y=11;y<=15;y++)put(edge,y,T.grass);
   for(let y=12;y<=14;y++)put(edge,y,T.path);
  }
  // The portal checks at x=32 remain unchanged, but the art now meets the edge.
@@ -137,7 +138,7 @@ function build(){
  break;
  case 'route1':
  borders();roads();
- for(let y=11;y<=16;y++){put(0,y,y>=12&&y<=14?T.path:T.grass);put(1,y,y>=12&&y<=14?T.path:T.grass)}rect(11,7,2,6,T.path);rect(22,14,2,7,T.path);
+ for(let y=11;y<=15;y++){put(0,y,y>=12&&y<=14?T.path:T.grass);put(1,y,y>=12&&y<=14?T.path:T.grass)}rect(11,7,2,6,T.path);rect(22,14,2,7,T.path);
  for(let y=2;y<12;y++)for(let x=3;x<31;x++)if(x!==11&&x!==12&&(x*7+y*11)%5!==0)put(x,y,(x+y)%4===0?T.rice:T.tall);
  for(let y=16;y<24;y++)for(let x=3;x<31;x++)if(x!==22&&x!==23&&(x*9+y*5)%6!==0)put(x,y,(x+y)%3===0?T.rice:T.tall);
  npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','Use the Index beam when their HP is low.']);npc(20,13,['Want to test your team against mine?'],'routetrainer','rt1');
