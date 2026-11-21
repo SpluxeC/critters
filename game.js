@@ -1393,7 +1393,7 @@ function indexParty(){
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
    +partyEvolutionControls(p,i)+'</div>';
  }).join('');
- return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
+ return evolutionNotification()+'<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
 }
 function indexItems(){
@@ -1652,7 +1652,7 @@ function renderIndex(){
  document.querySelectorAll('[data-evolve-party]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.evolveParty),p=s.party[i];if(!p||!evolutionReady(p))return;
   const result=tryEvolveChain(p);if(!result.length)return;
-  save();renderIndex();
+  renderIndex();save();
  });
  document.querySelectorAll('[data-critter-id]').forEach(b=>b.onclick=()=>{
   if(!speciesRegistry.has(b.dataset.critterId))return;
