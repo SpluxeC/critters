@@ -1858,7 +1858,7 @@ function renderBattle(message){
    const targetsForMove=m.target==='enemy'?targets:
     m.target==='ally'?activeAllies().filter(a=>a!==i):
     [i];
-   const choices=targetsForMove.length?targetsForMove:[i];
+   const choices=targetsForMove.length?targetsForMove:(m.target==='ally'?[i]:m.target==='enemy'?[]:[i]);
    return choices.map(target=>{
     const who=m.target==='enemy'?(battle.enemies[target]?.name||battle.enemies[target]?.type):m.target==='ally'?(s.party[target]?.name||s.party[target]?.type):'';
     return '<button class="btn combatAttack '+(m.category==='special'?'special':'')+'" data-use-move="'+escapeHtml(id)+'" data-move-target="'+target+'" '
@@ -1904,9 +1904,18 @@ function queueBattleAction(action){
  if(action.kind==='move'){
   const pp=s.party[actor].movePP||{};
   const hasMoves=(s.party[actor].moves||[]).some(id=>(pp[id]||0)>0);
-  if(!validMove(action.moveId)||((pp[action.moveId]||0)<=0&&(action.moveId!=='opening-flick'||hasMoves)))return;
+  const chosen=validMove(action.moveId);
+   if(!chosen||((pp[action.moveId]||0)<=0&&(action.moveId!=='opening-flick'||hasMoves)))return;
+   if(chosen.target==='enemy'&&!activeEnemies().includes(action.target))return;
+   if(chosen.target==='ally'&&action.target!==actor&&!activeAllies().includes(action.target))return;
  }
- battle.pending.push({...action,actor});
+ if(action.kind==='switch'){
+   if(!Number.isInteger(action.target)||!s.party[action.target]||s.party[action.target].hp<=0
+    ||battle.allySlots.includes(action.target)
+    ||battle.pending.some(q=>q.kind==='switch'&&q.target===action.target))return;
+  }
+  if(action.kind==='revive'&&(!Number.isInteger(action.target)||s.party[action.target]?.hp!==0))return;
+  battle.pending.push({...action,actor});
  battle.acting++;
  if(battle.acting<activeAllies().length){
   renderBattle(s.party[actor].type+' is ready. Choose the next Critter’s move.');
@@ -1914,7 +1923,7 @@ function queueBattleAction(action){
 }
 function selectPoke(){
  if(!battle||battle.phase!=='choose')return;
- const candidates=s.party.map((p,i)=>({p,i})).filter(({p,i})=>p.hp>0&&!battle.allySlots.includes(i));
+ const candidates=s.party.map((p,i)=>({p,i})).filter(({p,i})=>p.hp>0&&!battle.allySlots.includes(i)&&!battle.pending.some(q=>q.kind==='switch'&&q.target===i));
  const html=candidates.map(({p,i})=>'<button class="btn" data-poke="'+i+'">'+(symbols[p.type]||'◇')+' '+p.type+' Lv'+p.level+' · HP '+p.hp+'/'+p.maxHp+'</button>').join('');
  if(!html){renderBattle('No available bench Critter to switch into.');return}
  open(battle.name,battleHeader()+battleMessage('Choose a healthy reserve Critter.')+'<div class="options">'+html+'<button class="btn" id="cancelSelection">Cancel</button></div>');
@@ -2216,7 +2225,7 @@ function chooseTrainerAction(enemyIndex){
  const candidates=[];
  for(const move of legal){
   const enemyTarget=move.target==='enemy';
-  const candidatesForMove=enemyTarget?allies:[enemyIndex];
+  const candidatesForMove=enemyTarget?allies:move.target==='ally'?activeEnemies():[enemyIndex];
   for(const target of candidatesForMove){
    const score=trainerMoveScore(foe,move,enemyIndex,enemyTarget?target:allies[0]);
    // Small variation prevents repetitive AI without overwhelming smarter choices.
@@ -2262,6 +2271,9 @@ function resolveTeamTurn(){
   // A target may faint during this team turn; performMove retargets safely.
   performMove(foe,move,'enemy',enemyIndex,target,log);
  }
+ // Conditions tick after both teams act. Guard remains active through these ticks,
+ // then expires before the next team's action selection.
+ endOfTeamTurn(log);
  battle.guards={};battle.enemyGuards={};
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  if(!s.party.some(p=>p.hp>0))return blackout();
