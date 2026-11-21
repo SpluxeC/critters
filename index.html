@@ -106,7 +106,7 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 .watchStatus strong{color:#f5dfb1;font-size:13px;letter-spacing:0}
 .watchStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:12px}
 .watchStats span{background:#223f43;border:1px solid #668b84;border-radius:7px;text-align:center;padding:6px 2px;font-size:clamp(9px,2.2vw,12px);white-space:nowrap}
-.watchTabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-bottom:12px}
+.watchTabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-bottom:12px}
 .watchTab{border:1px solid #678780;background:#274c4e;color:#c8dbd4;border-radius:7px;min-width:0;padding:10px 2px;font:700 clamp(9px,2vw,12px) system-ui;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
 .watchTab.selected{color:#1e3437;background:#f0d397;border-color:#f0d397}
 .watchTab:focus-visible,.watchPosition:focus-visible{outline:2px solid #fff2c7;outline-offset:1px}
@@ -163,6 +163,20 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 @media(max-width:520px){.watchClockLayout{grid-template-columns:1fr}.watchClock{width:min(100%,270px);border-width:7px}.watchPosition{width:clamp(36px,11vw,43px)}.watchSelection{padding:9px}.watchSelectionHeading span{display:inline;margin-left:7px}.watchScreen{min-height:240px;padding:7px}.watchStatus{margin:2px 0 8px}.watchFooter .btn{flex:1}.watchPartyCard{padding:7px}.watchPartyMeta{font-size:9px}.watchTabs{gap:3px}.watchTab{font-size:9px;padding:9px 0}}
 @media(max-width:350px){.watchPartyGrid{grid-template-columns:1fr}.watchStats span{font-size:9px}.watchClock{width:230px}.watchPosition{width:35px}}
 @media(prefers-reduced-motion:reduce){.watchMeter>div{transition:none}}
+
+/* Move library and PP readouts */
+.combatAttack{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;white-space:normal;min-height:58px!important}
+.combatAttack small{font-size:10px;color:#f0e0aa;font-weight:700}
+.combatAttack em{font-size:9px;color:#d6e8df;font-style:normal;font-weight:500}
+.watchTypeButtons{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 12px}
+.watchTypeButton{border:1px solid #597c73;background:#244247;color:#dae8d9;border-radius:7px;font:700 11px system-ui;padding:7px;cursor:pointer;touch-action:manipulation}
+.watchTypeButton.selected{background:#f0d397;color:#1e3437;border-color:#f0d397}
+.watchMoveRow{padding:9px;margin-bottom:6px;background:#244347;border:1px solid #4f766f;border-radius:8px}
+.watchMoveTop{display:flex;align-items:center;justify-content:space-between;gap:7px}
+.watchMoveTop strong{font-size:12px}.watchMoveTop span{font-size:10px;color:#ecd4a1;text-transform:capitalize;white-space:nowrap}
+.watchMoveStats{font-size:10px;color:#a8d5c2;margin-top:4px}
+.watchMoveRow p{font-size:11px;color:#d3e0d7;margin:5px 0 0;line-height:1.4}
+@media(max-width:450px){.watchTab{font-size:8px}.watchTabs{gap:2px}.watchTypeButton{font-size:10px;padding:6px}}
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
