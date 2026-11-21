@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "description": "Official species registration. Kyle adds new Critters to species[]; use move IDs from data/moves.json. The game loads this live.",
+  "species": []
+}
