@@ -8,6 +8,8 @@ const strengths={Fire:['Grass','Ice'],Water:['Fire','Rock'],Grass:['Water','Shad
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
 const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
+// Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
+const npcResearcher=new Image();npcResearcher.src='assets/npc-researcher.png?v=18';
 const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant','Center Nurse','Center Clerk','Village Elder','School Teacher','Merchant','Item Shopkeeper','Gear Shopkeeper','Rice Farmer','Fisherman','Ranger','Samurai','Shrine Maiden','Monk','Blacksmith','Guard','Rival Trainer','Gym Trainer','Gym Leader','Village Child','Traveler','Festival Dancer','Mountain Hermit','Ninja','Scholar'];
 const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
@@ -34,6 +36,16 @@ function pickNpcSprite(x,y,kind='',id=''){
  return arr[Math.abs((x*17+y*29+area.length*13))%arr.length];
 }
 function drawNpc(p,x,y){
+ // Researcher has a dedicated 16-frame transparent PNG matching the player's
+ // directional sheet layout. Align at the feet and avoid sideways frame drift.
+ if(p.kind==='researcher'&&npcResearcher.complete&&npcResearcher.naturalWidth===128){
+  const direction={down:0,up:1,left:2,right:3}[p.face||'down']??0;
+  const column=0; // Stable standing pose; other columns are available for walking.
+  const size=59;
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(npcResearcher,column*32,direction*32,32,32,x-size/2,y-size+4,size,size);
+  return;
+ }
  const im=npcSheet;
  if(im.complete&&im.naturalWidth){
   const i=p.sprite??0,row=NPC_ROWS[p.face||'down']??0;
