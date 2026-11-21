@@ -39,3 +39,10 @@ The approved initial release targets the first Grass Gym badge, with optional ex
 
 ## Phase 9 — Species gameplay integration (November 2026)
 The Index reads the 200-species registry and 312-move library, including habitat filters, learnsets, stats, discovered/captured records and party species names. Regional trainer teams now select distinct non-legendary draft species from their areas while keeping their approved types and levels. Tutorial and rival starters remain placeholders. The game preserves fallback type-based encounters and moves when catalogs cannot load.
+
+## Phase 10 — Battle stability (November 2026)
+- Damage-over-time conditions now tick after both teams complete their actions, including faint checks and logged HP loss.
+- 2v2 action selection validates legal active targets and prevents two teammates from reserving the same switch-in.
+- Empty ally-target menus fall back safely to self, while enemy targeting never substitutes the acting ally.
+- Trainer AI can consider ally-targeting moves for both deployed teammates.
+- Existing type effectiveness, PP, 1v1 wild encounters and trainer-only 2v2 rules remain unchanged.
