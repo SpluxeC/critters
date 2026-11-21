@@ -1359,7 +1359,7 @@ function index(){
 function indexSlotContent(i){
  if(i<8){
   const p=s.party[i];
-  return p?'<span class="watchSlotIcon">'+(symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.type)+'</span><small>Lv '+p.level+'</small>'
+  return p?'<span class="watchSlotIcon">'+(symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.name||p.type)+'</span><small>Lv '+p.level+'</small>'
    :'<span class="watchSlotIcon empty">◇</span><span class="watchSlotName">Empty</span>';
  }
  const module=s.installed[i-8];
@@ -1769,12 +1769,29 @@ function startWild(){
  const level=s.area==='route1'?2+Math.floor(Math.random()*4):s.area==='route2'?5+Math.floor(Math.random()*6):10+Math.floor(Math.random()*8);
  return startBattle({kind:'wild',enemies:[critter(type,level)],name:'Wild Critter',award:0},'A wild '+type+' type Critter appeared!');
 }
+// Trainers use the authored species library in their home habitats. Starter
+// placeholders remain intact until the creators assign official starter designs.
+function trainerSpecies(type,level,area,trainerId,slot,used){
+ const candidates=[...speciesRegistry.values()].filter(sp=>
+  sp.types.includes(type)&&sp.habitats?.some(h=>h.areaId===area&&h.rarity!=='legendary')
+  &&!used.has(sp.speciesId));
+ if(!candidates.length)return critter(type,level);
+ candidates.sort((a,b)=>a.speciesId.localeCompare(b.speciesId));
+ const seed=trainerId+':'+slot+':'+type;
+ let hash=0;for(const char of seed)hash=(Math.imul(hash,31)+char.charCodeAt(0))>>>0;
+ const chosen=candidates[hash%candidates.length];
+ used.add(chosen.speciesId);
+ return critter(chosen.speciesId,level);
+}
 function startTrainer(id){
  if(firstAlive()<0)return blackout();
- const make=(t,l)=>critter(t,l);
+ const area=id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden';
+ const used=new Set();
+ const make=(t,l)=>trainerSpecies(t,l,area,id,used.size,used);
+ const starter=t=>critter(t,5);
  let enemies,name,award,kind='trainer';
- if(id==='tutorial'){enemies=[make(s.rival,5)];name='Childhood Rival';award=0;kind='tutorial'}
- else if(id==='rival'){enemies=[make(s.rival,12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
+ if(id==='tutorial'){enemies=[starter(s.rival)];name='Childhood Rival';award=0;kind='tutorial'}
+ else if(id==='rival'){enemies=[critter(s.rival,12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
  else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
