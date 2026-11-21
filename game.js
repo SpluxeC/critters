@@ -17,7 +17,7 @@ const VILLAGE_FENCES=[
  [2,16,11,16],[2,23,11,23],[2,9,6,9],[10,9,12,9],
  [21,16,27,16],[29,16,32,16]
 ];
-const VILLAGE_LANTERNS=[[13,10],[19,11],[22,10],[27,10],[20,16],[29,15],[13,23]];
+const VILLAGE_LANTERNS=[[13,10],[19,11],[22,10],[27,10],[19,16],[29,15],[13,23]];
 const VILLAGE_STONES=[[12,18],[30,12],[4,11],[30,23]];
 let villageObstacles=new Set();
 const key=(x,y)=>x+','+y;
@@ -160,6 +160,21 @@ function build(){
  npc(17,15,['These roots block the central path. Defeat all three trainers and activate the garden mechanism.'],'switch');
  break;
  }
+ // Older saves may place the character inside geometry introduced by the rebuild.
+ // Relocate only when necessary, to the closest free walkable square.
+ if(s.area==='village'&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y))){
+  const originX=s.x,originY=s.y;
+  let found=false;
+  for(let radius=1;radius<Math.max(W,H)&&!found;radius++){
+   for(let dy=-radius;dy<=radius&&!found;dy++)for(let dx=-radius;dx<=radius;dx++){
+    if(Math.abs(dx)+Math.abs(dy)!==radius)continue;
+    const nx=originX+dx,ny=originY+dy;
+    if(nx<1||ny<1||nx>=W-1||ny>=H-1||solidAt(nx,ny)||npcs.some(p=>p.x===nx&&p.y===ny))continue;
+    s.x=nx;s.y=ny;found=true;break;
+   }
+  }
+  if(!found){s.x=17;s.y=16}
+ }
  snapVisual();
  $('location').textContent={village:'Starting Village',lab:'Research Laboratory',route1:'Route 1 · Rice Fields',town:'Small Town',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym'}[s.area];
 }
@@ -281,91 +296,123 @@ function drawTile(t,x,y,a,b){
 }
 // Art direction prototype for the starting village. These features are deliberately
 // decorative; existing exits, NPCs and interaction hitboxes stay unchanged.
+// A single cohesive village art pass. Buildings, fences, lanterns and stone colliders
+// all read the same placement data so players cannot walk through visible obstacles.
 function drawVillageDetails(ox,oy,viewW,viewH){
  if(s.area!=='village')return;
- const world=(x,y)=>[x*S-ox,y*S-oy];
- const rectWorld=(x,y,w,h,color)=>{const p=world(x,y);ctx.fillStyle=color;ctx.fillRect(p[0],p[1],w*S,h*S)};
- const line=(x1,y1,x2,y2,width,color)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x1*S-ox,y1*S-oy);ctx.lineTo(x2*S-ox,y2*S-oy);ctx.stroke()};
- // Irregular grass beside pathways, never geometric outlines on the walking surface.
- const patches=[[2.6,11.3],[4.7,14.9],[11.3,16.3],[13.2,4.5],[19.2,19.1],[30.8,10.3],[29.8,23.4],[10.7,23.6]];
- for(const [x,y] of patches){const [px,py]=world(x,y);ctx.fillStyle='#40794366';ctx.beginPath();ctx.ellipse(px,py,23,13,.2,0,Math.PI*2);ctx.fill()}
- // Rice terraces: narrow embankments and irrigation channels with alternating rows.
- for(let y=17;y<=22;y++){
-  line(1.75,y+.07,11.1,y+.07,3.2,'#537747');
-  if(y%2===0)line(1.85,y+.17,10.9,y+.17,1.6,'#84b9b0');
+ const pos=(x,y)=>[x*S-ox,y*S-oy];
+ const segment=(x1,y1,x2,y2,width,color)=>{
+  const a=pos(x1,y1),b=pos(x2,y2);
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+ };
+ // Organic shadows connect the broad grasslands and soften straight tile boundaries.
+ for(const [x,y,r] of [[2,12,46],[11,16,68],[17,4,76],[20,18,81],[31,10,52],[4,24,58],[29,24,57]]){
+  const [px,py]=pos(x,y);
+  ctx.fillStyle='#254d3761';ctx.beginPath();ctx.ellipse(px,py,r,r*.6,.18,0,Math.PI*2);ctx.fill();
  }
- line(1.7,16.9,1.7,23.05,3,'#85b9b9');
- line(11.05,17.0,11.05,23.0,3,'#689c9d');
- for(let y=17;y<23;y++)for(let x=2;x<11;x++){
-  if((x*5+y*3)%6!==0)continue;
-  const p=world(x+.18,y+.18);ctx.fillStyle='#d7cf8a';ctx.fillRect(p[0],p[1],2.3,6);
+ // Grass creeping onto the irregular edges of the dirt paths.
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+  if(tiles[y][x]!==T.path)continue;
+  let nearby=0;
+  for(const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]])if(tiles[y+dy]?.[x+dx]===T.grass)nearby++;
+  if(!nearby)continue;
+  const [px,py]=pos(x,y),seed=(x*53+y*31)%11;
+  ctx.fillStyle='#74935c7a';
+  if(tiles[y]?.[x-1]===T.grass)ctx.fillRect(px,py+seed,3,20);
+  if(tiles[y]?.[x+1]===T.grass)ctx.fillRect(px+S-3,py+seed,3,18);
+  if(tiles[y-1]?.[x]===T.grass)ctx.fillRect(px+seed,py,20,3);
+  if(tiles[y+1]?.[x]===T.grass)ctx.fillRect(px+seed,py+S-3,20,3);
  }
- // Stone-lined wells, low timber fences and bamboo stakes placed outside the road.
- function fence(ax,ay,bx,by){
-  const [x1,y1]=world(ax,ay),[x2,y2]=world(bx,by);
-  ctx.strokeStyle='#594736';ctx.lineWidth=3;ctx.lineCap='butt';
-  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-  ctx.strokeStyle='#b29366';ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(x1,y1-6);ctx.lineTo(x2,y2-6);ctx.stroke();
-  const length=Math.hypot(x2-x1,y2-y1),count=Math.max(1,Math.floor(length/26));
-  for(let i=0;i<=count;i++){let t=i/count,px=x1+(x2-x1)*t,py=y1+(y2-y1)*t;ctx.fillStyle='#66503b';ctx.fillRect(px-2,py-11,4,18);ctx.fillStyle='#cfb082';ctx.fillRect(px-2,py-11,4,2)}
- }
- fence(2.5,16.7,10.9,16.7);fence(2.4,23.1,10.9,23.1);
- fence(2.6,9.5,6.5,9.5);fence(9.5,9.5,11.3,9.5);
- fence(21.1,16.6,26.7,16.6);fence(29.4,16.6,31.3,16.6);
- // Lanterns sit beside roads and entrances, rather than over the walking tiles.
- function lantern(x,y){
-  const [px,py]=world(x,y);
-  ctx.fillStyle='#4b4c43';ctx.fillRect(px-2,py-8,4,19);
-  ctx.fillStyle='#b9a78a';ctx.fillRect(px-7,py-11,14,4);
-  ctx.fillStyle='#f0d69c';ctx.fillRect(px-5,py-23,10,13);
-  ctx.fillStyle='#605549';ctx.fillRect(px-8,py-25,16,4);ctx.fillRect(px-6,py-10,12,3);
-  ctx.fillStyle='#fdf0b655';ctx.beginPath();ctx.arc(px,py-17,12,0,Math.PI*2);ctx.fill();
- }
- [[12.1,12.1],[19.6,12.0],[22.9,10.6],[26.8,10.6],[22.3,15.9],[29.6,15.6],[13.3,23.6]].forEach(p=>lantern(...p));
- // Little seasonal flowers and mossy stones add organic edges near the rice plots.
- for(const [x,y] of [[3,11],[4,15.4],[11.5,18],[14.2,23.5],[21.3,17],[30.7,22.5],[18.8,7.4],[2.2,9.4]]){
-  const [px,py]=world(x,y);
-  ctx.fillStyle='#d1a4a6';ctx.fillRect(px,py,4,4);ctx.fillStyle='#f2d7bc';ctx.fillRect(px+1,py-2,2,7);
-  ctx.fillStyle='#5f8a4b';ctx.fillRect(px+1,py+4,2,5)
- }
- // Continuous traditional roof silhouettes: dark tiled ridges, eaves, roof seams.
- function roof(x,y,w,h,lab=false){
-  const [px,py]=world(x,y),ww=w*S,hh=h*S;
-  ctx.fillStyle='#2e302b99';ctx.fillRect(px+5,py+hh-4,ww-10,14);
-  ctx.fillStyle=lab?'#4c5660':'#57514c';
-  ctx.beginPath();ctx.moveTo(px-9,py+13);ctx.lineTo(px+ww/2,py-17);
-  ctx.lineTo(px+ww+9,py+13);ctx.lineTo(px+ww+3,py+hh-7);
-  ctx.lineTo(px-4,py+hh-7);ctx.closePath();ctx.fill();
-  ctx.fillStyle=lab?'#78818a':'#9e7663';
-  ctx.beginPath();ctx.moveTo(px-4,py+15);ctx.lineTo(px+ww/2,py-10);
-  ctx.lineTo(px+ww+4,py+15);ctx.lineTo(px+ww-4,py+hh-14);
-  ctx.lineTo(px+4,py+hh-14);ctx.closePath();ctx.fill();
-  ctx.strokeStyle='#584740';ctx.lineWidth=3;
-  for(let i=1;i<7;i++){
-   const ry=py+18+(hh-36)*i/7;
-   ctx.beginPath();ctx.moveTo(px+4,ry);ctx.lineTo(px+ww-4,ry);ctx.stroke()
+ // Paddies: parallel ridges, flooded irrigation, staggered rice rows.
+ for(let y=17;y<23;y++){
+  segment(1.9,y+.07,10.9,y+.07,4,'#5a7956');
+  segment(2.0,y+.18,10.85,y+.18,2,'#88b5a0');
+  for(let x=2;x<11;x++){
+   const [px,py]=pos(x+.15,y+.16);
+   ctx.fillStyle='#d7c879';ctx.fillRect(px+((x+y)%3)*6,py+2,2,8);
+   ctx.fillStyle='#638c52';ctx.fillRect(px+5,py+7,2,10);
   }
-  ctx.fillStyle='#363937';ctx.fillRect(px-9,py+hh-13,ww+18,8);
-  // Traditional light wooden panels are drawn in the wall strip below the eaves.
-  ctx.fillStyle='#e3d2af';ctx.fillRect(px+9,py+hh+1,ww-18,32);
-  ctx.fillStyle='#775c4e';
-  for(let i=0;i<4;i++)ctx.fillRect(px+11+i*(ww-22)/3,py+hh+1,4,32);
-  ctx.fillStyle='#e7d6ad';ctx.fillRect(px+ww*.18,py+hh+9,ww*.18,15);
-  ctx.fillStyle='#bfa77d';ctx.fillRect(px+ww*.19,py+hh+10,ww*.16,13);
-  // Original entry collision tile remains visible and usable.
-  const doorway=px+Math.floor(w/2)*S;
-  ctx.fillStyle='#372f2b';ctx.fillRect(doorway+5,py+hh+8,22,27);
-  ctx.fillStyle='#d2ad67';ctx.fillRect(doorway+24,py+hh+21,3,3);
+ }
+ segment(1.6,16.95,1.6,23.15,4,'#79a9a5');
+ segment(11.05,17.0,11.05,23.0,4,'#7aada9');
+ // Natural planting clusters and moss-softened stones.
+ for(const [x,y] of [[2,11],[4,15],[11.5,18],[14.2,23.5],[21,17],[30.5,23],[18.8,7.5],[2,9.5],[30.7,9],[14,4]]){
+  const [px,py]=pos(x,y);ctx.fillStyle='#4d7d4f';
+  ctx.beginPath();ctx.ellipse(px,py,10,6,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#dcb8aa';ctx.fillRect(px-3,py-3,4,4);
+  ctx.fillStyle='#efdbb5';ctx.fillRect(px+3,py-7,3,4);
+ }
+ // Architecture: grounded shadows, plaster walls, wooden beams and ceramic roofs.
+ for(const house of VILLAGE_HOUSES){
+  const {x,y,w,h,door,kind}=house,lab=kind==='lab';
+  const [px,py]=pos(x,y),ww=w*S,roofH=h*S,base=py+roofH;
+  ctx.fillStyle='#172c2999';
+  ctx.beginPath();ctx.ellipse(px+ww*.52,base+43,ww*.57,19,0,0,Math.PI*2);ctx.fill();
+  // Wall façade is in the actual collider footprint at rows y+h and y+h+1.
+  ctx.fillStyle='#d8c9a8';ctx.fillRect(px+3,base,ww-6,64);
+  ctx.fillStyle='#4e4038';ctx.fillRect(px+2,base+1,ww-4,6);
+  ctx.fillStyle='#544439';
+  for(let k=0;k<5;k++){const beam=px+9+k*(ww-18)/4;ctx.fillRect(beam,base+5,5,59)}
+  ctx.fillStyle='#9e8366';
+  for(let k=0;k<3;k++)ctx.fillRect(px+25+k*(ww-50)/3,base+16,25,20);
+  ctx.fillStyle='#e4d7bb';
+  for(let k=0;k<3;k++)ctx.fillRect(px+27+k*(ww-50)/3,base+18,21,16);
+  // A continuous, dark-edged hipped tiled roof conceals the original tile grid.
+  ctx.fillStyle='#283a3d';ctx.beginPath();ctx.moveTo(px,py+8);
+  ctx.lineTo(px+ww*.5,py+4);ctx.lineTo(px+ww,py+8);
+  ctx.lineTo(px+ww-5,base-4);ctx.lineTo(px+5,base-4);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lab?'#5a6d73':'#82675b';ctx.beginPath();
+  ctx.moveTo(px+8,py+13);ctx.lineTo(px+ww*.5,py+7);
+  ctx.lineTo(px+ww-8,py+13);ctx.lineTo(px+ww-13,base-11);
+  ctx.lineTo(px+13,base-11);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=lab?'#344951':'#574a44';ctx.lineWidth=3;
+  for(let i=1;i<8;i++){
+   let ry=py+18+(roofH-35)*i/8;
+   ctx.beginPath();ctx.moveTo(px+11,ry);ctx.lineTo(px+ww-11,ry);ctx.stroke();
+  }
+  ctx.fillStyle='#344041';ctx.fillRect(px-3,base-15,ww+6,10);
+  // The visible door uses exactly the same x coordinate as the collision opening.
+  const doorway=pos(door,0)[0];
+  ctx.fillStyle='#332d28';ctx.fillRect(doorway+3,base+12,26,52);
+  ctx.fillStyle='#6f513f';ctx.fillRect(doorway+7,base+18,18,46);
+  ctx.fillStyle='#ecc586';ctx.fillRect(doorway+22,base+41,3,3);
+  ctx.fillStyle='#a38b69';ctx.fillRect(doorway+1,base+64,30,5);
   if(lab){
-    ctx.fillStyle='#e8d3a8';ctx.fillRect(px+ww/2-44,py+hh-9,88,18);
-    ctx.fillStyle='#413c35';ctx.font='bold 12px system-ui';ctx.fillText('RESEARCH',px+ww/2-36,py+hh+4);
+   ctx.fillStyle='#dfd6bb';ctx.fillRect(px+ww*.5-48,base-22,96,16);
+   ctx.fillStyle='#354a48';ctx.font='bold 12px system-ui';
+   ctx.fillText('RESEARCH',px+ww*.5-37,base-10);
   }
  }
- // Buildings draw on the decorative pass so their original rooftops don't show tile seams.
- roof(3,3,9,5);
- roof(20,3,10,6,true);
- roof(23,17,8,4);
+ // Fences are drawn in the *same cells* blocked by the collision map.
+ for(const [x1,y1,x2,y2] of VILLAGE_FENCES){
+  const xa=x1+.15,xb=x2-.15,yy=y1+.52;
+  segment(xa,yy,xb,yy,4,'#4c3d32');
+  segment(xa,yy-.19,xb,yy-.19,3,'#b18b61');
+  for(let x=x1;x<x2;x++){
+   const [px,py]=pos(x+.48,y1+.16);
+   ctx.fillStyle='#4e382c';ctx.fillRect(px-3,py,6,26);
+   ctx.fillStyle='#b7966c';ctx.fillRect(px-3,py,6,4);
+  }
+ }
+ for(const [x,y] of VILLAGE_STONES){
+  const [px,py]=pos(x+.5,y+.55);
+  ctx.fillStyle='#29433880';ctx.beginPath();ctx.ellipse(px,py+9,14,6,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#77756c';ctx.beginPath();ctx.ellipse(px,py,11,8,-.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#b9b29b';ctx.fillRect(px-6,py-6,8,3);
+ }
+ // Warm lantern lighting without mobile-unfriendly filters.
+ for(const [x,y] of VILLAGE_LANTERNS){
+  const [px,py]=pos(x+.5,y+.55);
+  ctx.fillStyle='#ffce7750';ctx.beginPath();ctx.arc(px,py-12,22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#56554b';ctx.fillRect(px-3,py-12,6,21);
+  ctx.fillStyle='#c6b298';ctx.fillRect(px-9,py-17,18,5);
+  ctx.fillStyle='#f7d89b';ctx.fillRect(px-6,py-30,12,14);
+  ctx.fillStyle='#524b43';ctx.fillRect(px-10,py-33,20,5);
+  ctx.fillStyle='#453e37';ctx.fillRect(px-7,py-16,14,4);
+ }
+ // Warm afternoon color-grading, mild enough to preserve readable gameplay.
+ ctx.fillStyle='#f1c88509';ctx.fillRect(0,0,viewW,viewH);
 }
 function resizeGameCanvas(){
  const width=Math.max(1,Math.round(C.clientWidth||C.getBoundingClientRect().width));
