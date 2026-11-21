@@ -7,11 +7,29 @@ const palette=['#75a65e','#c6ae82','#38683d','#88684f','#baa78a','#403127','#b7b
 const strengths={Fire:['Grass','Ice'],Water:['Fire','Rock'],Grass:['Water','Shadow'],Rock:['Electric','Venom'],Electric:['Water','Flying'],Ice:['Dragon','Ghost'],Flying:['Beast','Fighting'],Shadow:['Ghost','Psychic'],Ghost:['Psychic','Primordial'],Dragon:['Electric','Primordial'],Venom:['Grass','Flying'],Beast:['Dragon','Shadow'],Primordial:['Beast','Fire'],Psychic:['Fighting','Venom'],Fighting:['Rock','Ice']};
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
+const villageBuildings={home:new Image(),lab:new Image(),neighbor:new Image()};
+for(const kind of Object.keys(villageBuildings))villageBuildings[kind].src='assets/village-'+kind+'.svg';
+let doorTransition=null;
+function villageDoorAt(x,y){
+ if(s?.area!=='village')return null;
+ return VILLAGE_HOUSES.find(h=>h.door===x&&h.y+h.h+1===y)||null;
+}
+function openVillageDoor(h){
+ if(doorTransition||screen!=='game'||modal)return;
+ doorTransition={house:h,start:performance.now()};
+ releaseMovement();
+}
+function finishDoorAnimation(){
+ if(!doorTransition||performance.now()-doorTransition.start<240)return;
+ const {house}=doorTransition;doorTransition=null;
+ region(house.kind==='lab'?'lab':house.kind==='neighbor'?'neighbor':'home',17,23,
+ house.kind==='home'?'You step inside your home.':house.kind==='neighbor'?'A neighbor welcomes you into their home.':'You enter the Critter Research Laboratory.');
+}
 let s=null,screen='title',tiles=[],npcs=[],dialog=[],dialogDone=null,modal=false,battle=null,frame=0,held={},last=0,editing=false;
 const VILLAGE_HOUSES=[
  {x:3,y:3,w:9,h:5,door:7,kind:'home'},
  {x:20,y:3,w:10,h:6,door:24,kind:'lab'},
- {x:23,y:17,w:8,h:4,door:27,kind:'home'}
+ {x:23,y:17,w:8,h:4,door:27,kind:'neighbor'}
 ];
 const VILLAGE_FENCES=[
  [2,16,11,16],[2,23,11,23],[2,9,6,9],[10,9,12,9],
@@ -25,7 +43,6 @@ function villageCollider(x,y){if(x>=1&&x<W-1&&y>=1&&y<H-1)villageObstacles.add(k
 function buildVillageColliders(){
  villageObstacles=new Set();
  for(const h of VILLAGE_HOUSES)for(let y=h.y;y<=h.y+h.h+1;y++)for(let x=h.x;x<h.x+h.w;x++){
-  if(h.kind==='lab'&&x===h.door&&y===h.y+h.h+1)continue;
   villageCollider(x,y);
  }
  for(const [a,y,b] of VILLAGE_FENCES)for(let x=a;x<b;x++)villageCollider(x,y);
@@ -60,7 +77,7 @@ function show(page){releaseMovement();document.querySelectorAll('.screen').forEa
 function critter(type,level=5){const hp=20+level*4;return {type,level,hp,maxHp:hp,xp:0,status:'',moves:['Strike',type+' Pulse','Guard','Focus']}}
 function migrate(){
  if(!s)return;
- s.area=s.area||'village';if(!['village','lab','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(s.starter,5)]:[];
  s.party=s.party.map(p=>({...critter(p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36})).slice(0,8);
@@ -80,7 +97,7 @@ function houses(list){list.forEach(([x,y,w=7,h=5])=>{rect(x,y,w,h,T.roof);rect(x
 function roads(){rect(1,12,32,3,T.path)}
 function nature(seed,area){for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(tiles[y][x]===T.grass){const n=(x*43+y*59+x*y*7+seed)%113;if(n<area)put(x,y,T.tall);else if(n===44||n===79)put(x,y,T.flower)}}
 function build(){
- migrate();tiles=Array.from({length:H},()=>Array(W).fill(s.area==='lab'||s.area==='gym'?T.wood:T.grass));npcs=[];villageObstacles=new Set();
+ migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();
  switch(s.area){
  case 'village':
  // One art system: original house roof/wall tiles are NOT placed in the village.
@@ -106,12 +123,21 @@ function build(){
  npc(12,14,['Welcome to the valley! The scientist works in the northeast laboratory.']);
  npc(22,15,['Follow the eastern road toward Route 1!']);
  break;
+ case 'home':
+ case 'neighbor':
+ borders(T.wall);
+ rect(9,5,16,4,T.mat);rect(6,9,5,3,T.desk);
+ rect(24,10,4,4,T.desk);rect(13,16,8,3,T.mat);
+ rect(16,22,3,4,T.wood);put(17,25,T.door);
+ npc(14,11,s.area==='home'?['Your family keeps the house warm while you explore.']:['Welcome! The village is peaceful today.']);
+ break;
  case 'lab':
  borders(T.wall);rect(4,7,7,3,T.desk);rect(23,7,7,3,T.desk);rect(13,8,8,4,T.mat);put(17,25,T.door);
  npc(17,7,['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],'researcher');
  break;
  case 'route1':
- borders();roads();rect(11,7,2,6,T.path);rect(22,14,2,7,T.path);
+ borders();roads();
+ for(let y=11;y<=16;y++){put(0,y,y>=12&&y<=14?T.path:T.grass);put(1,y,y>=12&&y<=14?T.path:T.grass)}rect(11,7,2,6,T.path);rect(22,14,2,7,T.path);
  for(let y=2;y<12;y++)for(let x=3;x<31;x++)if(x!==11&&x!==12&&(x*7+y*11)%5!==0)put(x,y,(x+y)%4===0?T.rice:T.tall);
  for(let y=16;y<24;y++)for(let x=3;x<31;x++)if(x!==22&&x!==23&&(x*9+y*5)%6!==0)put(x,y,(x+y)%3===0?T.rice:T.tall);
  npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','Use the Index beam when their HP is low.']);npc(20,13,['Want to test your team against mine?'],'routetrainer','rt1');
@@ -185,7 +211,7 @@ function build(){
   if(!found){s.x=17;s.y=16}
  }
  snapVisual();
- $('location').textContent={village:'Starting Village',lab:'Research Laboratory',route1:'Route 1 · Rice Fields',town:'Small Town',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym'}[s.area];
+ $('location').textContent={village:'Starting Village',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home',route1:'Route 1 · Rice Fields',town:'Small Town',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym'}[s.area];
 }
 function say(lines,callback){dialog=lines.slice();dialogDone=callback||null;advance()}
 function advance(){if(dialog.length){$('dialogText').textContent=dialog.shift();$('dialog').classList.add('show')}else{$('dialog').classList.remove('show');const fn=dialogDone;dialogDone=null;if(fn)fn()}}
@@ -391,54 +417,30 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   ctx.fillStyle='#dcb8aa';ctx.fillRect(px-3,py-3,4,4);
   ctx.fillStyle='#efdbb5';ctx.fillRect(px+3,py-7,3,4);
  }
- // Architecture: grounded shadows, plaster walls, wooden beams and ceramic roofs.
- for(const house of VILLAGE_HOUSES){
-  const {x,y,w,h,door,kind}=house,lab=kind==='lab';
-  const [px,py]=pos(x,y),ww=w*S,roofH=h*S,base=py+roofH;
-  ctx.fillStyle='#172c2999';
-  ctx.beginPath();ctx.ellipse(px+ww*.52,base+43,ww*.57,19,0,0,Math.PI*2);ctx.fill();
-  // Wall façade is in the actual collider footprint at rows y+h and y+h+1.
-  ctx.fillStyle='#d8c9a8';ctx.fillRect(px+3,base,ww-6,64);
-  ctx.fillStyle='#4e4038';ctx.fillRect(px+2,base+1,ww-4,6);
-  ctx.fillStyle='#544439';
-  for(let k=0;k<5;k++){const beam=px+9+k*(ww-18)/4;ctx.fillRect(beam,base+5,5,59)}
-  ctx.fillStyle='#9e8366';
-  for(let k=0;k<3;k++)ctx.fillRect(px+25+k*(ww-50)/3,base+16,25,20);
-  ctx.fillStyle='#e4d7bb';
-  for(let k=0;k<3;k++)ctx.fillRect(px+27+k*(ww-50)/3,base+18,21,16);
-  // A continuous, dark-edged hipped tiled roof conceals the original tile grid.
-  ctx.fillStyle='#283a3d';ctx.beginPath();ctx.moveTo(px,py+8);
-  ctx.lineTo(px+ww*.5,py+4);ctx.lineTo(px+ww,py+8);
-  ctx.lineTo(px+ww-5,base-4);ctx.lineTo(px+5,base-4);ctx.closePath();ctx.fill();
-  ctx.fillStyle=lab?'#5a6d73':'#82675b';ctx.beginPath();
-  ctx.moveTo(px+8,py+13);ctx.lineTo(px+ww*.5,py+7);
-  ctx.lineTo(px+ww-8,py+13);ctx.lineTo(px+ww-13,base-11);
-  ctx.lineTo(px+13,base-11);ctx.closePath();ctx.fill();
-  ctx.strokeStyle=lab?'#344951':'#574a44';ctx.lineWidth=3;
-  for(let i=1;i<8;i++){
-   let ry=py+18+(roofH-35)*i/8;
-   ctx.beginPath();ctx.moveTo(px+11,ry);ctx.lineTo(px+ww-11,ry);ctx.stroke();
+ // The buildings are dedicated, single-layer sprites, not canvas tile drawings.
+ for(const h of VILLAGE_HOUSES){
+  const [px,py]=pos(h.x,h.y),w=h.w*S,height=(h.h+2)*S;
+  ctx.fillStyle='#15292488';
+  ctx.beginPath();ctx.ellipse(px+w/2,py+height-12,w*.55,17,0,0,Math.PI*2);ctx.fill();
+  const img=villageBuildings[h.kind];
+  if(img.complete&&img.naturalWidth>0){
+   ctx.imageSmoothingEnabled=false;ctx.drawImage(img,px,py,w,height);
+  }else{
+   // Graceful fallback if an image has not yet loaded.
+   ctx.fillStyle='#64585c';ctx.fillRect(px,py,w,h.h*S);
+   ctx.fillStyle='#d9c5a2';ctx.fillRect(px,py+h.h*S,w,2*S);
   }
-  ctx.fillStyle='#344041';ctx.fillRect(px-3,base-15,ww+6,10);
-  // Fine roof tile highlights and soft eave shadow.
-  ctx.strokeStyle='#ceb79844';ctx.lineWidth=1;
-  for(let stripe=0;stripe<5;stripe++){
-   const ry=py+20+stripe*(roofH-46)/5;
-   ctx.beginPath();ctx.moveTo(px+13,ry);ctx.lineTo(px+ww-14,ry);ctx.stroke();
+  if(doorTransition?.house===h){
+   const t=Math.min(1,(performance.now()-doorTransition.start)/220);
+   const doorX=(h.door+.06)*S-ox,doorY=(h.y+h.h+.28)*S-oy;
+   ctx.fillStyle='#1f1d20';ctx.fillRect(doorX,doorY,28,40);
+   ctx.fillStyle='#b48757';ctx.fillRect(doorX+2,doorY+2,Math.max(0,26*(1-t)),36);
+   ctx.fillStyle='#f4d9a066';ctx.fillRect(doorX+21,doorY+4,5,31);
   }
-  ctx.fillStyle='#151b2080';ctx.fillRect(px+4,base-6,ww-8,8);
-  // Stone doorstep: visually matches the retained entrance/doorway cell.
-  ctx.fillStyle='#a69b83';ctx.fillRect(px+4,base+64,ww-8,5);
-  // The visible door uses exactly the same x coordinate as the collision opening.
-  const doorway=pos(door,0)[0];
-  ctx.fillStyle='#332d28';ctx.fillRect(doorway+3,base+12,26,52);
-  ctx.fillStyle='#6f513f';ctx.fillRect(doorway+7,base+18,18,46);
-  ctx.fillStyle='#ecc586';ctx.fillRect(doorway+22,base+41,3,3);
-  ctx.fillStyle='#a38b69';ctx.fillRect(doorway+1,base+64,30,5);
-  if(lab){
-   ctx.fillStyle='#dfd6bb';ctx.fillRect(px+ww*.5-48,base-22,96,16);
-   ctx.fillStyle='#354a48';ctx.font='bold 12px system-ui';
-   ctx.fillText('RESEARCH',px+ww*.5-37,base-10);
+  // A restrained entrance cue, seen only while standing in front of the door.
+  if(Math.abs(s.x-h.door)<=1&&s.y===h.y+h.h+2){
+   const [cx,cy]=pos(h.door+.52,h.y+h.h+1.2);
+   ctx.fillStyle='#fae9adcc';ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill();
   }
  }
  // Fences are drawn in the *same cells* blocked by the collision map.
@@ -499,12 +501,12 @@ function draw(){
  sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
  ctx.fillStyle='#1c3835dc';ctx.fillRect(5,5,330,28);ctx.fillStyle='#fff1ca';ctx.font='bold 13px system-ui';ctx.fillText(s.name+' · '+(s.starter||'Visit lab')+' · '+s.money+' ◇ · '+s.badges+' Badge',11,23)
 }
-function region(area,x,y,textLine){s.area=area;s.x=x;s.y=y;build();save();if(textLine)say([textLine])}
+function region(area,x,y,textLine){doorTransition=null;s.area=area;s.x=x;s.y=y;build();save();if(textLine)say([textLine])}
 function move(d){
- if(screen!=='game'||modal||$('dialog').classList.contains('show'))return;
+ if(screen!=='game'||modal||doorTransition||$('dialog').classList.contains('show'))return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
- if(s.area==='village'&&d==='right'&&x>=32&&[13,14].includes(y)){if(!s.introComplete)return say(['Complete the laboratory tutorial before exploring Route 1.']);return region('route1',2,y,'Route 1 — Rice Fields. Wild Critters hide in tall grass.')}
- if(s.area==='route1'&&d==='left'&&x<=1&&[13,14].includes(y))return region('village',31,y);
+ if(s.area==='village'&&d==='right'&&x>=W-2&&tiles[y]?.[W-1]!==T.tree&&!solidAt(W-2,y)){if(!s.introComplete)return say(['Complete the laboratory tutorial before exploring Route 1.']);return region('route1',2,y,'Route 1 — Rice Fields. Wild Critters hide in tall grass.')}
+ if(s.area==='route1'&&d==='left'&&x<=1&&tiles[y]?.[0]!==T.tree&&!solidAt(1,y))return region('village',31,y);
  if(s.area==='route1'&&d==='right'&&x>=32&&[13,14].includes(y))return region('town',2,y,'You arrive at the first small town. Heal and shop here!');
  if(s.area==='town'&&d==='left'&&x<=1&&[13,14].includes(y))return region('route1',31,y);
  if(s.area==='town'&&d==='right'&&x>=32&&[13,14].includes(y))return region('route2',2,y,'Route 2 — Bamboo Forest.');
@@ -520,18 +522,23 @@ function move(d){
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&d==='down'&&x===17&&y>=25)return region('garden',24,12);
  if(x<0||y<0||x>=W||y>=H)return;
+ const door=villageDoorAt(x,y);
+ if(door){openVillageDoor(door);return}
  if(npcs.some(p=>p.x===x&&p.y===y)||solidAt(x,y))return;
  const t=tiles[y][x];
  beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;
- if(s.area==='village'&&x===24&&y===10)return region('lab',17,23);
- if(s.area==='lab'&&x===17&&y===25)return region('village',24,12);
+ // Village doors use the shared door interaction and short opening animation.
+ if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
+  const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);
+  return region('village',h.door,h.y+h.h+2);
+ }
  if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
  if((s.steps=(s.steps||0)+1)%10===0)save();
  if(['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)&&s.introComplete&&Math.random()<0.11)startWild()
 }
 function interact(){
- if(modal)return;if($('dialog').classList.contains('show'))return advance();
+ if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  if(p){if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
@@ -540,8 +547,12 @@ function interact(){
  if(p.kind==='leader')return s.badges?say(['Gym Leader: Your first badge is well earned.']):!s.defeated.g1||!s.defeated.g2||!s.defeated.g3||!s.puzzles.gate?say(['Gym Leader: Defeat all three trainers and open the garden mechanism first.']):startTrainer('leader');
  if(p.kind==='switch'){if(s.defeated.g1&&s.defeated.g2&&s.defeated.g3){s.puzzles.gate=true;build();save();return say(['You activate the garden mechanism. The roots withdraw!'])}return say(['The mechanism is tangled in roots. Defeat all three Gym trainers first.'])}
  return say(p.text)}
- if(s.area==='village'&&x===7&&y===9)return say(['Home sweet home. Captured Critters beyond the eight-party limit are stored here.']);
- if(s.area==='lab'&&x===17&&y===25)return region('village',24,12);
+ const door=villageDoorAt(x,y);
+ if(door)return openVillageDoor(door);
+ if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
+  const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);
+  return region('village',h.door,h.y+h.h+2);
+ }
  if(s.area==='garden'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&x===17&&y===25)return region('garden',24,12);
 }
@@ -733,6 +744,6 @@ document.addEventListener('touchmove',e=>{
 document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault()},{passive:false});
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>=120){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()-last>=120){move(stickDirection);last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 })();
