@@ -82,3 +82,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Walking over a landmark triggers a one-time description and reward (Potions, Revives, or credits) without blocking movement or modifying the maps' collision footprints.
 - Each discovery is saved in the existing `s.discoveries` collection; returning to a collected location grants no duplicate reward.
 - The Critter Index Records screen now lists landmark discoveries and completion count. Existing Route 1 finds, story progression, battles, and eight-member party cap remain unchanged.
+
+## Evolution stones and expanded Critter Shops (v45)
+- The First Town and Garden Town shops now sell twelve type stones for 220 credits each: Grass, Water, Fire, Rock, Electric, Ice, Flying, Shadow, Ghost, Venom, Psychic, and Fighting.
+- Stones are stored in the Critter Index item inventory. Twelve authored draft Critter evolution paths now require the original minimum level **and** the corresponding stone: Thistlehop (Grass, Lv 23), Driftkip (Water, Lv 18), Emberling (Fire, Lv 18), Bouldibble (Rock, Lv 18), Coilfin (Electric, Lv 18), Rimesnout (Ice, Lv 18), Breezlet (Flying, Lv 12), Umbrapip (Shadow, Lv 18), Booquill (Ghost, Lv 18), Mirelet (Venom, Lv 12), Oracub (Psychic, Lv 18), and Sparlet (Fighting, Lv 18).
+- To evolve, reach the specified minimum level, own the matching stone, and select **Use Stone & Evolve** in the Critter Index Party screen. One stone is consumed only on a successful evolution. Automatic level-up evolution cannot use a stone. All other evolution paths and conditions remain unchanged.
+- The expanded shop keeps healing items and modules available; modules still require a Critter Center for installation. Existing save inventories are compatible.
