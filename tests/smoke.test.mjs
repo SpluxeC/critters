@@ -86,3 +86,34 @@ test('Last Resort never writes itself into the learned move slots',()=>{
  assert.ok(game.includes('const fallback=moveId===\'opening-flick\''));
  assert.ok(!game.includes('actor.moves=[moveId,...actor.moves]'));
 });
+
+test('classic battle menus keep the three choices, move overlay and Index actions',()=>{
+ const start=game.indexOf('function renderBattle(message){');
+ const finish=game.indexOf('\nfunction queueBattleAction(',start);
+ assert.ok(start>=0&&finish>start,'Battle renderer exists');
+ const s={party:[{name:'Tester',type:'Water',level:8,hp:20,maxHp:30,moves:['tide-splash'],movePP:{'tide-splash':10}}],inventory:{Potion:2,Revive:0}};
+ const battle={phase:'choose',uiMenu:'root',allySlots:[0],enemySlots:[0],enemies:[{name:'Wildling',type:'Grass',hp:30,maxHp:35}],pending:[],acting:0,kind:'wild',mode:1,turn:1,feedback:'A wild Critter appeared!'};
+ let screen='';
+ const context={battle,s,
+  activeEnemies:()=>[0],activeAllies:()=>[0],normalizeMoves:()=>{},
+  validMove:id=>id==='tide-splash'?{id,name:'Tide Splash',type:'Water',target:'enemy',category:'special',power:40,pp:15}:null,
+  getMove:()=>({name:'Tide Splash',type:'Water',target:'enemy',category:'special',power:40,pp:15}),
+  escapeHtml:v=>String(v),battleHeader:v=>'<div class="combatArena">'+v+'</div>',battleMessage:v=>v||'',
+  recentBattleLog:()=>'',earlyBattleTip:()=>'',open:(title,html)=>{screen=html},
+  $:()=>({hidden:false}),document:{querySelectorAll:()=>[]},
+  captureChance:()=>.5,itemQty:()=>2,queueBattleAction:()=>{},selectPoke:()=>{},selectRevive:()=>{}};
+ const sandbox=vm.createContext(context);
+ vm.runInContext(game.slice(start,finish),sandbox);
+ sandbox.renderBattle();
+ assert.match(screen,/id="menuBattle"/);assert.match(screen,/id="menuIndex"/);assert.match(screen,/id="menuEscape"/);
+ assert.doesNotMatch(screen,/battleMovesAround/);
+ battle.uiMenu='battle';sandbox.renderBattle();
+ assert.match(screen,/battleMovesAround/);assert.match(screen,/Tide Splash/);
+ assert.match(screen,/data-move-target="0"/);
+ battle.uiMenu='index';sandbox.renderBattle();
+ assert.match(screen,/id="indexSwitch"/);assert.match(screen,/id="indexItem"/);assert.match(screen,/id="indexCapture"/);
+ battle.uiMenu='items';sandbox.renderBattle();
+ assert.match(screen,/id="potion"/);assert.match(screen,/id="revive"/);
+ battle.uiMenu='root';battle.kind='trainer';sandbox.renderBattle();
+ assert.match(screen,/id="menuEscape" disabled/);
+});
