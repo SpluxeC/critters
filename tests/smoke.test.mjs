@@ -117,3 +117,30 @@ test('classic battle menus keep the three choices, move overlay and Index action
  battle.uiMenu='root';battle.kind='trainer';sandbox.renderBattle();
  assert.match(screen,/id="menuEscape" disabled/);
 });
+
+test('battle environments use the actual map area, nearby tile and time',()=>{
+ const start=game.indexOf('const BATTLE_AREAS=');
+ const end=game.indexOf('function startBattle(data,msg){',start);
+ assert.ok(start>=0&&end>start);
+ const s={area:'route1',x:8,y:9},T={rice:6,tall:11,stone:16,flower:7,path:1,water:13};
+ const tiles=Array.from({length:26},()=>Array(34).fill(0));tiles[9][8]=T.rice;
+ const ctx=vm.createContext({s,tiles,T,worldPhase:()=> 'Dusk'});
+ vm.runInContext(game.slice(start,end),ctx);
+ const first=ctx.battleEnvironment();
+ assert.equal(first.area,'route1');assert.equal(first.terrain,'rice');assert.equal(first.phase,'Dusk');
+ s.area='lab';tiles[9][8]=T.path;
+ const indoor=ctx.battleEnvironment();
+ assert.equal(indoor.area,'lab');assert.equal(indoor.terrain,'path');
+ // An earlier battle snapshot must not change when the player enters a building.
+ assert.equal(first.area,'route1');assert.equal(first.terrain,'rice');
+ s.area='cave';tiles[9][8]=T.stone;
+ assert.equal(ctx.battleEnvironment().terrain,'stone');
+});
+test('all overworld and interior arenas have specific visual variants',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ for(const area of ['village','route1','town','route2','forest','route3','cave','garden','gym','lab','home','neighbor']){
+  assert.ok(html.includes('.arena-'+area),area+' is missing battle scenery CSS');
+ }
+ assert.match(game,/environment:battleEnvironment\(\)/);
+ assert.match(game,/battleEnvironmentClass\(\)/);
+});
