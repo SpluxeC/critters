@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "libraryId": "critters-original-moves-v36",
   "status": "active",
   "types": [
@@ -5274,6 +5274,48 @@
         "chance": 100
       },
       "description": "Landfall delivers a ground-type attack with heavy force."
+    },
+    {
+      "id": "starter-water-tidal-heart",
+      "name": "Tidal Heart",
+      "type": "Water",
+      "category": "special",
+      "power": 75,
+      "accuracy": 100,
+      "pp": 10,
+      "target": "enemy",
+      "priority": 0,
+      "requiredLevelGuide": 14,
+      "effect": null,
+      "description": "Starter-exclusive Water signature: a focused surge that rises with its partner's determination."
+    },
+    {
+      "id": "starter-rock-bedrock-vow",
+      "name": "Bedrock Vow",
+      "type": "Rock",
+      "category": "physical",
+      "power": 75,
+      "accuracy": 100,
+      "pp": 10,
+      "target": "enemy",
+      "priority": 0,
+      "requiredLevelGuide": 14,
+      "effect": null,
+      "description": "Starter-exclusive Rock signature: a powerful stonebound strike with an unwavering stance."
+    },
+    {
+      "id": "starter-electric-storm-promise",
+      "name": "Storm Promise",
+      "type": "Electric",
+      "category": "special",
+      "power": 75,
+      "accuracy": 100,
+      "pp": 10,
+      "target": "enemy",
+      "priority": 0,
+      "requiredLevelGuide": 14,
+      "effect": null,
+      "description": "Starter-exclusive Electric signature: a concentrated arc of energy from its unique lineage."
     }
   ]
 }
