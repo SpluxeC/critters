@@ -901,6 +901,23 @@ button,.btn,[role="button"],a,#world,.joystick{
 }
 #shade button,#shade .btn,#shade [role="button"],#shade a{touch-action:manipulation}
 
+
+/* v62 portrait overworld movement selector, located above Interact. */
+#game .actions{align-content:end}
+#game .actions #movementToggle{
+ min-height:44px;font-size:13px;font-weight:800;
+ background:#345b74ed;border-color:#9cc8db;
+}
+#game .actions #movementToggle.walking{
+ background:#6b6541ed;border-color:#dec68a;color:#fff7db;
+}
+#game .actions #talk{background:#a45d48ee}
+@media(max-width:520px) and (orientation:portrait){
+ #game .actions{gap:7px;min-width:105px}
+ #game .actions #movementToggle{min-height:42px;padding:6px 8px}
+ #game .actions #talk,#game .actions #index2{min-height:49px;padding:7px 9px}
+}
+
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -914,13 +931,13 @@ document.addEventListener('dblclick',function(event){
 <section id="game" class="screen" aria-label="Critters game">
   <div class="frame" id="gameFrame">
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
-    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v61</small></div><button class="btn" id="save" type="button">Save</button></div>
+    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v62</small></div><button class="btn" id="save" type="button">Save</button></div>
     <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
     <div class="mobile">
       <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
-      <div class="actions"><button class="btn primary" id="talk" type="button">Talk / Use</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
+      <div class="actions"><button class="btn movementMode" id="movementToggle" type="button" aria-pressed="false" aria-label="Movement speed: Run. Tap to switch.">🏃 Run</button><button class="btn primary" id="talk" type="button">Interact</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
     </div>
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=61-no-double-tap-zoom-20261122" defer></script></body></html>
+</main><script src="game.js?v=62-run-walk-toggle-20261122" defer></script></body></html>
