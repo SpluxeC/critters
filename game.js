@@ -1608,7 +1608,7 @@ function indexParty(){
    +(battleIndexActive()?'<div class="watchPartyMeta">'+(battle.allySlots.includes(i)?'Currently battling':p.hp>0?'Available to switch':'Fainted')+'</div>'+(p.hp>0&&!battle.allySlots.includes(i)&&!battle.pending.some(q=>q.kind==='switch'&&q.target===i)?'<button type="button" class="btn watchBattleAction" data-index-battle-switch="'+i+'">Switch into battle</button>':''):'')
     +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
-   +partyEvolutionControls(p,i)+'</div>';
+   +(battleIndexActive()?'':partyEvolutionControls(p,i))+'</div>';
  }).join('');
  return (battleIndexActive()?'':evolutionNotification())+'<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
@@ -1624,7 +1624,7 @@ function indexItems(){
    +'<button type="button" class="btn" id="watchBattleRevive" '+(!itemQty('Revive')||!s.party.some(p=>p.hp===0)?'disabled':'')+'>Use Revive ('+itemQty('Revive')+')</button></div>':'';
  return battleTools+'<div class="watchSectionTitle">Field inventory <small>View only</small></div>'+list
   +'<div class="watchSectionTitle">Available modules</div>'+(owned||'<div class="watchEmpty">No uninstalled modules owned.</div>')
-  +'<div class="watchReadOnly">Items are usable during battles; modules are installed at Critter Centers.</div>';
+  +'<div class="watchReadOnly">'+(battleIndexActive()?'Choose a battle item above to queue an action. Simply browsing the Index does not spend a turn.':'Items are usable during battles; modules are installed at Critter Centers.')+'</div>';
 }
 
 // Collection phase: species IDs are the permanent keys, not editable names.
