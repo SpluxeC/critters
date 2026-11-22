@@ -110,10 +110,8 @@ test('classic battle menus keep the three choices, move overlay and Index action
  battle.uiMenu='battle';sandbox.renderBattle();
  assert.match(screen,/battleMovesAround/);assert.match(screen,/Tide Splash/);
  assert.match(screen,/data-move-target="0"/);
- battle.uiMenu='index';sandbox.renderBattle();
- assert.match(screen,/id="indexSwitch"/);assert.match(screen,/id="indexItem"/);assert.match(screen,/id="indexCapture"/);
- battle.uiMenu='items';sandbox.renderBattle();
- assert.match(screen,/id="potion"/);assert.match(screen,/id="revive"/);
+ // Index is a separate full-screen watch; it should not be a small arena submenu.
+ assert.match(game,/if\(\$\('menuIndex'\)\)\$\('menuIndex'\)\.onclick=openBattleIndex/);
  battle.uiMenu='root';battle.kind='trainer';sandbox.renderBattle();
  assert.match(screen,/id="menuEscape" disabled/);
 });
@@ -174,4 +172,38 @@ test('all eight approved cinematic battle scenes are self-contained and assigned
  assert.ok(!ctx.battleEnvironmentClass().includes('scene-image'),'unillustrated home keeps existing indoor fallback');
  assert.ok(html.includes('background-size:113% auto'),'rice field gets requested closer framing');
  assert.ok(html.includes('background-size:112% auto'),'bamboo gets requested closer framing');
+});
+
+test('opening and closing the full-screen Index preserves the current battle turn',()=>{
+ const start=game.indexOf('function battleIndexActive(){');
+ const end=game.indexOf('function indexParty(){',start);
+ assert.ok(start>=0&&end>start);
+ const battle={phase:'choose',turn:3,pending:[{actor:0,kind:'move'}],acting:1,uiMenu:'root',indexOpen:false};
+ let indexRenders=0,battleRenders=0;
+ const context=vm.createContext({battle,renderIndex:()=>{indexRenders++},renderBattle:()=>{battleRenders++}});
+ vm.runInContext("let indexTab='clock',indexSelection=0;"+game.slice(start,end),context);
+ context.openBattleIndex();
+ assert.equal(battle.indexOpen,true);
+ assert.equal(battle.acting,1);assert.equal(battle.turn,3);
+ assert.equal(battle.pending.length,1);
+ assert.equal(indexRenders,1);
+ context.returnFromBattleIndex();
+ assert.equal(battle.indexOpen,false);
+ assert.equal(battle.uiMenu,'root');
+ assert.equal(battle.acting,1);assert.equal(battle.turn,3);
+ assert.equal(battle.pending.length,1);
+ assert.equal(battleRenders,1);
+});
+test('battle Index provides real battle actions and takes over the screen',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ for(const selector of ['#shade:has(.combatTop) .modal','#shade:has(.battleIndexShell) .modal',
+  '.classicMainMenu','#shade:has(.combatTop) .combatArena','#shade .battleIndexShell']){
+  assert.ok(html.includes(selector),selector+' full-screen CSS missing');
+ }
+ assert.match(game,/id="watchReturnBattle"/);
+ assert.match(game,/data-index-battle-switch=/);
+ assert.match(game,/id="watchBattlePotion"/);
+ assert.match(game,/id="watchBattleRevive"/);
+ assert.match(game,/id="watchCaptureBattle"/);
+ assert.match(game,/battle.indexOpen=false;queueBattleAction/);
 });
