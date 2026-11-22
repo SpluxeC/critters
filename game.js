@@ -1509,11 +1509,11 @@ function move(d){
  if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
  const first=s.area==='route1'&&!s.earlyJourney?.firstEncounter;
  if(first){s.earlyJourney=s.earlyJourney||{};s.earlyJourney.fieldSteps=(s.earlyJourney.fieldSteps||0)+1}
- // Encounter spacing is counted only on eligible wild tiles; the first Route 1
-  // encounter remains guaranteed after five steps of exploration.
-  s.wildStepsSinceEncounter=(s.wildStepsSinceEncounter||0)+1;
-  const guaranteed=first&&s.earlyJourney.fieldSteps>=5;
-  if(guaranteed||(s.wildStepsSinceEncounter>=4&&Math.random()<wildEncounterChance(s.area)))startWild();
+ // Roll independently on each eligible wild tile. Retain the first Route 1
+ // encounter guarantee so the opening capture tutorial cannot stall.
+ s.wildStepsSinceEncounter=(s.wildStepsSinceEncounter||0)+1;
+ const guaranteed=first&&s.earlyJourney.fieldSteps>=5;
+ if(guaranteed||Math.random()<wildEncounterChance(s.area))startWild();
 }
 }
 function interact(){
@@ -2056,40 +2056,11 @@ function effectiveWildHabitat(sp,area){
  const min=Math.max(1,Math.ceil(habitat.minLevel),range[0]),max=Math.min(Math.floor(habitat.maxLevel),range[1]);
  return min<=max?{...habitat,minLevel:min,maxLevel:max}:null;
 }
-// Each habitat is exclusive to one region in the authored library. Keep only
-// a small, stable selection active initially; exploration reveals additional
-// resident species without changing their original assigned location.
-const STARTING_WILD_ROSTER={route1:9,route2:12,forest:12,route3:13,garden:12,cave:13};
-function wildRosterOrder(area){
- const residents=[...speciesRegistry.values()].filter(sp=>effectiveWildHabitat(sp,area));
- const groups={common:[],uncommon:[],rare:[],legendary:[]};
- for(const sp of residents){
-  const rarity=wildHabitat(sp,area).rarity||'common';
-  (groups[rarity]||groups.common).push(sp);
- }
- // Stable ordering means a saved game sees the same unlock sequence each visit.
- for(const [rarity,list] of Object.entries(groups))list.sort((a,b)=>{
-  const rank=id=>{let h=2166136261;for(const ch of area+':'+rarity+':'+id)h=Math.imul(h^ch.charCodeAt(0),16777619)>>>0;return h};
-  return rank(a.speciesId)-rank(b.speciesId)||a.speciesId.localeCompare(b.speciesId);
- });
- const ordered=[],pattern=['common','common','uncommon','common','rare','uncommon'];
- while(ordered.length<residents.length){
-  let progressed=false;
-  for(const rarity of pattern){
-   if(groups[rarity]?.length){ordered.push(groups[rarity].shift());progressed=true}
-  }
-  if(!progressed)break;
- }
- // Legendary species stay separate, and only become available under the
- // existing first-badge requirement.
- ordered.push(...groups.legendary);
- return ordered;
-}
+// Every resident species within an area's current habitat/level limits is
+// eligible from the first encounter. Rarity and location determine its chance,
+// never the number of prior encounters or battles.
 function encounterSpeciesFor(area){
- const ordered=wildRosterOrder(area),encounters=Math.max(0,Number(s?.regionalWildEncounters?.[area])||0);
- const initial=STARTING_WILD_ROSTER[area]||10;
- const unlocked=initial+Math.floor(encounters/8)*4;
- return ordered.slice(0,Math.min(ordered.length,unlocked));
+ return [...speciesRegistry.values()].filter(sp=>effectiveWildHabitat(sp,area));
 }
 function wildHabitat(sp,area){return effectiveWildHabitat(sp,area)}
 function encounterWeight(sp,area){
@@ -2120,8 +2091,6 @@ function startWild(){
  if(firstAlive()<0)return blackout();
  s.wildStepsSinceEncounter=0;
  const choice=chooseWildSpecies(s.area);
- s.regionalWildEncounters=s.regionalWildEncounters||{};
- s.regionalWildEncounters[s.area]=(s.regionalWildEncounters[s.area]||0)+1;
  if(choice){
   const h=wildHabitat(choice,s.area);
   const min=Math.max(1,Math.floor(h.minLevel)),max=Math.max(min,Math.floor(h.maxLevel));
