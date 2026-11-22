@@ -2684,7 +2684,7 @@ function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capt
 
 // v30 Evolution progression. Chains are authored in data/critters.json.
 // Evolutions consume no items or credits, cannot affect opponents, and
-// re-use the existing 200 species (three restricted types remain standalone).
+// use the existing world species plus the reserved starter families.
 const EVOLUTION_STONE_TYPES=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting','Normal','Steel','Ground'];
 const EVOLUTION_STONES=Object.fromEntries(EVOLUTION_STONE_TYPES.map(type=>[type+' Stone',type]));
 function evolutionRule(p){return speciesFor(p)?.evolvesTo||null}
@@ -2770,7 +2770,7 @@ function evolutionChainInfo(sp){
  const rows=[];
  for(let i=0;i<chain.length;i++){
   const stage=chain[i],rule=i<chain.length-1?chain[i].evolvesTo:null;
-  rows.push('<div class="evoStage"><strong>#'+String(stage.number||0).padStart(3,'0')+' '+escapeHtml(stage.name)+'</strong>'
+  rows.push('<div class="evoStage"><strong>#'+String(critterIndexNumber(stage)).padStart(3,'0')+' '+escapeHtml(stage.name)+'</strong>'
    +'<small>'+escapeHtml((stage.types||[]).join(' / '))+'</small></div>');
   if(rule&&i<chain.length-1)rows.push('<div class="evoArrow">↓ '+escapeHtml(evolutionConditionLabel(rule))+'</div>');
  }
