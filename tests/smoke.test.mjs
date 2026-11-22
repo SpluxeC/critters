@@ -317,3 +317,36 @@ test('starter sprite rendering is wired to battle, Index, and selection without 
  assert.match(html,/\.combatFigure \.combatSprite/);
  assert.match(html,/\.starterChoices/);
 });
+
+test('Run/Walk toggle persists and changes actual movement cadence',()=>{
+ const start=game.indexOf('const movementStepInterval=');
+ const end=game.indexOf('function beginStep(',start);
+ assert.ok(start>=0&&end>start);
+ const s={movementMode:'run'};
+ const button={textContent:'',attrs:{},classes:new Set(),setAttribute(k,v){this.attrs[k]=v},classList:{toggle(k,on){button.classes[on?'add':'delete'](k)}}};
+ let saves=0;
+ const sandbox=vm.createContext({s,screen:'game',modal:false,$:()=>button,save:()=>saves++});
+ vm.runInContext(game.slice(start,end),sandbox);
+ assert.equal(sandbox.movementStepInterval(),135);
+ assert.equal(sandbox.movementStepDuration(),120);
+ sandbox.toggleMovementMode();
+ assert.equal(s.movementMode,'walk');
+ assert.equal(sandbox.movementStepInterval(),235);
+ assert.equal(sandbox.movementStepDuration(),210);
+ assert.equal(button.textContent,'🚶 Walk');
+ assert.equal(button.attrs['aria-pressed'],'true');
+ sandbox.toggleMovementMode();
+ assert.equal(s.movementMode,'run');
+ assert.equal(button.textContent,'🏃 Run');
+ assert.equal(saves,2);
+});
+test('portrait UI has the movement toggle directly above Interact',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(html,/id="movementToggle"[^>]*>🏃 Run<\/button><button[^>]*id="talk"[^>]*>Interact<\/button>/);
+ assert.match(html,/#game \.actions #movementToggle/);
+ assert.ok(!html.includes('Talk / Use</button>'));
+ assert.match(game,/\$\('movementToggle'\)\.onclick=toggleMovementMode/);
+ assert.match(game,/s\.movementMode=s\.movementMode==='walk'\?'walk':'run'/);
+ assert.match(game,/stickRepeatAt=Date\.now\(\)\+movementStepInterval\(\)/);
+ assert.match(game,/visual\.duration=movementStepDuration\(\)/);
+});
