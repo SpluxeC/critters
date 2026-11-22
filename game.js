@@ -8,6 +8,34 @@ const strengths={Fire:['Grass','Ice','Steel'],Water:['Fire','Rock','Ground'],Gra
 const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧',Normal:'◯',Steel:'⚙',Ground:'⏚'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
 const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
+// Three approved cinematic tree assets, bundled as self-contained SVG wrappers
+// around the supplied transparent artwork. Tile collision stays unchanged.
+const treeArt=['broadleaf','tiered','round'].map(name=>{
+ const img=new Image();img.src='assets/trees/'+name+'.svg?v=51';return img;
+});
+function treeArtReady(){return treeArt.every(img=>img.complete&&img.naturalWidth>0)}
+function treeVariant(x,y){
+ // Stable across reloads, with greater tall-tree variety on wooded routes.
+ return ((x*17+y*31+(x*y)%11)%3+3)%3;
+}
+function drawCinematicTrees(ox,oy,w,h,now){
+ if(!treeArtReady())return;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  if(tiles[y]?.[x]!==T.tree)continue;
+  const type=treeVariant(x,y),img=treeArt[type];
+  const rootX=x*S+S*.5-ox,rootY=(y+1)*S-oy;
+  const dense=s.area==='forest'||s.area==='route2';
+  const width=dense?(type===1?48:55):(type===1?63:74);
+  const height=width*(type===1?1.34:type===2?1.07:1.13);
+  if(rootX+width/2<0||rootX-width/2>w||rootY-height>h||rootY<0)continue;
+  // Shadow sits under the fixed solid tile; only the art moves in the breeze.
+  ctx.fillStyle='rgba(20,54,32,.27)';
+  ctx.beginPath();ctx.ellipse(rootX,rootY-5,width*.28,6,0,0,Math.PI*2);ctx.fill();
+  const bend=Math.sin(now*.00086-x*.43-y*.22)*.012;
+  ctx.save();ctx.translate(rootX,rootY-4);ctx.rotate(bend);
+  ctx.drawImage(img,-width/2,-height,width,height);ctx.restore();
+ }
+}
 // Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
 const npcResearcher=new Image();npcResearcher.src='assets/npc-researcher.png?v=18';
 const npcLabAssistant=new Image();npcLabAssistant.src='assets/npc-lab-assistant.png?v=20-player-style';
@@ -694,7 +722,7 @@ function sprite(gender,x,y,d,f,scale=1){
 function drawTile(t,x,y,a,b){
  // All natural terrain shares a single continuous grass surface. Tile cells now
  // describe objects/foliage rather than independent rectangular patches of color.
- const natural=t===T.grass||t===T.tall||t===T.rice||t===T.flower;
+ const natural=t===T.grass||t===T.tall||t===T.rice||t===T.flower||(t===T.tree&&treeArtReady());
  if(!natural){ctx.fillStyle=palette[t]||palette[0];ctx.fillRect(x,y,S+0.5,S+0.5)}
  const hash=(v)=>{const z=Math.sin(v*127.1+83.7)*43758.5453;return z-Math.floor(z)};
  const variation=hash(a*3.71+b*1.91);
@@ -733,7 +761,7 @@ function drawTile(t,x,y,a,b){
      ctx.fillRect(x+dx,y+dy,2,2)
    }
  }
- if(t===T.tree){
+ if(t===T.tree&&!treeArtReady()){
    if(s.area==='village'){
      // Natural rounded foliage rather than square tree stamps; never place
      // ornamental canopy outside of its solid tree footprint onto paths.
@@ -1231,7 +1259,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
     ctx.beginPath();ctx.moveTo(rootX,rootY);
     ctx.quadraticCurveTo(rootX+gust*2,rootY-8,rootX+gust*5,rootY-15);ctx.stroke();
    }
-  }else if(t===T.tree&&s.area!=='village'){
+  }else if(t===T.tree&&s.area!=='village'&&!treeArtReady()){
    ctx.strokeStyle='rgba(162,206,123,.34)';ctx.lineWidth=2;
    ctx.beginPath();ctx.arc(sx+14+gust*1.2,sy+12,11,3.45,5.5);ctx.stroke();
   }
@@ -1340,6 +1368,7 @@ function draw(){
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
  if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
+ drawCinematicTrees(ox,oy,viewportWidth,viewportHeight,performance.now());
  drawExplorationSites(ox,oy);
  drawAtmosphericMotion(ox,oy,viewportWidth,viewportHeight,performance.now());
  drawRegionAtmosphere(ox,oy,viewportWidth,viewportHeight,performance.now());
