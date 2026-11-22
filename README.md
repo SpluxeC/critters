@@ -159,3 +159,13 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Battle Index intentionally hides evolution actions and Save / Return to Title; permanent party rearrangement, home storage retrieval and module maintenance remain Critter Center-only.
 - The existing eight-approved cinematic backgrounds, individual arena mapping, 1v1 and occasional 2v2, eight-Critter party cap, evolution stones and existing saves are preserved.
 - Added smoke tests for the full-screen UI and opening/closing the Index without changing active turn or pending actions. JavaScript syntax and isolated pause/restore checks passed; a full mobile-browser visual check is still recommended.
+
+## v56 — Discovery-order Critter IDs (not separate display numbers)
+- Species IDs **are** the Critter Index numbers: `cr-001-...` through `cr-209-...`, with no independent `number` field. This supersedes the earlier idea of keeping old internal IDs with separate display-order numbers.
+- #001–#003: three-form **Water** starter family; #004–#006: **Rock**; #007–#009: **Electric**. Their final names, designs and artwork remain reserved for Cody and Kyle; each family currently has two level-up evolution links (three total forms, matching the nine reserved slots).
+- Starter-exclusive moves registered in `data/moves.json`: **Tidal Heart** (Water), **Bedrock Vow** (Rock), and **Storm Promise** (Electric), learned at level 14 by every form of its respective lineage. Existing starter type advantage rules are preserved.
+- #010–#209 are the original 200 draft world species, ordered by likely discovery location and minimum encounter level, with every one-/two-evolution family numbered directly next to its forms. Each existing creature retains its type, authored habitats, moves, evolution requirements, and restricted Dragon/Primordial/Beast status.
+- Save migration runs after the full species catalog loads. A `legacySpeciesId` alias within each species entry safely translates old party and stored Critters, capture logs, evolution histories, and collection records to the new actual species IDs; no duplicate discovery numbering is maintained.
+- The starter-selection and childhood rival systems now instantiate their reserved real species IDs, with a safe fallback if species data is still loading. Collection and Index search, entry cards, and evolution-chain labels parse numbers directly from IDs.
+- New regression coverage checks real sequential IDs, family adjacency, unique starter move exclusivity, and old-save migration. Existing shop and battle functionality remains unchanged.
+- **Total Index entries: 209** (200 existing drafted world species plus nine reserved starter forms). Original starter art is still pending.
