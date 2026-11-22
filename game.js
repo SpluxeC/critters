@@ -2282,9 +2282,12 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  if(moveId!=='opening-flick'&&(actor.movePP[moveId]||0)<=0){
   log.push((actor.name||actor.type)+' has no PP left for '+move.name+'.');return;
  }
- if(moveId==='opening-flick'&&!actor.moves.includes(moveId))actor.moves=[moveId,...actor.moves].slice(0,4);
- if((actor.movePP[moveId]||0)<=0){
-  log.push((actor.name||actor.type)+' has no remaining moves and uses a basic struggle!');
+ // Last Resort is a temporary desperation action, not a learned move.
+ // Never overwrite one of the Critter's four equipped attacks.
+ const fallback=moveId==='opening-flick'&&(actor.movePP[moveId]||0)<=0;
+ if(fallback&&actor.moves.some(id=>(actor.movePP[id]||0)>0))return;
+ if(fallback){
+  log.push((actor.name||actor.type)+' has no remaining PP and uses Last Resort!');
  }else actor.movePP[moveId]--;
  let targetSide=move.target==='enemy'?enemySide(side):side;
  let target=getCombatant(targetSide,targetIndex);
@@ -2385,7 +2388,9 @@ function performPlayerAction(action,log){
   case 'potion':if(itemQty('Potion')){s.inventory.Potion--;const healed=Math.min(20,actor.maxHp-actor.hp);actor.hp+=healed;log.push(actor.type+' recovered '+healed+' HP.')}return;
   case 'revive':if(itemQty('Revive')&&s.party[action.target]?.hp===0){s.inventory.Revive--;const q=s.party[action.target];q.hp=Math.max(1,Math.floor(q.maxHp/2));log.push(q.type+' was revived with '+q.hp+' HP.')}return;
   case 'capture':if(battle.kind==='wild'){
-    const foe=battle.enemies[0],chance=captureChance(foe);
+    const foe=battle.enemies[0];
+    if(!foe||foe.hp<=0){log.push('Capture target is unavailable.');return}
+    const chance=captureChance(foe);
     if(Math.random()<chance){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
      const destination=addCapturedCritter(caught);
