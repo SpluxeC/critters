@@ -305,10 +305,26 @@ function updateVisual(now=performance.now()){
  visual.x=visual.fromX+(visual.toX-visual.fromX)*t;
  visual.y=visual.fromY+(visual.toY-visual.fromY)*t;
 }
+// Run is the original movement pace; Walk takes longer between grid steps.
+const movementStepInterval=()=>s?.movementMode==='walk'?235:135;
+const movementStepDuration=()=>s?.movementMode==='walk'?210:120;
+function syncMovementToggle(){
+ const btn=$('movementToggle');if(!btn)return;
+ const walking=s?.movementMode==='walk';
+ btn.textContent=walking?'🚶 Walk':'🏃 Run';
+ btn.setAttribute('aria-pressed',String(walking));
+ btn.setAttribute('aria-label','Movement speed: '+(walking?'Walk':'Run')+'. Tap to switch.');
+ btn.classList.toggle('walking',walking);
+}
+function toggleMovementMode(){
+ if(!s||screen!=='game'||modal)return;
+ s.movementMode=s.movementMode==='walk'?'run':'walk';
+ syncMovementToggle();save();
+}
 function beginStep(x,y){
  updateVisual();visual.fromX=visual.x;visual.fromY=visual.y;
  visual.toX=x;visual.toY=y;visual.start=performance.now();
- visual.duration=120;
+ visual.duration=movementStepDuration();
 }
 
 const read=()=>{try{return JSON.parse(localStorage.getItem('critters-v1'))}catch{return null}};
@@ -324,7 +340,7 @@ function backUpLegacySaveBeforeMigration(){
  }catch(err){console.warn('Could not back up pre-migration save',err)}
 }
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){snapVisual();resizeGameCanvas()}}
+function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){snapVisual();resizeGameCanvas();syncMovementToggle()}}
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
@@ -473,6 +489,7 @@ function critter(type,level=5){
 }
 function migrate(){
  if(!s)return;
+ s.movementMode=s.movementMode==='walk'?'walk':'run';
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
@@ -2978,11 +2995,11 @@ preview('malePreview','male');preview('femalePreview','female');
 $('new').onclick=()=>show('selection');
 $('continue').onclick=()=>{backUpLegacySaveBeforeMigration();s=read();if(!s)return;migrate();build();show('game')};
 $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,' ');if(!name){$('error').textContent='Please enter a name.';return}
- s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4};
- save();build();show('game');say(['Welcome, '+name+'!','Use the left joystick to move and Talk / Use to interact.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
+ s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4,movementMode:'run'};
+ save();build();show('game');say(['Welcome, '+name+'!','Use the left joystick to move and tap Interact to use objects. Toggle Run / Walk to change speed.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
-$('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
-window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>120){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
+$('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('movementToggle').onclick=toggleMovementMode;$('dialog').onclick=advance;$('close').onclick=close;
+window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>movementStepInterval()){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
 window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});// Mobile joystick uses a pointer captured by the joystick base; keyboard controls stay unchanged.
 const stick=$('joystick'),thumb=$('joystickThumb');
 let stickPointer=null,stickDirection=null,stickActive=false,stickRepeatAt=0;
@@ -3033,7 +3050,7 @@ document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+135;last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>145){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
