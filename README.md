@@ -196,3 +196,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Rock: #004 Craglet → #005 Granibuck → #006 Monolithorn.
 - Electric: #007 Sparkin → #008 Voltrix → #009 Tempestrike.
 - These provisional names replace the v60 names for display and gameplay only. Species IDs, art paths, starter origin, evolution rules, saves, and level-70 signature moves remain unchanged. Existing saved Critter names are refreshed from species metadata.
+
+## v66 — Natural random wild encounters
+- Removed encounter-count and battle-count species unlocking. Every species authored for a region can be encountered from the beginning when its habitat overlaps the area's currently permitted level range; normal legendary badge restrictions still apply.
+- Every eligible wild tile independently rolls that area's encounter probability rather than requiring a four-tile cooldown. The first Route 1 encounter guarantee remains for introductory progression.
+- Species selection remains weighted by rarity, discovery status and day/night influences; original habitats, level bands, badges, saves, capture mechanics and the full Critter library remain intact. Legacy regional encounter counters are ignored, not deleted, for old-save compatibility.
