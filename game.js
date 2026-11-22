@@ -318,6 +318,39 @@ function show(page){releaseMovement();document.querySelectorAll('.screen').forEa
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
 const PARTY_LIMIT=8;
+// Critter IDs are the authoritative Index numbers, not a separate display field.
+const STARTER_SPECIES_IDS={Water:'cr-001-starter-water-1',Rock:'cr-004-starter-rock-1',Electric:'cr-007-starter-electric-1'};
+const starterSpeciesId=type=>STARTER_SPECIES_IDS[type]||type;
+const critterIndexNumber=species=>{const match=/^cr-(\d{3})-/.exec(species?.speciesId||'');return match?Number(match[1]):9999};
+function migrateSpeciesIds(){
+ if(!s||!speciesRegistry.size)return;
+ const alias=new Map();
+ for(const sp of speciesRegistry.values())if(sp.legacySpeciesId&&sp.legacySpeciesId!==sp.speciesId)alias.set(sp.legacySpeciesId,sp.speciesId);
+ const translate=id=>alias.get(id)||id;
+ const moveRecord=p=>{
+  if(!p||typeof p!=='object')return;
+  if(p.speciesId)p.speciesId=translate(p.speciesId);
+  for(const e of p.evolutionHistory||[]){if(e.from)e.from=translate(e.from);if(e.to)e.to=translate(e.to)}
+ };
+ for(const p of [...(s.party||[]),...(s.storage||[])])moveRecord(p);
+ // Old starter saves contained only a type. Attach the real base-form ID.
+ for(const p of s.party||[])if(!p.speciesId&&s.starter&&p.type===s.starter&&s.party.indexOf(p)===0)p.speciesId=starterSpeciesId(s.starter);
+ for(const p of s.captureLog||[])moveRecord(p);
+ if(s.collection&&typeof s.collection==='object'){
+  for(const field of ['seen','caught']){
+   const entries=s.collection[field];if(!entries||typeof entries!=='object')continue;
+   for(const [oldId,value] of Object.entries(entries)){
+    const id=translate(oldId);if(id===oldId)continue;
+    // Keep existing discovery history when a migrated key collides with an already-new key.
+    if(!entries[id])entries[id]=value;
+    delete entries[oldId];
+   }
+  }
+  for(const item of Object.values(s.collection.caught||{}))if(item?.evolvedFrom)item.evolvedFrom=translate(item.evolvedFrom);
+ }
+ if(s.evolutionNews)for(const e of s.evolutionNews){if(e.fromId)e.fromId=translate(e.fromId);if(e.toId)e.toId=translate(e.toId)}
+ s.speciesIdSchema=2;
+}
 const moveRegistry=new Map(),speciesRegistry=new Map();
 const moveFallbacks=[
  {id:'opening-flick',name:'Opening Flick',type:'Typeless',category:'physical',power:30,accuracy:100,pp:35,target:'enemy',priority:1},
@@ -384,7 +417,7 @@ function getMove(p,id){
 function refillMovePP(p){normalizeMoves(p);for(const id of p.moves)p.movePP[id]=getMove(p,id).pp}
 async function loadCritterMoveData(){
  try{
-  const res=await fetch('data/moves.json?v=36',{cache:'no-store'});
+  const res=await fetch('data/moves.json?v=57',{cache:'no-store'});
   if(!res.ok)throw Error('moves HTTP '+res.status);
   const data=await res.json();
   if(!Array.isArray(data.moves))throw Error('move catalog missing moves');
@@ -392,7 +425,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=36',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=57',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -401,7 +434,7 @@ async function loadCritterMoveData(){
      speciesRegistry.set(sp.speciesId,sp);
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
- if(s){for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
+ if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
@@ -416,7 +449,7 @@ function migrate(){
  if(!s)return;
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
- if(!Array.isArray(s.party))s.party=s.starter?[critter(s.starter,5)]:[];
+ if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
  s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
  if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p})));
  // Preserve excess Critters from older saves instead of silently dropping them.
@@ -1788,18 +1821,18 @@ function collectionSpeciesHistory(id){
   +'</div>';
 }
 function indexCritters(){
- const all=[...speciesRegistry.values()].sort((a,b)=>(a.number||999)-(b.number||999));
+ const all=[...speciesRegistry.values()].sort((a,b)=>critterIndexNumber(a)-critterIndexNumber(b));
  const filtered=all.filter(sp=>{
   const byType=critterBookType==='All'||sp.types?.includes(critterBookType);
   const byArea=critterBookArea==='all'||sp.habitats?.some(h=>h.areaId===critterBookArea);
   const term=critterBookSearch.trim().toLowerCase();
-  const bySearch=!term||String(sp.name).toLowerCase().includes(term)||String(sp.number).includes(term)||String(sp.speciesId).includes(term);
+  const bySearch=!term||String(sp.name).toLowerCase().includes(term)||String(critterIndexNumber(sp)).includes(term)||String(sp.speciesId).includes(term);
   return byType&&byArea&&bySearch&&(critterBookDiscovery==='all'||discoveryStatus(sp.speciesId)===critterBookDiscovery);
  });
  const selection=critterBookSelected?speciesRegistry.get(critterBookSelected):null;
  const types=Object.keys(strengths);
  const typeFilters=['All',...types].map(type=>'<option value="'+escapeHtml(type)+'" '+(critterBookType===type?'selected':'')+'>'+escapeHtml(type)+'</option>').join('');
- const areaFilters=Object.entries(CRITTER_AREA_LABELS).map(([id,name])=>'<option value="'+id+'" '+(critterBookArea===id?'selected':'')+'>'+escapeHtml(name)+'</option>').join('');
+ const areaFilters=Object.entries({...CRITTER_AREA_LABELS,lab:'Research Laboratory — Starters'}).map(([id,name])=>'<option value="'+id+'" '+(critterBookArea===id?'selected':'')+'>'+escapeHtml(name)+'</option>').join('');
  const collectionOptions=[['all','All discoveries'],['unseen','Unseen'],['seen','Seen only'],['captured','Captured']].map(([id,label])=>'<option value="'+id+'" '+(critterBookDiscovery===id?'selected':'')+'>'+label+'</option>').join('');
  const search='<div class="collectionDiscoverFilter"><label>Discovery status<select id="critterDiscoveryFilter" aria-label="Filter discovery status">'+collectionOptions+'</select></label></div>'
   +'<div class="speciesFilters"><label>Type<select id="critterTypeFilter" aria-label="Filter Critter type">'+typeFilters+'</select></label>'
@@ -1815,7 +1848,7 @@ function indexCritters(){
    return '<div class="speciesMoveLine"><span>Lv '+e.level+'</span><strong>'+escapeHtml(move?.name||e.moveId)+'</strong><small>'+escapeHtml(move?.type||'Unknown')+'</small></div>';
   }).join('');
   body='<button class="btn speciesBack" type="button" id="critterBack">← Back to all Critters</button>'
-   +'<div class="speciesIdentity">'+critterArtwork(selection)+'<div><span class="speciesNumber">#'+String(selection.number||0).padStart(3,'0')+'</span>'
+   +'<div class="speciesIdentity">'+critterArtwork(selection)+'<div><span class="speciesNumber">#'+String(critterIndexNumber(selection)).padStart(3,'0')+'</span>'
    +'<h3>'+escapeHtml(selection.name)+'</h3><p>'+selection.types.map(escapeHtml).join(' / ')+'</p>'
    +'<small>'+escapeHtml(selection.role||'balanced')+' · '+(selection.art?.status==='ready'?'Art uploaded':'Awaiting original art')+'</small>'
    +'<div class="collectionStatus '+discoveryStatus(selection.speciesId)+'">'+discoveryStatus(selection.speciesId).toUpperCase()+'</div></div></div>'
@@ -1832,7 +1865,7 @@ function indexCritters(){
   const list=slice.map(sp=>{
    const first=sp.habitats?.[0];
    return '<button type="button" class="speciesTile" data-critter-id="'+escapeHtml(sp.speciesId)+'">'
-    +'<span class="speciesMiniIcon">'+(symbols[sp.types?.[0]]||'◇')+'</span><span><small>#'+String(sp.number||0).padStart(3,'0')+'</small><strong>'+escapeHtml(sp.name)+'</strong>'
+    +'<span class="speciesMiniIcon">'+(symbols[sp.types?.[0]]||'◇')+'</span><span><small>#'+String(critterIndexNumber(sp)).padStart(3,'0')+'</small><strong>'+escapeHtml(sp.name)+'</strong>'
     +'<em>'+sp.types.map(escapeHtml).join(' / ')+'</em><small>'+escapeHtml(first?.areaName||'Undiscovered area')+'</small>'
     +'<small class="collectionStatus '+discoveryStatus(sp.speciesId)+'">'+discoveryStatus(sp.speciesId).toUpperCase()+'</small></span><span class="speciesArrow">›</span></button>';
   }).join('')||'<div class="watchEmpty">No Critters match these filters.</div>';
@@ -1842,7 +1875,7 @@ function indexCritters(){
    +'<span>Page '+(critterBookPage+1)+' / '+(maxPage+1)+'</span>'
    +'<button type="button" class="btn" id="critterNext" '+(critterBookPage>=maxPage?'disabled':'')+'>Next</button></div>';
  }
- return '<div class="watchSectionTitle">Master Critter library <small>'+all.length+' / 200 drafted</small></div><p class="muted">Each species has one home region. Additional wild species gradually appear as you explore that region; rare encounters remain uncommon.</p>'+search+body;
+ return '<div class="watchSectionTitle">Master Critter Index <small>'+all.length+' species</small></div><p class="muted">Species IDs #001–#009 are the three starter families. All other IDs follow likely discovery order, keeping evolution forms together. Starter names and artwork are reserved for your designs.</p>'+search+body;
 }
 
 function indexTools(){
@@ -1946,7 +1979,10 @@ function earlyBattleTip(){
 
 function starterMenu(){
  open('Choose Your Starter','<p>Choose your first partner. The Critter Index holds your team, inventory, and capture beam.</p><div class="options"><button class="btn" data-starter="Rock">⛰ Rock</button><button class="btn" data-starter="Water">💧 Water</button><button class="btn" data-starter="Electric">⚡ Electric</button></div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
- document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;s.party=[critter(s.starter,5)];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
+ document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;const starterId=starterSpeciesId(s.starter);
+  const partner=critter(starterId,5);
+  if(!speciesRegistry.has(starterId)){partner.speciesId=starterId;partner.name=s.starter+' Starter';partner.type=s.starter;partner.types=[s.starter]}
+  s.party=[partner];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
 }
 // World / encounter balancing (v31) — area-specific encounter density, species
 // rarity, wild level ranges, and tiny novelty/time-of-day influences.
@@ -2073,10 +2109,10 @@ function startTrainer(id){
  const area=id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden';
  const used=new Set();
  const make=(t,l)=>trainerSpecies(t,l,area,id,used.size,used);
- const starter=t=>critter(t,5);
+ const starter=t=>critter(starterSpeciesId(t),5);
  let enemies,name,award,kind='trainer';
  if(id==='tutorial'){enemies=[starter(s.rival)];name='Childhood Rival';award=0;kind='tutorial'}
- else if(id==='rival'){enemies=[critter(s.rival,12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
+ else if(id==='rival'){enemies=[critter(starterSpeciesId(s.rival),12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
  else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
