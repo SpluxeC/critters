@@ -113,3 +113,11 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Quest progress and completion are displayed on the Critter Index Records screen. New quest state uses additive, old-save-friendly fields (`sideQuests`, `questCaptureCounts`) and preserves existing party, storage, evolution stones, and captures.
 - A completed objective alone does not automatically grant a reward. Players must talk to the quest giver and explicitly claim it.
 - The JavaScript syntax check passed; full gameplay and mobile interaction testing remain pending.
+
+## Phase 19 — Gameplay stability and regression checks (v50)
+- Fixed a real battle bug: when all PP is exhausted, Last Resort no longer permanently inserts itself into a Critter's four learned move slots, which previously could erase one learned attack. Last Resort remains available as a temporary fallback.
+- Added a guard so captures do not proceed if the target is already unavailable.
+- Added `tests/smoke.test.mjs`, a dependency-free Node.js regression test suite covering: game source syntax, 200-species / 312-move integrity, authored evolution links and stone IDs, capture odds, eight-member party overflow into home storage, cumulative stone-and-badge evolution requirements, optional quest progress, and the Last Resort regression.
+- Added `.github/workflows/critters-tests.yml` to run these tests on future pushes and pull requests using Node 22.
+- To run locally: `node --test tests/smoke.test.mjs`.
+- Isolated runtime logic and data checks were performed through the connected repository tools. Full device/browser integration and GitHub Actions run results were not available for verification in this session.
