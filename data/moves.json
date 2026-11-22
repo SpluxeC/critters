@@ -5285,7 +5285,7 @@
       "pp": 10,
       "target": "enemy",
       "priority": 0,
-      "requiredLevelGuide": 14,
+      "requiredLevelGuide": 70,
       "effect": null,
       "description": "Starter-exclusive Water signature: a focused surge that rises with its partner's determination."
     },
@@ -5299,7 +5299,7 @@
       "pp": 10,
       "target": "enemy",
       "priority": 0,
-      "requiredLevelGuide": 14,
+      "requiredLevelGuide": 70,
       "effect": null,
       "description": "Starter-exclusive Rock signature: a powerful stonebound strike with an unwavering stance."
     },
@@ -5313,7 +5313,7 @@
       "pp": 10,
       "target": "enemy",
       "priority": 0,
-      "requiredLevelGuide": 14,
+      "requiredLevelGuide": 70,
       "effect": null,
       "description": "Starter-exclusive Electric signature: a concentrated arc of energy from its unique lineage."
     }

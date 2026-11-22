@@ -345,6 +345,7 @@ function show(page){releaseMovement();document.querySelectorAll('.screen').forEa
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
 const PARTY_LIMIT=8;
+const MAX_CRITTER_LEVEL=100;
 // Critter IDs are the authoritative Index numbers, not a separate display field.
 const STARTER_SPECIES_IDS={Water:'cr-001-starter-water-1',Rock:'cr-004-starter-rock-1',Electric:'cr-007-starter-electric-1'};
 const starterSpeciesId=type=>STARTER_SPECIES_IDS[type]||type;
@@ -458,7 +459,7 @@ function getMove(p,id){
 function refillMovePP(p){normalizeMoves(p);for(const id of p.moves)p.movePP[id]=getMove(p,id).pp}
 async function loadCritterMoveData(){
  try{
-  const res=await fetch('data/moves.json?v=57',{cache:'no-store'});
+  const res=await fetch('data/moves.json?v=64-level-cap',{cache:'no-store'});
   if(!res.ok)throw Error('moves HTTP '+res.status);
   const data=await res.json();
   if(!Array.isArray(data.moves))throw Error('move catalog missing moves');
@@ -466,7 +467,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=60-approved-starter-art',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=64-level-cap',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -480,6 +481,7 @@ async function loadCritterMoveData(){
 }
 
 function critter(type,level=5){
+ level=Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(level)||1)));
  const spec=speciesRegistry.get(type);
  const starterType=Object.entries(STARTER_SPECIES_IDS).find(([,id])=>id===type)?.[0];
  const primary=spec?.types?.[0]||starterType||type;
@@ -496,8 +498,8 @@ function migrate(){
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
- s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
- if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p})));
+ s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
+ if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp})));
  // Preserve excess Critters from older saves instead of silently dropping them.
  if(s.party.length>PARTY_LIMIT)s.storage.push(...s.party.splice(PARTY_LIMIT));
  s.wildStepsSinceEncounter=Number.isInteger(s.wildStepsSinceEncounter)?Math.max(0,Math.min(100,s.wildStepsSinceEncounter)):4;
@@ -1681,8 +1683,8 @@ function indexParty(){
   return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(critterSpriteTag(p,'watchPartySprite')||symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
-    +'<div class="watchPartyMeta">XP '+Math.floor(p.xp||0)+' / '+experienceToNextLevel(p)+' to Lv '+(p.level+1)+'</div>'
-    +'<div class="watchMeter"><div style="width:'+Math.min(100,Math.max(0,Math.round(100*(p.xp||0)/experienceToNextLevel(p))))+'%"></div></div>'
+    +'<div class="watchPartyMeta">'+(p.level>=MAX_CRITTER_LEVEL?'MAX LEVEL · Lv 100':'XP '+Math.floor(p.xp||0)+' / '+experienceToNextLevel(p)+' to Lv '+(p.level+1))+'</div>'
+    +'<div class="watchMeter"><div style="width:'+(p.level>=MAX_CRITTER_LEVEL?100:Math.min(100,Math.max(0,Math.round(100*(p.xp||0)/experienceToNextLevel(p)))))+'%"></div></div>'
     +'<div class="watchPartyMeta">'+(nextLevelMove(p)?'Next move: '+escapeHtml(getMove(p,nextLevelMove(p).moveId).name)+' at Lv '+nextLevelMove(p).level:'No further level-up moves assigned')+'</div>'
    +(battleIndexActive()?'<div class="watchPartyMeta">'+(battle.allySlots.includes(i)?'Currently battling':p.hp>0?'Available to switch':'Fainted')+'</div>'+(p.hp>0&&!battle.allySlots.includes(i)&&!battle.pending.some(q=>q.kind==='switch'&&q.target===i)?'<button type="button" class="btn watchBattleAction" data-index-battle-switch="'+i+'">Switch into battle</button>':''):'')
     +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
@@ -2851,19 +2853,22 @@ function partyEvolutionControls(p,i){
   +'<button class="btn" type="button" data-evolve-party="'+i+'" '+(!evolutionReady(p,true)?'disabled':'')+'>'+(rule.stone?'Use Stone & Evolve':'Evolve')+'</button></div>';
 }
 
-function experienceToNextLevel(p){return Math.max(12,(p?.level||1)*12)}
+function experienceToNextLevel(p){return p?.level>=MAX_CRITTER_LEVEL?0:Math.max(12,(p?.level||1)*12)}
 function nextLevelMove(p){
+ if(p?.level>=MAX_CRITTER_LEVEL)return null;
  const spec=speciesFor(p);
  return registeredLearnset(spec).find(e=>e.level>p.level&&validMove(e.moveId))||null;
 }
 function awardExperience(p,xp){
  if(!p)return [];
+ if(p.level>=MAX_CRITTER_LEVEL){p.level=MAX_CRITTER_LEVEL;p.xp=0;return []}
  const events=[];
  p.xp=Math.max(0,Number.isFinite(p.xp)?p.xp:0)+Math.max(0,Math.floor(xp));
  // Existing level requirements and health growth remain unchanged.
- while(p.xp>=experienceToNextLevel(p)){
+ while(p.level<MAX_CRITTER_LEVEL&&p.xp>=experienceToNextLevel(p)){
   p.xp-=experienceToNextLevel(p);
   p.level++;
+  if(p.level===MAX_CRITTER_LEVEL)p.xp=0;
   p.maxHp+=4;
   p.hp=Math.min(p.maxHp,p.hp+4);
   events.push((p.name||p.type)+' reached Lv '+p.level+'!');

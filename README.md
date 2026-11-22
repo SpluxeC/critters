@@ -185,3 +185,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Copy only the nine original pixel-art PNGs from `tune/starter-battle-sprites-20261121` into `main` at unchanged paths and content; do not merge unrelated branch code.
 - Starter selection shows first-stage sprite and name; battle figures, Index collection portraits, Index tiles, party details, and watch slots render these sprites with type-icon fallbacks for other Critters.
 - Save migration, authoritative IDs, starter signature moves, evolution rules, and portrait battle layout remain unchanged.
+
+## v64 — Starter signatures at level 70 and universal level cap
+- Water, Rock, and Electric starter signature moves unlock at level 70 for all three stages instead of level 14.
+- All Critters cap at level 100, with no XP accumulation or further level-ups at maximum. Existing party and home storage saves are clamped and the party view displays MAX LEVEL rather than Level 101.
+- Previously approved starter names remain until replacement names are approved.
