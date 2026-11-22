@@ -654,6 +654,167 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
  }
 }
 
+
+/* v55: real edge-to-edge battles and a full-screen paused Critter Index. */
+#shade:has(.combatTop),#shade:has(.battleIndexShell){
+ position:fixed;inset:0;display:grid;place-items:stretch;padding:0!important;
+ width:100vw;height:100dvh;max-height:100dvh;background:#13242b;overflow:hidden;z-index:30;
+}
+#shade:has(.combatTop) .modal,#shade:has(.battleIndexShell) .modal{
+ position:fixed;inset:0!important;margin:0!important;padding:0!important;
+ border:0!important;border-radius:0!important;max-width:none!important;
+ width:100vw!important;height:100dvh!important;max-height:100dvh!important;
+ box-shadow:none!important;overflow:hidden!important;
+}
+#shade:has(.combatTop) .modalHead,#shade:has(.battleIndexShell) .modalHead{display:none!important}
+#shade:has(.combatTop) #modalBody{position:absolute;inset:0;overflow:hidden}
+#shade:has(.combatTop) .combatArena{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ margin:0!important;border:0!important;border-radius:0!important;
+ background-size:cover!important;background-position:center center!important;
+ overflow:hidden;
+}
+#shade:has(.combatTop) .combatArena.scene-image{
+ background-size:cover,cover!important;background-repeat:no-repeat!important;
+}
+#shade:has(.combatTop) .combatArena.scene-rice{background-position:center 55%!important}
+#shade:has(.combatTop) .combatArena.scene-bamboo{background-position:center 52%!important}
+#shade:has(.combatTop) .combatRoster{
+ position:absolute;inset:max(50px,calc(env(safe-area-inset-top) + 39px)) max(10px,env(safe-area-inset-right)) auto max(10px,env(safe-area-inset-left));
+ z-index:7;display:flex!important;justify-content:space-between;align-items:flex-start;pointer-events:none;
+}
+#shade:has(.combatTop) .combatRoster>div{width:min(29vw,320px);min-width:0}
+#shade:has(.combatTop) .combatRoster>div:first-child{order:2}
+#shade:has(.combatTop) .combatRoster>div:last-child{order:1}
+#shade:has(.combatTop) .rosterTitle{color:#fbf7e2;font-size:clamp(9px,1.2vw,12px);text-shadow:0 1px 4px #162332}
+#shade:has(.combatTop) .combatCard{padding:6px 9px;box-shadow:0 3px 10px #101e2a75}
+#shade:has(.combatTop) .combatTop{
+ position:absolute;top:max(6px,env(safe-area-inset-top));left:max(11px,env(safe-area-inset-left));
+ right:max(11px,env(safe-area-inset-right));z-index:8;margin:0;
+ background:#172e44ba;padding:6px 12px;border-radius:7px;border:1px solid #dddfd566;
+ color:#fff5d4;
+}
+#shade:has(.combatTop) .combatMessage{
+ position:absolute;z-index:8;bottom:max(12px,calc(env(safe-area-inset-bottom) + 7px));
+ left:max(11px,env(safe-area-inset-left));
+ width:min(46vw,540px);max-width:none;max-height:15dvh;
+ margin:0;padding:9px 12px;background:#152f45dc;
+ border:2px solid #bcd4c8b5;border-left:5px solid #f2d494;
+ box-shadow:0 3px 12px #101e34a8;
+}
+#shade:has(.combatTop) .classicMainMenu{
+ position:absolute;z-index:10;bottom:max(14px,calc(env(safe-area-inset-bottom) + 8px));
+ right:max(14px,env(safe-area-inset-right));
+ display:flex!important;flex-direction:column;gap:9px;width:clamp(130px,19vw,230px);
+ margin:0;pointer-events:auto;
+}
+#shade:has(.combatTop) .classicMainMenu .btn{
+ min-height:clamp(47px,10dvh,78px);font-size:clamp(14px,1.9vw,22px);
+ justify-content:flex-start;padding:8px 15px;box-shadow:3px 4px 0 #14213fbd;
+}
+#shade:has(.combatTop) .classicSubmenu{
+ position:absolute;z-index:10;bottom:max(12px,env(safe-area-inset-bottom));
+ right:max(11px,env(safe-area-inset-right));
+ width:min(40vw,360px);margin:0;display:flex;justify-content:flex-end;
+ padding:7px;background:#1c3347db;border-radius:10px;border:1px solid #bdc7b7a8;
+}
+#shade:has(.combatTop) .classicSubmenu strong{flex-basis:100%;text-align:center}
+#shade:has(.combatTop) .classicIndexMenu,#shade:has(.combatTop) .classicItemsMenu{
+ position:absolute;z-index:10;bottom:max(14px,env(safe-area-inset-bottom));
+ right:max(14px,env(safe-area-inset-right));max-width:min(44vw,400px);background:#173047d9;padding:10px;border-radius:12px;
+}
+#shade:has(.combatTop) .classicFootnote{
+ position:absolute;z-index:11;right:max(12px,env(safe-area-inset-right));
+ bottom:0;max-width:22vw;background:#172f46b8;
+}
+#shade:has(.combatTop) .combatQueue{
+ position:absolute;z-index:9;left:max(11px,env(safe-area-inset-left));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 75px);
+ padding:5px 10px;border-radius:6px;background:#152d43d9;max-width:45vw;
+}
+#shade:has(.combatTop) .combatLog{
+ position:absolute;z-index:9;right:max(11px,env(safe-area-inset-right));
+ top:calc(max(50px,env(safe-area-inset-top) + 39px) + 88px);
+ width:min(28vw,340px);max-height:25dvh;overflow:auto;
+ background:#162e44dc;color:#ecf2e7;
+}
+#shade:has(.combatTop) .openingTip,#shade:has(.combatTop) .combatNote{
+ position:absolute;z-index:8;left:max(11px,env(safe-area-inset-left));
+ bottom:calc(max(12px,env(safe-area-inset-bottom)) + 75px);max-width:40vw;pointer-events:none;
+}
+#shade:has(.combatTop) .combatProcessing{
+ position:absolute;bottom:20%;left:50%;transform:translateX(-50%);z-index:10;
+ background:#19384bdc;padding:12px;border-radius:8px;
+}
+#shade:has(.combatTop) .battleMovesAround .battleMove{width:clamp(123px,19vw,250px);min-height:56px;max-height:79px;z-index:12}
+#shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+1){left:2%;top:26%}
+#shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+2){right:2%;top:26%}
+#shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+3){left:2%;bottom:23%}
+#shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n){right:2%;bottom:23%}
+#shade:has(.combatTop) .combatSide.allies{left:17%;top:38%;width:32%;height:51%}
+#shade:has(.combatTop) .combatSide.enemies{left:57%;top:22%;width:31%;height:47%}
+/* Index owns the viewport, hiding the arena entirely until the player returns. */
+#shade:has(.battleIndexShell){background:#102b35}
+#shade:has(.battleIndexShell) #modalBody{
+ position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;
+ overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+ padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right))
+ max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+ background:radial-gradient(ellipse at 50% 0%,#285a5b,#112c36 66%,#0b222b);
+}
+#shade .battleIndexShell{width:min(1100px,100%);margin:0 auto;min-height:100%;padding-bottom:12px}
+#shade .battleIndexShell .watchScreen{min-height:clamp(200px,55dvh,800px)}
+#shade .battleIndexShell .watchFooter{
+ display:flex;gap:12px;position:sticky;bottom:0;z-index:8;
+ background:#152f3ae9;padding:10px;border-radius:9px;justify-content:flex-end;
+}
+#shade .battleIndexShell .watchFooter .btn{min-height:46px}
+#shade .battleIndexShell .watchBattleAction{margin-top:8px;min-height:40px;display:block;width:100%}
+#shade .battleIndexShell .battleBagActions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+#shade .battleIndexShell .battleBagActions .btn{flex:1 1 200px;min-height:48px}
+@media(max-width:720px){
+ #shade:has(.combatTop) .combatCard{padding:3px 6px}
+ #shade:has(.combatTop) .combatRoster>div{width:min(36vw,240px)}
+ #shade:has(.combatTop) .combatCardHead{font-size:11px}
+ #shade:has(.combatTop) .combatCardFoot{font-size:9px}
+ #shade:has(.combatTop) .combatMessage{width:min(45vw,330px);font-size:11px;padding:6px 8px}
+ #shade:has(.combatTop) .classicMainMenu{width:clamp(116px,27vw,177px);gap:6px}
+ #shade:has(.combatTop) .classicMainMenu .btn{min-height:43px;font-size:14px;padding:5px 9px}
+ #shade:has(.combatTop) .combatLog{top:42%;width:26vw;max-height:16dvh}
+ #shade:has(.combatTop) .battleMovesAround .battleMove{min-height:43px;max-height:61px;width:clamp(100px,25vw,165px)}
+ #shade:has(.combatTop) .classicSubmenu{width:min(49vw,250px)}
+ #shade:has(.combatTop) .combatSide.allies{left:16%;top:38%;width:33%}
+ #shade:has(.combatTop) .combatSide.enemies{left:55%;top:26%;width:32%}
+}
+@media(max-height:430px) and (orientation:landscape){
+ #shade:has(.combatTop) .combatTop{padding:3px 8px;font-size:9px}
+ #shade:has(.combatTop) .combatRoster{top:35px}
+ #shade:has(.combatTop) .rosterTitle{display:none}
+ #shade:has(.combatTop) .combatCard{margin-bottom:2px;padding:2px 5px}
+ #shade:has(.combatTop) .combatCardFoot{font-size:8px;padding-top:1px}
+ #shade:has(.combatTop) .combatCard .health{margin-top:2px;height:6px}
+ #shade:has(.combatTop) .classicMainMenu .btn{min-height:37px}
+ #shade:has(.combatTop) .combatMessage{max-height:38px}
+ #shade:has(.combatTop) .combatLog{display:none}
+ #shade:has(.combatTop) .battleMovesAround .battleMove{min-height:35px;max-height:48px;padding:3px 6px}
+ #shade:has(.combatTop) .battleMovesAround .battleMove .moveMeta{font-size:9px}
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+1){top:24%}
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+2){top:24%}
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+3){bottom:18%}
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n){bottom:18%}
+}
+@media(max-width:520px) and (orientation:portrait){
+ #shade:has(.combatTop) .combatTop{font-size:9px}
+ #shade:has(.combatTop) .combatRoster{top:45px}
+ #shade:has(.combatTop) .combatRoster>div{width:44vw}
+ #shade:has(.combatTop) .classicMainMenu{width:38vw}
+ #shade:has(.combatTop) .combatMessage{width:50vw}
+ #shade:has(.combatTop) .battleMovesAround .battleMove{width:41vw}
+ #shade:has(.combatTop) .combatSide.allies{top:42%;left:6%;width:42%;height:40%}
+ #shade:has(.combatTop) .combatSide.enemies{top:30%;left:53%;width:39%;height:37%}
+ #shade:has(.combatTop) .combatLog{display:none}
+ #shade:has(.combatTop) .classicSubmenu{width:55vw}
+}
+
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
