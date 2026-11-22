@@ -169,3 +169,11 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - The starter-selection and childhood rival systems now instantiate their reserved real species IDs, with a safe fallback if species data is still loading. Collection and Index search, entry cards, and evolution-chain labels parse numbers directly from IDs.
 - New regression coverage checks real sequential IDs, family adjacency, unique starter move exclusivity, and old-save migration. Existing shop and battle functionality remains unchanged.
 - **Total Index entries: 209** (200 existing drafted world species plus nine reserved starter forms). Original starter art is still pending.
+
+## v57 — Critical pre-v56 starter migration hotfix
+- **Do not infer a starter from the first party slot or from its type/level.** An ordinary same-type catch must remain an ordinary catch even if the original starter was moved to Home storage or reordered.
+- A type-only Critter is assigned the reserved starter ID only if it has an explicit `starterOrigin: true` marker. Newly chosen starters receive that provenance flag automatically. Older type-only starters without reliable provenance remain **unidentified rather than guessed**; preserve them for manual review.
+- Before pressing Continue on a save that has not completed the new ID migration, the game stores a non-overwriting raw localStorage backup at `critters-v1-before-species-id-migration`. The backup is separate from the primary `critters-v1` key.
+- The ID remapping now executes before normalizing party/storage when Continue is clicked **and** after asynchronous species loading, covering either order of operations.
+- Added regression tests for same-type catch in first slot, unmarked starter in Home, marked starter in Home, idempotence and backup wiring.
+- **Important recovery limitation:** A previously loaded v56 save that has already autosaved the wrong starter ID cannot be reliably repaired from the resulting record alone. Do not overwrite known-good earlier backups; restore or manually identify a Critter using verifiable saved history before assigning starter provenance.
