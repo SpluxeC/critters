@@ -1991,7 +1991,6 @@ function noteOpeningEvent(key){
 function earlyBattleTip(){
  if(!battle)return '';
  if(battle.kind==='tutorial')return '<p class="openingTip">Training match: Try your starter’s attacks! Everyone will be healed afterward.</p>';
- if(battle.kind==='wild'&&s.area==='route1'&&!s.earlyJourney?.firstCapture)return '<p class="openingTip">Capture hint: Lower the wild Critter’s HP, then tap Capture Beam. Attempts can fail.</p>';
  if(battle.id==='rt1'&&!s.defeated?.rt1)return '<p class="openingTip">Trainer tip: Guard, switch Critters, or use a Potion if you need to.</p>';
  return '';
 }
