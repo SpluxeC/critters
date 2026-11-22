@@ -493,6 +493,108 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
  #shade:has(.combatTop) .combatSymbol{animation:none}
 }
 
+
+/* v53: Location-aware arenas. Environment is snapshotted at battle start. */
+/* Area defaults deliberately retain the existing classic arena as fallback. */
+#shade:has(.combatTop) .combatArena{
+ --sky-top:#8bbcf0;--sky-bottom:#d1ebde;--horizon:#88be9c;
+ --ground-a:#7bbf83;--ground-b:#5f9f6c;
+ background:linear-gradient(to bottom,var(--sky-top) 0%,var(--sky-bottom) 43%,var(--horizon) 48%,var(--ground-a) 69%,var(--ground-b) 100%);
+}
+#shade:has(.combatTop) .battleScenery .sceneDetail,
+#shade:has(.combatTop) .battleScenery .sceneStructure{position:absolute;pointer-events:none}
+#shade:has(.combatTop) .combatArena.arena-village,
+#shade:has(.combatTop) .combatArena.arena-route1{
+ --sky-top:#8bb9e9;--sky-bottom:#e3ecdc;--horizon:#96be81;--ground-a:#7db67b;--ground-b:#558e68;
+}
+.arena-village .sceneDetail,.arena-route1 .sceneDetail{bottom:7%;width:42%;height:19%;background:repeating-linear-gradient(105deg,#b9c86e 0 3px,#6c9c50 4px 8px,#80a95d 9px 12px);border-radius:10% 10% 25% 25%;opacity:.8;transform:skewX(-12deg)}
+.arena-village .detailA,.arena-route1 .detailA{left:4%}
+.arena-village .detailB,.arena-route1 .detailB{right:2%;bottom:30%;width:28%;height:10%;opacity:.65}
+.arena-route1.terrain-rice .sceneDetail,.arena-village.terrain-rice .sceneDetail{background:repeating-linear-gradient(105deg,#d9cd78 0 3px,#598b57 4px 9px,#8cb66a 10px 13px);box-shadow:0 8px 3px #7fb4ac77}
+#shade:has(.combatTop) .combatArena.arena-route2{
+ --sky-top:#a5ced9;--sky-bottom:#c4e2c3;--horizon:#5d9770;--ground-a:#659d67;--ground-b:#345c43;
+}
+.arena-route2 .sceneryTree{width:6%;height:60%;bottom:35%;background:linear-gradient(90deg,#356f55,#76a670,#2e634b);border-radius:45% 45% 6% 6%;filter:none;opacity:.8}
+.arena-route2 .sceneryTree:after{height:110%;width:20%;left:40%;bottom:-13%;background:#426b44}
+.arena-route2 .treeA{left:8%}.arena-route2 .treeB{left:48%;opacity:.45}.arena-route2 .treeC{right:12%}
+.arena-route2 .sceneDetail{bottom:32%;height:54%;width:2%;border-radius:10px;background:repeating-linear-gradient(0deg,#7fa369 0 15px,#4e8658 16px 18px);box-shadow:10px 0 0 #5a9561,17px 0 0 #356f50}
+.arena-route2 .detailA{left:23%}.arena-route2 .detailB{right:27%;height:64%;opacity:.6}
+#shade:has(.combatTop) .combatArena.arena-forest{
+ --sky-top:#628c87;--sky-bottom:#a9ccad;--horizon:#346c56;--ground-a:#447c5c;--ground-b:#234f3d;
+}
+.arena-forest .sceneryTree{opacity:.94;filter:blur(2px);height:62%;width:22%;bottom:32%;background:radial-gradient(ellipse at 40% 25%,#a5c681,#317b51 62%,#1b513b)}
+.arena-forest .sceneDetail{width:100%;height:27%;bottom:18%;background:repeating-linear-gradient(110deg,#286a4377 0 7px,#749e59a0 8px 11px,transparent 12px 20px);opacity:.6}
+.arena-forest .detailA{left:0}.arena-forest .detailB{display:none}
+#shade:has(.combatTop) .combatArena.arena-route3{
+ --sky-top:#84a9d2;--sky-bottom:#d3e2e1;--horizon:#839d99;--ground-a:#a4ae87;--ground-b:#727d62;
+}
+.arena-route3 .sceneDetail{width:65%;height:36%;bottom:36%;background:linear-gradient(140deg,transparent 49%,#7a8e89 50% 67%,transparent 68%),linear-gradient(35deg,transparent 40%,#9ea9a5 41% 62%,transparent 63%);opacity:.95}
+.arena-route3 .detailA{left:-7%}.arena-route3 .detailB{right:-7%;transform:scaleX(-1);opacity:.75}
+.arena-route3 .sceneryTree{opacity:.28}
+#shade:has(.combatTop) .combatArena.arena-cave{
+ --sky-top:#1b2938;--sky-bottom:#304352;--horizon:#475865;--ground-a:#737b7c;--ground-b:#414853;
+ background:radial-gradient(ellipse at 48% 15%,#5c77867d,transparent 70%),linear-gradient(to bottom,#152431 0%,#344553 45%,#505e66 46%,#777b7c 63%,#404750 100%);
+}
+.arena-cave .sceneryCloud,.arena-cave .sceneryTree{display:none}
+.arena-cave .sceneDetail{bottom:18%;width:21%;height:52%;clip-path:polygon(49% 0,100% 100%,0 100%);background:linear-gradient(105deg,#8fbbbd,#4b7281 50%,#314656);opacity:.82;filter:drop-shadow(0 0 10px #b9e9f066)}
+.arena-cave .detailA{left:6%}.arena-cave .detailB{right:9%;height:40%;width:15%}
+.arena-cave .sceneStructure{inset:0 0 auto;height:30%;background:repeating-linear-gradient(110deg,#0e202f 0 8%,#293b47 9% 16%,#122633 17% 24%);clip-path:polygon(0 0,100% 0,100% 48%,86% 62%,76% 38%,59% 75%,42% 39%,22% 65%,8% 44%,0 58%)}
+#shade:has(.combatTop) .combatArena.arena-town{
+ --sky-top:#a7c6e4;--sky-bottom:#e5e3d3;--horizon:#9ab2a0;--ground-a:#b1b9a5;--ground-b:#849c90;
+}
+.arena-town .sceneStructure,.arena-garden .sceneStructure{bottom:38%;left:3%;width:24%;height:32%;background:linear-gradient(#9a775c 0 18%,#ede0c5 19% 90%,#a78661 91%);clip-path:polygon(0 20%,50% 0,100% 20%,100% 100%,0 100%);opacity:.78}
+.arena-town .sceneDetail{bottom:4%;width:100%;height:25%;background:repeating-linear-gradient(95deg,#d5c5a6 0 22px,#b1a58c 23px 25px,#dad2bc 26px 50px);opacity:.58}
+.arena-town .detailA{left:0}.arena-town .detailB{display:none}
+#shade:has(.combatTop) .combatArena.arena-garden{
+ --sky-top:#a8c9dc;--sky-bottom:#f0e2d8;--horizon:#91b69a;--ground-a:#82b78b;--ground-b:#588f79;
+}
+.arena-garden .sceneDetail{bottom:13%;width:33%;height:16%;border-radius:50%;background:radial-gradient(ellipse,#86c4c1,#428d93 65%,#6ca88a 70%);box-shadow:0 0 0 6px #afd2a277}
+.arena-garden .detailA{left:4%}.arena-garden .detailB{right:5%;width:20%;bottom:22%}
+.arena-garden .sceneryTree{opacity:.45}
+#shade:has(.combatTop) .combatArena.arena-lab,
+#shade:has(.combatTop) .combatArena.arena-home,
+#shade:has(.combatTop) .combatArena.arena-neighbor,
+#shade:has(.combatTop) .combatArena.arena-gym{
+ background:linear-gradient(to bottom,#63798c 0%,#8496a1 57%,#c6b297 58%,#8c806e 100%);
+}
+.arena-lab .sceneryCloud,.arena-lab .sceneryTree,
+.arena-home .sceneryCloud,.arena-home .sceneryTree,
+.arena-neighbor .sceneryCloud,.arena-neighbor .sceneryTree,
+.arena-gym .sceneryCloud,.arena-gym .sceneryTree{display:none}
+.arena-lab .sceneStructure,.arena-home .sceneStructure,.arena-neighbor .sceneStructure,.arena-gym .sceneStructure{
+ top:0;left:6%;width:29%;height:49%;border:9px solid #4c5b67;
+ background:linear-gradient(180deg,#bbd4dc,#91bbba 80%,#c1ddd3);
+ box-shadow:0 8px 0 #526174,inset 0 0 0 3px #cfdbd4;
+}
+.arena-lab .sceneDetail{bottom:27%;height:23%;width:16%;background:linear-gradient(90deg,#6b8b94,#b6d3ca,#60828d);border:5px solid #526c75;border-radius:6px}
+.arena-lab .detailA{left:43%}.arena-lab .detailB{right:6%;width:11%;height:38%;background:linear-gradient(#d3dcd8,#7499a1)}
+#shade:has(.combatTop) .combatArena.arena-lab{background:linear-gradient(#7c96a1 0%,#a4b7b7 57%,#cbdad4 58%,#8da8a6 100%)}
+.arena-home .sceneDetail,.arena-neighbor .sceneDetail{bottom:27%;width:31%;height:16%;background:linear-gradient(#8d6044,#b98c61);border:5px solid #614b43;border-radius:5px}
+.arena-home .detailA,.arena-neighbor .detailA{left:44%}
+.arena-home .detailB,.arena-neighbor .detailB{display:none}
+#shade:has(.combatTop) .combatArena.arena-home,
+#shade:has(.combatTop) .combatArena.arena-neighbor{background:linear-gradient(#ad997e 0%,#d2c2a4 57%,#a27b58 58%,#654b3a 100%)}
+#shade:has(.combatTop) .combatArena.arena-gym{background:linear-gradient(#b8cba9 0%,#dce3bf 57%,#90bd84 58%,#628d5e 100%)}
+.arena-gym .sceneStructure{border-color:#59794b;background:linear-gradient(180deg,#d6e9ce,#b4d4a3);box-shadow:0 5px 0 #4e7e4e}
+.arena-gym .sceneDetail{bottom:26%;width:18%;height:36%;background:repeating-linear-gradient(90deg,#397e45 0 12px,#63a35c 13px 18px);border:3px solid #3c793e;border-radius:6px}
+.arena-gym .detailA{left:40%}.arena-gym .detailB{right:6%;height:42%}
+#shade:has(.combatTop) .combatArena.terrain-stone:not(.arena-cave):not(.arena-lab):not(.arena-gym):not(.arena-home):not(.arena-neighbor){
+ --ground-a:#a8ad9d;--ground-b:#7e8c83;
+}
+#shade:has(.combatTop) .combatArena.terrain-water:not(.arena-cave):not(.arena-lab):not(.arena-gym):not(.arena-home):not(.arena-neighbor){
+ --ground-a:#7fbdba;--ground-b:#448d96;
+}
+#shade:has(.combatTop) .combatArena.phase-dusk:not(.arena-lab):not(.arena-home):not(.arena-neighbor):not(.arena-gym){
+ box-shadow:inset 0 0 0 999px #f49c6230,inset 0 -16px 32px #44495d47;
+}
+#shade:has(.combatTop) .combatArena.phase-night:not(.arena-lab):not(.arena-home):not(.arena-neighbor):not(.arena-gym):not(.arena-cave){
+ box-shadow:inset 0 0 0 999px #111c485c,inset 0 -20px 40px #081a3d7a;
+}
+#shade:has(.combatTop) .combatArena.phase-dawn:not(.arena-lab):not(.arena-home):not(.arena-neighbor):not(.arena-gym){
+ box-shadow:inset 0 0 0 999px #ecb98c22,inset 0 -14px 24px #a3c9b74a;
+}
+#shade:has(.combatTop) .combatArena.arena-cave .combatFigure{filter:drop-shadow(0 5px 9px #d6f0f263)}
+
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
