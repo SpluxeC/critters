@@ -150,3 +150,12 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - The rice and bamboo images get a slightly closer crop, following creator feedback that opponents could look too distant. The images stay behind the live Critters, overlays, HP cards, attack buttons and Battle / Index / Escape menu.
 - Existing day/dusk/night arena effects, move targeting, 1v1 and occasional 2v2, capture chances, eight-Critter party cap and saved progress are preserved.
 - Regression tests verify that all eight asset files exist, contain actual image data, and are mapped to the intended regions. JavaScript syntax and static asset checks were run; in-browser/mobile rendering still needs device verification.
+
+## v55 — Fullscreen cinematic battles and full-screen paused Critter Index
+- The battle dialog now occupies the entire visible game viewport; the chosen cinematic painting fills the background edge-to-edge, with ally/enemy figures and HP panels layered over it.
+- The opening Battle, Index, and Escape actions are vertically stacked over the bottom-right corner of the arena, rather than appearing below it. Attack buttons remain over the battlefield when Battle is selected. Layout accounts for phone safe areas and short landscape screens.
+- Selecting Index opens the actual Critter Index as a **full-screen takeover**. The active encounter and queued actions stay in memory; inspecting tabs and returning to battle does **not** spend a turn.
+- In battle, the Party tab offers **Switch into battle** for eligible reserves, the Bag tab offers Potion and Revive actions, and a wild battle's Index offers Capture Beam. Choosing one of those queues the original battle action and uses the existing team-turn combat rules.
+- Battle Index intentionally hides evolution actions and Save / Return to Title; permanent party rearrangement, home storage retrieval and module maintenance remain Critter Center-only.
+- The existing eight-approved cinematic backgrounds, individual arena mapping, 1v1 and occasional 2v2, eight-Critter party cap, evolution stones and existing saves are preserved.
+- Added smoke tests for the full-screen UI and opening/closing the Index without changing active turn or pending actions. JavaScript syntax and isolated pause/restore checks passed; a full mobile-browser visual check is still recommended.
