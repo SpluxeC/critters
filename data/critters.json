@@ -4,7 +4,7 @@
   "species": [
     {
       "speciesId": "cr-001-starter-water-1",
-      "name": "Water Starter — Form 1",
+      "name": "Bubblit",
       "types": [
         "Water"
       ],
@@ -61,10 +61,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/starters/water.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Water",
       "starterForm": 1,
       "signatureMoveId": "starter-water-tidal-heart",
@@ -76,7 +76,7 @@
     },
     {
       "speciesId": "cr-002-starter-water-2",
-      "name": "Water Starter — Form 2",
+      "name": "Rillisk",
       "types": [
         "Water"
       ],
@@ -133,10 +133,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-starter-stage-2.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Water",
       "starterForm": 2,
       "signatureMoveId": "starter-water-tidal-heart",
@@ -149,7 +149,7 @@
     },
     {
       "speciesId": "cr-003-starter-water-3",
-      "name": "Water Starter — Form 3",
+      "name": "Tiderax",
       "types": [
         "Water"
       ],
@@ -206,10 +206,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-starter-stage-3.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Water",
       "starterForm": 3,
       "signatureMoveId": "starter-water-tidal-heart",
@@ -218,7 +218,7 @@
     },
     {
       "speciesId": "cr-004-starter-rock-1",
-      "name": "Rock Starter — Form 1",
+      "name": "Grumlet",
       "types": [
         "Rock"
       ],
@@ -275,10 +275,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/starters/rock.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Rock",
       "starterForm": 1,
       "signatureMoveId": "starter-rock-bedrock-vow",
@@ -290,7 +290,7 @@
     },
     {
       "speciesId": "cr-005-starter-rock-2",
-      "name": "Rock Starter — Form 2",
+      "name": "Craghorn",
       "types": [
         "Rock"
       ],
@@ -347,10 +347,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/rock-starter-stage-2.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Rock",
       "starterForm": 2,
       "signatureMoveId": "starter-rock-bedrock-vow",
@@ -363,7 +363,7 @@
     },
     {
       "speciesId": "cr-006-starter-rock-3",
-      "name": "Rock Starter — Form 3",
+      "name": "Titanstag",
       "types": [
         "Rock"
       ],
@@ -420,10 +420,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/rock-starter-stage-3.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Rock",
       "starterForm": 3,
       "signatureMoveId": "starter-rock-bedrock-vow",
@@ -432,7 +432,7 @@
     },
     {
       "speciesId": "cr-007-starter-electric-1",
-      "name": "Electric Starter — Form 1",
+      "name": "Zappit",
       "types": [
         "Electric"
       ],
@@ -489,10 +489,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/starters/electric.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Electric",
       "starterForm": 1,
       "signatureMoveId": "starter-electric-storm-promise",
@@ -504,7 +504,7 @@
     },
     {
       "speciesId": "cr-008-starter-electric-2",
-      "name": "Electric Starter — Form 2",
+      "name": "Voltimp",
       "types": [
         "Electric"
       ],
@@ -561,10 +561,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/electric-starter-stage-2.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Electric",
       "starterForm": 2,
       "signatureMoveId": "starter-electric-storm-promise",
@@ -577,7 +577,7 @@
     },
     {
       "speciesId": "cr-009-starter-electric-3",
-      "name": "Electric Starter — Form 3",
+      "name": "Stormbrute",
       "types": [
         "Electric"
       ],
@@ -634,10 +634,10 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/electric-starter-stage-3.png"
       },
-      "notes": "Reserved starter family slot. Cody and Kyle will provide final name, art, appearance, stats and move tuning; unique family signature attack is already in the move library.",
+      "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Electric",
       "starterForm": 3,
       "signatureMoveId": "starter-electric-storm-promise",

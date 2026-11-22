@@ -852,13 +852,47 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
  }
 }
 
+
+/* v60: original approved starter sprites; crisp pixels on portrait screens. */
+#shade:has(.combatTop) .combatFigure .combatSprite{
+ position:relative;z-index:2;display:block;object-fit:contain;
+ width:clamp(110px,28vw,220px);height:clamp(125px,25dvh,260px);
+ max-width:100%;max-height:100%;image-rendering:pixelated;
+ filter:drop-shadow(0 5px 4px rgba(10,22,34,.65));
+ animation:combatHover 3s ease-in-out infinite;
+}
+#shade:has(.combatTop) .combatFigure.enemy .combatSprite{transform-origin:center bottom}
+#shade:has(.combatTop) .combatFigure .combatAura{pointer-events:none}
+.speciesMiniIcon .speciesMiniSprite,.watchSlotIcon .watchSlotSprite,.watchTinyIcon .watchTinySprite{
+ display:block;object-fit:contain;width:100%;height:100%;image-rendering:pixelated;
+}
+.watchPartySprite{display:inline-block;vertical-align:middle;width:38px;height:38px;object-fit:contain;image-rendering:pixelated;margin-right:4px}
+.starterChoices{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.starterChoices .starterChoice{
+ min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:4px;padding:8px 4px;min-height:135px;text-align:center;
+}
+.starterChoice .starterChoiceSprite{
+ display:block;width:min(100%,110px);height:90px;object-fit:contain;image-rendering:pixelated;
+}
+.starterChoice strong{font-size:clamp(11px,2.7vw,15px)}
+.starterChoice small{font-size:11px;opacity:.85}
+@media(max-width:520px) and (orientation:portrait){
+ #shade:has(.combatTop) .combatFigure .combatSprite{
+  width:min(35vw,175px);height:clamp(110px,21dvh,205px);
+ }
+ .starterChoices .starterChoice{min-height:112px}
+ .starterChoice .starterChoiceSprite{height:74px}
+ .watchPartySprite{width:32px;height:32px}
+}
+
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
 <section id="game" class="screen" aria-label="Critters game">
   <div class="frame" id="gameFrame">
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
-    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v59</small></div><button class="btn" id="save" type="button">Save</button></div>
+    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v60</small></div><button class="btn" id="save" type="button">Save</button></div>
     <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
     <div class="mobile">
       <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
@@ -867,4 +901,4 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=59-compact-move-buttons-20261122" defer></script></body></html>
+</main><script src="game.js?v=60-approved-starter-sprites-20261122" defer></script></body></html>

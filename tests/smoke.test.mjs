@@ -292,3 +292,28 @@ test('hotfix snapshots the legacy save before Continue and marks future starters
  assert.match(game,/partner\.starterOrigin=true/);
  assert.doesNotMatch(game,/s\.party\.indexOf\(p\)===0\)p\.speciesId=starterSpeciesId/);
 });
+
+test('approved nine starters use their correct names, IDs, and local sprite assets',()=>{
+ const expected=[["Bubblit","assets/critters/starters/water.png"],["Rillisk","assets/critters/gallery/water-starter-stage-2.png"],["Tiderax","assets/critters/gallery/water-starter-stage-3.png"],["Grumlet","assets/critters/starters/rock.png"],["Craghorn","assets/critters/gallery/rock-starter-stage-2.png"],["Titanstag","assets/critters/gallery/rock-starter-stage-3.png"],["Zappit","assets/critters/starters/electric.png"],["Voltimp","assets/critters/gallery/electric-starter-stage-2.png"],["Stormbrute","assets/critters/gallery/electric-starter-stage-3.png"]];
+ for(let i=0;i<9;i++){
+  const sp=species[i];
+  assert.equal(sp.name,expected[i][0]);
+  assert.equal(sp.art.status,'ready');
+  assert.equal(sp.art.spritePath,expected[i][1]);
+  assert.ok(sp.speciesId.startsWith('cr-'+String(i+1).padStart(3,'0')+'-'));
+  const png=readFileSync(new URL('../'+sp.art.spritePath,import.meta.url));
+  assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+ }
+});
+test('starter sprite rendering is wired to battle, Index, and selection without changing other Critters',()=>{
+ assert.match(game,/function critterSpriteTag\(/);
+ assert.match(game,/critterSpriteTag\(p,'combatSprite'\)/);
+ assert.match(game,/critterSpriteTag\(p,'watchPartySprite'\)/);
+ assert.match(game,/critterSpriteTag\(sp,'speciesMiniSprite'\)/);
+ assert.match(game,/critterSpriteTag\(sp,'speciesPortrait'\)/);
+ assert.match(game,/class="starterChoiceSprite"/);
+ assert.match(game,/partner\.starterOrigin=true/);
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(html,/\.combatFigure \.combatSprite/);
+ assert.match(html,/\.starterChoices/);
+});

@@ -177,3 +177,11 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - The ID remapping now executes before normalizing party/storage when Continue is clicked **and** after asynchronous species loading, covering either order of operations.
 - Added regression tests for same-type catch in first slot, unmarked starter in Home, marked starter in Home, idempotence and backup wiring.
 - **Important recovery limitation:** A previously loaded v56 save that has already autosaved the wrong starter ID cannot be reliably repaired from the resulting record alone. Do not overwrite known-good earlier backups; restore or manually identify a Critter using verifiable saved history before assigning starter provenance.
+
+## v60 — Official starter names and Kyle's nine approved sprites
+- Water: #001 **Bubblit**, #002 **Rillisk**, #003 **Tiderax**.
+- Rock: #004 **Grumlet**, #005 **Craghorn**, #006 **Titanstag**.
+- Electric: #007 **Zappit**, #008 **Voltimp**, #009 **Stormbrute**.
+- Copy only the nine original pixel-art PNGs from `tune/starter-battle-sprites-20261121` into `main` at unchanged paths and content; do not merge unrelated branch code.
+- Starter selection shows first-stage sprite and name; battle figures, Index collection portraits, Index tiles, party details, and watch slots render these sprites with type-icon fallbacks for other Critters.
+- Save migration, authoritative IDs, starter signature moves, evolution rules, and portrait battle layout remain unchanged.

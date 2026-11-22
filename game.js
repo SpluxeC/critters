@@ -384,6 +384,16 @@ const defaultMoveIds=(type,level)=>{
 };
 function validMove(id){return moveRegistry.get(id)||null}
 function speciesFor(p){return p?.speciesId?speciesRegistry.get(p.speciesId):null}
+// Render only approved local sprite paths. Legacy/non-art Critters retain their type icons.
+function critterSpritePath(p){
+ const spec=p?.art?p:speciesFor(p);
+ const path=spec?.art?.status==='ready'?spec.art.spritePath:null;
+ return typeof path==='string'&&/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(path)?path:null;
+}
+function critterSpriteTag(p,cssClass){
+ const path=critterSpritePath(p);
+ return path?'<img class="'+cssClass+'" src="'+escapeHtml(path)+'" alt="'+escapeHtml(p?.name||speciesFor(p)?.name||'Critter')+'" decoding="async">':'';
+}
 function registeredLearnset(spec){
  return Array.isArray(spec?.levelUp)?spec.levelUp.filter(q=>Number.isInteger(q.level)&&q.level>=1&&typeof q.moveId==='string')
   .sort((a,b)=>a.level-b.level):[];
@@ -440,7 +450,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=57',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=60-approved-starter-art',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -1601,7 +1611,7 @@ function index(){
 function indexSlotContent(i){
  if(i<8){
   const p=s.party[i];
-  return p?'<span class="watchSlotIcon">'+(symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.name||p.type)+'</span><small>Lv '+p.level+'</small>'
+  return p?'<span class="watchSlotIcon">'+(critterSpriteTag(p,'watchSlotSprite')||symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.name||p.type)+'</span><small>Lv '+p.level+'</small>'
    :'<span class="watchSlotIcon empty">◇</span><span class="watchSlotName">Empty</span>';
  }
  const module=s.installed[i-8];
@@ -1616,7 +1626,7 @@ function indexClock(){
   const x=50+39*Math.cos(angle),y=50+39*Math.sin(angle);
   clock+='<button type="button" class="watchPosition '+(i>=8?'isModule ':'')+(indexSelection===i?'selected':'')+'" data-index-slot="'+i+'" '
     +'style="left:'+x.toFixed(2)+'%;top:'+y.toFixed(2)+'%" aria-label="'+(i+1)+' o’clock slot">'
-    +'<span class="watchTime">'+(i+1)+'</span><span class="watchTinyIcon">'+(i<8?(s.party[i]?symbols[s.party[i].type]||'◇':'·'):'✧')+'</span></button>';
+    +'<span class="watchTime">'+(i+1)+'</span><span class="watchTinyIcon">'+(i<8?(s.party[i]?critterSpriteTag(s.party[i],'watchTinySprite')||symbols[s.party[i].type]||'◇':'·'):'✧')+'</span></button>';
  }
  clock+='</div>';
  const i=indexSelection,p=s.party[i],mod=s.installed[i-8];
@@ -1651,7 +1661,7 @@ function indexParty(){
   const p=s.party[i];
   if(!p)return '<div class="watchPartyCard empty"><span>Slot '+(i+1)+'</span><strong>◇ Empty</strong></div>';
   const pct=Math.round(100*p.hp/Math.max(1,p.maxHp));
-  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
+  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(critterSpriteTag(p,'watchPartySprite')||symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
     +'<div class="watchPartyMeta">XP '+Math.floor(p.xp||0)+' / '+experienceToNextLevel(p)+' to Lv '+(p.level+1)+'</div>'
@@ -1814,11 +1824,8 @@ function indexMoves(){
 const CRITTER_AREA_LABELS={all:'All areas',route1:'Route 1 · Rice Fields',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town Outskirts'};
 const LIBRARY_PAGE_SIZE=16;
 function critterArtwork(sp){
- // Art is never fabricated. Original sprites appear after Cody/Kyle uploads.
- if(sp?.art?.status==='ready'&&typeof sp.art.spritePath==='string'&&/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(sp.art.spritePath)){
-  return '<img class="speciesPortrait" alt="Artwork for '+escapeHtml(sp.name)+'" src="'+escapeHtml(sp.art.spritePath)+'" loading="lazy">';
- }
- return '<div class="speciesSilhouette" role="img" aria-label="Artwork pending"><span>◇</span><small>ART PENDING</small></div>';
+ const artwork=critterSpriteTag(sp,'speciesPortrait');
+ return artwork||'<div class="speciesSilhouette" role="img" aria-label="Artwork pending"><span>◇</span><small>ART PENDING</small></div>';
 }
 function critterStatTable(sp){
  const fields=[['hp','HP'],['attack','Attack'],['defense','Defense'],['specialAttack','Sp. Atk'],['specialDefense','Sp. Def'],['speed','Speed']];
@@ -1884,7 +1891,7 @@ function indexCritters(){
   const list=slice.map(sp=>{
    const first=sp.habitats?.[0];
    return '<button type="button" class="speciesTile" data-critter-id="'+escapeHtml(sp.speciesId)+'">'
-    +'<span class="speciesMiniIcon">'+(symbols[sp.types?.[0]]||'◇')+'</span><span><small>#'+String(critterIndexNumber(sp)).padStart(3,'0')+'</small><strong>'+escapeHtml(sp.name)+'</strong>'
+    +'<span class="speciesMiniIcon">'+(critterSpriteTag(sp,'speciesMiniSprite')||symbols[sp.types?.[0]]||'◇')+'</span><span><small>#'+String(critterIndexNumber(sp)).padStart(3,'0')+'</small><strong>'+escapeHtml(sp.name)+'</strong>'
     +'<em>'+sp.types.map(escapeHtml).join(' / ')+'</em><small>'+escapeHtml(first?.areaName||'Undiscovered area')+'</small>'
     +'<small class="collectionStatus '+discoveryStatus(sp.speciesId)+'">'+discoveryStatus(sp.speciesId).toUpperCase()+'</small></span><span class="speciesArrow">›</span></button>';
   }).join('')||'<div class="watchEmpty">No Critters match these filters.</div>';
@@ -1996,10 +2003,11 @@ function earlyBattleTip(){
 }
 
 function starterMenu(){
- open('Choose Your Starter','<p>Choose your first partner. The Critter Index holds your team, inventory, and capture beam.</p><div class="options"><button class="btn" data-starter="Rock">⛰ Rock</button><button class="btn" data-starter="Water">💧 Water</button><button class="btn" data-starter="Electric">⚡ Electric</button></div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
+ const choices=[['Water','Bubblit','assets/critters/starters/water.png'],['Rock','Grumlet','assets/critters/starters/rock.png'],['Electric','Zappit','assets/critters/starters/electric.png']];
+ open('Choose Your Starter','<p>Choose your first partner. The Critter Index holds your team, inventory, and capture beam.</p><div class="options starterChoices">'+choices.map(([type,name,path])=>'<button class="btn starterChoice" data-starter="'+type+'"><img src="'+path+'" alt="'+name+'" class="starterChoiceSprite"><strong>'+name+'</strong><small>'+type+' type</small></button>').join('')+'</div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
  document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;const starterId=starterSpeciesId(s.starter);
   const partner=critter(starterId,5);
-  if(!speciesRegistry.has(starterId)){partner.speciesId=starterId;partner.name=s.starter+' Starter';partner.type=s.starter;partner.types=[s.starter]}
+  if(!speciesRegistry.has(starterId)){partner.speciesId=starterId;partner.name={Water:'Bubblit',Rock:'Grumlet',Electric:'Zappit'}[s.starter]||s.starter+' Starter';partner.type=s.starter;partner.types=[s.starter]}
   partner.starterOrigin=true;s.party=[partner];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
 }
 // World / encounter balancing (v31) — area-specific encounter density, species
@@ -2175,7 +2183,7 @@ function hpCard(p,side,active=false){
 function sceneFigure(p,side,i){
  if(!p||p.hp<=0)return '';
  return '<div class="combatFigure '+side+' '+(battle.impact===side&&battle.lastTarget===i?'hit':'')+'" aria-label="'+escapeHtml(p.name||p.type)+'">'
-  +'<span class="combatAura"></span><span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>'
+  +'<span class="combatAura"></span>'+(critterSpriteTag(p,'combatSprite')||'<span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>')
   +'<small>'+escapeHtml(p.name||p.type)+'</small></div>';
 }
 function battleVisual(){
