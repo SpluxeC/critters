@@ -312,6 +312,17 @@ function beginStep(x,y){
 }
 
 const read=()=>{try{return JSON.parse(localStorage.getItem('critters-v1'))}catch{return null}};
+function backUpLegacySaveBeforeMigration(){
+ // Immutable recovery copy before any v56+ ID migration/autosave.
+ const key='critters-v1-before-species-id-migration';
+ try{
+  if(localStorage.getItem(key))return;
+  const raw=localStorage.getItem('critters-v1');
+  if(!raw)return;
+  const existing=JSON.parse(raw);
+  if(existing&&existing.speciesIdSchema!==2)localStorage.setItem(key,raw);
+ }catch(err){console.warn('Could not back up pre-migration save',err)}
+}
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
 function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){snapVisual();resizeGameCanvas()}}
 
@@ -333,8 +344,12 @@ function migrateSpeciesIds(){
   for(const e of p.evolutionHistory||[]){if(e.from)e.from=translate(e.from);if(e.to)e.to=translate(e.to)}
  };
  for(const p of [...(s.party||[]),...(s.storage||[])])moveRecord(p);
- // Old starter saves contained only a type. Attach the real base-form ID.
- for(const p of s.party||[])if(!p.speciesId&&s.starter&&p.type===s.starter&&s.party.indexOf(p)===0)p.speciesId=starterSpeciesId(s.starter);
+ // Never guess a legacy starter from party position, type, or level.
+ // Same-type wild catches may be in any party slot or Home storage.
+ // Only explicit provenance written when the starter was chosen is trustworthy.
+ for(const p of [...(s.party||[]),...(s.storage||[])])
+  if(!p.speciesId&&p.starterOrigin===true&&s.starter&&p.type===s.starter)
+   p.speciesId=starterSpeciesId(s.starter);
  for(const p of s.captureLog||[])moveRecord(p);
  if(s.collection&&typeof s.collection==='object'){
   for(const field of ['seen','caught']){
@@ -1983,7 +1998,7 @@ function starterMenu(){
  document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;const starterId=starterSpeciesId(s.starter);
   const partner=critter(starterId,5);
   if(!speciesRegistry.has(starterId)){partner.speciesId=starterId;partner.name=s.starter+' Starter';partner.type=s.starter;partner.types=[s.starter]}
-  s.party=[partner];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
+  partner.starterOrigin=true;s.party=[partner];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
 }
 // World / encounter balancing (v31) — area-specific encounter density, species
 // rarity, wild level ranges, and tiny novelty/time-of-day influences.
@@ -2951,7 +2966,7 @@ function shop(){
 function preview(id,g){const im=sprites[g],c=$(id),p=c.getContext('2d');p.imageSmoothingEnabled=false;function draw(){if(!im.naturalWidth)return;const m=spriteMetrics(g)?.[0]?.[0];if(!m)return;p.clearRect(0,0,c.width,c.height);const k=Math.min(c.width/(m.sw+10),c.height/(m.sh+8));p.drawImage(im,m.sx,m.sy,m.sw,m.sh,(c.width-m.sw*k)/2,c.height-m.sh*k-4,m.sw*k,m.sh*k)}im.addEventListener('load',draw);draw()}
 preview('malePreview','male');preview('femalePreview','female');
 $('new').onclick=()=>show('selection');
-$('continue').onclick=()=>{s=read();if(!s)return;migrate();build();show('game')};
+$('continue').onclick=()=>{backUpLegacySaveBeforeMigration();s=read();if(!s)return;migrate();build();show('game')};
 $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,' ');if(!name){$('error').textContent='Please enter a name.';return}
  s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4};
  save();build();show('game');say(['Welcome, '+name+'!','Use the left joystick to move and Talk / Use to interact.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
