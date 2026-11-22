@@ -2197,10 +2197,33 @@ function hpCard(p,side,active=false){
   +'<div class="health"><div class="'+(low?'low':'')+'" style="width:'+pct+'%"></div></div>'
   +'<div class="combatCardFoot">HP '+p.hp+'/'+p.maxHp+(p.hp===0?' · Fainted':'')+' · '+escapeHtml(defendTypes(p).join('/'))+'</div></div>';
 }
+// Only approved starter species have rear battle artwork. Keep Index and enemy fronts unchanged.
+const STARTER_REAR_BATTLE_SPRITES=Object.freeze({
+ 'cr-001-starter-water-1':'water-starter-stage-1-back.png',
+ 'cr-002-starter-water-2':'water-starter-stage-2-back.png',
+ 'cr-003-starter-water-3':'water-starter-stage-3-back.png',
+ 'cr-004-starter-rock-1':'rock-starter-stage-1-back.png',
+ 'cr-005-starter-rock-2':'rock-starter-stage-2-back.png',
+ 'cr-006-starter-rock-3':'rock-starter-stage-3-back.png',
+ 'cr-007-starter-electric-1':'electric-starter-stage-1-back.png',
+ 'cr-008-starter-electric-2':'electric-starter-stage-2-back.png',
+ 'cr-009-starter-electric-3':'electric-starter-stage-3-back.png'
+});
+function battleFigureArtwork(p,side){
+ const rearFile=side==='ally'?STARTER_REAR_BATTLE_SPRITES[p?.speciesId]:null;
+ if(rearFile){
+  const path='assets/critters/battle-backs/starters/'+rearFile;
+  const fallback=critterSpritePath(p);
+  // If a cached deployment does not yet have its rear asset, retain the approved front sprite.
+  return '<img class="combatSprite combatSpriteRear" src="'+path+'" alt="'+escapeHtml(p.name||speciesFor(p)?.name||'Critter')+' (rear view)" decoding="async"'+
+   (fallback?' onerror="this.onerror=null;this.src=\''+fallback+'\'";':'')+'>';
+ }
+ return critterSpriteTag(p,'combatSprite')||'<span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>';
+}
 function sceneFigure(p,side,i){
  if(!p||p.hp<=0)return '';
  return '<div class="combatFigure '+side+' '+(battle.impact===side&&battle.lastTarget===i?'hit':'')+'" aria-label="'+escapeHtml(p.name||p.type)+'">'
-  +'<span class="combatAura"></span>'+(critterSpriteTag(p,'combatSprite')||'<span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>')
+  +'<span class="combatAura"></span>'+battleFigureArtwork(p,side)
   +'<small>'+escapeHtml(p.name||p.type)+'</small></div>';
 }
 function battleVisual(){
