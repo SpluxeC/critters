@@ -2056,7 +2056,7 @@ function startBattle(data,msg){
  save();
  battle={...data,mode:doubles?2:1,allySlots,enemySlots:data.enemies.map((p,i)=>i).slice(0,doubles?2:1),
   nextEnemy:doubles?2:1,participants:[...allySlots],pending:[],acting:0,turn:1,phase:'choose',lastTurnLog:[],
-  guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null};
+  guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null,uiMenu:'root'};
  renderBattle(msg);
 }
 function itemQty(name){return s.inventory[name]||0}
@@ -2088,14 +2088,14 @@ function battleVisual(){
   +'<span class="battleVfxBeam"></span><span class="battleVfxCore"></span><span class="battleVfxBurst"></span>'
   +'<span class="battleVfxLabel">'+escapeHtml(fx.name||'Attack')+'</span></div>';
 }
-function battleHeader(){
+function battleHeader(moveOverlay=''){
  const ally=battle.allySlots.map((i,slot)=>hpCard(s.party[i],'ally',battle.phase==='choose'&&slot===battle.acting)).join('');
  const foe=battle.enemySlots.map(i=>hpCard(battle.enemies[i],'enemy')).join('');
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div><div><div class="rosterTitle">YOUR TEAM</div>'+ally+'</div></div>'
-  +'<div class="combatArena"><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+'</div>';
+  +'<div class="combatArena"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>';
 }
 function battleMessage(msg){return '<div class="combatMessage" role="status">'+escapeHtml(msg||battle.feedback||'Choose your actions.')+'</div>'}
 function renderBattle(message){
@@ -2104,57 +2104,74 @@ function renderBattle(message){
  const i=battle.allySlots[battle.acting],actor=s.party[i];
  const targets=activeEnemies();
  const queued=battle.pending.map(q=>{
-  const p=s.party[q.actor];return (p?.name||p?.type||'Critter')+' → '+(q.kind==='move'?getMove(p,q.moveId).name:q.kind)
+  const p=s.party[q.actor];return (p?.name||p?.type||'Critter')+' → '+(q.kind==='move'?getMove(p,q.moveId).name:q.kind);
  }).join(' · ');
- let actions='';
+ const mode=battle.uiMenu||'root';
+ let actions='',moveOverlay='';
  if(battle.phase==='choose'&&actor&&actor.hp>0){
   normalizeMoves(actor);
   const allMoves=actor.moves.filter(id=>validMove(id));
   const noUsableMoves=!allMoves.some(id=>(actor.movePP[id]||0)>0);
-  const moveButtons=allMoves.map(id=>{
-   const m=getMove(actor,id),remaining=actor.movePP[id]||0;
-   const targetsForMove=m.target==='enemy'?targets:
-    m.target==='ally'?activeAllies().filter(a=>a!==i):
-    [i];
-   const choices=targetsForMove.length?targetsForMove:(m.target==='ally'?[i]:m.target==='enemy'?[]:[i]);
-   return choices.map(target=>{
-    const who=m.target==='enemy'?(battle.enemies[target]?.name||battle.enemies[target]?.type):m.target==='ally'?(s.party[target]?.name||s.party[target]?.type):'';
-    return '<button class="btn combatAttack '+(m.category==='special'?'special':'')+'" data-use-move="'+escapeHtml(id)+'" data-move-target="'+target+'" '
+  if(mode==='battle'){
+   const moveButtons=allMoves.flatMap(id=>{
+    const m=getMove(actor,id),remaining=actor.movePP[id]||0;
+    const targetsForMove=m.target==='enemy'?targets:
+     m.target==='ally'?activeAllies().filter(a=>a!==i):[i];
+    const choices=targetsForMove.length?targetsForMove:(m.target==='ally'?[i]:m.target==='enemy'?[]:[i]);
+    return choices.map(target=>{
+     const who=m.target==='enemy'?(battle.enemies[target]?.name||battle.enemies[target]?.type):m.target==='ally'?(s.party[target]?.name||s.party[target]?.type):'';
+     const type=String(m.type||'Typeless').toLowerCase().replace(/[^a-z]/g,'');
+     return '<button class="btn combatAttack battleMove type-'+type+'" data-use-move="'+escapeHtml(id)+'" data-move-target="'+target+'" '
       +(remaining===0?'disabled':'')+' title="'+escapeHtml(m.description||'')+'">'
-      +escapeHtml(m.name)+(who?' → '+escapeHtml(who):'')+' <small>'+remaining+'/'+m.pp+' PP</small>'
-      +'<em>'+escapeHtml(m.type)+' · '+(m.category==='status'?'Support':m.power+' power')+'</em></button>';
-   }).join('');
-  }).join('')+(noUsableMoves?'<button class="btn combatAttack" data-use-move="opening-flick" data-move-target="'+(targets[0]??i)+'">Last Resort <small>No PP needed</small></button>':'');
-  actions='<div class="combatChoice"><b>'+escapeHtml(actor.name||actor.type)+' · Action '+(battle.acting+1)+'/'+battle.allySlots.length+'</b>'
-   +(battle.mode===2?'<div class="targetHint">Choose a move and its target</div>':'')
-   +'<div class="combatActions">'+moveButtons
-   +'<button class="btn" id="guard">Guard</button><button class="btn" id="focus">Focus</button>'
-   +'<button class="btn" id="switch">Switch</button>'
-   +'<button class="btn" id="potion" '+(!itemQty('Potion')?'disabled':'')+'>Potion ('+itemQty('Potion')+')</button>'
-   +'<button class="btn" id="revive" '+(!itemQty('Revive')||!s.party.some(q=>q.hp===0)?'disabled':'')+'>Revive ('+itemQty('Revive')+')</button>'
-   +(battle.kind==='wild'?'<button class="btn" id="capture">⌚ Capture Beam · '+Math.round(captureChance(battle.enemies[0])*100)+'% estimated</button><button class="btn" id="run">Run</button>':'')
-   +'</div></div>';
+      +'<span class="moveName">'+escapeHtml(m.name)+'</span>'
+      +'<span class="moveMeta">'+escapeHtml(m.type)+' · '+remaining+'/'+m.pp+' PP'+(who?' · '+escapeHtml(who):'')+'</span></button>';
+    });
+   }).join('')+(noUsableMoves?'<button class="btn combatAttack battleMove type-typeless" data-use-move="opening-flick" data-move-target="'+(targets[0]??i)+'"><span class="moveName">Last Resort</span><span class="moveMeta">No PP needed</span></button>':'');
+   moveOverlay='<div class="battleMovesAround" role="group" aria-label="Moves for '+escapeHtml(actor.name||actor.type)+'">'+moveButtons+'</div>';
+   actions='<div class="classicSubmenu"><strong>'+escapeHtml(actor.name||actor.type)+' · Choose a move'+(battle.mode===2?' and target':'')+'</strong>'
+     +'<button class="btn" id="battleGuard">Guard</button><button class="btn" id="battleFocus">Focus</button><button class="btn" id="battleBack">Back</button></div>';
+  }else if(mode==='index'){
+   actions='<div class="classicMenu classicIndexMenu"><button class="btn" id="indexSwitch">↔ Switch Critter</button>'
+     +'<button class="btn" id="indexItem">▣ Use Item</button>'
+     +(battle.kind==='wild'?'<button class="btn" id="indexCapture">⌚ Capture Beam · '+Math.round(captureChance(battle.enemies[0])*100)+'%</button>':'')
+     +'<button class="btn" id="battleBack">Back</button></div>';
+  }else if(mode==='items'){
+   actions='<div class="classicMenu classicItemsMenu">'
+     +'<button class="btn" id="potion" '+(!itemQty('Potion')?'disabled':'')+'>Potion · '+itemQty('Potion')+'</button>'
+     +'<button class="btn" id="revive" '+(!itemQty('Revive')||!s.party.some(q=>q.hp===0)?'disabled':'')+'>Revive · '+itemQty('Revive')+'</button>'
+     +'<button class="btn" id="battleBack">Back</button></div>';
+  }else{
+   actions='<div class="classicMenu classicMainMenu">'
+     +'<button class="btn classicBattle" id="menuBattle"><span>⚔</span> Battle</button>'
+     +'<button class="btn classicIndex" id="menuIndex"><span>⌚</span> Index</button>'
+     +'<button class="btn classicEscape" id="menuEscape" '+(battle.kind!=='wild'?'disabled title="Cannot escape a trainer battle"':'')+'><span>↗</span> Escape</button></div>'
+     +(battle.kind!=='wild'?'<p class="classicFootnote">Escape is unavailable against trainers.</p>':'');
+  }
  }else if(battle.phase==='resolve')actions='<div class="combatProcessing">Resolving team turn…</div>';
- open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader()+battleMessage(battle.feedback)
+ open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader(moveOverlay)+battleMessage(battle.feedback)
   +(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')
-  +recentBattleLog()+actions+earlyBattleTip()+'<p class="muted combatNote">Each team chooses its turn. Move accuracy, PP, effects, and type strengths apply.</p>');
+  +actions+recentBattleLog()+earlyBattleTip());
  $('close').hidden=true;
  if(battle.phase!=='choose')return;
+ const menuTo=(next)=>{battle.uiMenu=next;renderBattle()};
+ if($('menuBattle'))$('menuBattle').onclick=()=>menuTo('battle');
+ if($('menuIndex'))$('menuIndex').onclick=()=>menuTo('index');
+ if($('menuEscape'))$('menuEscape').onclick=()=>{if(battle.kind==='wild')queueBattleAction({kind:'run'})};
+ if($('battleBack'))$('battleBack').onclick=()=>menuTo(mode==='items'?'index':'root');
  document.querySelectorAll('[data-use-move]').forEach(el=>el.onclick=()=>{
   const moveId=el.dataset.useMove,target=Number(el.dataset.moveTarget);
   if(!validMove(moveId)||((actor.movePP[moveId]||0)<1&&!(moveId==='opening-flick'&&noUsableMoves)))return;
   queueBattleAction({kind:'move',moveId,target});
  });
- $('guard').onclick=()=>queueBattleAction({kind:'guard'});
- $('focus').onclick=()=>queueBattleAction({kind:'focus'});
- $('switch').onclick=selectPoke;
- $('potion').onclick=()=>{if(itemQty('Potion'))queueBattleAction({kind:'potion',target:i})};
- $('revive').onclick=()=>{if(itemQty('Revive')&&s.party.some(q=>q.hp===0))selectRevive()};
- if(battle.kind==='wild'){
-  $('capture').onclick=()=>queueBattleAction({kind:'capture'});
-  $('run').onclick=()=>queueBattleAction({kind:'run'});
- }
+ if($('battleGuard'))$('battleGuard').onclick=()=>queueBattleAction({kind:'guard'});
+ if($('battleFocus'))$('battleFocus').onclick=()=>queueBattleAction({kind:'focus'});
+ if($('indexSwitch'))$('indexSwitch').onclick=selectPoke;
+ if($('indexItem'))$('indexItem').onclick=()=>menuTo('items');
+ if($('indexCapture'))$('indexCapture').onclick=()=>{if(battle.kind==='wild')queueBattleAction({kind:'capture'})};
+ if($('potion'))$('potion').onclick=()=>{if(itemQty('Potion'))queueBattleAction({kind:'potion',target:i})};
+ if($('revive'))$('revive').onclick=()=>{if(itemQty('Revive')&&s.party.some(q=>q.hp===0))selectRevive()};
 }
+
 function queueBattleAction(action){
  if(!battle||battle.phase!=='choose')return;
  const actor=battle.allySlots[battle.acting];
@@ -2174,6 +2191,7 @@ function queueBattleAction(action){
   }
   if(action.kind==='revive'&&(!Number.isInteger(action.target)||s.party[action.target]?.hp!==0))return;
   battle.pending.push({...action,actor});
+ battle.uiMenu='root';
  battle.acting++;
  if(battle.acting<activeAllies().length){
   renderBattle(s.party[actor].type+' is ready. Choose the next Critter’s move.');
@@ -2183,19 +2201,19 @@ function selectPoke(){
  if(!battle||battle.phase!=='choose')return;
  const candidates=s.party.map((p,i)=>({p,i})).filter(({p,i})=>p.hp>0&&!battle.allySlots.includes(i)&&!battle.pending.some(q=>q.kind==='switch'&&q.target===i));
  const html=candidates.map(({p,i})=>'<button class="btn" data-poke="'+i+'">'+(symbols[p.type]||'◇')+' '+p.type+' Lv'+p.level+' · HP '+p.hp+'/'+p.maxHp+'</button>').join('');
- if(!html){renderBattle('No available bench Critter to switch into.');return}
- open(battle.name,battleHeader()+battleMessage('Choose a healthy reserve Critter.')+'<div class="options">'+html+'<button class="btn" id="cancelSelection">Cancel</button></div>');
+ if(!html){battle.uiMenu='index';renderBattle('No available bench Critter to switch into.');return}
+ open(battle.name,battleHeader()+battleMessage('Choose a healthy reserve Critter.')+'<div class="options classicSelector">'+html+'<button class="btn" id="cancelSelection">Back to Index</button></div>');
  $('close').hidden=true;
  document.querySelectorAll('[data-poke]').forEach(el=>el.onclick=()=>queueBattleAction({kind:'switch',target:Number(el.dataset.poke)}));
- $('cancelSelection').onclick=()=>renderBattle('Choose an action.');
+ $('cancelSelection').onclick=()=>{battle.uiMenu='index';renderBattle('Choose an action.')};
 }
 function selectRevive(){
  if(!battle||battle.phase!=='choose')return;
  const html=s.party.map((p,i)=>p.hp===0?'<button class="btn" data-revive="'+i+'">'+escapeHtml(p.type)+' · Lv '+p.level+'</button>':'').join('');
- open(battle.name,battleHeader()+battleMessage('Choose a fainted Critter to revive.')+'<div class="options">'+html+'<button class="btn" id="cancelSelection">Cancel</button></div>');
+ open(battle.name,battleHeader()+battleMessage('Choose a fainted Critter to revive.')+'<div class="options classicSelector">'+html+'<button class="btn" id="cancelSelection">Back to Items</button></div>');
  $('close').hidden=true;
  document.querySelectorAll('[data-revive]').forEach(el=>el.onclick=()=>queueBattleAction({kind:'revive',target:Number(el.dataset.revive)}));
- $('cancelSelection').onclick=()=>renderBattle('Choose an action.');
+ $('cancelSelection').onclick=()=>{battle.uiMenu='items';renderBattle('Choose an action.')};
 }
 function defeatFoe(i,log){
  const enemy=battle.enemies[i];if(!enemy)return;
@@ -2560,7 +2578,7 @@ function resolveTeamTurn(){
  battle.enemySlots=battle.enemySlots.filter(i=>battle.enemies[i]?.hp>0);
  refillEnemyTeam();refillAllyTeam(log);
  battle.lastTurnLog=log.slice(-30);
- battle.turn++;battle.acting=0;battle.phase='choose';
+ battle.turn++;battle.acting=0;battle.phase='choose';battle.uiMenu='root';
  save();
  renderBattle(log.slice(-3).join(' '));
 }
