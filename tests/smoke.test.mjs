@@ -17,8 +17,8 @@ function extract(start,end,context){
 const stones=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting','Normal','Steel','Ground'];
 test('game source parses',()=>assert.doesNotThrow(()=>new Function(game)));
 test('species, moves, and evolution links have valid IDs',()=>{
- assert.equal(species.length,200);
- assert.equal(moves.length,312);
+ assert.equal(species.length,209);
+ assert.equal(moves.length,315);
  const speciesIds=new Set(species.map(s=>s.speciesId));
  const moveIds=new Set(moves.map(m=>m.id).concat('opening-flick','brace-up'));
  assert.equal(speciesIds.size,species.length);
@@ -206,4 +206,60 @@ test('battle Index provides real battle actions and takes over the screen',()=>{
  assert.match(game,/id="watchBattleRevive"/);
  assert.match(game,/id="watchCaptureBattle"/);
  assert.match(game,/battle.indexOpen=false;queueBattleAction/);
+});
+
+test('Critter species IDs are the Index numbers with starter families first',()=>{
+ assert.equal(species.length,209);
+ const idSet=new Set(species.map(sp=>sp.speciesId));
+ for(let i=0;i<species.length;i++){
+  const sp=species[i],expected='cr-'+String(i+1).padStart(3,'0')+'-';
+  assert.ok(sp.speciesId.startsWith(expected),'wrong ID at '+(i+1)+' '+sp.name);
+  assert.equal(Object.hasOwn(sp,'number'),false,'no separate display number allowed');
+  assert.ok(sp.legacySpeciesId,'old ID alias missing for save migration');
+  if(sp.evolvesTo){
+   assert.ok(idSet.has(sp.evolvesTo.speciesId));
+   const to=species.find(x=>x.speciesId===sp.evolvesTo.speciesId);
+   assert.equal(to.evolvesFrom,sp.speciesId,'evolution link not reciprocal');
+   assert.equal(species.indexOf(to),i+1,'evolved form must immediately follow');
+  }
+ }
+ assert.deepEqual(species.slice(0,9).map(sp=>sp.types[0]),[
+  'Water','Water','Water','Rock','Rock','Rock','Electric','Electric','Electric']);
+ assert.equal(species.filter(x=>x.starterFamily).length,9);
+ assert.equal(species.filter(x=>x.starterFamily==='Water').length,3);
+ assert.equal(species.filter(x=>x.starterFamily==='Rock').length,3);
+ assert.equal(species.filter(x=>x.starterFamily==='Electric').length,3);
+ for(const [t,id] of [['Water','starter-water-tidal-heart'],['Rock','starter-rock-bedrock-vow'],['Electric','starter-electric-storm-promise']]){
+  const sig=moves.find(x=>x.id===id);
+  assert.ok(sig&&sig.type===t,'missing signature move for '+t);
+  assert.ok(species.filter(x=>x.starterFamily===t).every(x=>x.levelUp.some(l=>l.moveId===id)),'signature not learnable by all '+t+' forms');
+  assert.ok(species.filter(x=>x.starterFamily!==t).every(x=>!x.levelUp.some(l=>l.moveId===id)),'signature move leaked to another family');
+ }
+});
+test('legacy saves migrate every old species ID to the authoritative new ID',()=>{
+ const start=game.indexOf('function migrateSpeciesIds(){');
+ const end=game.indexOf('const moveFallbacks=',start);
+ assert.ok(start>=0&&end>start);
+ const old=species.find(sp=>sp.legacySpeciesId.startsWith('cr-001-'));
+ const s={
+  party:[{speciesId:old.legacySpeciesId,level:15,evolutionHistory:[{from:old.legacySpeciesId,to:old.legacySpeciesId}]}],
+  storage:[{speciesId:old.legacySpeciesId,level:12}],
+  captureLog:[{speciesId:old.legacySpeciesId,type:'Grass'}],
+  collection:{seen:{[old.legacySpeciesId]:{firstArea:'route2'}},caught:{[old.legacySpeciesId]:{firstArea:'route2',evolvedFrom:old.legacySpeciesId}}},
+  evolutionNews:[{fromId:old.legacySpeciesId,toId:old.legacySpeciesId}]
+ };
+ const speciesRegistry=new Map(species.map(sp=>[sp.speciesId,sp]));
+ const context=vm.createContext({s,speciesRegistry,STARTER_SPECIES_IDS:{Water:'cr-001-starter-water-1'}});
+ vm.runInContext(game.slice(start,end),context);
+ context.migrateSpeciesIds();
+ assert.equal(s.party[0].speciesId,old.speciesId);
+ assert.equal(s.storage[0].speciesId,old.speciesId);
+ assert.equal(s.captureLog[0].speciesId,old.speciesId);
+ assert.equal(s.party[0].evolutionHistory[0].from,old.speciesId);
+ assert.equal(s.collection.seen[old.speciesId].firstArea,'route2');
+ assert.equal(s.collection.caught[old.speciesId].evolvedFrom,old.speciesId);
+ assert.equal(s.evolutionNews[0].toId,old.speciesId);
+ assert.equal(s.collection.seen[old.legacySpeciesId],undefined);
+ context.migrateSpeciesIds();
+ assert.equal(Object.keys(s.collection.seen).length,1,'migration must be idempotent');
 });
