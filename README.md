@@ -106,3 +106,10 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Evolution notifications have a celebratory shimmer. Responsive CSS and a reduced-motion fallback keep battle controls accessible.
 - Animations are presentation-only and do not alter combat math, PP, action order, capture chances, evolution conditions or saves. No new Critter artwork is required.
 - JavaScript syntax checks passed; end-to-end browser/mobile testing remains outstanding.
+
+## Phase 18 — NPC side quests (v49)
+- Four optional side quests are available through existing friendly NPCs: Rice Farmer on Route 1 (capture two Route 1 Critters after accepting; 90 credits and one Potion), Town Naturalist in First Town (capture two Route 2 Critters; one Grass Stone), Forest Guide in Hidden Forest (discover the Hidden Forest Shrine; one Ghost Stone), and Garden Caretaker in Garden Town (discover the Garden Memorial; one Water Stone).
+- Speak with a quest NPC to accept or decline. Progress is recorded per quest; return to the same NPC to claim the one-time reward. Objectives are independent from trainer battles and do not block story progression.
+- Quest progress and completion are displayed on the Critter Index Records screen. New quest state uses additive, old-save-friendly fields (`sideQuests`, `questCaptureCounts`) and preserves existing party, storage, evolution stones, and captures.
+- A completed objective alone does not automatically grant a reward. Players must talk to the quest giver and explicitly claim it.
+- The JavaScript syntax check passed; full gameplay and mobile interaction testing remain pending.
