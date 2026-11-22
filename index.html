@@ -363,6 +363,136 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 .combatLog li:last-child{border-bottom:0}
 #shade .combatAttack:focus-visible{outline:3px solid #fff1c0;outline-offset:2px}
 @media(max-height:550px) and (orientation:landscape){.combatLog{margin:4px 0}.combatLog summary{padding:5px 8px}.combatLog ol{max-height:90px}}
+
+/* v52 classic creature-battle presentation: overworld-inspired, original UI art */
+#shade:has(.combatTop) .modal{width:min(98vw,940px);background:linear-gradient(150deg,#182e42,#233d42 60%,#173a34);border:2px solid #a3c9a5}
+#shade:has(.combatTop) .modalHead{background:#1b3445ee}
+#shade:has(.combatTop) .combatTop{margin:1px 2px 7px;font-size:11px}
+#shade:has(.combatTop) .combatRoster{gap:9px;position:relative;z-index:1}
+#shade:has(.combatTop) .combatCard{background:linear-gradient(120deg,#f5f0dd,#dfece6);border:2px solid #576b93;color:#243258;min-height:0;padding:6px 10px;margin-bottom:5px;box-shadow:3px 3px 0 #302e6a66}
+#shade:has(.combatTop) .combatCardHead{color:#243258;font-size:13px}
+#shade:has(.combatTop) .combatCardHead small{color:#405174}
+#shade:has(.combatTop) .combatCardFoot{color:#334464;font-size:10px}
+#shade:has(.combatTop) .combatCard .health{background:#334e69;border:1px solid #5f6e85;border-radius:14px;overflow:hidden}
+#shade:has(.combatTop) .combatCard .health div{background:linear-gradient(90deg,#4cd5b1,#80eca8);height:100%}
+#shade:has(.combatTop) .combatCard .health div.low{background:linear-gradient(90deg,#ee805a,#f6c66b)}
+#shade:has(.combatTop) .combatArena{
+ height:clamp(250px,39dvh,390px);margin:5px 0 8px;display:block;
+ border:3px solid #a8b9d8;border-radius:15px;
+ background:
+  radial-gradient(ellipse at 69% 73%,#cae3ad 0 17%,transparent 31%),
+  radial-gradient(ellipse at 24% 90%,#93d9af 0 24%,transparent 48%),
+  linear-gradient(165deg,transparent 51%,#70a882 51% 62%,transparent 63%),
+  linear-gradient(20deg,transparent 48%,#9dc2ba 49% 64%,transparent 65%),
+  linear-gradient(#8bbcf0 0%,#cbe7ec 48%,#a6d3ae 49%,#67b68b 70%,#64ad79 100%);
+ box-shadow:inset 0 8px 30px #ffffff58,inset 0 -15px 32px #245e4c55,0 4px 16px #06162244
+}
+#shade:has(.combatTop) .combatArena:before{
+ position:absolute;content:"";inset:auto auto 7% 7%;height:18%;width:47%;
+ border-radius:50%;background:radial-gradient(ellipse,#2e806b77 0%,#72b99c66 53%,transparent 76%);z-index:0
+}
+#shade:has(.combatTop) .combatArena:after{
+ position:absolute;content:"";inset:27% 9% auto auto;height:22%;width:33%;
+ border-radius:50%;background:radial-gradient(ellipse,#39826c67 0%,transparent 72%);z-index:0
+}
+.battleScenery{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.sceneryCloud{position:absolute;top:6%;width:28%;height:15%;border-radius:60%;background:#fff9f5aa;filter:blur(12px);opacity:.8}
+.sceneryCloud.cloudA{left:12%;transform:rotate(-7deg)}
+.sceneryCloud.cloudB{right:4%;top:14%;width:23%;opacity:.5}
+.sceneryTree{position:absolute;bottom:34%;width:11%;height:40%;border-radius:50% 50% 39% 38%;background:radial-gradient(ellipse at 40% 27%,#9dddc3 4%,#449c80 44%,#2f846f 79%);filter:blur(3px);opacity:.66}
+.sceneryTree:after{content:"";position:absolute;bottom:-20%;height:35%;width:10%;left:46%;background:#557865}
+.sceneryTree.treeA{left:3%;height:32%;bottom:42%}
+.sceneryTree.treeB{left:52%;height:44%;width:15%;bottom:38%;opacity:.4}
+.sceneryTree.treeC{right:2%;height:39%;width:13%;bottom:37%}
+#shade:has(.combatTop) .combatSide{position:absolute;z-index:1;display:flex;gap:8px;padding:0;align-items:end;justify-content:center}
+#shade:has(.combatTop) .combatSide.enemies{left:57%;top:14%;width:39%;height:48%}
+#shade:has(.combatTop) .combatSide.allies{left:13%;top:39%;width:43%;height:54%}
+#shade:has(.combatTop) .combatFigure{max-width:145px;min-width:0;height:100%;align-content:center;filter:drop-shadow(0 7px 2px #23554544)}
+#shade:has(.combatTop) .combatSymbol{font-size:clamp(52px,9vw,108px);filter:drop-shadow(1px 5px 3px #22464455);animation:combatHover 3s ease-in-out infinite}
+#shade:has(.combatTop) .combatFigure.enemy .combatSymbol{font-size:clamp(42px,7vw,84px)}
+#shade:has(.combatTop) .combatFigure small{z-index:2;border:1px solid #ffffff55;background:#263d64dc}
+#shade:has(.combatTop) .combatAura{inset:17% 14% 23%;border:2px solid #e9ffd27d;background:radial-gradient(ellipse,#ffffff30,transparent 70%);box-shadow:0 0 30px #d3ffe46e}
+#shade:has(.combatTop) .combatMessage{background:linear-gradient(100deg,#253d55,#2f575a);color:#f6f2d8;border-color:#e4c980;margin:5px 0;max-height:65px}
+.classicMenu{display:grid;gap:9px;margin-top:7px}
+.classicMainMenu{grid-template-columns:repeat(3,minmax(0,1fr))}
+#shade .classicMenu .btn{min-height:54px;display:flex;align-items:center;justify-content:center;gap:10px;border:2px solid #99b5ba;border-radius:9px;box-shadow:inset 0 2px #ffffff30,0 3px 0 #102c3d;font-size:clamp(14px,2.2vw,19px);font-weight:850;letter-spacing:.4px}
+#shade .classicMenu .btn span{font-size:22px}
+#shade .classicBattle{background:linear-gradient(110deg,#df6e5a,#ed9974);color:#24314c}
+#shade .classicIndex{background:linear-gradient(110deg,#70bbae,#89e0be);color:#193b45}
+#shade .classicEscape{background:linear-gradient(110deg,#d9b982,#f8d8a5);color:#39425c}
+.classicIndexMenu,.classicItemsMenu{grid-template-columns:repeat(2,minmax(0,1fr))}
+.classicFootnote{font-size:11px;margin:5px 0;color:#c5d7d1}
+.classicSubmenu{display:flex;align-items:center;gap:7px;margin:8px 0 1px;flex-wrap:wrap}
+.classicSubmenu strong{flex:1 1 210px;font-size:12px;color:#f8e5ba}
+#shade .classicSubmenu .btn{font-size:12px;min-height:40px;padding:5px 12px}
+.battleMovesAround{position:absolute;z-index:5;inset:0;pointer-events:none}
+#shade .battleMovesAround .battleMove{
+ position:absolute;pointer-events:auto;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
+ gap:2px;width:clamp(108px,25%,210px);min-height:55px;max-height:70px;
+ padding:7px 10px;background:linear-gradient(105deg,#fbd57c,#e8a78e);
+ border:2px solid #334675;border-radius:4px 12px 4px 5px;transform:skewX(-7deg);
+ box-shadow:4px 4px 0 #354479,0 0 0 1px #ffffff77 inset;text-shadow:none;
+ color:#253859;font-size:clamp(11px,1.7vw,15px);text-align:left;line-height:1.14;white-space:normal
+}
+#shade .battleMovesAround .battleMove .moveName{font-weight:900;letter-spacing:.025em;transform:skewX(7deg)}
+#shade .battleMovesAround .battleMove .moveMeta{color:#324768;font-size:10px;font-weight:700;transform:skewX(7deg)}
+#shade .battleMovesAround .battleMove:nth-child(4n + 1){left:2%;top:11%}
+#shade .battleMovesAround .battleMove:nth-child(4n + 2){right:3%;top:29%}
+#shade .battleMovesAround .battleMove:nth-child(4n + 3){left:2%;bottom:13%}
+#shade .battleMovesAround .battleMove:nth-child(4n){right:3%;bottom:10%}
+#shade .battleMovesAround .battleMove:nth-child(n+5){position:relative;display:inline-flex;left:auto;right:auto;top:auto;bottom:auto;min-width:105px;width:31%;margin:3px}
+#shade .battleMovesAround .battleMove:nth-child(n+5):first-of-type{margin-left:4%}
+#shade .battleMovesAround .battleMove:hover{filter:brightness(1.11);box-shadow:5px 5px 0 #233e83}
+#shade .battleMovesAround .battleMove:disabled{opacity:.58;filter:saturate(.6)}
+#shade .battleMovesAround .type-fire{background:linear-gradient(100deg,#ff987a,#ffd3a1)}
+#shade .battleMovesAround .type-water{background:linear-gradient(100deg,#8ddce8,#c0f0ff)}
+#shade .battleMovesAround .type-grass{background:linear-gradient(100deg,#92d9a4,#cdf4b8)}
+#shade .battleMovesAround .type-electric{background:linear-gradient(100deg,#fbe67d,#fff4b8)}
+#shade .battleMovesAround .type-ice{background:linear-gradient(100deg,#a9e8f2,#e0fcff)}
+#shade .battleMovesAround .type-ghost,#shade .battleMovesAround .type-shadow{background:linear-gradient(100deg,#bba5e1,#e0d4fe)}
+#shade .battleMovesAround .type-ground,#shade .battleMovesAround .type-rock{background:linear-gradient(100deg,#c0ad89,#eee0b8)}
+#shade .battleMovesAround .type-steel{background:linear-gradient(100deg,#bbcdd5,#e2f2f1)}
+#shade .battleMovesAround .type-venom{background:linear-gradient(100deg,#d69ad6,#f5c1f0)}
+#shade .battleMovesAround .type-flying{background:linear-gradient(100deg,#b7e7db,#f2f5dd)}
+#shade .battleMovesAround .type-psychic{background:linear-gradient(100deg,#f3bad6,#ffe1f1)}
+#shade .battleMovesAround .type-fighting{background:linear-gradient(100deg,#ec9c87,#fbd5af)}
+.classicSelector{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#shade .classicSelector .btn{min-height:45px;white-space:normal}
+@media(max-height:550px) and (orientation:landscape){
+ #shade:has(.combatTop) .modal{padding:7px;max-height:calc(100dvh - 6px)}
+ #shade:has(.combatTop) .combatTop{font-size:9px;margin:0 0 2px}
+ #shade:has(.combatTop) .combatRoster{gap:4px}
+ #shade:has(.combatTop) .combatCard{padding:2px 6px;margin-bottom:2px}
+ #shade:has(.combatTop) .combatCardHead{font-size:10px}
+ #shade:has(.combatTop) .combatCardFoot{font-size:9px}
+ #shade:has(.combatTop) .combatArena{height:clamp(125px,36dvh,215px);margin:2px 0 4px}
+ #shade:has(.combatTop) .combatSymbol{font-size:clamp(30px,11dvh,66px)}
+ #shade:has(.combatTop) .combatFigure.enemy .combatSymbol{font-size:clamp(28px,9dvh,55px)}
+ #shade .battleMovesAround .battleMove{width:clamp(96px,24%,170px);min-height:35px;max-height:47px;padding:3px 6px;font-size:11px}
+ #shade .battleMovesAround .battleMove .moveMeta{font-size:9px}
+ #shade .classicMenu .btn{min-height:34px;font-size:12px}
+ #shade .classicSubmenu .btn{min-height:30px;padding:3px 7px}
+ #shade:has(.combatTop) .combatMessage{font-size:11px;max-height:38px;padding:5px}
+ #shade .combatLog{margin-top:4px}
+}
+@media(max-width:520px) and (orientation:portrait){
+ #shade:has(.combatTop) .combatArena{height:clamp(220px,42dvh,310px)}
+ #shade:has(.combatTop) .combatSide.allies{left:12%;top:39%;width:44%}
+ #shade:has(.combatTop) .combatSymbol{font-size:54px}
+ #shade:has(.combatTop) .combatFigure.enemy .combatSymbol{font-size:44px}
+ #shade .battleMovesAround .battleMove{min-height:43px;max-height:56px;width:41%;padding:4px 6px;font-size:11px}
+ #shade .battleMovesAround .battleMove .moveMeta{font-size:9px}
+ #shade .battleMovesAround .battleMove:nth-child(4n + 1){left:2%;top:6%}
+ #shade .battleMovesAround .battleMove:nth-child(4n + 2){right:2%;top:26%}
+ #shade .battleMovesAround .battleMove:nth-child(4n + 3){left:2%;bottom:11%}
+ #shade .battleMovesAround .battleMove:nth-child(4n){right:2%;bottom:7%}
+ #shade .classicMenu .btn{font-size:12px;gap:4px;min-height:47px}
+ #shade .classicMenu .btn span{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ #shade:has(.combatTop) .combatSymbol{animation:none}
+}
+
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
