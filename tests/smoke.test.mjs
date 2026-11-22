@@ -263,3 +263,32 @@ test('legacy saves migrate every old species ID to the authoritative new ID',()=
  context.migrateSpeciesIds();
  assert.equal(Object.keys(s.collection.seen).length,1,'migration must be idempotent');
 });
+
+test('v56 hotfix never guesses a legacy starter from same type or party position',()=>{
+ const start=game.indexOf('function migrateSpeciesIds(){');
+ const end=game.indexOf('const moveRegistry=',start);
+ assert.ok(start>=0&&end>start);
+ const starterId='cr-001-starter-water-1';
+ const s={starter:'Water',
+  party:[{type:'Water',name:'Caught Water Critter',level:5,speciesId:null},
+         {type:'Water',name:'Another Water Critter',level:10,speciesId:null}],
+  storage:[{type:'Water',name:'Old unmarked starter',speciesId:null},
+           {type:'Water',name:'Verified starter',speciesId:null,starterOrigin:true}],
+  collection:{seen:{},caught:{}},captureLog:[]};
+ const registry=new Map(species.map(sp=>[sp.speciesId,sp]));
+ const sandbox=vm.createContext({s,speciesRegistry:registry,starterSpeciesId:()=>starterId});
+ vm.runInContext(game.slice(start,end),sandbox);
+ sandbox.migrateSpeciesIds();
+ assert.equal(s.party[0].speciesId,null,'same-type catch in slot zero must not be rewritten');
+ assert.equal(s.party[1].speciesId,null,'another same-type catch must not be rewritten');
+ assert.equal(s.storage[0].speciesId,null,'unknown legacy starter in Home must not be guessed');
+ assert.equal(s.storage[1].speciesId,starterId,'only explicitly marked starter can be upgraded');
+ sandbox.migrateSpeciesIds();
+ assert.equal(s.storage[1].speciesId,starterId,'migration remains idempotent');
+});
+test('hotfix snapshots the legacy save before Continue and marks future starters',()=>{
+ assert.match(game,/backUpLegacySaveBeforeMigration\(\);s=read\(\)/);
+ assert.match(game,/critters-v1-before-species-id-migration/);
+ assert.match(game,/partner\.starterOrigin=true/);
+ assert.doesNotMatch(game,/s\.party\.indexOf\(p\)===0\)p\.speciesId=starterSpeciesId/);
+});
