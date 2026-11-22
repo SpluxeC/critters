@@ -4,7 +4,7 @@
   "species": [
     {
       "speciesId": "cr-001-starter-water-1",
-      "name": "Bubblit",
+      "name": "Drizzlet",
       "types": [
         "Water"
       ],
@@ -76,7 +76,7 @@
     },
     {
       "speciesId": "cr-002-starter-water-2",
-      "name": "Rillisk",
+      "name": "Riptalon",
       "types": [
         "Water"
       ],
@@ -149,7 +149,7 @@
     },
     {
       "speciesId": "cr-003-starter-water-3",
-      "name": "Tiderax",
+      "name": "Tidalisk",
       "types": [
         "Water"
       ],
@@ -218,7 +218,7 @@
     },
     {
       "speciesId": "cr-004-starter-rock-1",
-      "name": "Grumlet",
+      "name": "Craglet",
       "types": [
         "Rock"
       ],
@@ -290,7 +290,7 @@
     },
     {
       "speciesId": "cr-005-starter-rock-2",
-      "name": "Craghorn",
+      "name": "Granibuck",
       "types": [
         "Rock"
       ],
@@ -363,7 +363,7 @@
     },
     {
       "speciesId": "cr-006-starter-rock-3",
-      "name": "Titanstag",
+      "name": "Monolithorn",
       "types": [
         "Rock"
       ],
@@ -432,7 +432,7 @@
     },
     {
       "speciesId": "cr-007-starter-electric-1",
-      "name": "Zappit",
+      "name": "Sparkin",
       "types": [
         "Electric"
       ],
@@ -504,7 +504,7 @@
     },
     {
       "speciesId": "cr-008-starter-electric-2",
-      "name": "Voltimp",
+      "name": "Voltrix",
       "types": [
         "Electric"
       ],
@@ -577,7 +577,7 @@
     },
     {
       "speciesId": "cr-009-starter-electric-3",
-      "name": "Stormbrute",
+      "name": "Tempestrike",
       "types": [
         "Electric"
       ],

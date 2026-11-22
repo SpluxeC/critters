@@ -190,3 +190,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Water, Rock, and Electric starter signature moves unlock at level 70 for all three stages instead of level 14.
 - All Critters cap at level 100, with no XP accumulation or further level-ups at maximum. Existing party and home storage saves are clamped and the party view displays MAX LEVEL rather than Level 101.
 - Previously approved starter names remain until replacement names are approved.
+
+## v65 — Provisional starter evolution names
+- Water: #001 Drizzlet → #002 Riptalon → #003 Tidalisk.
+- Rock: #004 Craglet → #005 Granibuck → #006 Monolithorn.
+- Electric: #007 Sparkin → #008 Voltrix → #009 Tempestrike.
+- These provisional names replace the v60 names for display and gameplay only. Species IDs, art paths, starter origin, evolution rules, saves, and level-70 signature moves remain unchanged. Existing saved Critter names are refreshed from species metadata.

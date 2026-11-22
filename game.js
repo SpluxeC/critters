@@ -467,7 +467,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=64-level-cap',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=65-starter-renames',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -2022,11 +2022,11 @@ function earlyBattleTip(){
 }
 
 function starterMenu(){
- const choices=[['Water','Bubblit','assets/critters/starters/water.png'],['Rock','Grumlet','assets/critters/starters/rock.png'],['Electric','Zappit','assets/critters/starters/electric.png']];
+ const choices=[['Water','Drizzlet','assets/critters/starters/water.png'],['Rock','Craglet','assets/critters/starters/rock.png'],['Electric','Sparkin','assets/critters/starters/electric.png']];
  open('Choose Your Starter','<p>Choose your first partner. The Critter Index holds your team, inventory, and capture beam.</p><div class="options starterChoices">'+choices.map(([type,name,path])=>'<button class="btn starterChoice" data-starter="'+type+'"><img src="'+path+'" alt="'+name+'" class="starterChoiceSprite"><strong>'+name+'</strong><small>'+type+' type</small></button>').join('')+'</div><p class="muted">Water beats Rock · Rock beats Electric · Electric beats Water</p>');
  document.querySelectorAll('[data-starter]').forEach(b=>b.onclick=()=>{s.starter=b.dataset.starter;const starterId=starterSpeciesId(s.starter);
   const partner=critter(starterId,5);
-  if(!speciesRegistry.has(starterId)){partner.speciesId=starterId;partner.name={Water:'Bubblit',Rock:'Grumlet',Electric:'Zappit'}[s.starter]||s.starter+' Starter';partner.type=s.starter;partner.types=[s.starter]}
+  if(!speciesRegistry.has(starterId)){partner.speciesId=starterId;partner.name={Water:'Drizzlet',Rock:'Craglet',Electric:'Sparkin'}[s.starter]||s.starter+' Starter';partner.type=s.starter;partner.types=[s.starter]}
   partner.starterOrigin=true;s.party=[partner];s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];save();close();say(['Your '+s.starter+' starter joins your Critter Index.','Your rival chooses '+s.rival+' — the advantageous starter type.','This is a friendly match. Your whole team will be healed afterward!'],()=>startTrainer('tutorial'))})
 }
 // World / encounter balancing (v31) — area-specific encounter density, species
