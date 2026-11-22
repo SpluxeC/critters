@@ -652,12 +652,12 @@ function drawTile(t,x,y,a,b){
      }
      ctx.fillStyle='#83b260';ctx.fillRect(x+6,y+17,9,2);
    }else if(t===T.rice){
-     ctx.fillStyle='#87a951';
-     for(let k=0;k<4;k++){
-       const px=x+3+k*8,py=y+6+(a+b)%3;
-       ctx.fillRect(px,py,2,19);ctx.fillRect(px+2,py+5,2,10);
-       ctx.fillStyle='#d4c47c';ctx.fillRect(px+1,py+2,3,3);ctx.fillStyle='#87a951';
-     }
+     // Flooded rice-paddy floor; plants sway in the animated world pass.
+     ctx.fillStyle='#648e69';ctx.fillRect(x,y,S+.5,S+.5);
+     ctx.fillStyle='rgba(48,110,111,.58)';ctx.fillRect(x+2,y+18,28,13);
+     ctx.fillStyle='rgba(181,218,183,.31)';ctx.fillRect(x+4,y+23,22,1);
+     ctx.fillStyle='rgba(35,70,44,.30)';
+     for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(x+5+k*7,y+27,3,1.5,0,0,Math.PI*2);ctx.fill();}
    }
  }
  if(t===T.path){
@@ -1114,37 +1114,89 @@ function atmosphericLight(x,y,radius,warmth=1){
   ctx.beginPath();ctx.arc(x,y,Math.min(radius,30),0,Math.PI*2);ctx.fill();
  }
 }
-function drawAtmosphericMotion(ox,oy,w,h,now){
- // Animated foliage and subtle irrigation ripples are purely decorative:
- // never change tile collisions, random encounters, or movement state.
- if(atmosphericIndoor())return;
- const wind=now/750,lowX=Math.max(0,Math.floor(ox/S)),hiX=Math.min(W,Math.ceil((ox+w)/S));
- const lowY=Math.max(0,Math.floor(oy/S)),hiY=Math.min(H,Math.ceil((oy+h)/S));
- for(let y=lowY;y<hiY;y++)for(let x=lowX;x<hiX;x++){
-  const t=tiles[y]?.[x];if(t!==T.tall&&t!==T.rice&&t!==T.water)continue;
-  const sx=x*S-ox,sy=y*S-oy;
-  if(t===T.water){
-   ctx.fillStyle='#c5efda80';
-   const ripple=(now/160+(x*11+y*17))%28;
-   ctx.fillRect(sx+2+ripple,sy+7+(x+y)%9,7,1.5);
-  }else{
-   const sway=Math.sin(wind+x*.8+y*.56)*2.3;
-   ctx.strokeStyle=t===T.rice?'#d9d08b':'#91be73';
-   ctx.lineWidth=1.8;
-   for(let k=0;k<2;k++){
-    const start=sx+8+k*12,base=sy+25-k*4;
-    ctx.beginPath();ctx.moveTo(start,base);ctx.lineTo(start+sway,base-11);ctx.stroke();
-   }
+// Decorative wind field shared by rice, grass and trees; all map hitboxes stay fixed.
+function windAt(x,y,now){
+ const t=now*.001;
+ return .72*Math.sin(t*1.55-x*.33-y*.12)+.40*Math.sin(t*.83-x*.14+y*.22);
+}
+function drawRiceClump(sx,sy,x,y,now){
+ const gust=windAt(x,y,now);
+ for(let k=0;k<5;k++){
+  const rootX=sx+4+k*6+(x*7+y*3+k*11)%3,rootY=sy+25+(k+y)%4;
+  const length=16+(k*7+x+y)%8,bend=gust*(4.1+length*.13);
+  ctx.strokeStyle=k%3===0?'#a7bb59':k%2===0?'#729d48':'#91b953';
+  ctx.lineWidth=k%3===0?2:1.55;
+  ctx.beginPath();ctx.moveTo(rootX,rootY);
+  ctx.quadraticCurveTo(rootX+bend*.24,rootY-length*.53,rootX+bend,rootY-length);ctx.stroke();
+  ctx.strokeStyle=k%2?'#c1ca69':'#609348';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(rootX+bend*.3,rootY-length*.55);
+  ctx.quadraticCurveTo(rootX+bend*.28-4,rootY-length*.62,rootX+bend*.2-6,rootY-length*.35);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(rootX+bend*.45,rootY-length*.66);
+  ctx.quadraticCurveTo(rootX+bend*.55+5,rootY-length*.75,rootX+bend*.5+7,rootY-length*.49);ctx.stroke();
+  if((k+x*3+y)%3!==0){
+   ctx.strokeStyle='#e1c77a';ctx.lineWidth=1.35;
+   ctx.beginPath();ctx.moveTo(rootX+bend,rootY-length);
+   ctx.quadraticCurveTo(rootX+bend+3,rootY-length-4,rootX+bend+5+gust*2,rootY-length+1);ctx.stroke();
+   ctx.fillStyle='#dbc277';
+   for(let n=0;n<3;n++)ctx.fillRect(rootX+bend+1+n*1.5,rootY-length-2+n*1.4,2.2,2.6);
   }
  }
- // Floating motes are sparse; fixed positions mean no flickering.
- const motes=Math.min(34,Math.ceil(w*h/15000));
+}
+function drawAtmosphericMotion(ox,oy,w,h,now){
+ if(atmosphericIndoor())return;
+ const lowX=Math.max(0,Math.floor(ox/S)-1),hiX=Math.min(W,Math.ceil((ox+w)/S)+1);
+ const lowY=Math.max(0,Math.floor(oy/S)-1),hiY=Math.min(H,Math.ceil((oy+h)/S)+1);
+ for(let y=lowY;y<hiY;y++)for(let x=lowX;x<hiX;x++){
+  const t=tiles[y]?.[x];
+  if(t!==T.tall&&t!==T.rice&&t!==T.water&&t!==T.tree)continue;
+  const sx=x*S-ox,sy=y*S-oy,gust=windAt(x,y,now);
+  if(t===T.rice){
+   ctx.strokeStyle='rgba(213,239,206,.32)';ctx.lineWidth=1;
+   const ripple=(now/400+x*11+y*7)%23;
+   ctx.beginPath();ctx.moveTo(sx+2+ripple*.3,sy+29);ctx.lineTo(sx+8+ripple*.3,sy+29);ctx.stroke();
+   drawRiceClump(sx,sy,x,y,now);
+  }else if(t===T.water){
+   const ripple=(now/235+x*11+y*17)%25;
+   ctx.strokeStyle='rgba(234,255,237,.45)';ctx.lineWidth=1.2;
+   ctx.beginPath();ctx.moveTo(sx+3+ripple,sy+9+(x+y)%9);ctx.lineTo(sx+9+ripple,sy+9+(x+y)%9);ctx.stroke();
+  }else if(t===T.tall){
+   for(let k=0;k<4;k++){
+    const rootX=sx+5+k*7,rootY=sy+26-k%2*3;
+    ctx.strokeStyle=k%2?'#9ac76b':'#66994f';ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(rootX,rootY);
+    ctx.quadraticCurveTo(rootX+gust*2,rootY-8,rootX+gust*5,rootY-15);ctx.stroke();
+   }
+  }else if(t===T.tree&&s.area!=='village'){
+   ctx.strokeStyle='rgba(162,206,123,.34)';ctx.lineWidth=2;
+   ctx.beginPath();ctx.arc(sx+14+gust*1.2,sy+12,11,3.45,5.5);ctx.stroke();
+  }
+ }
+ const motes=Math.min(23,Math.ceil(w*h/23000));
  for(let i=0;i<motes;i++){
-  const mx=((i*173.1+Math.sin(i*33)*135+now/120*(i%3+1))%(W*S)+W*S)%(W*S)-ox;
-  const my=((i*89.7+Math.cos(i*19)*77-now/280)%(H*S)+H*S)%(H*S)-oy;
+  const mx=((i*173.1+Math.sin(i*33)*135+now/160*(i%3+1))%(W*S)+W*S)%(W*S)-ox;
+  const my=((i*89.7+Math.cos(i*19)*77-now/380)%(H*S)+H*S)%(H*S)-oy;
   if(mx<0||my<0||mx>w||my>h)continue;
-  ctx.fillStyle=worldPhase()==='Night'?'#eddca785':'#f2f4d14d';
-  ctx.fillRect(mx,my,i%4===0?2:1,2);
+  ctx.fillStyle=worldPhase()==='Night'?'#eddca765':'#f2f4d13b';
+  ctx.fillRect(mx,my,i%4===0?2:1,1.5);
+ }
+}
+function drawRegionAtmosphere(ox,oy,w,h,now){
+ if(atmosphericIndoor())return;
+ const hour=worldHour(),daylight=hour>=6&&hour<19;
+ const haze=s.area==='forest'?.075:s.area==='cave'?.10:s.area==='route2'?.05:s.area==='route1'?.035:.025;
+ ctx.fillStyle=s.area==='cave'?'rgba(95,118,139,'+haze+')':'rgba(232,245,203,'+haze+')';ctx.fillRect(0,0,w,h);
+ if(daylight&&(s.area==='forest'||s.area==='route2'||s.area==='route1')){
+  const phase=Math.sin(now/2500)*9;
+  ctx.save();ctx.globalAlpha=s.area==='forest'?.08:.045;
+  for(let n=0;n<3;n++){
+   const atX=((n*257+94+phase)-ox*.08+w)%w;
+   const grad=ctx.createLinearGradient(atX-45,0,atX+80,h);
+   grad.addColorStop(0,'rgba(255,249,198,0)');
+   grad.addColorStop(.45,'rgba(255,249,198,.8)');
+   grad.addColorStop(1,'rgba(255,249,198,0)');
+   ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(atX,0);ctx.lineTo(atX+44,0);ctx.lineTo(atX+120,h);ctx.lineTo(atX+40,h);ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
  }
 }
 function drawAtmosphereOverlay(ox,oy,w,h){
@@ -1225,6 +1277,7 @@ function draw(){
  if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
  drawExplorationSites(ox,oy);
  drawAtmosphericMotion(ox,oy,viewportWidth,viewportHeight,performance.now());
+ drawRegionAtmosphere(ox,oy,viewportWidth,viewportHeight,performance.now());
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
  const x=p.x*S+16-ox,y=p.y*S+32-oy;
