@@ -1,10 +1,9 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "description": "200 editable Critters with 18 types, including Normal, Steel and Ground, using 312 original moves. All special-type restrictions, evolution IDs and habitats remain intact.",
   "species": [
     {
-      "speciesId": "starter-water-1",
-      "number": 1,
+      "speciesId": "cr-001-starter-water-1",
       "name": "Water Starter — Form 1",
       "types": [
         "Water"
@@ -70,13 +69,13 @@
       "starterForm": 1,
       "signatureMoveId": "starter-water-tidal-heart",
       "evolvesTo": {
-        "speciesId": "starter-water-2",
+        "speciesId": "cr-002-starter-water-2",
         "minLevel": 16
-      }
+      },
+      "legacySpeciesId": "starter-water-1"
     },
     {
-      "speciesId": "starter-water-2",
-      "number": 2,
+      "speciesId": "cr-002-starter-water-2",
       "name": "Water Starter — Form 2",
       "types": [
         "Water"
@@ -142,14 +141,14 @@
       "starterForm": 2,
       "signatureMoveId": "starter-water-tidal-heart",
       "evolvesTo": {
-        "speciesId": "starter-water-3",
+        "speciesId": "cr-003-starter-water-3",
         "minLevel": 32
       },
-      "evolvesFrom": "starter-water-1"
+      "evolvesFrom": "cr-001-starter-water-1",
+      "legacySpeciesId": "starter-water-2"
     },
     {
-      "speciesId": "starter-water-3",
-      "number": 3,
+      "speciesId": "cr-003-starter-water-3",
       "name": "Water Starter — Form 3",
       "types": [
         "Water"
@@ -214,11 +213,11 @@
       "starterFamily": "Water",
       "starterForm": 3,
       "signatureMoveId": "starter-water-tidal-heart",
-      "evolvesFrom": "starter-water-2"
+      "evolvesFrom": "cr-002-starter-water-2",
+      "legacySpeciesId": "starter-water-3"
     },
     {
-      "speciesId": "starter-rock-1",
-      "number": 4,
+      "speciesId": "cr-004-starter-rock-1",
       "name": "Rock Starter — Form 1",
       "types": [
         "Rock"
@@ -284,13 +283,13 @@
       "starterForm": 1,
       "signatureMoveId": "starter-rock-bedrock-vow",
       "evolvesTo": {
-        "speciesId": "starter-rock-2",
+        "speciesId": "cr-005-starter-rock-2",
         "minLevel": 16
-      }
+      },
+      "legacySpeciesId": "starter-rock-1"
     },
     {
-      "speciesId": "starter-rock-2",
-      "number": 5,
+      "speciesId": "cr-005-starter-rock-2",
       "name": "Rock Starter — Form 2",
       "types": [
         "Rock"
@@ -356,14 +355,14 @@
       "starterForm": 2,
       "signatureMoveId": "starter-rock-bedrock-vow",
       "evolvesTo": {
-        "speciesId": "starter-rock-3",
+        "speciesId": "cr-006-starter-rock-3",
         "minLevel": 32
       },
-      "evolvesFrom": "starter-rock-1"
+      "evolvesFrom": "cr-004-starter-rock-1",
+      "legacySpeciesId": "starter-rock-2"
     },
     {
-      "speciesId": "starter-rock-3",
-      "number": 6,
+      "speciesId": "cr-006-starter-rock-3",
       "name": "Rock Starter — Form 3",
       "types": [
         "Rock"
@@ -428,11 +427,11 @@
       "starterFamily": "Rock",
       "starterForm": 3,
       "signatureMoveId": "starter-rock-bedrock-vow",
-      "evolvesFrom": "starter-rock-2"
+      "evolvesFrom": "cr-005-starter-rock-2",
+      "legacySpeciesId": "starter-rock-3"
     },
     {
-      "speciesId": "starter-electric-1",
-      "number": 7,
+      "speciesId": "cr-007-starter-electric-1",
       "name": "Electric Starter — Form 1",
       "types": [
         "Electric"
@@ -498,13 +497,13 @@
       "starterForm": 1,
       "signatureMoveId": "starter-electric-storm-promise",
       "evolvesTo": {
-        "speciesId": "starter-electric-2",
+        "speciesId": "cr-008-starter-electric-2",
         "minLevel": 16
-      }
+      },
+      "legacySpeciesId": "starter-electric-1"
     },
     {
-      "speciesId": "starter-electric-2",
-      "number": 8,
+      "speciesId": "cr-008-starter-electric-2",
       "name": "Electric Starter — Form 2",
       "types": [
         "Electric"
@@ -570,14 +569,14 @@
       "starterForm": 2,
       "signatureMoveId": "starter-electric-storm-promise",
       "evolvesTo": {
-        "speciesId": "starter-electric-3",
+        "speciesId": "cr-009-starter-electric-3",
         "minLevel": 32
       },
-      "evolvesFrom": "starter-electric-1"
+      "evolvesFrom": "cr-007-starter-electric-1",
+      "legacySpeciesId": "starter-electric-2"
     },
     {
-      "speciesId": "starter-electric-3",
-      "number": 9,
+      "speciesId": "cr-009-starter-electric-3",
       "name": "Electric Starter — Form 3",
       "types": [
         "Electric"
@@ -642,11 +641,11 @@
       "starterFamily": "Electric",
       "starterForm": 3,
       "signatureMoveId": "starter-electric-storm-promise",
-      "evolvesFrom": "starter-electric-2"
+      "evolvesFrom": "cr-008-starter-electric-2",
+      "legacySpeciesId": "starter-electric-3"
     },
     {
-      "speciesId": "cr-014-grovehorn",
-      "number": 10,
+      "speciesId": "cr-010-grovehorn",
       "name": "Grovehorn",
       "types": [
         "Grass",
@@ -708,11 +707,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-014-grovehorn"
     },
     {
-      "speciesId": "cr-015-bloomtail",
-      "number": 11,
+      "speciesId": "cr-011-bloomtail",
       "name": "Bloomtail",
       "types": [
         "Grass",
@@ -774,11 +773,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-015-bloomtail"
     },
     {
-      "speciesId": "cr-017-verdantusk",
-      "number": 12,
+      "speciesId": "cr-012-verdantusk",
       "name": "Verdantusk",
       "types": [
         "Grass"
@@ -839,11 +838,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-017-verdantusk"
     },
     {
-      "speciesId": "cr-025-foamlark",
-      "number": 13,
+      "speciesId": "cr-013-foamlark",
       "name": "Foamlark",
       "types": [
         "Water",
@@ -905,11 +904,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-025-foamlark"
     },
     {
-      "speciesId": "cr-027-reeflet",
-      "number": 14,
+      "speciesId": "cr-014-reeflet",
       "name": "Reeflet",
       "types": [
         "Water",
@@ -971,11 +970,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-027-reeflet"
     },
     {
-      "speciesId": "cr-057-granipup",
-      "number": 15,
+      "speciesId": "cr-015-granipup",
       "name": "Granipup",
       "types": [
         "Rock",
@@ -1039,18 +1038,18 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesTo": {
-        "speciesId": "cr-058-geodillo",
+        "speciesId": "cr-016-geodillo",
         "minLevel": 23,
         "condition": {
           "kind": "badge",
           "minimum": 1
         },
         "stone": "Steel Stone"
-      }
+      },
+      "legacySpeciesId": "cr-057-granipup"
     },
     {
-      "speciesId": "cr-058-geodillo",
-      "number": 16,
+      "speciesId": "cr-016-geodillo",
       "name": "Geodillo",
       "types": [
         "Ground",
@@ -1113,11 +1112,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-057-granipup"
+      "evolvesFrom": "cr-015-granipup",
+      "legacySpeciesId": "cr-058-geodillo"
     },
     {
-      "speciesId": "cr-079-joltling",
-      "number": 17,
+      "speciesId": "cr-017-joltling",
       "name": "Joltling",
       "types": [
         "Electric"
@@ -1178,11 +1177,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-079-joltling"
     },
     {
-      "speciesId": "cr-110-gliderill",
-      "number": 18,
+      "speciesId": "cr-018-gliderill",
       "name": "Gliderill",
       "types": [
         "Flying"
@@ -1243,11 +1242,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-110-gliderill"
     },
     {
-      "speciesId": "cr-023-runnelot",
-      "number": 19,
+      "speciesId": "cr-019-runnelot",
       "name": "Runnelot",
       "types": [
         "Water",
@@ -1311,13 +1310,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-024-shellune",
+        "speciesId": "cr-020-shellune",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-023-runnelot"
     },
     {
-      "speciesId": "cr-024-shellune",
-      "number": 20,
+      "speciesId": "cr-020-shellune",
       "name": "Shellune",
       "types": [
         "Water"
@@ -1379,11 +1378,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-023-runnelot"
+      "evolvesFrom": "cr-019-runnelot",
+      "legacySpeciesId": "cr-024-shellune"
     },
     {
-      "speciesId": "cr-026-mistmew",
-      "number": 21,
+      "speciesId": "cr-021-mistmew",
       "name": "Mistmew",
       "types": [
         "Water"
@@ -1444,11 +1443,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-026-mistmew"
     },
     {
-      "speciesId": "cr-042-scorchub",
-      "number": 22,
+      "speciesId": "cr-022-scorchub",
       "name": "Scorchub",
       "types": [
         "Fire",
@@ -1510,11 +1509,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-042-scorchub"
     },
     {
-      "speciesId": "cr-045-blazefin",
-      "number": 23,
+      "speciesId": "cr-023-blazefin",
       "name": "Blazefin",
       "types": [
         "Fire"
@@ -1575,11 +1574,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-045-blazefin"
     },
     {
-      "speciesId": "cr-052-pebblit",
-      "number": 24,
+      "speciesId": "cr-024-pebblit",
       "name": "Pebblit",
       "types": [
         "Ground",
@@ -1643,14 +1642,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
-        "speciesId": "cr-053-craggle",
+        "speciesId": "cr-025-craggle",
         "minLevel": 12,
         "stone": "Ground Stone"
-      }
+      },
+      "legacySpeciesId": "cr-052-pebblit"
     },
     {
-      "speciesId": "cr-053-craggle",
-      "number": 25,
+      "speciesId": "cr-025-craggle",
       "name": "Craggle",
       "types": [
         "Ground",
@@ -1713,15 +1712,15 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-052-pebblit",
+      "evolvesFrom": "cr-024-pebblit",
       "evolvesTo": {
-        "speciesId": "cr-054-shardlet",
+        "speciesId": "cr-026-shardlet",
         "minLevel": 28
-      }
+      },
+      "legacySpeciesId": "cr-053-craggle"
     },
     {
-      "speciesId": "cr-054-shardlet",
-      "number": 26,
+      "speciesId": "cr-026-shardlet",
       "name": "Shardlet",
       "types": [
         "Steel",
@@ -1784,11 +1783,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "evolvesFrom": "cr-053-craggle"
+      "evolvesFrom": "cr-025-craggle",
+      "legacySpeciesId": "cr-054-shardlet"
     },
     {
-      "speciesId": "cr-055-bouldibble",
-      "number": 27,
+      "speciesId": "cr-027-bouldibble",
       "name": "Bouldibble",
       "types": [
         "Ground",
@@ -1852,14 +1851,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
-        "speciesId": "cr-056-flintpaw",
+        "speciesId": "cr-028-flintpaw",
         "minLevel": 18,
         "stone": "Rock Stone"
-      }
+      },
+      "legacySpeciesId": "cr-055-bouldibble"
     },
     {
-      "speciesId": "cr-056-flintpaw",
-      "number": 28,
+      "speciesId": "cr-028-flintpaw",
       "name": "Flintpaw",
       "types": [
         "Ground",
@@ -1922,11 +1921,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-055-bouldibble"
+      "evolvesFrom": "cr-027-bouldibble",
+      "legacySpeciesId": "cr-056-flintpaw"
     },
     {
-      "speciesId": "cr-061-obsiduck",
-      "number": 29,
+      "speciesId": "cr-029-obsiduck",
       "name": "Obsiduck",
       "types": [
         "Rock",
@@ -1988,11 +1987,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-061-obsiduck"
     },
     {
-      "speciesId": "cr-077-luminix",
-      "number": 30,
+      "speciesId": "cr-030-luminix",
       "name": "Luminix",
       "types": [
         "Electric"
@@ -2053,11 +2052,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-077-luminix"
     },
     {
-      "speciesId": "cr-016-spindleleaf",
-      "number": 31,
+      "speciesId": "cr-031-spindleleaf",
       "name": "Spindleleaf",
       "types": [
         "Grass"
@@ -2118,11 +2117,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-016-spindleleaf"
     },
     {
-      "speciesId": "cr-112-windoodle",
-      "number": 32,
+      "speciesId": "cr-032-windoodle",
       "name": "Windoodle",
       "types": [
         "Flying"
@@ -2183,11 +2182,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-112-windoodle"
     },
     {
-      "speciesId": "cr-001-mosslilt",
-      "number": 33,
+      "speciesId": "cr-033-mosslilt",
       "name": "Mosslilt",
       "types": [
         "Grass",
@@ -2251,13 +2250,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-002-fernlet",
+        "speciesId": "cr-034-fernlet",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-001-mosslilt"
     },
     {
-      "speciesId": "cr-002-fernlet",
-      "number": 34,
+      "speciesId": "cr-034-fernlet",
       "name": "Fernlet",
       "types": [
         "Grass",
@@ -2320,18 +2319,18 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-001-mosslilt",
+      "evolvesFrom": "cr-033-mosslilt",
       "evolvesTo": {
-        "speciesId": "cr-003-bramblemuff",
+        "speciesId": "cr-035-bramblemuff",
         "minLevel": 28,
         "condition": {
           "kind": "night"
         }
-      }
+      },
+      "legacySpeciesId": "cr-002-fernlet"
     },
     {
-      "speciesId": "cr-003-bramblemuff",
-      "number": 35,
+      "speciesId": "cr-035-bramblemuff",
       "name": "Bramblemuff",
       "types": [
         "Grass"
@@ -2393,11 +2392,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-002-fernlet"
+      "evolvesFrom": "cr-034-fernlet",
+      "legacySpeciesId": "cr-003-bramblemuff"
     },
     {
-      "speciesId": "cr-011-rootwhisp",
-      "number": 36,
+      "speciesId": "cr-036-rootwhisp",
       "name": "Rootwhisp",
       "types": [
         "Grass"
@@ -2458,11 +2457,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-011-rootwhisp"
     },
     {
-      "speciesId": "cr-018-puddlepip",
-      "number": 37,
+      "speciesId": "cr-037-puddlepip",
       "name": "Puddlepip",
       "types": [
         "Water",
@@ -2526,13 +2525,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
-        "speciesId": "cr-019-brinefin",
+        "speciesId": "cr-038-brinefin",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-018-puddlepip"
     },
     {
-      "speciesId": "cr-019-brinefin",
-      "number": 38,
+      "speciesId": "cr-038-brinefin",
       "name": "Brinefin",
       "types": [
         "Water",
@@ -2595,19 +2594,19 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-018-puddlepip",
+      "evolvesFrom": "cr-037-puddlepip",
       "evolvesTo": {
-        "speciesId": "cr-020-coraloo",
+        "speciesId": "cr-039-coraloo",
         "minLevel": 28,
         "condition": {
           "kind": "badge",
           "minimum": 1
         }
-      }
+      },
+      "legacySpeciesId": "cr-019-brinefin"
     },
     {
-      "speciesId": "cr-020-coraloo",
-      "number": 39,
+      "speciesId": "cr-039-coraloo",
       "name": "Coraloo",
       "types": [
         "Water"
@@ -2669,11 +2668,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-019-brinefin"
+      "evolvesFrom": "cr-038-brinefin",
+      "legacySpeciesId": "cr-020-coraloo"
     },
     {
-      "speciesId": "cr-021-driftkip",
-      "number": 40,
+      "speciesId": "cr-040-driftkip",
       "name": "Driftkip",
       "types": [
         "Water"
@@ -2736,14 +2735,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-022-glintgill",
+        "speciesId": "cr-041-glintgill",
         "minLevel": 18,
         "stone": "Water Stone"
-      }
+      },
+      "legacySpeciesId": "cr-021-driftkip"
     },
     {
-      "speciesId": "cr-022-glintgill",
-      "number": 41,
+      "speciesId": "cr-041-glintgill",
       "name": "Glintgill",
       "types": [
         "Water"
@@ -2805,11 +2804,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-021-driftkip"
+      "evolvesFrom": "cr-040-driftkip",
+      "legacySpeciesId": "cr-022-glintgill"
     },
     {
-      "speciesId": "cr-028-wavetail",
-      "number": 42,
+      "speciesId": "cr-042-wavetail",
       "name": "Wavetail",
       "types": [
         "Water"
@@ -2870,11 +2869,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-028-wavetail"
     },
     {
-      "speciesId": "cr-094-icicleaf",
-      "number": 43,
+      "speciesId": "cr-043-icicleaf",
       "name": "Icicleaf",
       "types": [
         "Ice"
@@ -2935,11 +2934,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-094-icicleaf"
     },
     {
-      "speciesId": "cr-111-kiteclaw",
-      "number": 44,
+      "speciesId": "cr-044-kiteclaw",
       "name": "Kiteclaw",
       "types": [
         "Flying",
@@ -3001,11 +3000,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-111-kiteclaw"
     },
     {
-      "speciesId": "cr-114-soarwhisk",
-      "number": 45,
+      "speciesId": "cr-045-soarwhisk",
       "name": "Soarwhisk",
       "types": [
         "Flying",
@@ -3067,11 +3066,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
+      "legacySpeciesId": "cr-114-soarwhisk"
     },
     {
-      "speciesId": "cr-115-flitwing",
-      "number": 46,
+      "speciesId": "cr-046-flitwing",
       "name": "Flitwing",
       "types": [
         "Flying",
@@ -3133,11 +3132,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-115-flitwing"
     },
     {
-      "speciesId": "cr-117-skyfin",
-      "number": 47,
+      "speciesId": "cr-047-skyfin",
       "name": "Skyfin",
       "types": [
         "Flying"
@@ -3198,11 +3197,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-117-skyfin"
     },
     {
-      "speciesId": "cr-118-dusklet",
-      "number": 48,
+      "speciesId": "cr-048-dusklet",
       "name": "Dusklet",
       "types": [
         "Shadow",
@@ -3266,13 +3265,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-119-shadepaw",
+        "speciesId": "cr-049-shadepaw",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-118-dusklet"
     },
     {
-      "speciesId": "cr-119-shadepaw",
-      "number": 49,
+      "speciesId": "cr-049-shadepaw",
       "name": "Shadepaw",
       "types": [
         "Shadow",
@@ -3335,15 +3334,15 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-118-dusklet",
+      "evolvesFrom": "cr-048-dusklet",
       "evolvesTo": {
-        "speciesId": "cr-120-gloomink",
+        "speciesId": "cr-050-gloomink",
         "minLevel": 28
-      }
+      },
+      "legacySpeciesId": "cr-119-shadepaw"
     },
     {
-      "speciesId": "cr-120-gloomink",
-      "number": 50,
+      "speciesId": "cr-050-gloomink",
       "name": "Gloomink",
       "types": [
         "Shadow"
@@ -3405,11 +3404,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-119-shadepaw"
+      "evolvesFrom": "cr-049-shadepaw",
+      "legacySpeciesId": "cr-120-gloomink"
     },
     {
-      "speciesId": "cr-126-crepuskit",
-      "number": 51,
+      "speciesId": "cr-051-crepuskit",
       "name": "Crepuskit",
       "types": [
         "Shadow"
@@ -3470,11 +3469,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-126-crepuskit"
     },
     {
-      "speciesId": "cr-127-sablefin",
-      "number": 52,
+      "speciesId": "cr-052-sablefin",
       "name": "Sablefin",
       "types": [
         "Shadow",
@@ -3536,11 +3535,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-127-sablefin"
     },
     {
-      "speciesId": "cr-162-poisonip",
-      "number": 53,
+      "speciesId": "cr-053-poisonip",
       "name": "Poisonip",
       "types": [
         "Venom"
@@ -3601,11 +3600,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-162-poisonip"
     },
     {
-      "speciesId": "cr-163-corrofin",
-      "number": 54,
+      "speciesId": "cr-054-corrofin",
       "name": "Corrofin",
       "types": [
         "Venom",
@@ -3667,11 +3666,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-163-corrofin"
     },
     {
-      "speciesId": "cr-165-blightling",
-      "number": 55,
+      "speciesId": "cr-055-blightling",
       "name": "Blightling",
       "types": [
         "Venom"
@@ -3732,11 +3731,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-165-blightling"
     },
     {
-      "speciesId": "cr-166-thoughtip",
-      "number": 56,
+      "speciesId": "cr-056-thoughtip",
       "name": "Thoughtip",
       "types": [
         "Psychic",
@@ -3800,13 +3799,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-167-mindlet",
+        "speciesId": "cr-057-mindlet",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-166-thoughtip"
     },
     {
-      "speciesId": "cr-167-mindlet",
-      "number": 57,
+      "speciesId": "cr-057-mindlet",
       "name": "Mindlet",
       "types": [
         "Psychic",
@@ -3869,19 +3868,19 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-166-thoughtip",
+      "evolvesFrom": "cr-056-thoughtip",
       "evolvesTo": {
-        "speciesId": "cr-168-dreamquill",
+        "speciesId": "cr-058-dreamquill",
         "minLevel": 28,
         "condition": {
           "kind": "area",
           "areaId": "route3"
         }
-      }
+      },
+      "legacySpeciesId": "cr-167-mindlet"
     },
     {
-      "speciesId": "cr-168-dreamquill",
-      "number": 58,
+      "speciesId": "cr-058-dreamquill",
       "name": "Dreamquill",
       "types": [
         "Psychic",
@@ -3944,11 +3943,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-167-mindlet"
+      "evolvesFrom": "cr-057-mindlet",
+      "legacySpeciesId": "cr-168-dreamquill"
     },
     {
-      "speciesId": "cr-174-starwhisp",
-      "number": 59,
+      "speciesId": "cr-059-starwhisp",
       "name": "Starwhisp",
       "types": [
         "Psychic"
@@ -4009,11 +4008,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-174-starwhisp"
     },
     {
-      "speciesId": "cr-175-trancelot",
-      "number": 60,
+      "speciesId": "cr-060-trancelot",
       "name": "Trancelot",
       "types": [
         "Psychic",
@@ -4075,11 +4074,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-175-trancelot"
     },
     {
-      "speciesId": "cr-177-synapip",
-      "number": 61,
+      "speciesId": "cr-061-synapip",
       "name": "Synapip",
       "types": [
         "Psychic"
@@ -4140,11 +4139,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-177-synapip"
     },
     {
-      "speciesId": "cr-193-parryfin",
-      "number": 62,
+      "speciesId": "cr-062-parryfin",
       "name": "Parryfin",
       "types": [
         "Steel",
@@ -4206,11 +4205,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-193-parryfin"
     },
     {
-      "speciesId": "cr-194-martialet",
-      "number": 63,
+      "speciesId": "cr-063-martialet",
       "name": "Martialet",
       "types": [
         "Fighting"
@@ -4271,11 +4270,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-194-martialet"
     },
     {
-      "speciesId": "cr-195-grapplet",
-      "number": 64,
+      "speciesId": "cr-064-grapplet",
       "name": "Grapplet",
       "types": [
         "Fighting",
@@ -4337,11 +4336,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
+      "legacySpeciesId": "cr-195-grapplet"
     },
     {
-      "speciesId": "cr-197-feintling",
-      "number": 65,
+      "speciesId": "cr-065-feintling",
       "name": "Feintling",
       "types": [
         "Fighting"
@@ -4402,11 +4401,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-197-feintling"
     },
     {
-      "speciesId": "cr-004-cloverkin",
-      "number": 66,
+      "speciesId": "cr-066-cloverkin",
       "name": "Cloverkin",
       "types": [
         "Grass"
@@ -4469,16 +4468,16 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-005-sapshrew",
+        "speciesId": "cr-067-sapshrew",
         "minLevel": 18,
         "condition": {
           "kind": "day"
         }
-      }
+      },
+      "legacySpeciesId": "cr-004-cloverkin"
     },
     {
-      "speciesId": "cr-005-sapshrew",
-      "number": 67,
+      "speciesId": "cr-067-sapshrew",
       "name": "Sapshrew",
       "types": [
         "Grass",
@@ -4541,11 +4540,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-004-cloverkin"
+      "evolvesFrom": "cr-066-cloverkin",
+      "legacySpeciesId": "cr-005-sapshrew"
     },
     {
-      "speciesId": "cr-010-willowink",
-      "number": 68,
+      "speciesId": "cr-068-willowink",
       "name": "Willowink",
       "types": [
         "Grass",
@@ -4607,11 +4606,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-010-willowink"
     },
     {
-      "speciesId": "cr-029-streamink",
-      "number": 69,
+      "speciesId": "cr-069-streamink",
       "name": "Streamink",
       "types": [
         "Water"
@@ -4672,11 +4671,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-029-streamink"
     },
     {
-      "speciesId": "cr-116-thermalet",
-      "number": 70,
+      "speciesId": "cr-070-thermalet",
       "name": "Thermalet",
       "types": [
         "Flying",
@@ -4738,11 +4737,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-116-thermalet"
     },
     {
-      "speciesId": "cr-125-ebonkip",
-      "number": 71,
+      "speciesId": "cr-071-ebonkip",
       "name": "Ebonkip",
       "types": [
         "Shadow",
@@ -4804,11 +4803,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-125-ebonkip"
     },
     {
-      "speciesId": "cr-164-miasmoth",
-      "number": 72,
+      "speciesId": "cr-072-miasmoth",
       "name": "Miasmoth",
       "types": [
         "Venom",
@@ -4870,11 +4869,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-164-miasmoth"
     },
     {
-      "speciesId": "cr-008-petaloor",
-      "number": 73,
+      "speciesId": "cr-073-petaloor",
       "name": "Petaloor",
       "types": [
         "Grass",
@@ -4936,11 +4935,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-008-petaloor"
     },
     {
-      "speciesId": "cr-009-reedrill",
-      "number": 74,
+      "speciesId": "cr-074-reedrill",
       "name": "Reedrill",
       "types": [
         "Grass"
@@ -5001,11 +5000,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-009-reedrill"
     },
     {
-      "speciesId": "cr-012-junibun",
-      "number": 75,
+      "speciesId": "cr-075-junibun",
       "name": "Junibun",
       "types": [
         "Normal",
@@ -5067,11 +5066,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
+      "legacySpeciesId": "cr-012-junibun"
     },
     {
-      "speciesId": "cr-060-slatetail",
-      "number": 76,
+      "speciesId": "cr-076-slatetail",
       "name": "Slatetail",
       "types": [
         "Steel",
@@ -5133,11 +5132,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-060-slatetail"
     },
     {
-      "speciesId": "cr-095-winterpaw",
-      "number": 77,
+      "speciesId": "cr-077-winterpaw",
       "name": "Winterpaw",
       "types": [
         "Ice",
@@ -5199,11 +5198,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-095-winterpaw"
     },
     {
-      "speciesId": "cr-102-breezlet",
-      "number": 78,
+      "speciesId": "cr-078-breezlet",
       "name": "Breezlet",
       "types": [
         "Flying",
@@ -5267,14 +5266,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-103-plumehop",
+        "speciesId": "cr-079-plumehop",
         "minLevel": 12,
         "stone": "Flying Stone"
-      }
+      },
+      "legacySpeciesId": "cr-102-breezlet"
     },
     {
-      "speciesId": "cr-103-plumehop",
-      "number": 79,
+      "speciesId": "cr-079-plumehop",
       "name": "Plumehop",
       "types": [
         "Flying",
@@ -5337,19 +5336,19 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-102-breezlet",
+      "evolvesFrom": "cr-078-breezlet",
       "evolvesTo": {
-        "speciesId": "cr-104-skylarkit",
+        "speciesId": "cr-080-skylarkit",
         "minLevel": 28,
         "condition": {
           "kind": "area",
           "areaId": "route3"
         }
-      }
+      },
+      "legacySpeciesId": "cr-103-plumehop"
     },
     {
-      "speciesId": "cr-104-skylarkit",
-      "number": 80,
+      "speciesId": "cr-080-skylarkit",
       "name": "Skylarkit",
       "types": [
         "Flying",
@@ -5412,11 +5411,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-103-plumehop"
+      "evolvesFrom": "cr-079-plumehop",
+      "legacySpeciesId": "cr-104-skylarkit"
     },
     {
-      "speciesId": "cr-129-cloakmoth",
-      "number": 81,
+      "speciesId": "cr-081-cloakmoth",
       "name": "Cloakmoth",
       "types": [
         "Shadow"
@@ -5477,11 +5476,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-129-cloakmoth"
     },
     {
-      "speciesId": "cr-130-nightquill",
-      "number": 82,
+      "speciesId": "cr-082-nightquill",
       "name": "Nightquill",
       "types": [
         "Shadow"
@@ -5542,11 +5541,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-130-nightquill"
     },
     {
-      "speciesId": "cr-131-shadeleaf",
-      "number": 83,
+      "speciesId": "cr-083-shadeleaf",
       "name": "Shadeleaf",
       "types": [
         "Shadow",
@@ -5608,11 +5607,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-131-shadeleaf"
     },
     {
-      "speciesId": "cr-133-blacket",
-      "number": 84,
+      "speciesId": "cr-084-blacket",
       "name": "Blacket",
       "types": [
         "Shadow"
@@ -5673,11 +5672,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-133-blacket"
     },
     {
-      "speciesId": "cr-146-veiloo",
-      "number": 85,
+      "speciesId": "cr-085-veiloo",
       "name": "Veiloo",
       "types": [
         "Ghost"
@@ -5738,11 +5737,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-146-veiloo"
     },
     {
-      "speciesId": "cr-147-spiritick",
-      "number": 86,
+      "speciesId": "cr-086-spiritick",
       "name": "Spiritick",
       "types": [
         "Ghost",
@@ -5804,11 +5803,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-147-spiritick"
     },
     {
-      "speciesId": "cr-149-hollowkin",
-      "number": 87,
+      "speciesId": "cr-087-hollowkin",
       "name": "Hollowkin",
       "types": [
         "Ghost"
@@ -5869,11 +5868,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-149-hollowkin"
     },
     {
-      "speciesId": "cr-158-venomoss",
-      "number": 88,
+      "speciesId": "cr-088-venomoss",
       "name": "Venomoss",
       "types": [
         "Venom"
@@ -5934,11 +5933,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-158-venomoss"
     },
     {
-      "speciesId": "cr-159-rotwhisk",
-      "number": 89,
+      "speciesId": "cr-089-rotwhisk",
       "name": "Rotwhisk",
       "types": [
         "Venom",
@@ -6000,11 +5999,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-159-rotwhisk"
     },
     {
-      "speciesId": "cr-161-sludgekip",
-      "number": 90,
+      "speciesId": "cr-090-sludgekip",
       "name": "Sludgekip",
       "types": [
         "Venom",
@@ -6066,11 +6065,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
+      "legacySpeciesId": "cr-161-sludgekip"
     },
     {
-      "speciesId": "cr-169-oracub",
-      "number": 91,
+      "speciesId": "cr-091-oracub",
       "name": "Oracub",
       "types": [
         "Psychic"
@@ -6133,14 +6132,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-170-telekin",
+        "speciesId": "cr-092-telekin",
         "minLevel": 18,
         "stone": "Psychic Stone"
-      }
+      },
+      "legacySpeciesId": "cr-169-oracub"
     },
     {
-      "speciesId": "cr-170-telekin",
-      "number": 92,
+      "speciesId": "cr-092-telekin",
       "name": "Telekin",
       "types": [
         "Psychic"
@@ -6202,11 +6201,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-169-oracub"
+      "evolvesFrom": "cr-091-oracub",
+      "legacySpeciesId": "cr-170-telekin"
     },
     {
-      "speciesId": "cr-171-prismew",
-      "number": 93,
+      "speciesId": "cr-093-prismew",
       "name": "Prismew",
       "types": [
         "Psychic",
@@ -6270,13 +6269,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-172-lucibun",
+        "speciesId": "cr-094-lucibun",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-171-prismew"
     },
     {
-      "speciesId": "cr-172-lucibun",
-      "number": 94,
+      "speciesId": "cr-094-lucibun",
       "name": "Lucibun",
       "types": [
         "Psychic",
@@ -6339,11 +6338,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-171-prismew"
+      "evolvesFrom": "cr-093-prismew",
+      "legacySpeciesId": "cr-172-lucibun"
     },
     {
-      "speciesId": "cr-013-leaflume",
-      "number": 95,
+      "speciesId": "cr-095-leaflume",
       "name": "Leaflume",
       "types": [
         "Grass"
@@ -6404,11 +6403,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-013-leaflume"
     },
     {
-      "speciesId": "cr-132-dimling",
-      "number": 96,
+      "speciesId": "cr-096-dimling",
       "name": "Dimling",
       "types": [
         "Shadow",
@@ -6470,11 +6469,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-132-dimling"
     },
     {
-      "speciesId": "cr-148-etherfin",
-      "number": 97,
+      "speciesId": "cr-097-etherfin",
       "name": "Etherfin",
       "types": [
         "Ghost",
@@ -6536,11 +6535,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-148-etherfin"
     },
     {
-      "speciesId": "cr-173-echomind",
-      "number": 98,
+      "speciesId": "cr-098-echomind",
       "name": "Echomind",
       "types": [
         "Psychic",
@@ -6602,11 +6601,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-173-echomind"
     },
     {
-      "speciesId": "cr-160-bitterbun",
-      "number": 99,
+      "speciesId": "cr-099-bitterbun",
       "name": "Bitterbun",
       "types": [
         "Normal",
@@ -6668,11 +6667,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
+      "legacySpeciesId": "cr-160-bitterbun"
     },
     {
-      "speciesId": "cr-176-visifin",
-      "number": 100,
+      "speciesId": "cr-100-visifin",
       "name": "Visifin",
       "types": [
         "Psychic"
@@ -6733,11 +6732,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-176-visifin"
     },
     {
-      "speciesId": "cr-199-eonolith",
-      "number": 101,
+      "speciesId": "cr-101-eonolith",
       "name": "Eonolith",
       "types": [
         "Primordial",
@@ -6799,11 +6798,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-199-eonolith"
     },
     {
-      "speciesId": "cr-040-kindlisk",
-      "number": 102,
+      "speciesId": "cr-102-kindlisk",
       "name": "Kindlisk",
       "types": [
         "Fire",
@@ -6867,13 +6866,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-041-charhoof",
+        "speciesId": "cr-103-charhoof",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-040-kindlisk"
     },
     {
-      "speciesId": "cr-041-charhoof",
-      "number": 103,
+      "speciesId": "cr-103-charhoof",
       "name": "Charhoof",
       "types": [
         "Fire"
@@ -6935,11 +6934,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-040-kindlisk"
+      "evolvesFrom": "cr-102-kindlisk",
+      "legacySpeciesId": "cr-041-charhoof"
     },
     {
-      "speciesId": "cr-047-furnacat",
-      "number": 104,
+      "speciesId": "cr-104-furnacat",
       "name": "Furnacat",
       "types": [
         "Normal",
@@ -7001,11 +7000,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
+      "legacySpeciesId": "cr-047-furnacat"
     },
     {
-      "speciesId": "cr-049-ignifawn",
-      "number": 105,
+      "speciesId": "cr-105-ignifawn",
       "name": "Ignifawn",
       "types": [
         "Fire",
@@ -7067,11 +7066,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-049-ignifawn"
     },
     {
-      "speciesId": "cr-050-flametip",
-      "number": 106,
+      "speciesId": "cr-106-flametip",
       "name": "Flametip",
       "types": [
         "Fire"
@@ -7132,11 +7131,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-050-flametip"
     },
     {
-      "speciesId": "cr-051-sparkmoth",
-      "number": 107,
+      "speciesId": "cr-107-sparkmoth",
       "name": "Sparkmoth",
       "types": [
         "Fire"
@@ -7197,11 +7196,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-051-sparkmoth"
     },
     {
-      "speciesId": "cr-062-marblisk",
-      "number": 108,
+      "speciesId": "cr-108-marblisk",
       "name": "Marblisk",
       "types": [
         "Steel",
@@ -7263,11 +7262,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-062-marblisk"
     },
     {
-      "speciesId": "cr-063-cliffmole",
-      "number": 109,
+      "speciesId": "cr-109-cliffmole",
       "name": "Cliffmole",
       "types": [
         "Ground",
@@ -7329,11 +7328,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
+      "legacySpeciesId": "cr-063-cliffmole"
     },
     {
-      "speciesId": "cr-065-stonewisp",
-      "number": 110,
+      "speciesId": "cr-110-stonewisp",
       "name": "Stonewisp",
       "types": [
         "Rock",
@@ -7395,11 +7394,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-065-stonewisp"
     },
     {
-      "speciesId": "cr-067-gravelark",
-      "number": 111,
+      "speciesId": "cr-111-gravelark",
       "name": "Gravelark",
       "types": [
         "Ground",
@@ -7461,11 +7460,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
+      "legacySpeciesId": "cr-067-gravelark"
     },
     {
-      "speciesId": "cr-081-chargill",
-      "number": 112,
+      "speciesId": "cr-112-chargill",
       "name": "Chargill",
       "types": [
         "Electric"
@@ -7526,11 +7525,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-081-chargill"
     },
     {
-      "speciesId": "cr-082-stormew",
-      "number": 113,
+      "speciesId": "cr-113-stormew",
       "name": "Stormew",
       "types": [
         "Electric",
@@ -7592,11 +7591,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-082-stormew"
     },
     {
-      "speciesId": "cr-083-wirewhisk",
-      "number": 114,
+      "speciesId": "cr-114-wirewhisk",
       "name": "Wirewhisk",
       "types": [
         "Electric",
@@ -7658,11 +7657,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-083-wirewhisk"
     },
     {
-      "speciesId": "cr-085-plasmip",
-      "number": 115,
+      "speciesId": "cr-115-plasmip",
       "name": "Plasmip",
       "types": [
         "Electric"
@@ -7723,11 +7722,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-085-plasmip"
     },
     {
-      "speciesId": "cr-086-frostip",
-      "number": 116,
+      "speciesId": "cr-116-frostip",
       "name": "Frostip",
       "types": [
         "Ice",
@@ -7791,13 +7790,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-087-glacibun",
+        "speciesId": "cr-117-glacibun",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-086-frostip"
     },
     {
-      "speciesId": "cr-087-glacibun",
-      "number": 117,
+      "speciesId": "cr-117-glacibun",
       "name": "Glacibun",
       "types": [
         "Ice",
@@ -7860,19 +7859,19 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-086-frostip",
+      "evolvesFrom": "cr-116-frostip",
       "evolvesTo": {
-        "speciesId": "cr-088-sleetlet",
+        "speciesId": "cr-118-sleetlet",
         "minLevel": 28,
         "condition": {
           "kind": "badge",
           "minimum": 1
         }
-      }
+      },
+      "legacySpeciesId": "cr-087-glacibun"
     },
     {
-      "speciesId": "cr-088-sleetlet",
-      "number": 118,
+      "speciesId": "cr-118-sleetlet",
       "name": "Sleetlet",
       "types": [
         "Ice"
@@ -7934,11 +7933,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-087-glacibun"
+      "evolvesFrom": "cr-117-glacibun",
+      "legacySpeciesId": "cr-088-sleetlet"
     },
     {
-      "speciesId": "cr-089-rimesnout",
-      "number": 119,
+      "speciesId": "cr-119-rimesnout",
       "name": "Rimesnout",
       "types": [
         "Ice",
@@ -8002,14 +8001,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesTo": {
-        "speciesId": "cr-090-snowwhisk",
+        "speciesId": "cr-120-snowwhisk",
         "minLevel": 18,
         "stone": "Ice Stone"
-      }
+      },
+      "legacySpeciesId": "cr-089-rimesnout"
     },
     {
-      "speciesId": "cr-090-snowwhisk",
-      "number": 120,
+      "speciesId": "cr-120-snowwhisk",
       "name": "Snowwhisk",
       "types": [
         "Ice",
@@ -8072,11 +8071,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-089-rimesnout"
+      "evolvesFrom": "cr-119-rimesnout",
+      "legacySpeciesId": "cr-090-snowwhisk"
     },
     {
-      "speciesId": "cr-091-chillume",
-      "number": 121,
+      "speciesId": "cr-121-chillume",
       "name": "Chillume",
       "types": [
         "Ice",
@@ -8140,13 +8139,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-092-crystip",
+        "speciesId": "cr-122-crystip",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-091-chillume"
     },
     {
-      "speciesId": "cr-092-crystip",
-      "number": 122,
+      "speciesId": "cr-122-crystip",
       "name": "Crystip",
       "types": [
         "Ice",
@@ -8209,11 +8208,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "evolvesFrom": "cr-091-chillume"
+      "evolvesFrom": "cr-121-chillume",
+      "legacySpeciesId": "cr-092-crystip"
     },
     {
-      "speciesId": "cr-105-updrift",
-      "number": 123,
+      "speciesId": "cr-123-updrift",
       "name": "Updrift",
       "types": [
         "Flying"
@@ -8276,16 +8275,16 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-106-gustwing",
+        "speciesId": "cr-124-gustwing",
         "minLevel": 18,
         "condition": {
           "kind": "day"
         }
-      }
+      },
+      "legacySpeciesId": "cr-105-updrift"
     },
     {
-      "speciesId": "cr-106-gustwing",
-      "number": 124,
+      "speciesId": "cr-124-gustwing",
       "name": "Gustwing",
       "types": [
         "Flying"
@@ -8347,11 +8346,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-105-updrift"
+      "evolvesFrom": "cr-123-updrift",
+      "legacySpeciesId": "cr-106-gustwing"
     },
     {
-      "speciesId": "cr-107-zephip",
-      "number": 125,
+      "speciesId": "cr-125-zephip",
       "name": "Zephip",
       "types": [
         "Flying",
@@ -8415,13 +8414,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-108-featherkin",
+        "speciesId": "cr-126-featherkin",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-107-zephip"
     },
     {
-      "speciesId": "cr-108-featherkin",
-      "number": 126,
+      "speciesId": "cr-126-featherkin",
       "name": "Featherkin",
       "types": [
         "Flying"
@@ -8483,11 +8482,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-107-zephip"
+      "evolvesFrom": "cr-125-zephip",
+      "legacySpeciesId": "cr-108-featherkin"
     },
     {
-      "speciesId": "cr-113-aerobun",
-      "number": 127,
+      "speciesId": "cr-127-aerobun",
       "name": "Aerobun",
       "types": [
         "Normal",
@@ -8549,11 +8548,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
+      "legacySpeciesId": "cr-113-aerobun"
     },
     {
-      "speciesId": "cr-134-wispkin",
-      "number": 128,
+      "speciesId": "cr-128-wispkin",
       "name": "Wispkin",
       "types": [
         "Ghost",
@@ -8617,13 +8616,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-135-phantip",
+        "speciesId": "cr-129-phantip",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-134-wispkin"
     },
     {
-      "speciesId": "cr-135-phantip",
-      "number": 129,
+      "speciesId": "cr-129-phantip",
       "name": "Phantip",
       "types": [
         "Ghost",
@@ -8686,18 +8685,18 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-134-wispkin",
+      "evolvesFrom": "cr-128-wispkin",
       "evolvesTo": {
-        "speciesId": "cr-136-hauntlet",
+        "speciesId": "cr-130-hauntlet",
         "minLevel": 28,
         "condition": {
           "kind": "night"
         }
-      }
+      },
+      "legacySpeciesId": "cr-135-phantip"
     },
     {
-      "speciesId": "cr-136-hauntlet",
-      "number": 130,
+      "speciesId": "cr-130-hauntlet",
       "name": "Hauntlet",
       "types": [
         "Ghost"
@@ -8759,11 +8758,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-135-phantip"
+      "evolvesFrom": "cr-129-phantip",
+      "legacySpeciesId": "cr-136-hauntlet"
     },
     {
-      "speciesId": "cr-137-booquill",
-      "number": 131,
+      "speciesId": "cr-131-booquill",
       "name": "Booquill",
       "types": [
         "Ghost"
@@ -8826,14 +8825,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-138-echomoth",
+        "speciesId": "cr-132-echomoth",
         "minLevel": 18,
         "stone": "Ghost Stone"
-      }
+      },
+      "legacySpeciesId": "cr-137-booquill"
     },
     {
-      "speciesId": "cr-138-echomoth",
-      "number": 132,
+      "speciesId": "cr-132-echomoth",
       "name": "Echomoth",
       "types": [
         "Ghost"
@@ -8895,11 +8894,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-137-booquill"
+      "evolvesFrom": "cr-131-booquill",
+      "legacySpeciesId": "cr-138-echomoth"
     },
     {
-      "speciesId": "cr-142-fogwisp",
-      "number": 133,
+      "speciesId": "cr-133-fogwisp",
       "name": "Fogwisp",
       "types": [
         "Ghost"
@@ -8960,11 +8959,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-142-fogwisp"
     },
     {
-      "speciesId": "cr-143-lanternik",
-      "number": 134,
+      "speciesId": "cr-134-lanternik",
       "name": "Lanternik",
       "types": [
         "Ghost",
@@ -9026,11 +9025,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-143-lanternik"
     },
     {
-      "speciesId": "cr-145-shroudbun",
-      "number": 135,
+      "speciesId": "cr-135-shroudbun",
       "name": "Shroudbun",
       "types": [
         "Ghost"
@@ -9091,11 +9090,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-145-shroudbun"
     },
     {
-      "speciesId": "cr-182-brawlbit",
-      "number": 136,
+      "speciesId": "cr-136-brawlbit",
       "name": "Brawlbit",
       "types": [
         "Fighting",
@@ -9159,13 +9158,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-183-strikeling",
+        "speciesId": "cr-137-strikeling",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-182-brawlbit"
     },
     {
-      "speciesId": "cr-183-strikeling",
-      "number": 137,
+      "speciesId": "cr-137-strikeling",
       "name": "Strikeling",
       "types": [
         "Fighting",
@@ -9228,15 +9227,15 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-182-brawlbit",
+      "evolvesFrom": "cr-136-brawlbit",
       "evolvesTo": {
-        "speciesId": "cr-184-knucklepup",
+        "speciesId": "cr-138-knucklepup",
         "minLevel": 28
-      }
+      },
+      "legacySpeciesId": "cr-183-strikeling"
     },
     {
-      "speciesId": "cr-184-knucklepup",
-      "number": 138,
+      "speciesId": "cr-138-knucklepup",
       "name": "Knucklepup",
       "types": [
         "Fighting",
@@ -9299,11 +9298,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-183-strikeling"
+      "evolvesFrom": "cr-137-strikeling",
+      "legacySpeciesId": "cr-184-knucklepup"
     },
     {
-      "speciesId": "cr-185-sparlet",
-      "number": 139,
+      "speciesId": "cr-139-sparlet",
       "name": "Sparlet",
       "types": [
         "Fighting"
@@ -9366,14 +9365,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-186-dashkick",
+        "speciesId": "cr-140-dashkick",
         "minLevel": 18,
         "stone": "Fighting Stone"
-      }
+      },
+      "legacySpeciesId": "cr-185-sparlet"
     },
     {
-      "speciesId": "cr-186-dashkick",
-      "number": 140,
+      "speciesId": "cr-140-dashkick",
       "name": "Dashkick",
       "types": [
         "Fighting",
@@ -9436,11 +9435,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-185-sparlet"
+      "evolvesFrom": "cr-139-sparlet",
+      "legacySpeciesId": "cr-186-dashkick"
     },
     {
-      "speciesId": "cr-187-jabmink",
-      "number": 141,
+      "speciesId": "cr-141-jabmink",
       "name": "Jabmink",
       "types": [
         "Fighting",
@@ -9504,13 +9503,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-188-pummelkin",
+        "speciesId": "cr-142-pummelkin",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-187-jabmink"
     },
     {
-      "speciesId": "cr-188-pummelkin",
-      "number": 142,
+      "speciesId": "cr-142-pummelkin",
       "name": "Pummelkin",
       "types": [
         "Fighting"
@@ -9572,11 +9571,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-187-jabmink"
+      "evolvesFrom": "cr-141-jabmink",
+      "legacySpeciesId": "cr-188-pummelkin"
     },
     {
-      "speciesId": "cr-190-boxibun",
-      "number": 143,
+      "speciesId": "cr-143-boxibun",
       "name": "Boxibun",
       "types": [
         "Fighting"
@@ -9637,11 +9636,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-190-boxibun"
     },
     {
-      "speciesId": "cr-068-gemhorn",
-      "number": 144,
+      "speciesId": "cr-144-gemhorn",
       "name": "Gemhorn",
       "types": [
         "Rock",
@@ -9703,11 +9702,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-068-gemhorn"
     },
     {
-      "speciesId": "cr-084-ohmlet",
-      "number": 145,
+      "speciesId": "cr-145-ohmlet",
       "name": "Ohmlet",
       "types": [
         "Electric"
@@ -9768,11 +9767,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-084-ohmlet"
     },
     {
-      "speciesId": "cr-093-flurryfin",
-      "number": 146,
+      "speciesId": "cr-146-flurryfin",
       "name": "Flurryfin",
       "types": [
         "Ice",
@@ -9834,11 +9833,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-093-flurryfin"
     },
     {
-      "speciesId": "cr-109-clouduck",
-      "number": 147,
+      "speciesId": "cr-147-clouduck",
       "name": "Clouduck",
       "types": [
         "Flying",
@@ -9900,11 +9899,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-109-clouduck"
     },
     {
-      "speciesId": "cr-048-sootsprite",
-      "number": 148,
+      "speciesId": "cr-148-sootsprite",
       "name": "Sootsprite",
       "types": [
         "Fire",
@@ -9966,11 +9965,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-048-sootsprite"
     },
     {
-      "speciesId": "cr-064-rubblit",
-      "number": 149,
+      "speciesId": "cr-149-rubblit",
       "name": "Rubblit",
       "types": [
         "Ground",
@@ -10032,11 +10031,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
+      "legacySpeciesId": "cr-064-rubblit"
     },
     {
-      "speciesId": "cr-080-buzzmink",
-      "number": 150,
+      "speciesId": "cr-150-buzzmink",
       "name": "Buzzmink",
       "types": [
         "Electric"
@@ -10097,11 +10096,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-080-buzzmink"
     },
     {
-      "speciesId": "cr-128-midnibug",
-      "number": 151,
+      "speciesId": "cr-151-midnibug",
       "name": "Midnibug",
       "types": [
         "Shadow"
@@ -10162,11 +10161,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-128-midnibug"
     },
     {
-      "speciesId": "cr-192-roundpaw",
-      "number": 152,
+      "speciesId": "cr-152-roundpaw",
       "name": "Roundpaw",
       "types": [
         "Normal",
@@ -10228,11 +10227,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
+      "legacySpeciesId": "cr-192-roundpaw"
     },
     {
-      "speciesId": "cr-200-feralune",
-      "number": 153,
+      "speciesId": "cr-153-feralune",
       "name": "Feralune",
       "types": [
         "Beast",
@@ -10294,11 +10293,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-200-feralune"
     },
     {
-      "speciesId": "cr-006-thistlehop",
-      "number": 154,
+      "speciesId": "cr-154-thistlehop",
       "name": "Thistlehop",
       "types": [
         "Grass",
@@ -10362,14 +10361,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-007-barkling",
+        "speciesId": "cr-155-barkling",
         "minLevel": 23,
         "stone": "Grass Stone"
-      }
+      },
+      "legacySpeciesId": "cr-006-thistlehop"
     },
     {
-      "speciesId": "cr-007-barkling",
-      "number": 155,
+      "speciesId": "cr-155-barkling",
       "name": "Barkling",
       "types": [
         "Grass"
@@ -10431,11 +10430,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-006-thistlehop"
+      "evolvesFrom": "cr-154-thistlehop",
+      "legacySpeciesId": "cr-007-barkling"
     },
     {
-      "speciesId": "cr-030-tidewhisk",
-      "number": 156,
+      "speciesId": "cr-156-tidewhisk",
       "name": "Tidewhisk",
       "types": [
         "Water"
@@ -10496,11 +10495,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-030-tidewhisk"
     },
     {
-      "speciesId": "cr-031-splashowl",
-      "number": 157,
+      "speciesId": "cr-157-splashowl",
       "name": "Splashowl",
       "types": [
         "Water",
@@ -10562,11 +10561,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-031-splashowl"
     },
     {
-      "speciesId": "cr-033-dewfin",
-      "number": 158,
+      "speciesId": "cr-158-dewfin",
       "name": "Dewfin",
       "types": [
         "Water"
@@ -10627,11 +10626,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-033-dewfin"
     },
     {
-      "speciesId": "cr-034-brookettle",
-      "number": 159,
+      "speciesId": "cr-159-brookettle",
       "name": "Brookettle",
       "types": [
         "Water"
@@ -10692,11 +10691,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-034-brookettle"
     },
     {
-      "speciesId": "cr-043-ashwhirl",
-      "number": 160,
+      "speciesId": "cr-160-ashwhirl",
       "name": "Ashwhirl",
       "types": [
         "Fire"
@@ -10757,11 +10756,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-043-ashwhirl"
     },
     {
-      "speciesId": "cr-044-torchmink",
-      "number": 161,
+      "speciesId": "cr-161-torchmink",
       "name": "Torchmink",
       "types": [
         "Fire",
@@ -10823,11 +10822,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-044-torchmink"
     },
     {
-      "speciesId": "cr-046-pyrelark",
-      "number": 162,
+      "speciesId": "cr-162-pyrelark",
       "name": "Pyrelark",
       "types": [
         "Fire"
@@ -10888,11 +10887,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-046-pyrelark"
     },
     {
-      "speciesId": "cr-076-thundrill",
-      "number": 163,
+      "speciesId": "cr-163-thundrill",
       "name": "Thundrill",
       "types": [
         "Electric",
@@ -10954,11 +10953,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-076-thundrill"
     },
     {
-      "speciesId": "cr-078-circuitip",
-      "number": 164,
+      "speciesId": "cr-164-circuitip",
       "name": "Circuitip",
       "types": [
         "Steel",
@@ -11020,11 +11019,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-078-circuitip"
     },
     {
-      "speciesId": "cr-155-fumefin",
-      "number": 165,
+      "speciesId": "cr-165-fumefin",
       "name": "Fumefin",
       "types": [
         "Venom",
@@ -11088,17 +11087,17 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-156-acidillo",
+        "speciesId": "cr-166-acidillo",
         "minLevel": 23,
         "condition": {
           "kind": "badge",
           "minimum": 1
         }
-      }
+      },
+      "legacySpeciesId": "cr-155-fumefin"
     },
     {
-      "speciesId": "cr-156-acidillo",
-      "number": 166,
+      "speciesId": "cr-166-acidillo",
       "name": "Acidillo",
       "types": [
         "Venom",
@@ -11161,11 +11160,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-155-fumefin"
+      "evolvesFrom": "cr-165-fumefin",
+      "legacySpeciesId": "cr-156-acidillo"
     },
     {
-      "speciesId": "cr-178-clairling",
-      "number": 167,
+      "speciesId": "cr-167-clairling",
       "name": "Clairling",
       "types": [
         "Psychic",
@@ -11227,11 +11226,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-178-clairling"
     },
     {
-      "speciesId": "cr-179-astralkip",
-      "number": 168,
+      "speciesId": "cr-168-astralkip",
       "name": "Astralkip",
       "types": [
         "Psychic",
@@ -11293,11 +11292,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-179-astralkip"
     },
     {
-      "speciesId": "cr-181-mesmeric",
-      "number": 169,
+      "speciesId": "cr-169-mesmeric",
       "name": "Mesmeric",
       "types": [
         "Psychic"
@@ -11358,11 +11357,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-181-mesmeric"
     },
     {
-      "speciesId": "cr-191-fistip",
-      "number": 170,
+      "speciesId": "cr-170-fistip",
       "name": "Fistip",
       "types": [
         "Fighting",
@@ -11424,11 +11423,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-191-fistip"
     },
     {
-      "speciesId": "cr-074-staticat",
-      "number": 171,
+      "speciesId": "cr-171-staticat",
       "name": "Staticat",
       "types": [
         "Electric",
@@ -11492,14 +11491,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesTo": {
-        "speciesId": "cr-075-flashbun",
+        "speciesId": "cr-172-flashbun",
         "minLevel": 23,
         "stone": "Normal Stone"
-      }
+      },
+      "legacySpeciesId": "cr-074-staticat"
     },
     {
-      "speciesId": "cr-075-flashbun",
-      "number": 172,
+      "speciesId": "cr-172-flashbun",
       "name": "Flashbun",
       "types": [
         "Normal",
@@ -11562,11 +11561,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-074-staticat"
+      "evolvesFrom": "cr-171-staticat",
+      "legacySpeciesId": "cr-075-flashbun"
     },
     {
-      "speciesId": "cr-157-stinglet",
-      "number": 173,
+      "speciesId": "cr-173-stinglet",
       "name": "Stinglet",
       "types": [
         "Venom",
@@ -11628,11 +11627,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-157-stinglet"
     },
     {
-      "speciesId": "cr-180-psychelet",
-      "number": 174,
+      "speciesId": "cr-174-psychelet",
       "name": "Psychelet",
       "types": [
         "Psychic",
@@ -11694,11 +11693,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-180-psychelet"
     },
     {
-      "speciesId": "cr-032-marshling",
-      "number": 175,
+      "speciesId": "cr-175-marshling",
       "name": "Marshling",
       "types": [
         "Water",
@@ -11760,11 +11759,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
+      "legacySpeciesId": "cr-032-marshling"
     },
     {
-      "speciesId": "cr-144-spooklet",
-      "number": 176,
+      "speciesId": "cr-176-spooklet",
       "name": "Spooklet",
       "types": [
         "Ghost"
@@ -11825,11 +11824,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-144-spooklet"
     },
     {
-      "speciesId": "cr-035-cindlet",
-      "number": 177,
+      "speciesId": "cr-177-cindlet",
       "name": "Cindlet",
       "types": [
         "Fire",
@@ -11893,13 +11892,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-036-flarefox",
+        "speciesId": "cr-178-flarefox",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-035-cindlet"
     },
     {
-      "speciesId": "cr-036-flarefox",
-      "number": 178,
+      "speciesId": "cr-178-flarefox",
       "name": "Flarefox",
       "types": [
         "Fire",
@@ -11962,19 +11961,19 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-035-cindlet",
+      "evolvesFrom": "cr-177-cindlet",
       "evolvesTo": {
-        "speciesId": "cr-037-coalbit",
+        "speciesId": "cr-179-coalbit",
         "minLevel": 28,
         "condition": {
           "kind": "area",
           "areaId": "route3"
         }
-      }
+      },
+      "legacySpeciesId": "cr-036-flarefox"
     },
     {
-      "speciesId": "cr-037-coalbit",
-      "number": 179,
+      "speciesId": "cr-179-coalbit",
       "name": "Coalbit",
       "types": [
         "Fire"
@@ -12036,11 +12035,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-036-flarefox"
+      "evolvesFrom": "cr-178-flarefox",
+      "legacySpeciesId": "cr-037-coalbit"
     },
     {
-      "speciesId": "cr-038-emberling",
-      "number": 180,
+      "speciesId": "cr-180-emberling",
       "name": "Emberling",
       "types": [
         "Fire"
@@ -12103,14 +12102,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-039-glowpup",
+        "speciesId": "cr-181-glowpup",
         "minLevel": 18,
         "stone": "Fire Stone"
-      }
+      },
+      "legacySpeciesId": "cr-038-emberling"
     },
     {
-      "speciesId": "cr-039-glowpup",
-      "number": 181,
+      "speciesId": "cr-181-glowpup",
       "name": "Glowpup",
       "types": [
         "Normal",
@@ -12173,11 +12172,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-038-emberling"
+      "evolvesFrom": "cr-180-emberling",
+      "legacySpeciesId": "cr-039-glowpup"
     },
     {
-      "speciesId": "cr-059-quartzling",
-      "number": 182,
+      "speciesId": "cr-182-quartzling",
       "name": "Quartzling",
       "types": [
         "Rock",
@@ -12239,11 +12238,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-059-quartzling"
     },
     {
-      "speciesId": "cr-066-rockoon",
-      "number": 183,
+      "speciesId": "cr-183-rockoon",
       "name": "Rockoon",
       "types": [
         "Ground",
@@ -12305,11 +12304,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
+      "legacySpeciesId": "cr-066-rockoon"
     },
     {
-      "speciesId": "cr-069-zappet",
-      "number": 184,
+      "speciesId": "cr-184-zappet",
       "name": "Zappet",
       "types": [
         "Electric",
@@ -12373,13 +12372,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-070-sparkleap",
+        "speciesId": "cr-185-sparkleap",
         "minLevel": 12
-      }
+      },
+      "legacySpeciesId": "cr-069-zappet"
     },
     {
-      "speciesId": "cr-070-sparkleap",
-      "number": 185,
+      "speciesId": "cr-185-sparkleap",
       "name": "Sparkleap",
       "types": [
         "Electric",
@@ -12442,18 +12441,18 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-069-zappet",
+      "evolvesFrom": "cr-184-zappet",
       "evolvesTo": {
-        "speciesId": "cr-071-voltrit",
+        "speciesId": "cr-186-voltrit",
         "minLevel": 28,
         "condition": {
           "kind": "night"
         }
-      }
+      },
+      "legacySpeciesId": "cr-070-sparkleap"
     },
     {
-      "speciesId": "cr-071-voltrit",
-      "number": 186,
+      "speciesId": "cr-186-voltrit",
       "name": "Voltrit",
       "types": [
         "Electric"
@@ -12515,11 +12514,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-070-sparkleap"
+      "evolvesFrom": "cr-185-sparkleap",
+      "legacySpeciesId": "cr-071-voltrit"
     },
     {
-      "speciesId": "cr-072-coilfin",
-      "number": 187,
+      "speciesId": "cr-187-coilfin",
       "name": "Coilfin",
       "types": [
         "Electric",
@@ -12583,14 +12582,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesTo": {
-        "speciesId": "cr-073-arcquill",
+        "speciesId": "cr-188-arcquill",
         "minLevel": 18,
         "stone": "Electric Stone"
-      }
+      },
+      "legacySpeciesId": "cr-072-coilfin"
     },
     {
-      "speciesId": "cr-073-arcquill",
-      "number": 188,
+      "speciesId": "cr-188-arcquill",
       "name": "Arcquill",
       "types": [
         "Electric",
@@ -12653,11 +12652,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "evolvesFrom": "cr-072-coilfin"
+      "evolvesFrom": "cr-187-coilfin",
+      "legacySpeciesId": "cr-073-arcquill"
     },
     {
-      "speciesId": "cr-097-powderowl",
-      "number": 189,
+      "speciesId": "cr-189-powderowl",
       "name": "Powderowl",
       "types": [
         "Ice"
@@ -12718,11 +12717,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-097-powderowl"
     },
     {
-      "speciesId": "cr-098-hailhorn",
-      "number": 190,
+      "speciesId": "cr-190-hailhorn",
       "name": "Hailhorn",
       "types": [
         "Ice",
@@ -12784,11 +12783,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable)."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
+      "legacySpeciesId": "cr-098-hailhorn"
     },
     {
-      "speciesId": "cr-099-polarip",
-      "number": 191,
+      "speciesId": "cr-191-polarip",
       "name": "Polarip",
       "types": [
         "Ice",
@@ -12850,11 +12849,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-099-polarip"
     },
     {
-      "speciesId": "cr-101-geliduck",
-      "number": 192,
+      "speciesId": "cr-192-geliduck",
       "name": "Geliduck",
       "types": [
         "Ice"
@@ -12915,11 +12914,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-101-geliduck"
     },
     {
-      "speciesId": "cr-121-umbrapip",
-      "number": 193,
+      "speciesId": "cr-193-umbrapip",
       "name": "Umbrapip",
       "types": [
         "Shadow"
@@ -12982,14 +12981,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-122-noctibun",
+        "speciesId": "cr-194-noctibun",
         "minLevel": 18,
         "stone": "Shadow Stone"
-      }
+      },
+      "legacySpeciesId": "cr-121-umbrapip"
     },
     {
-      "speciesId": "cr-122-noctibun",
-      "number": 194,
+      "speciesId": "cr-194-noctibun",
       "name": "Noctibun",
       "types": [
         "Shadow",
@@ -13052,11 +13051,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-121-umbrapip"
+      "evolvesFrom": "cr-193-umbrapip",
+      "legacySpeciesId": "cr-122-noctibun"
     },
     {
-      "speciesId": "cr-123-veilwhisk",
-      "number": 195,
+      "speciesId": "cr-195-veilwhisk",
       "name": "Veilwhisk",
       "types": [
         "Shadow",
@@ -13120,13 +13119,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-124-darklilt",
+        "speciesId": "cr-196-darklilt",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-123-veilwhisk"
     },
     {
-      "speciesId": "cr-124-darklilt",
-      "number": 196,
+      "speciesId": "cr-196-darklilt",
       "name": "Darklilt",
       "types": [
         "Shadow"
@@ -13188,11 +13187,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-123-veilwhisk"
+      "evolvesFrom": "cr-195-veilwhisk",
+      "legacySpeciesId": "cr-124-darklilt"
     },
     {
-      "speciesId": "cr-139-spectrill",
-      "number": 197,
+      "speciesId": "cr-197-spectrill",
       "name": "Spectrill",
       "types": [
         "Ghost",
@@ -13256,13 +13255,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-140-glimmergeist",
+        "speciesId": "cr-198-glimmergeist",
         "minLevel": 23
-      }
+      },
+      "legacySpeciesId": "cr-139-spectrill"
     },
     {
-      "speciesId": "cr-140-glimmergeist",
-      "number": 198,
+      "speciesId": "cr-198-glimmergeist",
       "name": "Glimmergeist",
       "types": [
         "Ghost"
@@ -13324,11 +13323,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-139-spectrill"
+      "evolvesFrom": "cr-197-spectrill",
+      "legacySpeciesId": "cr-140-glimmergeist"
     },
     {
-      "speciesId": "cr-150-mirelet",
-      "number": 199,
+      "speciesId": "cr-199-mirelet",
       "name": "Mirelet",
       "types": [
         "Venom",
@@ -13392,14 +13391,14 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-151-toxipup",
+        "speciesId": "cr-200-toxipup",
         "minLevel": 12,
         "stone": "Venom Stone"
-      }
+      },
+      "legacySpeciesId": "cr-150-mirelet"
     },
     {
-      "speciesId": "cr-151-toxipup",
-      "number": 200,
+      "speciesId": "cr-200-toxipup",
       "name": "Toxipup",
       "types": [
         "Venom",
@@ -13462,19 +13461,19 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "evolvesFrom": "cr-150-mirelet",
+      "evolvesFrom": "cr-199-mirelet",
       "evolvesTo": {
-        "speciesId": "cr-152-sporefang",
+        "speciesId": "cr-201-sporefang",
         "minLevel": 28,
         "condition": {
           "kind": "badge",
           "minimum": 1
         }
-      }
+      },
+      "legacySpeciesId": "cr-151-toxipup"
     },
     {
-      "speciesId": "cr-152-sporefang",
-      "number": 201,
+      "speciesId": "cr-201-sporefang",
       "name": "Sporefang",
       "types": [
         "Venom"
@@ -13536,11 +13535,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-151-toxipup"
+      "evolvesFrom": "cr-200-toxipup",
+      "legacySpeciesId": "cr-152-sporefang"
     },
     {
-      "speciesId": "cr-153-vialisk",
-      "number": 202,
+      "speciesId": "cr-202-vialisk",
       "name": "Vialisk",
       "types": [
         "Venom"
@@ -13603,13 +13602,13 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesTo": {
-        "speciesId": "cr-154-noxmink",
+        "speciesId": "cr-203-noxmink",
         "minLevel": 18
-      }
+      },
+      "legacySpeciesId": "cr-153-vialisk"
     },
     {
-      "speciesId": "cr-154-noxmink",
-      "number": 203,
+      "speciesId": "cr-203-noxmink",
       "name": "Noxmink",
       "types": [
         "Venom"
@@ -13671,11 +13670,11 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-153-vialisk"
+      "evolvesFrom": "cr-202-vialisk",
+      "legacySpeciesId": "cr-154-noxmink"
     },
     {
-      "speciesId": "cr-100-shiverkin",
-      "number": 204,
+      "speciesId": "cr-204-shiverkin",
       "name": "Shiverkin",
       "types": [
         "Ice",
@@ -13737,11 +13736,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-100-shiverkin"
     },
     {
-      "speciesId": "cr-141-pallowl",
-      "number": 205,
+      "speciesId": "cr-205-pallowl",
       "name": "Pallowl",
       "types": [
         "Ghost",
@@ -13803,11 +13802,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-141-pallowl"
     },
     {
-      "speciesId": "cr-189-kickquill",
-      "number": 206,
+      "speciesId": "cr-206-kickquill",
       "name": "Kickquill",
       "types": [
         "Fighting",
@@ -13869,11 +13868,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-189-kickquill"
     },
     {
-      "speciesId": "cr-196-comboon",
-      "number": 207,
+      "speciesId": "cr-207-comboon",
       "name": "Comboon",
       "types": [
         "Fighting",
@@ -13935,11 +13934,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-196-comboon"
     },
     {
-      "speciesId": "cr-096-blizzlet",
-      "number": 208,
+      "speciesId": "cr-208-blizzlet",
       "name": "Blizzlet",
       "types": [
         "Ice"
@@ -14000,11 +13999,11 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-096-blizzlet"
     },
     {
-      "speciesId": "cr-198-drakoryn",
-      "number": 209,
+      "speciesId": "cr-209-drakoryn",
       "name": "Drakoryn",
       "types": [
         "Dragon",
@@ -14066,7 +14065,8 @@
         "status": "awaiting-upload",
         "spritePath": null
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves."
+      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "legacySpeciesId": "cr-198-drakoryn"
     }
   ],
   "encounterBalanceVersion": 2
