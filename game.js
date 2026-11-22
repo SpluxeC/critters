@@ -463,6 +463,9 @@ function critter(type,level=5){
 }
 function migrate(){
  if(!s)return;
+ // A returning player may click Continue after the catalogs already loaded.
+ // Migrate before normalizing party metadata in either loading order.
+ if(speciesRegistry.size)migrateSpeciesIds();
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
