@@ -127,3 +127,11 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - All existing `T.tree` tiles now display one of the three leafy tree variants, selected deterministically from tile coordinates. Tree sprites have layered branches, textured bark and foliage and subtle wind-driven sway.
 - Dense forest and bamboo areas use appropriately smaller tree art; more open regions display larger canopies. The collision footprint, tree locations, walking routes, terrain, NPCs, quests, and existing saves are unchanged.
 - The original hand-drawn tree shapes remain available if the new assets have not loaded or fail to load. JavaScript syntax was checked, but live mobile-browser visual testing is still recommended.
+
+## v52 — Classic-style battle screen
+- The battle presentation now uses a scenic arena with layered hills, sky, clouds and foliage, side-by-side opposing and friendly Critters, and restyled type and health panels. Existing Critter placeholder icons remain until official artwork is added.
+- At the beginning of each player action, players choose **Battle**, **Index**, or **Escape**. Escape uses exactly the existing Run action and is disabled in trainer battles.
+- Battle reveals colorful attack cards arranged around the active Critter, with PP, type and (in 2v2) target names. Guard and Focus stay available as tactical battle actions; existing turn order, damage, move availability and 2v2 targeting are preserved.
+- Index opens **Switch Critter**, **Use Item** (Potion/Revive), and (during wild battles) **Critter Index Capture Beam**. Back navigation returns to the preceding menu without consuming turns.
+- UI changes are responsive for portrait and landscape phones and support reduced-motion preferences. The party remains capped at eight, and stored Critters remain accessible only at Critter Centers.
+- Tests now include classic battle menu states, move buttons, Index controls and trainer Escape restrictions. This release has passed JavaScript parsing and isolated rendering/menu tests; physical device visual tests are still pending.
