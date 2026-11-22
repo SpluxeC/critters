@@ -815,13 +815,50 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
  #shade:has(.combatTop) .classicSubmenu{width:55vw}
 }
 
+
+/* v59: compact move controls positioned around the ally, not over the opponent. */
+#shade:has(.combatTop) .battleMovesAround .battleMove{
+ box-sizing:border-box;width:clamp(96px,17vw,158px);min-height:42px;max-height:54px;
+ padding:5px 7px;gap:1px;font-size:clamp(10px,1.4vw,13px);line-height:1.1;z-index:12;
+}
+#shade:has(.combatTop) .battleMovesAround .battleMove .moveName{
+ font-size:inherit;line-height:1.12;overflow-wrap:anywhere;
+}
+#shade:has(.combatTop) .battleMovesAround .battleMove .moveMeta{
+ font-size:clamp(8px,1.1vw,10px);line-height:1.1;
+}
+@media(max-width:520px) and (orientation:portrait){
+ #shade:has(.combatTop) .battleMovesAround .battleMove{
+  width:clamp(98px,30vw,132px)!important;min-height:40px!important;max-height:53px!important;
+  padding:4px 6px!important;font-size:clamp(10px,2.7vw,12px)!important;margin:0!important;
+ }
+ #shade:has(.combatTop) .battleMovesAround .battleMove .moveMeta{font-size:clamp(8px,2vw,9px)}
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+1){
+  left:3%!important;right:auto!important;top:36%!important;bottom:auto!important;
+ }
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+2){
+  left:auto!important;right:9%!important;top:69%!important;bottom:auto!important;
+ }
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n+3){
+  left:3%!important;right:auto!important;top:70%!important;bottom:auto!important;
+ }
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(4n){
+  left:auto!important;right:9%!important;top:81%!important;bottom:auto!important;
+ }
+ #shade:has(.combatTop) .battleMovesAround .battleMove:nth-child(n+5){
+  position:relative!important;left:auto!important;right:auto!important;
+  top:auto!important;bottom:auto!important;width:30%!important;
+  min-width:90px;display:inline-flex;vertical-align:top;margin:2px!important;
+ }
+}
+
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
 <section id="game" class="screen" aria-label="Critters game">
   <div class="frame" id="gameFrame">
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
-    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v58</small></div><button class="btn" id="save" type="button">Save</button></div>
+    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v59</small></div><button class="btn" id="save" type="button">Save</button></div>
     <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
     <div class="mobile">
       <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
@@ -830,4 +867,4 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=58-no-capture-tip-20261122" defer></script></body></html>
+</main><script src="game.js?v=59-compact-move-buttons-20261122" defer></script></body></html>
