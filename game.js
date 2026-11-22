@@ -440,9 +440,10 @@ async function loadCritterMoveData(){
 
 function critter(type,level=5){
  const spec=speciesRegistry.get(type);
- const primary=spec?.types?.[0]||type;
+ const starterType=Object.entries(STARTER_SPECIES_IDS).find(([,id])=>id===type)?.[0];
+ const primary=spec?.types?.[0]||starterType||type;
  const hp=spec?.baseStats?.hp?Math.max(1,spec.baseStats.hp+(level-1)*4):20+level*4;
- const p={type:primary,types:spec?.types||[primary],speciesId:spec?spec.speciesId:null,name:spec?.name||primary,baseStats:spec?.baseStats||null,level,hp,maxHp:hp,xp:0,status:'',moves:[],movePP:{}};
+ const p={type:primary,types:spec?.types||[primary],speciesId:spec?.speciesId||(starterType?type:null),name:spec?.name||(starterType?starterType+' Starter':primary),baseStats:spec?.baseStats||null,level,hp,maxHp:hp,xp:0,status:'',moves:[],movePP:{}};
  return normalizeMoves(refreshSpeciesMetadata(p));
 }
 function migrate(){
