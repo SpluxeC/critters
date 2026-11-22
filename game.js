@@ -1585,6 +1585,15 @@ function indexClock(){
   +'<button type="button" class="btn watchMinor" id="watchViewTab">'+(i<8?'View party details':'View modules')+'</button>'
   +'</div></div>';
 }
+function battleIndexActive(){return !!(battle&&battle.phase==='choose'&&battle.indexOpen)}
+function openBattleIndex(){
+ if(!battle||battle.phase!=='choose')return;
+ battle.indexOpen=true;indexTab='party';indexSelection=0;renderIndex();
+}
+function returnFromBattleIndex(){
+ if(!battle||!battle.indexOpen)return;
+ battle.indexOpen=false;battle.uiMenu='root';renderBattle();
+}
 function indexParty(){
  const cards=Array.from({length:8},(_,i)=>{
   const p=s.party[i];
@@ -1596,11 +1605,12 @@ function indexParty(){
     +'<div class="watchPartyMeta">XP '+Math.floor(p.xp||0)+' / '+experienceToNextLevel(p)+' to Lv '+(p.level+1)+'</div>'
     +'<div class="watchMeter"><div style="width:'+Math.min(100,Math.max(0,Math.round(100*(p.xp||0)/experienceToNextLevel(p))))+'%"></div></div>'
     +'<div class="watchPartyMeta">'+(nextLevelMove(p)?'Next move: '+escapeHtml(getMove(p,nextLevelMove(p).moveId).name)+' at Lv '+nextLevelMove(p).level:'No further level-up moves assigned')+'</div>'
-   +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
+   +(battleIndexActive()?'<div class="watchPartyMeta">'+(battle.allySlots.includes(i)?'Currently battling':p.hp>0?'Available to switch':'Fainted')+'</div>'+(p.hp>0&&!battle.allySlots.includes(i)&&!battle.pending.some(q=>q.kind==='switch'&&q.target===i)?'<button type="button" class="btn watchBattleAction" data-index-battle-switch="'+i+'">Switch into battle</button>':''):'')
+    +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
    +partyEvolutionControls(p,i)+'</div>';
  }).join('');
- return evolutionNotification()+'<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
+ return (battleIndexActive()?'':evolutionNotification())+'<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
 }
 function indexItems(){
@@ -1608,7 +1618,11 @@ function indexItems(){
  const list=items.length?items.map(([k,v])=>'<div class="watchRow"><span>▣ '+escapeHtml(k)+'</span><strong>×'+v+'</strong></div>').join(''):'<div class="watchEmpty">Your bag is empty.</div>';
  const modules=['Power Coil','Guard Plate','Weakening Field'];
  const owned=modules.map(m=>{const count=s.modules.filter(x=>x===m).length;return count?'<div class="watchRow"><span>✧ '+escapeHtml(m)+'</span><strong>×'+count+'</strong></div>':''}).join('');
- return '<div class="watchSectionTitle">Field inventory <small>View only</small></div>'+list
+ const current=battleIndexActive()?battle.allySlots[battle.acting]:-1;
+ const battleTools=battleIndexActive()?'<div class="watchSectionTitle">Battle supplies</div><div class="battleBagActions">'
+   +'<button type="button" class="btn" id="watchBattlePotion" '+(!itemQty('Potion')?'disabled':'')+'>Use Potion on '+escapeHtml(s.party[current]?.name||s.party[current]?.type||'active Critter')+' ('+itemQty('Potion')+')</button>'
+   +'<button type="button" class="btn" id="watchBattleRevive" '+(!itemQty('Revive')||!s.party.some(p=>p.hp===0)?'disabled':'')+'>Use Revive ('+itemQty('Revive')+')</button></div>':'';
+ return battleTools+'<div class="watchSectionTitle">Field inventory <small>View only</small></div>'+list
   +'<div class="watchSectionTitle">Available modules</div>'+(owned||'<div class="watchEmpty">No uninstalled modules owned.</div>')
   +'<div class="watchReadOnly">Items are usable during battles; modules are installed at Critter Centers.</div>';
 }
@@ -1842,15 +1856,18 @@ function indexTools(){
   +'<div class="watchReadOnly">Your watch is read-only away from a Critter Center. Modules are automatic after installation.</div>';
 }
 function renderIndex(){
- if(!s||screen!=='game'||battle)return;
+ if(!s||screen!=='game'||(battle&&!battleIndexActive()))return;
+ const battleViewing=battleIndexActive();
  const tabs=INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+label+'</button>').join('');
  let content=indexTab==='clock'?indexClock():indexTab==='party'?indexParty():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTab==='critters'?indexCritters():indexTools();
- open('Critter Index','<div class="watchShell"><div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
+ open('Critter Index','<div class="watchShell '+(battleViewing?'battleIndexShell':'')+'"><div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
   +'<div class="watchStats"><span>◇ '+s.money+' credits</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
   +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>'
   +'<div class="watchScreen" role="region" aria-label="Critter Index '+escapeHtml(indexTab)+' screen">'+content+'</div>'
-  +'<div class="watchFooter"><button type="button" class="btn" id="mSave">Save Adventure</button>'
-  +'<button type="button" class="btn" id="mTitle">Return to Title</button></div></div>');
+  +'<div class="watchFooter">'+(battleViewing?
+    '<button type="button" class="btn primary" id="watchReturnBattle">Return to Battle</button>'
+    +(battle.kind==='wild'?'<button type="button" class="btn" id="watchCaptureBattle">⌚ Capture Beam · '+Math.round(captureChance(battle.enemies[0])*100)+'%</button>':''):
+    '<button type="button" class="btn" id="mSave">Save Adventure</button><button type="button" class="btn" id="mTitle">Return to Title</button>')+'</div></div>');
  document.querySelectorAll('[data-watch-tab]').forEach(b=>b.onclick=()=>{
   if(!INDEX_TABS.some(([key])=>key===b.dataset.watchTab))return;
   indexTab=b.dataset.watchTab;renderIndex();
@@ -1860,6 +1877,7 @@ function renderIndex(){
   moveBookType=b.dataset.moveType;renderIndex();
  });
  document.querySelectorAll('[data-evolve-party]').forEach(b=>b.onclick=()=>{
+  if(battleViewing)return;
   const i=Number(b.dataset.evolveParty),p=s.party[i];if(!p||!evolutionReady(p,true))return;
   const result=tryEvolveChain(p,2,true);if(!result.length)return;
   renderIndex();save();
@@ -1889,8 +1907,27 @@ function renderIndex(){
  });
  const view=$('watchViewTab');
  if(view)view.onclick=()=>{indexTab=indexSelection<8?'party':'tools';renderIndex()};
- $('mSave').onclick=()=>{save();close()};
- $('mTitle').onclick=()=>{save();close();show('title')};
+ if(battleViewing){
+  $('watchReturnBattle').onclick=returnFromBattleIndex;
+  document.querySelectorAll('[data-index-battle-switch]').forEach(el=>el.onclick=()=>{
+   const target=Number(el.dataset.indexBattleSwitch);
+   if(!Number.isInteger(target))return;
+   battle.indexOpen=false;queueBattleAction({kind:'switch',target});
+  });
+  const potion=$('watchBattlePotion');if(potion)potion.onclick=()=>{
+   if(!itemQty('Potion'))return;
+   const actor=battle.allySlots[battle.acting];
+   battle.indexOpen=false;queueBattleAction({kind:'potion',target:actor});
+  };
+  const revive=$('watchBattleRevive');if(revive)revive.onclick=selectRevive;
+  const capture=$('watchCaptureBattle');if(capture)capture.onclick=()=>{
+   if(battle.kind!=='wild')return;
+   battle.indexOpen=false;queueBattleAction({kind:'capture'});
+  };
+ }else{
+  $('mSave').onclick=()=>{save();close()};
+  $('mTitle').onclick=()=>{save();close();show('title')};
+ }
 }
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -2177,7 +2214,7 @@ function renderBattle(message){
  if(battle.phase!=='choose')return;
  const menuTo=(next)=>{battle.uiMenu=next;renderBattle()};
  if($('menuBattle'))$('menuBattle').onclick=()=>menuTo('battle');
- if($('menuIndex'))$('menuIndex').onclick=()=>menuTo('index');
+ if($('menuIndex'))$('menuIndex').onclick=openBattleIndex;
  if($('menuEscape'))$('menuEscape').onclick=()=>{if(battle.kind==='wild')queueBattleAction({kind:'run'})};
  if($('battleBack'))$('battleBack').onclick=()=>menuTo(mode==='items'?'index':'root');
  document.querySelectorAll('[data-use-move]').forEach(el=>el.onclick=()=>{
@@ -2213,6 +2250,7 @@ function queueBattleAction(action){
   }
   if(action.kind==='revive'&&(!Number.isInteger(action.target)||s.party[action.target]?.hp!==0))return;
   battle.pending.push({...action,actor});
+ battle.indexOpen=false;
  battle.uiMenu='root';
  battle.acting++;
  if(battle.acting<activeAllies().length){
@@ -2232,10 +2270,12 @@ function selectPoke(){
 function selectRevive(){
  if(!battle||battle.phase!=='choose')return;
  const html=s.party.map((p,i)=>p.hp===0?'<button class="btn" data-revive="'+i+'">'+escapeHtml(p.type)+' · Lv '+p.level+'</button>':'').join('');
- open(battle.name,battleHeader()+battleMessage('Choose a fainted Critter to revive.')+'<div class="options classicSelector">'+html+'<button class="btn" id="cancelSelection">Back to Items</button></div>');
+ if(battle.indexOpen){
+  open('Critter Index · Revive','<div class="watchShell battleIndexShell"><div class="watchSectionTitle">Choose a fainted Critter</div><div class="options classicSelector">'+html+'</div><div class="watchFooter"><button class="btn primary" id="cancelSelection">Back to Index</button></div></div>');
+ }else open(battle.name,battleHeader()+battleMessage('Choose a fainted Critter to revive.')+'<div class="options classicSelector">'+html+'<button class="btn" id="cancelSelection">Back to Items</button></div>');
  $('close').hidden=true;
- document.querySelectorAll('[data-revive]').forEach(el=>el.onclick=()=>queueBattleAction({kind:'revive',target:Number(el.dataset.revive)}));
- $('cancelSelection').onclick=()=>{battle.uiMenu='items';renderBattle('Choose an action.')};
+ document.querySelectorAll('[data-revive]').forEach(el=>el.onclick=()=>{battle.indexOpen=false;queueBattleAction({kind:'revive',target:Number(el.dataset.revive)})});
+ $('cancelSelection').onclick=()=>{if(battle.indexOpen)renderIndex();else{battle.uiMenu='items';renderBattle('Choose an action.')}};
 }
 function defeatFoe(i,log){
  const enemy=battle.enemies[i];if(!enemy)return;
