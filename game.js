@@ -2097,9 +2097,17 @@ function battleVisual(){
   +'<span class="battleVfxBeam"></span><span class="battleVfxCore"></span><span class="battleVfxBurst"></span>'
   +'<span class="battleVfxLabel">'+escapeHtml(fx.name||'Attack')+'</span></div>';
 }
+// Eight approved, creature-free cinematic backgrounds, selected by saved area.
+const BATTLE_SCENE_ART={
+ village:'rice',route1:'rice',route2:'bamboo',forest:'hidden-forest',
+ route3:'foothills',cave:'cave',town:'town',garden:'town',
+ gym:'gym',lab:'laboratory'
+};
 function battleEnvironmentClass(){
  const env=battle?.environment||{area:'route1',terrain:'field',phase:'Day'};
- return 'arena-'+env.area+' terrain-'+env.terrain+' phase-'+env.phase.toLowerCase();
+ const art=BATTLE_SCENE_ART[env.area];
+ return 'arena-'+env.area+' terrain-'+env.terrain+' phase-'+env.phase.toLowerCase()
+  +(art?' scene-image scene-'+art:'');
 }
 function battleHeader(moveOverlay=''){
  const ally=battle.allySlots.map((i,slot)=>hpCard(s.party[i],'ally',battle.phase==='choose'&&slot===battle.acting)).join('');
