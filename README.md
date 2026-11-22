@@ -121,3 +121,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Added `.github/workflows/critters-tests.yml` to run these tests on future pushes and pull requests using Node 22.
 - To run locally: `node --test tests/smoke.test.mjs`.
 - Isolated runtime logic and data checks were performed through the connected repository tools. Full device/browser integration and GitHub Actions run results were not available for verification in this session.
+
+## v51 — Three cinematic tree variants
+- Added the three approved transparent tree designs as self-contained assets at `assets/trees/broadleaf.svg`, `assets/trees/tiered.svg`, and `assets/trees/round.svg`. They wrap compact PNG renditions so GitHub Pages can serve them without a build tool.
+- All existing `T.tree` tiles now display one of the three leafy tree variants, selected deterministically from tile coordinates. Tree sprites have layered branches, textured bark and foliage and subtle wind-driven sway.
+- Dense forest and bamboo areas use appropriately smaller tree art; more open regions display larger canopies. The collision footprint, tree locations, walking routes, terrain, NPCs, quests, and existing saves are unchanged.
+- The original hand-drawn tree shapes remain available if the new assets have not loaded or fail to load. JavaScript syntax was checked, but live mobile-browser visual testing is still recommended.
