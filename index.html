@@ -595,6 +595,65 @@ button,.joystick{user-select:none;-webkit-user-select:none;-webkit-touch-callout
 }
 #shade:has(.combatTop) .combatArena.arena-cave .combatFigure{filter:drop-shadow(0 5px 9px #d6f0f263)}
 
+
+/* v54 — The eight approved cinematic battle paintings. No Pokémon or discarded cave art. */
+/* Keep procedural scenery as a fallback in unillustrated home interiors only. */
+#shade:has(.combatTop) .combatArena.scene-image{
+ background-size:cover;
+ background-repeat:no-repeat;
+ background-position:center 54%;
+ background-color:#5c7867;
+}
+#shade:has(.combatTop) .combatArena.scene-image .battleScenery{display:none}
+#shade:has(.combatTop) .combatArena.scene-image.scene-rice{
+ background-image:url("assets/battle-scenes/rice-fields.svg"),linear-gradient(#9ebfd4,#7caf7a);
+ background-position:center 56%;
+ background-size:113% auto;
+}
+#shade:has(.combatTop) .combatArena.scene-image.scene-bamboo{
+ background-image:url("assets/battle-scenes/bamboo-forest.svg"),linear-gradient(#7eab8c,#4b7658);
+ background-position:center 51%;
+ background-size:112% auto;
+}
+#shade:has(.combatTop) .combatArena.scene-image.scene-hidden-forest{
+ background-image:url("assets/battle-scenes/hidden-forest.svg"),linear-gradient(#426b53,#263b2f);
+ background-position:center 55%;
+}
+#shade:has(.combatTop) .combatArena.scene-image.scene-foothills{
+ background-image:url("assets/battle-scenes/mountain-foothills.svg"),linear-gradient(#b3c6d4,#787e69);
+ background-position:center 54%;
+}
+#shade:has(.combatTop) .combatArena.scene-image.scene-cave{
+ /* Specifically the revised cave: natural rock, waterfall; no crystals/lantern posts. */
+ background-image:url("assets/battle-scenes/mountain-cave.svg"),linear-gradient(#6a7374,#252c32);
+ background-position:center 53%;
+}
+#shade:has(.combatTop) .combatArena.scene-image.scene-town{
+ background-image:url("assets/battle-scenes/town-garden.svg"),linear-gradient(#bfc6a5,#9d845f);
+ background-position:center 57%;
+}
+#shade:has(.combatTop) .combatArena.scene-image.scene-gym{
+ background-image:url("assets/battle-scenes/grass-gym.svg"),linear-gradient(#9bac8b,#5e7957);
+ background-position:center 56%;
+}
+#shade:has(.combatTop) .combatArena.scene-image.scene-laboratory{
+ background-image:url("assets/battle-scenes/research-lab.svg"),linear-gradient(#607d98,#263746);
+ background-position:center 51%;
+}
+/* Image scenes preserve the original time-of-day system and readable battle controls. */
+#shade:has(.combatTop) .combatArena.scene-image .combatFigure{
+ filter:drop-shadow(0 4px 4px rgba(7,28,22,.75));
+}
+#shade:has(.combatTop) .combatArena.scene-image .combatFigure small{
+ box-shadow:0 1px 6px #071b26a3;
+}
+@media(max-height:550px) and (orientation:landscape){
+ #shade:has(.combatTop) .combatArena.scene-image.scene-rice,
+ #shade:has(.combatTop) .combatArena.scene-image.scene-bamboo{
+  background-size:113% auto;
+ }
+}
+
 </style></head><body><main class="app">
 <section id="title" class="screen show"><div class="panel intro"><div style="font-size:55px;color:#e6c881">✦</div><h1>CRITTERS</h1><div class="muted">THE BEGINNING</div><p>Explore a Japanese-inspired countryside, meet Critters, and begin your adventure with the Critter Index.</p><button class="btn primary" id="new">New Adventure</button> <button class="btn" id="continue" hidden>Continue</button><p class="muted" style="font-size:12px">First playable prototype · Original game art</p></div></section>
 <section id="selection" class="screen"><div class="panel choose"><h2>Choose Your Adventurer</h2><p class="muted">Pick a character, then give them a name.</p><div class="characters"><button class="character selected" data-gender="male"><canvas class="portrait" width="110" height="136" id="malePreview"></canvas><b>Boy</b></button><button class="character" data-gender="female"><canvas class="portrait" width="110" height="136" id="femalePreview"></canvas><b>Girl</b></button></div><div class="name"><label for="playerName">Your name</label><input id="playerName" maxlength="16" placeholder="Enter a name" autocomplete="off"><div id="error" style="color:#f8bdaa"></div><button class="btn primary" id="begin">Begin Adventure</button></div></div></section>
