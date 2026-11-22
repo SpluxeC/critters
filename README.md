@@ -93,3 +93,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Added Normal Stone, Steel Stone, and Ground Stone to both existing Critter Shops for 220 credits each, bringing the current stone catalog to 15 types.
 - Staticat requires Normal Stone and Lv 23; Granipup requires Steel Stone, Lv 23 and the first badge; Pebblit requires Ground Stone and Lv 12. These are editable draft evolution assignments.
 - Existing evolution conditions remain cumulative: a stone never bypasses its minimum level, time, place, or badge requirements. All 200 species and existing inventory/save rules are preserved.
+
+## Phase 16 — Cinematic world animation (v47)
+- The rice paddies on Route 1 and in the starting village have layered, curved rice stalks with individual leaves and golden grain heads. Broad, traveling wind waves bend the plants smoothly over time; flooded paddy floors have subtle reflections and ripples.
+- Tall grass and wooded foliage respond to the same deterministic wind field; ponds and streams have moving water highlights. Forest and bamboo environments get restrained moving sunbeams and haze, while cave lighting has a cooler tint.
+- The improvements run entirely in the renderer. Map coordinates, collision, NPCs, interactions, encounters, saves, battles, evolution stones and the eight-Critter party maximum are unchanged. No new image assets are needed.
+- JavaScript syntax was checked; live in-browser visual/performance testing remains necessary, particularly on mobile devices.
