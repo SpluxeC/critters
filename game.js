@@ -402,6 +402,8 @@ function migrate(){
  s.worldMinutes=Number.isFinite(s.worldMinutes)?((s.worldMinutes%1440)+1440)%1440:8*60;
  s.worldDay=Number.isFinite(s.worldDay)&&s.worldDay>=1?Math.floor(s.worldDay):1;
  s.discoveries=s.discoveries&&typeof s.discoveries==='object'?s.discoveries:{};
+ s.sideQuests=s.sideQuests&&typeof s.sideQuests==='object'&&!Array.isArray(s.sideQuests)?s.sideQuests:{};
+ s.questCaptureCounts=s.questCaptureCounts&&typeof s.questCaptureCounts==='object'&&!Array.isArray(s.questCaptureCounts)?s.questCaptureCounts:{};
  s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'&&!Array.isArray(s.earlyJourney)?s.earlyJourney:{};
  if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
  if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
@@ -419,6 +421,69 @@ function borders(type=T.tree){for(let x=0;x<W;x++){put(x,0,type);put(x,H-1,type)
 function houses(list){list.forEach(([x,y,w=7,h=5])=>{rect(x,y,w,h,T.roof);rect(x,y+h,w,2,T.wall);put(x+Math.floor(w/2),y+h+1,T.door)})}
 function roads(){rect(1,12,32,3,T.path)}
 function nature(seed,area){for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(tiles[y][x]===T.grass){const n=(x*43+y*59+x*y*7+seed)%113;if(n<area)put(x,y,T.tall);else if(n===44||n===79)put(x,y,T.flower)}}
+// Phase 18: side quests are completely optional and never gate main-story routes.
+// Capture quests track captures AFTER acceptance. Landmark quests use existing finds.
+const SIDE_QUESTS=[
+ {id:'farmer-fieldwork',title:'Farmer’s Field Notes',giver:'Rice Farmer',area:'route1',
+  description:'Help document two wild Critters caught in the rice fields.',kind:'captures',captureArea:'route1',required:2,
+  reward:{credits:90,item:'Potion',quantity:1}},
+ {id:'bamboo-survey',title:'Bamboo Wildlife Survey',giver:'Town Naturalist',area:'town',
+  description:'Capture two wild Critters on Route 2 to help with a habitat survey.',kind:'captures',captureArea:'route2',required:2,
+  reward:{item:'Grass Stone',quantity:1}},
+ {id:'forest-shrine',title:'The Forgotten Shrine',giver:'Forest Guide',area:'forest',
+  description:'Find the glowing shrine hidden within the forest.',kind:'landmark',landmark:'exp-forest',
+  reward:{item:'Ghost Stone',quantity:1}},
+ {id:'garden-memorial',title:'Garden Memories',giver:'Garden Caretaker',area:'garden',
+  description:'Find the Garden Memorial and learn its story.',kind:'landmark',landmark:'exp-garden',
+  reward:{item:'Water Stone',quantity:1}}
+];
+function sideQuest(id){return SIDE_QUESTS.find(q=>q.id===id)||null}
+function sideQuestProgress(q){
+ const saved=s.sideQuests?.[q.id];if(!saved)return 0;
+ if(q.kind==='landmark')return s.discoveries?.[q.landmark]?1:0;
+ return Math.max(0,(s.questCaptureCounts?.[q.captureArea]||0)-(saved.baseline||0));
+}
+function sideQuestGoal(q){return q.kind==='landmark'?1:q.required}
+function sideQuestRewardLabel(q){
+ return [q.reward.credits?q.reward.credits+' credits':'',q.reward.item?q.reward.item+' ×'+(q.reward.quantity||1):''].filter(Boolean).join(' + ');
+}
+function talkSideQuest(id){
+ const q=sideQuest(id);if(!q)return;
+ const state=s.sideQuests?.[id],progress=Math.min(sideQuestGoal(q),sideQuestProgress(q));
+ const done=!!state&&state.status==='complete',ready=!!state&&state.status==='active'&&progress>=sideQuestGoal(q);
+ const message=done?'Thank you again! Your help made a difference.':
+  ready?'You did it! I have a reward for your work.':
+  state?'Keep exploring. You have made '+progress+' / '+sideQuestGoal(q)+' progress.':
+  'Would you like to help? This is optional, and your main journey will continue normally.';
+ open(q.giver+' · Side Quest','<h3>'+escapeHtml(q.title)+'</h3><p>'+escapeHtml(q.description)+'</p>'
+  +'<p><b>Progress:</b> '+progress+' / '+sideQuestGoal(q)+'</p>'
+  +'<p><b>Reward:</b> '+escapeHtml(sideQuestRewardLabel(q))+'</p>'
+  +'<p>'+escapeHtml(message)+'</p><div class="options">'
+  +(ready?'<button class="btn primary" id="questClaim">Claim reward</button>':'')
+  +(!state?'<button class="btn primary" id="questAccept">Accept quest</button>':'')
+  +'<button class="btn" id="questClose">Leave</button></div>');
+ if($('questAccept'))$('questAccept').onclick=()=>{
+  s.sideQuests[q.id]={status:'active',baseline:q.kind==='captures'?(s.questCaptureCounts?.[q.captureArea]||0):0};
+  save();talkSideQuest(q.id);
+ };
+ if($('questClaim'))$('questClaim').onclick=()=>{
+  const active=s.sideQuests[q.id];if(!active||active.status!=='active'||sideQuestProgress(q)<sideQuestGoal(q))return;
+  if(q.reward.credits)s.money+=q.reward.credits;
+  if(q.reward.item)s.inventory[q.reward.item]=(s.inventory[q.reward.item]||0)+(q.reward.quantity||1);
+  active.status='complete';save();
+  talkSideQuest(q.id);
+ };
+ $('questClose').onclick=close;
+}
+function sideQuestIndex(){
+ return '<div class="watchSectionTitle">Side quests <small>'+SIDE_QUESTS.filter(q=>s.sideQuests?.[q.id]?.status==='complete').length+'/'+SIDE_QUESTS.length+' complete</small></div>'
+  +SIDE_QUESTS.map(q=>{
+   const state=s.sideQuests?.[q.id],progress=Math.min(sideQuestGoal(q),sideQuestProgress(q));
+   const status=state?.status==='complete'?'Completed':!state?'Not accepted':progress>=sideQuestGoal(q)?'Return to '+q.giver:progress+' / '+sideQuestGoal(q);
+   return '<div class="watchRow"><span><b>'+escapeHtml(q.title)+'</b><small> · '+escapeHtml(q.giver)+' · '+escapeHtml(q.description)+'</small></span><span>'+escapeHtml(status)+'</span></div>';
+  }).join('')
+  +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
+}
 function build(){
  migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
@@ -497,7 +562,7 @@ function build(){
  // Distinct interactive landmarks; their own footprint is always solid.
  for(const o of ROUTE1_SITES){put(o.x,o.y,T.grass);route1Blocked.add(key(o.x,o.y))}
  // Keep the two existing NPCs and the trainer’s battle progression.
- npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','The northern lookout and southern paddies are worth exploring.']);
+ npc(9,11,['Route 1 has wild Critters hiding in the rice fields.','The northern lookout and southern paddies are worth exploring.'],'sidequest','farmer-fieldwork');
  npc(20,13,['Want to test your team against mine?'],'routetrainer','rt1');
  break;
  case 'town':
@@ -505,7 +570,7 @@ function build(){
  npc(9,12,['Welcome to the town between the rice fields and the bamboo woods!']);
  npc(23,12,['Critter Center technicians heal your party and maintain your Index.'],'center');
  npc(14,18,['Welcome to the supply shop!'],'shop');
- npc(16,10,['This town is a good place to rest before Route 2.']);
+ npc(16,10,['This town is a good place to rest before Route 2.'],'sidequest','bamboo-survey');
  break;
  case 'route2':
  borders();roads();rect(10,1,3,12,T.path);rect(25,15,2,8,T.path);
@@ -518,7 +583,7 @@ function build(){
  borders();rect(15,13,4,12,T.path);rect(5,9,24,3,T.path);rect(15,7,4,6,T.path);
  for(let y=2;y<24;y++)for(let x=2;x<32;x++)if(tiles[y][x]===T.grass&&(x*23+y*11)%7<4)put(x,y,(x+y)%3===0?T.tall:T.tree);
  rect(15,13,4,12,T.path);rect(5,9,24,3,T.path);rect(15,7,4,6,T.path);
- npc(9,9,['You found the Hidden Forest!','Rare habitats and additional wild encounters reward exploration.']);
+ npc(9,9,['You found the Hidden Forest!','Rare habitats and additional wild encounters reward exploration.'],'sidequest','forest-shrine');
  break;
  case 'route3':
  borders();roads();rect(19,1,3,12,T.path);rect(6,15,2,8,T.path);
@@ -536,7 +601,7 @@ function build(){
  borders();roads();rect(23,8,3,5,T.path);rect(5,8,2,5,T.path);houses([[2,3,9,4],[20,3,10,5],[3,18,8,4],[20,18,10,4]]);
  for(let x=12;x<19;x++)for(let y=3;y<11;y++)if((x+y)%4===0)put(x,y,T.flower);
  rect(11,16,8,6,T.water);rect(14,16,2,6,T.path);
- npc(7,12,['Garden Town is famous for koi ponds, lanterns and the Grass Gym.']);
+ npc(7,12,['Garden Town is famous for koi ponds, lanterns and the Grass Gym.'],'sidequest','garden-memorial');
  npc(14,13,['Welcome to the Garden Town Critter Center!'],'center');
  npc(20,15,['Need supplies before the Gym?'],'shop');
  npc(25,11,['The Grass Gym entrance is directly north.','Inside is an overgrown hedge maze.']);
@@ -1345,7 +1410,8 @@ function interact(){
  if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  if(p)p.face={up:'down',down:'up',left:'right',right:'left'}[s.face];
- if(p){if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
+ if(p){if(p.kind==='sidequest')return talkSideQuest(p.id);
+ if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
  if(p.kind==='gymtrainer'||p.kind==='routetrainer')return s.defeated[p.id]?say(['Trainer: Good match! Want a rematch?'],()=>rematchMenu(p.id)):say(p.text,()=>startTrainer(p.id));
@@ -1632,7 +1698,7 @@ function indexRecords(){
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchSectionTitle">Landmark discoveries</div>'
    +EXPLORATION_SITES.map(o=>'<div class="watchRow"><span>'+escapeHtml(o.title)+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
-   +collectionProgressUI()+collectionMilestonesUI()
+   +sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
@@ -2323,6 +2389,8 @@ function performPlayerAction(action,log){
     if(Math.random()<chance){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
      const destination=addCapturedCritter(caught);
+     s.questCaptureCounts=s.questCaptureCounts||{};
+     s.questCaptureCounts[s.area]=(s.questCaptureCounts[s.area]||0)+1;
      s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:destination});s.captureLog=s.captureLog.slice(-80);
      endBattle(true,'Capture successful! '+(foe.name||foe.type)+(destination==='Party'?' joined your party ('+s.party.length+'/'+PARTY_LIMIT+').':' was automatically sent to home storage ('+s.storage.length+' stored).'),false);
     }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
