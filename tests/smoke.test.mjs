@@ -17,14 +17,16 @@ function extract(start,end,context){
 const stones=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting','Normal','Steel','Ground'];
 test('game source parses',()=>assert.doesNotThrow(()=>new Function(game)));
 test('species, moves, and evolution links have valid IDs',()=>{
- assert.equal(species.length,209);
+ assert.equal(species.length,215);
  assert.equal(moves.length,315);
  const speciesIds=new Set(species.map(s=>s.speciesId));
  const moveIds=new Set(moves.map(m=>m.id).concat('opening-flick','brace-up'));
  assert.equal(speciesIds.size,species.length);
  assert.equal(new Set(moves.map(m=>m.id)).size,moves.length);
  for(const sp of species){
-  assert.ok(sp.habitats.length>=1,sp.name+' has no home habitat');
+  if(['cr-211-falrift','cr-212-falgrath','cr-214-mothoxin'].includes(sp.speciesId))
+   assert.deepEqual(sp.habitats,[],sp.name+' is not assigned a wild habitat');
+  else assert.ok(sp.habitats.length>=1,sp.name+' has no home habitat');
   assert.ok(sp.habitats.every(h=>Number.isFinite(h.minLevel)&&Number.isFinite(h.maxLevel)&&h.minLevel<=h.maxLevel));
   for(const learn of sp.levelUp||[])assert.ok(moveIds.has(learn.moveId),sp.name+' has unknown move '+learn.moveId);
   if(!sp.evolvesTo)continue;
@@ -209,13 +211,14 @@ test('battle Index provides real battle actions and takes over the screen',()=>{
 });
 
 test('Critter species IDs are the Index numbers with starter families first',()=>{
- assert.equal(species.length,209);
+ assert.equal(species.length,215);
  const idSet=new Set(species.map(sp=>sp.speciesId));
  for(let i=0;i<species.length;i++){
   const sp=species[i],expected='cr-'+String(i+1).padStart(3,'0')+'-';
   assert.ok(sp.speciesId.startsWith(expected),'wrong ID at '+(i+1)+' '+sp.name);
   assert.equal(Object.hasOwn(sp,'number'),false,'no separate display number allowed');
-  assert.ok(sp.legacySpeciesId,'old ID alias missing for save migration');
+  if(i<209)assert.ok(sp.legacySpeciesId,'old ID alias missing for save migration');
+  else assert.equal(sp.legacySpeciesId,undefined,'new IDs must not alias old saves');
   if(sp.evolvesTo){
    assert.ok(idSet.has(sp.evolvesTo.speciesId));
    const to=species.find(x=>x.speciesId===sp.evolvesTo.speciesId);
@@ -349,4 +352,201 @@ test('portrait UI has the movement toggle directly above Interact',()=>{
  assert.match(game,/s\.movementMode=s\.movementMode==='walk'\?'walk':'run'/);
  assert.match(game,/stickRepeatAt=Date\.now\(\)\+movementStepInterval\(\)/);
  assert.match(game,/visual\.duration=movementStepDuration\(\)/);
+});
+
+const routeOneOldOrder='011-bloomtail 012-verdantusk 024-pebblit 013-foamlark 032-windoodle 030-luminix 014-reeflet 015-granipup 023-blazefin 010-grovehorn 031-spindleleaf 019-runnelot 018-gliderill 017-joltling 027-bouldibble 022-scorchub 029-obsiduck 021-mistmew'.split(' ').map(id=>'cr-'+id);
+const routeOneArt=[
+ ['cr-210-falquill','Falquill','Flying','route-1/falcon-stage-1'],
+ ['cr-211-falrift','Falrift','Flying','route-1/falcon-stage-2'],
+ ['cr-212-falgrath','Falgrath','Flying','route-1/falcon-stage-3'],
+ ['cr-213-toxidot','Toxidot','Venom','venom-moth/venom-larva'],
+ ['cr-214-mothoxin','Mothoxin','Venom','venom-moth/venom-owl-moth'],
+];
+const scruffinId='cr-215-scruffin';
+const routeOneNewIds=new Set([...routeOneArt.map(([id])=>id),scruffinId]);
+const routeOneNewOrder=[...routeOneOldOrder];
+routeOneNewOrder[1]=routeOneArt[0][0];
+routeOneNewOrder[4]=routeOneArt[3][0];
+routeOneNewOrder[12]=scruffinId;
+routeOneNewOrder.push(routeOneOldOrder[1],routeOneOldOrder[4],routeOneOldOrder[12]);
+function encounterHarness(catalog=species,roll=.5){
+ const s={area:'route1',badges:0,regionalWildEncounters:{route1:0}};
+ const math=Object.create(Math);math.random=()=>roll;
+ return extract('const WILD_AREA_BALANCE','// Battle Phase 2:',{s,Math:math,
+  speciesRegistry:new Map(catalog.map(sp=>[sp.speciesId,sp])),discoveryStatus:()=> 'unseen',
+  worldHour:()=>12,firstAlive:()=>0,critter:(speciesId,level)=>({speciesId,level}),
+  startBattle:battle=>battle,starterSpeciesId:type=>type});
+}
+const ids=pool=>Array.from(pool,sp=>sp.speciesId);
+test('Route 1 swaps two opening slots and one later slot without moving other reveals',()=>{
+ const runtime=encounterHarness(),old=encounterHarness(species.filter(sp=>!routeOneNewIds.has(sp.speciesId)));
+ for(const badges of [0,1,3,8]){
+  runtime.s.badges=old.s.badges=badges;
+  assert.deepEqual(ids(old.wildRosterOrder('route1')),routeOneOldOrder);
+  assert.deepEqual(ids(runtime.wildRosterOrder('route1')),routeOneNewOrder);
+  for(const [count,size] of [[0,9],[7,9],[8,13],[15,13],[16,17],[23,17],[24,21],[60,21]]){
+   runtime.s.regionalWildEncounters.route1=count;
+   assert.deepEqual(ids(runtime.encounterSpeciesFor('route1')),routeOneNewOrder.slice(0,size));
+  }
+  for(const area of ['route2','route3','forest','garden','cave'])
+   assert.deepEqual(ids(runtime.wildRosterOrder(area)),ids(old.wildRosterOrder(area)));
+ }
+ // An older or partially loaded catalog must retain the originals until each replacement is available.
+ const partial=encounterHarness(species.filter(sp=>sp.speciesId!==routeOneArt[0][0]));
+ assert.equal(partial.encounterSpeciesFor('route1')[1].speciesId,routeOneOldOrder[1]);
+ assert.equal(partial.encounterSpeciesFor('route1')[4].speciesId,routeOneArt[3][0]);
+});
+test('both new opening species can be drawn and fought at levels 2–5; only trainer one swaps to Falquill',()=>{
+ const runtime=encounterHarness(),old=encounterHarness(species.filter(sp=>!routeOneNewIds.has(sp.speciesId)));
+ const fromFirst=new Set(Array.from({length:1000},(_,i)=>runtime.chooseWildSpecies('route1',i/1000).speciesId));
+ assert.deepEqual([...fromFirst].sort(),routeOneNewOrder.slice(0,9).sort());
+ for(const [id] of [routeOneArt[0],routeOneArt[3]]){
+  const sp=species.find(q=>q.speciesId===id);
+  assert.deepEqual([sp.habitats[0].minLevel,sp.habitats[0].maxLevel,sp.habitats[0].rarity],[2,5,'common']);
+  for(const [roll,level] of [[0,2],[.9999,5]]){
+   const battle=encounterHarness(species,roll);
+   const choose=battle.chooseWildSpecies;
+   let naturalRoll;
+   for(let i=0;i<1000;i++)if(choose('route1',i/1000).speciesId===id){naturalRoll=i/1000;break}
+   assert.notEqual(naturalRoll,undefined);
+   battle.chooseWildSpecies=(area)=>choose(area,naturalRoll);
+   const started=battle.startWild();
+   assert.equal(started.kind,'wild');
+   assert.deepEqual(started.enemies[0],{speciesId:id,level});
+   assert.equal(battle.s.regionalWildEncounters.route1,1);
+  }
+ }
+ for(const id of ['rt1','rt2','rt3','tutorial','rival','leader','g1','g2','g3']){
+  for(const defeated of [{},{[id]:true}]){
+   runtime.s.defeated=old.s.defeated=defeated;
+   runtime.s.rival=old.s.rival='Water';
+   let actual,expected;
+   runtime.startBattle=battle=>{actual=battle};
+   old.startBattle=battle=>{expected=battle};
+   runtime.startTrainer(id);old.startTrainer(id);
+   assert.ok(actual?.enemies.length);
+   if(id==='rt1'){
+    assert.equal(expected.enemies[0].speciesId,'cr-018-gliderill','v65/cached catalog fallback');
+    assert.equal(actual.enemies[0].speciesId,'cr-210-falquill');
+    assert.equal(actual.enemies[0].level,defeated.rt1?6:4);
+    expected.enemies[0].speciesId='cr-210-falquill';
+   }
+   assert.deepEqual(JSON.parse(JSON.stringify(actual)),JSON.parse(JSON.stringify(expected)));
+  }
+ }
+});
+test('five new art designs use distinct registry IDs, ally rears, enemy/Index fronts, and safe fallbacks',()=>{
+ const registry=new Map(species.map(sp=>[sp.speciesId,sp]));
+ const runtime=extract('function speciesFor(','function registeredLearnset(',{speciesRegistry:registry,
+  escapeHtml:s=>s,symbols:{Flying:'F',Venom:'V'}});
+ vm.runInContext(game.slice(game.indexOf('const STARTER_REAR_BATTLE_SPRITES='),game.indexOf('function sceneFigure(')),runtime);
+ for(const [id,name,type,asset] of routeOneArt){
+  const sp=registry.get(id),prefix='assets/critters/route-one-designs/'+asset;
+  assert.ok(sp,id);
+  assert.equal(sp.name,name);
+  assert.deepEqual(sp.types,[type]);
+  assert.equal(sp.art.spritePath,prefix+'-front.png');
+  assert.equal(sp.art.rearSpritePath,prefix+'-back.png');
+  assert.equal(sp.evolvesTo,undefined);
+  for(const path of [sp.art.spritePath,sp.art.rearSpritePath]){
+   const png=readFileSync(new URL('../'+path,import.meta.url));
+   assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+   assert.equal(png.readUInt32BE(16),96);assert.equal(png.readUInt32BE(20),96);
+  }
+  const p={speciesId:id,name,type},ally=runtime.battleFigureArtwork(p,'ally');
+  assert.ok(ally.includes('src="'+sp.art.rearSpritePath+'"'));
+  assert.ok(ally.includes("this.src='"+sp.art.spritePath+"'"));
+  assert.ok(runtime.battleFigureArtwork(p,'enemy').includes('src="'+sp.art.spritePath+'"'));
+  assert.ok(runtime.critterSpriteTag(sp,'speciesPortrait').includes(sp.art.spritePath));
+ }
+ for(const starter of species.slice(0,9)){
+  const p={speciesId:starter.speciesId,name:starter.name,type:starter.types[0]};
+  assert.match(runtime.battleFigureArtwork(p,'ally'),/battle-backs\/starters\/.*-back\.png/);
+  assert.ok(runtime.battleFigureArtwork(p,'enemy').includes('src="'+starter.art.spritePath+'"'));
+ }
+ assert.equal(runtime.battleFigureArtwork({speciesId:'unknown',type:'Flying'},'ally'),'<span class="combatSymbol">F</span>');
+ assert.doesNotMatch(runtime.battleFigureArtwork({art:{status:'ready',rearSpritePath:'https://example.com/invalid.png'},type:'Flying'},'ally'),/example\.com/);
+});
+test('real capture and migration keep new IDs, both Scruffin coats, displaced IDs, and starter provenance',()=>{
+ const state={area:'route1',badges:0,regionalWildEncounters:{route1:16},starter:'Water',
+  inventory:{Potion:2},party:[],storage:[],captureCount:0,collection:{}};
+ const math=Object.create(Math);math.random=()=>0;
+ const sandbox=extract('const PARTY_LIMIT=','function put(',{s:state,Math:math,W:34,H:34,
+  strengths:Object.fromEntries(species.flatMap(sp=>sp.types).map(t=>[t,[]])),
+  defendTypes:p=>p.types||[p.type],statProfile:()=>({}),COLLECTION_MILESTONES:[],
+  battle:null,endBattle:()=>{},noteOpeningEvent:()=>{}});
+ vm.runInContext(`for(const sp of catalog)speciesRegistry.set(sp.speciesId,sp);for(const move of moves)moveRegistry.set(move.id,move);`,
+  Object.assign(sandbox,{catalog:species,moves}));
+ for(const [start,end] of [['function refreshSpeciesMetadata(','function activeModifier('],['function collectionData(','function migrateCollection('],['function captureChance(','function refillEnemyTeam(']])
+  vm.runInContext(game.slice(game.indexOf(start),game.indexOf(end)),sandbox);
+ state.party=[{...sandbox.critter('cr-001-starter-water-1',5),starterOrigin:true},
+  sandbox.critter('cr-012-verdantusk',3)];
+ state.storage=[sandbox.critter('cr-032-windoodle',4)];
+ for(const [id,,type] of [routeOneArt[0],routeOneArt[3]]){
+  const foe=sandbox.critter(id,4);
+  assert.equal(foe.type,type);
+  assert.ok(foe.moves.length>=2);
+  sandbox.battle={kind:'wild',enemies:[foe]};
+  sandbox.performPlayerAction({kind:'capture',actor:0},[]);
+  assert.ok(state.collection.caught[id]);
+  assert.equal(state.captureLog.at(-1).speciesId,id);
+  assert.equal(state.party.at(-1).speciesId,id);
+  assert.ok(state.party.at(-1).movePP[foe.moves[0]]>0);
+ }
+ for(const [roll,gender] of [[.49,'female'],[.5,'male']]){
+  const battle=encounterHarness(species,roll);
+  battle.s.regionalWildEncounters.route1=8;
+  battle.chooseWildSpecies=()=>species.find(sp=>sp.speciesId===scruffinId);
+  const wild=battle.startWild();
+  assert.equal(wild.enemies[0].gender,gender);
+  const foe={...sandbox.critter(scruffinId,wild.enemies[0].level),gender:wild.enemies[0].gender};
+  sandbox.battle={kind:'wild',enemies:[foe]};
+  sandbox.performPlayerAction({kind:'capture',actor:0},[]);
+  assert.equal(state.party.at(-1).speciesId,scruffinId);
+  assert.equal(state.party.at(-1).gender,gender);
+ }
+ assert.equal(state.collection.caught[scruffinId].captures,2);
+ const expectedIds=state.party.map(p=>p.speciesId);
+ sandbox.s=JSON.parse(JSON.stringify(state));
+ sandbox.migrate();
+ assert.deepEqual(Array.from(sandbox.s.party,p=>p.speciesId),expectedIds);
+ assert.equal(sandbox.s.party[0].starterOrigin,true);
+ assert.equal(sandbox.s.storage[0].speciesId,'cr-032-windoodle');
+ assert.equal(sandbox.s.regionalWildEncounters.route1,16);
+ assert.equal(sandbox.s.inventory.Potion,2);
+ assert.equal(sandbox.s.speciesIdSchema,2);
+ assert.equal(sandbox.s.captureCount,4);
+ assert.deepEqual(Array.from(sandbox.s.party.slice(-2),p=>p.gender),['female','male']);
+});
+
+test('Scruffin at eight has exact female red / male blue art on both battle sides',()=>{
+ const sp=species.find(q=>q.speciesId===scruffinId);
+ assert.ok(sp);
+ assert.equal(sp.name,'Scruffin');
+ assert.deepEqual(sp.types,['Fighting']);
+ assert.equal(sp.evolvesTo,undefined);
+ const runtime=encounterHarness();
+ runtime.s.regionalWildEncounters.route1=7;
+ assert.ok(!ids(runtime.encounterSpeciesFor('route1')).includes(scruffinId));
+ runtime.s.regionalWildEncounters.route1=8;
+ assert.equal(runtime.encounterSpeciesFor('route1')[12].speciesId,scruffinId);
+ assert.ok(runtime.encounterWeight(sp,'route1')>0);
+ const art=extract('function speciesFor(','function registeredLearnset(',{
+  speciesRegistry:new Map([[scruffinId,sp]]),escapeHtml:s=>s,symbols:{Fighting:'F'}});
+ vm.runInContext(game.slice(game.indexOf('const STARTER_REAR_BATTLE_SPRITES='),game.indexOf('function sceneFigure(')),art);
+ for(const [gender,coat] of [['female','red'],['male','blue']]){
+  const p=JSON.parse(JSON.stringify({speciesId:scruffinId,name:'Scruffin',type:'Fighting',gender}));
+  const path='assets/critters/route-one-designs/roster/aussie-'+coat+'-merle-stage-1';
+  const ally=art.battleFigureArtwork(p,'ally'),enemy=art.battleFigureArtwork(p,'enemy');
+  assert.ok(ally.includes('src="'+path+'-back.png"'));
+  assert.ok(ally.includes("this.src='"+path+"-front.png'"));
+  assert.ok(enemy.includes('src="'+path+'-front.png"'));
+  assert.ok(art.critterSpriteTag(p,'watchPartySprite').includes(path+'-front.png'));
+  for(const suffix of ['-front','-back']){
+   const png=readFileSync(new URL('../'+path+suffix+'.png',import.meta.url));
+   assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+   assert.equal(png.readUInt32BE(16),96);assert.equal(png.readUInt32BE(20),96);
+  }
+ }
+ assert.ok(art.critterSpriteTag(sp,'speciesPortrait').includes(sp.art.spritePath));
 });

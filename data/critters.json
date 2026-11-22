@@ -14067,6 +14067,289 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "legacySpeciesId": "cr-198-drakoryn"
+    },
+    {
+      "speciesId": "cr-210-falquill",
+      "name": "Falquill",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 12,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [
+        {
+          "areaId": "route1",
+          "areaName": "Route 1 · Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
+          "rarity": "common",
+          "wildOnly": true
+        }
+      ],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-1-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-1-back.png"
+      },
+      "notes": "Falcon line, stage 1 of 3. Evolution requirements are not assigned."
+    },
+    {
+      "speciesId": "cr-211-falrift",
+      "name": "Falrift",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 19,
+        "defense": 14,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-2-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-2-back.png"
+      },
+      "notes": "Falcon line, stage 2 of 3. Evolution requirements are not assigned."
+    },
+    {
+      "speciesId": "cr-212-falgrath",
+      "name": "Falgrath",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 41,
+        "attack": 27,
+        "defense": 21,
+        "specialAttack": 23,
+        "specialDefense": 22,
+        "speed": 30
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-3-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-3-back.png"
+      },
+      "notes": "Falcon line, stage 3 of 3. Evolution requirements are not assigned."
+    },
+    {
+      "speciesId": "cr-213-toxidot",
+      "name": "Toxidot",
+      "types": [
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 23,
+        "attack": 10,
+        "defense": 11,
+        "specialAttack": 12,
+        "specialDefense": 10,
+        "speed": 12
+      },
+      "habitats": [
+        {
+          "areaId": "route1",
+          "areaName": "Route 1 · Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
+          "rarity": "common",
+          "wildOnly": true
+        }
+      ],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        },
+        {
+          "level": 13,
+          "moveId": "fang-drip"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/venom-moth/venom-larva-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-larva-back.png"
+      },
+      "notes": "Venom moth line, stage 1 of 2. Evolution requirements are not assigned."
+    },
+    {
+      "speciesId": "cr-214-mothoxin",
+      "name": "Mothoxin",
+      "types": [
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 34,
+        "attack": 17,
+        "defense": 16,
+        "specialAttack": 23,
+        "specialDefense": 19,
+        "speed": 21
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        },
+        {
+          "level": 13,
+          "moveId": "fang-drip"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/venom-moth/venom-owl-moth-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-owl-moth-back.png"
+      },
+      "notes": "Venom moth line, stage 2 of 2. Evolution requirements are not assigned."
+    },
+    {
+      "speciesId": "cr-215-scruffin",
+      "name": "Scruffin",
+      "types": [
+        "Fighting"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 8,
+        "specialDefense": 10,
+        "speed": 13
+      },
+      "habitats": [
+        {
+          "areaId": "route1",
+          "areaName": "Route 1 · Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
+          "rarity": "common",
+          "wildOnly": true
+        }
+      ],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "training-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "spirit-thrust"
+        },
+        {
+          "level": 7,
+          "moveId": "battle-breath"
+        },
+        {
+          "level": 13,
+          "moveId": "breaker-kick"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-back.png",
+        "genderVariants": {
+          "female": {
+            "spritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-front.png",
+            "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-back.png"
+          },
+          "male": {
+            "spritePath": "assets/critters/route-one-designs/roster/aussie-blue-merle-stage-1-front.png",
+            "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-blue-merle-stage-1-back.png"
+          }
+        }
+      },
+      "notes": "Australian Shepherd pup; female red merle and male blue merle are cosmetic variants of the same species."
     }
   ],
   "encounterBalanceVersion": 2

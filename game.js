@@ -402,9 +402,11 @@ const defaultMoveIds=(type,level)=>{
 function validMove(id){return moveRegistry.get(id)||null}
 function speciesFor(p){return p?.speciesId?speciesRegistry.get(p.speciesId):null}
 // Render only approved local sprite paths. Legacy/non-art Critters retain their type icons.
-function critterSpritePath(p){
+function critterSpritePath(p,view='spritePath'){
  const spec=p?.art?p:speciesFor(p);
- const path=spec?.art?.status==='ready'?spec.art.spritePath:null;
+ const art=spec?.art,variants=art?.genderVariants;
+ const variant=variants&&Object.hasOwn(variants,p?.gender)?variants[p.gender]:null;
+ const path=art?.status==='ready'?(variant?.[view]??art[view]):null;
  return typeof path==='string'&&/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(path)?path:null;
 }
 function critterSpriteTag(p,cssClass){
@@ -467,7 +469,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=65-starter-renames',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=route-one-art-20261122',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -2060,8 +2062,16 @@ function effectiveWildHabitat(sp,area){
 // a small, stable selection active initially; exploration reveals additional
 // resident species without changing their original assigned location.
 const STARTING_WILD_ROSTER={route1:9,route2:12,forest:12,route3:13,garden:12,cave:13};
+const FALQUILL_SPECIES_ID='cr-210-falquill';
+const ROUTE1_WILD_REPLACEMENTS=new Map([
+ ['cr-012-verdantusk',FALQUILL_SPECIES_ID],
+ ['cr-032-windoodle','cr-213-toxidot'],
+ ['cr-018-gliderill','cr-215-scruffin']
+]);
+const ROUTE1_NEW_SLOT_IDS=new Set(ROUTE1_WILD_REPLACEMENTS.values());
 function wildRosterOrder(area){
- const residents=[...speciesRegistry.values()].filter(sp=>effectiveWildHabitat(sp,area));
+ const eligible=[...speciesRegistry.values()].filter(sp=>effectiveWildHabitat(sp,area));
+ const residents=area==='route1'?eligible.filter(sp=>!ROUTE1_NEW_SLOT_IDS.has(sp.speciesId)):eligible;
  const groups={common:[],uncommon:[],rare:[],legendary:[]};
  for(const sp of residents){
   const rarity=wildHabitat(sp,area).rarity||'common';
@@ -2083,7 +2093,17 @@ function wildRosterOrder(area){
  // Legendary species stay separate, and only become available under the
  // existing first-badge requirement.
  ordered.push(...groups.legendary);
- return ordered;
+ if(area!=='route1')return ordered;
+ // Substitute in place without rehashing the legacy slots. The originals
+ // become late reveals only when their corresponding new data is available.
+ const byId=new Map(eligible.map(sp=>[sp.speciesId,sp])),displaced=[];
+ const opening=ordered.map(sp=>{
+  const replacement=byId.get(ROUTE1_WILD_REPLACEMENTS.get(sp.speciesId));
+  if(!replacement)return sp;
+  displaced.push(sp);
+  return replacement;
+ });
+ return opening.concat(displaced);
 }
 function encounterSpeciesFor(area){
  const ordered=wildRosterOrder(area),encounters=Math.max(0,Number(s?.regionalWildEncounters?.[area])||0);
@@ -2127,6 +2147,8 @@ function startWild(){
   const min=Math.max(1,Math.floor(h.minLevel)),max=Math.max(min,Math.floor(h.maxLevel));
   const level=min+Math.floor(Math.random()*(max-min+1));
   const foe=critter(choice.speciesId,level);
+  const variants=choice.art?.genderVariants;
+  if(variants?.female&&variants?.male)foe.gender=Math.random()<.5?'female':'male';
   return startBattle({kind:'wild',enemies:[foe],name:'Wild Critter',award:0},'A wild '+choice.name+' appeared!');
  }
  // If the registry is unavailable (for example while offline), preserve the
@@ -2139,7 +2161,7 @@ function startWild(){
 // placeholders remain intact until the creators assign official starter designs.
 function trainerSpecies(type,level,area,trainerId,slot,used){
  const candidates=[...speciesRegistry.values()].filter(sp=>
-  sp.types.includes(type)&&sp.habitats?.some(h=>h.areaId===area&&h.rarity!=='legendary')
+  sp.types.includes(type)&&sp.habitats?.some(h=>h.areaId===area&&h.rarity!=='legendary'&&!h.wildOnly)
   &&!used.has(sp.speciesId));
  if(!candidates.length)return critter(type,level);
  candidates.sort((a,b)=>a.speciesId.localeCompare(b.speciesId));
@@ -2159,7 +2181,13 @@ function startTrainer(id){
  if(id==='tutorial'){enemies=[starter(s.rival)];name='Childhood Rival';award=0;kind='tutorial'}
  else if(id==='rival'){enemies=[critter(starterSpeciesId(s.rival),12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
- else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
+ else if(id.startsWith('rt')){
+  const n=Number(id.slice(2)),up=s.defeated[id]?2:0;
+  // First trainer gets Falquill; cached catalogs keep the old Flying selection.
+  enemies=n===1?[id==='rt1'&&speciesRegistry.has(FALQUILL_SPECIES_ID)?critter(FALQUILL_SPECIES_ID,4+up):make('Flying',4+up)]
+   :n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];
+  name='Route Trainer '+n;award=20+n*15;
+ }
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
  startBattle({kind,enemies,name,award,id},name+' challenges you!')
 }
@@ -2199,7 +2227,7 @@ function hpCard(p,side,active=false){
   +'<div class="health"><div class="'+(low?'low':'')+'" style="width:'+pct+'%"></div></div>'
   +'<div class="combatCardFoot">HP '+p.hp+'/'+p.maxHp+(p.hp===0?' · Fainted':'')+' · '+escapeHtml(defendTypes(p).join('/'))+'</div></div>';
 }
-// Only approved starter species have rear battle artwork. Keep Index and enemy fronts unchanged.
+// Preserve the existing starter rear mappings; new paired artwork comes from species data.
 const STARTER_REAR_BATTLE_SPRITES=Object.freeze({
  'cr-001-starter-water-1':'water-starter-stage-1-back.png',
  'cr-002-starter-water-2':'water-starter-stage-2-back.png',
@@ -2212,13 +2240,14 @@ const STARTER_REAR_BATTLE_SPRITES=Object.freeze({
  'cr-009-starter-electric-3':'electric-starter-stage-3-back.png'
 });
 function battleFigureArtwork(p,side){
- const rearFile=side==='ally'?STARTER_REAR_BATTLE_SPRITES[p?.speciesId]:null;
- if(rearFile){
-  const path='assets/critters/battle-backs/starters/'+rearFile;
+ const starterRear=side==='ally'?STARTER_REAR_BATTLE_SPRITES[p?.speciesId]:null;
+ const path=starterRear?'assets/critters/battle-backs/starters/'+starterRear
+  :side==='ally'?critterSpritePath(p,'rearSpritePath'):null;
+ if(path){
   const fallback=critterSpritePath(p);
   // If a cached deployment does not yet have its rear asset, retain the approved front sprite.
   return '<img class="combatSprite combatSpriteRear" src="'+path+'" alt="'+escapeHtml(p.name||speciesFor(p)?.name||'Critter')+' (rear view)" decoding="async"'+
-   (fallback?' onerror="this.onerror=null;this.src=\''+fallback+'\'";':'')+'>';
+   (fallback?' onerror="this.onerror=null;this.src=\''+fallback+'\';"':'')+'>';
  }
  return critterSpriteTag(p,'combatSprite')||'<span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>';
 }
