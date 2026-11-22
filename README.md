@@ -99,3 +99,10 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Tall grass and wooded foliage respond to the same deterministic wind field; ponds and streams have moving water highlights. Forest and bamboo environments get restrained moving sunbeams and haze, while cave lighting has a cooler tint.
 - The improvements run entirely in the renderer. Map coordinates, collision, NPCs, interactions, encounters, saves, battles, evolution stones and the eight-Critter party maximum are unchanged. No new image assets are needed.
 - JavaScript syntax was checked; live in-browser visual/performance testing remains necessary, particularly on mobile devices.
+
+## Phase 17 — Battle visual overhaul (v48)
+- Battle scenes now overlay type-colored animated attack trails, traveling energy cores and impact rings, with separate directions for ally and enemy actions and a miss-aware effect.
+- A successful Critter Index capture-beam result displays a brief illuminated watch, beam, and registration animation in the battle completion panel.
+- Evolution notifications have a celebratory shimmer. Responsive CSS and a reduced-motion fallback keep battle controls accessible.
+- Animations are presentation-only and do not alter combat math, PP, action order, capture chances, evolution conditions or saves. No new Critter artwork is required.
+- JavaScript syntax checks passed; end-to-end browser/mobile testing remains outstanding.
