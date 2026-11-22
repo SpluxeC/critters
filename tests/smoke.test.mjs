@@ -238,7 +238,7 @@ test('Critter species IDs are the Index numbers with starter families first',()=
 });
 test('legacy saves migrate every old species ID to the authoritative new ID',()=>{
  const start=game.indexOf('function migrateSpeciesIds(){');
- const end=game.indexOf('const moveFallbacks=',start);
+ const end=game.indexOf('const moveRegistry=',start);
  assert.ok(start>=0&&end>start);
  const old=species.find(sp=>sp.legacySpeciesId.startsWith('cr-001-'));
  const s={
