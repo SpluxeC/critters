@@ -135,3 +135,10 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Index opens **Switch Critter**, **Use Item** (Potion/Revive), and (during wild battles) **Critter Index Capture Beam**. Back navigation returns to the preceding menu without consuming turns.
 - UI changes are responsive for portrait and landscape phones and support reduced-motion preferences. The party remains capped at eight, and stored Critters remain accessible only at Critter Centers.
 - Tests now include classic battle menu states, move buttons, Index controls and trainer Escape restrictions. This release has passed JavaScript parsing and isolated rendering/menu tests; physical device visual tests are still pending.
+
+## v53 — Battle arenas reflect the map and indoor buildings
+- The environment at the instant a battle starts is captured as an ephemeral scene snapshot: current area, tile terrain (rice, tall grass, stone, flowers, path, water or field) and world time phase. Battle transitions or subsequent world changes do not alter this scene mid-fight.
+- Distinct scenic arena treatments now cover Starting Village and Route 1 rice paddies, First Town, Route 2 bamboo, Hidden Forest, Route 3 foothills, Mountain Cave, Garden Town, Grass Gym, Research Laboratory, Player Home, and Village Home. Caves use rocks/crystal textures rather than blue sky; laboratories, homes and gym battles use interior walls/flooring.
+- Day, dawn, dusk, and night tint the outdoor scenes without changing battle logic, damage, PP, captures or the approved Battle / Index / Escape controls.
+- The terrain variants and location labels are expressed as CSS classes on the battle arena; no world maps, collision or existing save fields are modified.
+- Added regression checks for environment classification, snapshot independence, and CSS coverage across all areas. JavaScript syntax validation passed; real device/browser visual testing remains pending.
