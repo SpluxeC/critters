@@ -144,3 +144,34 @@ test('all overworld and interior arenas have specific visual variants',()=>{
  assert.match(game,/environment:battleEnvironment\(\)/);
  assert.match(game,/battleEnvironmentClass\(\)/);
 });
+
+test('all eight approved cinematic battle scenes are self-contained and assigned to the right areas',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const files=['rice-fields','bamboo-forest','hidden-forest','mountain-foothills','mountain-cave','town-garden','grass-gym','research-lab'];
+ const classes=['rice','bamboo','hidden-forest','foothills','cave','town','gym','laboratory'];
+ for(let i=0;i<files.length;i++){
+  const path=new URL('../assets/battle-scenes/'+files[i]+'.svg',import.meta.url);
+  const asset=readFileSync(path,'utf8');
+  assert.match(asset,/<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+  assert.match(asset,/href="data:image\/(?:jpeg|png);base64,/);
+  assert.ok(asset.length>50000,files[i]+' should contain an actual painted scene');
+  assert.ok(html.includes('assets/battle-scenes/'+files[i]+'.svg'),files[i]+' CSS reference missing');
+  assert.ok(html.includes('.scene-'+classes[i]),classes[i]+' CSS class missing');
+ }
+ const start=game.indexOf('const BATTLE_SCENE_ART=');
+ const end=game.indexOf('function battleHeader(',start);
+ assert.ok(start>=0&&end>start);
+ const battle={environment:{area:'route1',terrain:'rice',phase:'Day'}};
+ const ctx=vm.createContext({battle});
+ vm.runInContext(game.slice(start,end),ctx);
+ const mapping={village:'rice',route1:'rice',route2:'bamboo',forest:'hidden-forest',route3:'foothills',
+  cave:'cave',town:'town',garden:'town',gym:'gym',lab:'laboratory'};
+ for(const [area,art] of Object.entries(mapping)){
+  battle.environment.area=area;
+  assert.ok(ctx.battleEnvironmentClass().includes('scene-image scene-'+art),area+' mapped incorrectly');
+ }
+ battle.environment.area='home';
+ assert.ok(!ctx.battleEnvironmentClass().includes('scene-image'),'unillustrated home keeps existing indoor fallback');
+ assert.ok(html.includes('background-size:113% auto'),'rice field gets requested closer framing');
+ assert.ok(html.includes('background-size:112% auto'),'bamboo gets requested closer framing');
+});
