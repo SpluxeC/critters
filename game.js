@@ -1983,6 +1983,16 @@ function sceneFigure(p,side,i){
   +'<span class="combatAura"></span><span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>'
   +'<small>'+escapeHtml(p.name||p.type)+'</small></div>';
 }
+function battleVisual(){
+ const fx=battle?.lastVfx;
+ if(!fx)return '';
+ const safeType=String(fx.type||'Typeless').replace(/[^a-zA-Z]/g,'');
+ const direction=fx.side==='enemy'?'reverse':'forward';
+ const typeClass='vfx-'+safeType.toLowerCase();
+ return '<div class="battleVfx '+typeClass+' '+direction+(fx.missed?' missed':'')+'" aria-hidden="true">'
+  +'<span class="battleVfxBeam"></span><span class="battleVfxCore"></span><span class="battleVfxBurst"></span>'
+  +'<span class="battleVfxLabel">'+escapeHtml(fx.name||'Attack')+'</span></div>';
+}
 function battleHeader(){
  const ally=battle.allySlots.map((i,slot)=>hpCard(s.party[i],'ally',battle.phase==='choose'&&slot===battle.acting)).join('');
  const foe=battle.enemySlots.map(i=>hpCard(battle.enemies[i],'enemy')).join('');
@@ -1990,7 +2000,7 @@ function battleHeader(){
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div><div><div class="rosterTitle">YOUR TEAM</div>'+ally+'</div></div>'
-  +'<div class="combatArena"><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div></div>';
+  +'<div class="combatArena"><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+'</div>';
 }
 function battleMessage(msg){return '<div class="combatMessage" role="status">'+escapeHtml(msg||battle.feedback||'Choose your actions.')+'</div>'}
 function renderBattle(message){
@@ -2226,9 +2236,12 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  const interruption={jolt:.20,chill:.17,stagger:.18,confuse:.22,disorient:.15,entangle:.08}[actor.status]||0;
  if(interruption&&Math.random()<interruption){log.push(name+' cannot act because of '+actor.status+'!');return}
  log.push(name+' used '+move.name+'.');
+ // Store the final animated action only; the damage and turn system are unchanged.
+ battle.lastVfx={name:move.name,type:move.type,side,missed:false};
  const hitChance=Math.min(100,Math.max(5,(move.accuracy??100)*
   statFactor(side,actorIndex,'accuracy')/statFactor(targetSide,targetIndex,'evasion')));
  if(Math.random()*100>=hitChance){
+  battle.lastVfx.missed=true;
   log.push('It missed!');return;
  }
  if(move.category!=='status'&&move.power>0){
@@ -2409,7 +2422,7 @@ function recentBattleLog(){
 function resolveTeamTurn(){
  if(!battle)return;
  const log=[];
- battle.phase='resolve';battle.impact='';battle.lastTarget=null;
+ battle.phase='resolve';battle.impact='';battle.lastTarget=null;battle.lastVfx=null;
  const actions=battle.pending.slice();battle.pending=[];
  // Team order: one player action per deployed Critter, followed by all living enemies.
  // Resolve priority within a team without changing the approved team-turn order.
@@ -2521,7 +2534,7 @@ function tryEvolveChain(p,limit=2,usingStone=false){
 function evolutionNotification(){
  const records=Array.isArray(s?.evolutionNews)?s.evolutionNews:[];
  s.evolutionNews=[];
- return records.length?'<div class="evoNotices"><strong>✧ Evolution!</strong>'+records.map(e=>'<p>'+escapeHtml(e.from)+' evolved into <b>'+escapeHtml(e.to)+'</b> at Lv '+e.level+'!</p>').join('')+'</div>':'';
+ return records.length?'<div class="evoNotices"><div class="evoPulse" aria-hidden="true">✦</div><strong>✧ Evolution!</strong>'+records.map(e=>'<p>'+escapeHtml(e.from)+' evolved into <b>'+escapeHtml(e.to)+'</b> at Lv '+e.level+'!</p>').join('')+'</div>':'';
 }
 function evolutionChainInfo(sp){
  if(!sp)return '';
@@ -2584,7 +2597,10 @@ function endBattle(won,message,defeated){
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
  }
  else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);s.area='town';s.x=17;s.y=15;build()}
- const evolveMessages=evolutionNotification();save();open(won?'Battle Complete':'Defeated','<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
+ const evolveMessages=evolutionNotification();
+ const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
+  ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">⌚</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
+ save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
  $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader')build()}
 }
 function blackout(){
