@@ -2048,6 +2048,15 @@ function startTrainer(id){
 
 // Battle Phase 2: each side takes a complete team turn. Trainer doubles are
 // two active Critters per side; wild, tutorial, rival, and first gym stay 1v1.
+// Snapshot the battlefield's actual overworld context before opening the modal.
+const BATTLE_AREAS=['village','route1','town','route2','forest','route3','cave','garden','gym','lab','home','neighbor'];
+const BATTLE_AREA_LABELS={village:'Starting Village',route1:'Rice Fields',town:'First Town',route2:'Bamboo Trail',forest:'Hidden Forest',route3:'Mountain Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home'};
+function battleEnvironment(){
+ const area=BATTLE_AREAS.includes(s.area)?s.area:'route1';
+ const tile=tiles?.[s.y]?.[s.x];
+ const terrain=tile===T.rice?'rice':tile===T.tall?'grass':tile===T.stone?'stone':tile===T.flower?'flowers':tile===T.path?'path':tile===T.water?'water':'field';
+ return {area,terrain,phase:worldPhase()};
+}
 function startBattle(data,msg){
  const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
  const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
@@ -2056,7 +2065,7 @@ function startBattle(data,msg){
  save();
  battle={...data,mode:doubles?2:1,allySlots,enemySlots:data.enemies.map((p,i)=>i).slice(0,doubles?2:1),
   nextEnemy:doubles?2:1,participants:[...allySlots],pending:[],acting:0,turn:1,phase:'choose',lastTurnLog:[],
-  guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null,uiMenu:'root'};
+  guards:{},focus:{},feedback:msg,impact:'',criticalSide:'',lastTarget:null,uiMenu:'root',environment:battleEnvironment()};
  renderBattle(msg);
 }
 function itemQty(name){return s.inventory[name]||0}
@@ -2088,14 +2097,19 @@ function battleVisual(){
   +'<span class="battleVfxBeam"></span><span class="battleVfxCore"></span><span class="battleVfxBurst"></span>'
   +'<span class="battleVfxLabel">'+escapeHtml(fx.name||'Attack')+'</span></div>';
 }
+function battleEnvironmentClass(){
+ const env=battle?.environment||{area:'route1',terrain:'field',phase:'Day'};
+ return 'arena-'+env.area+' terrain-'+env.terrain+' phase-'+env.phase.toLowerCase();
+}
 function battleHeader(moveOverlay=''){
  const ally=battle.allySlots.map((i,slot)=>hpCard(s.party[i],'ally',battle.phase==='choose'&&slot===battle.acting)).join('');
  const foe=battle.enemySlots.map(i=>hpCard(battle.enemies[i],'enemy')).join('');
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ const scene=battle.environment||{area:'route1',phase:'Day'};
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div><div><div class="rosterTitle">YOUR TEAM</div>'+ally+'</div></div>'
-  +'<div class="combatArena"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>';
+  +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>';
 }
 function battleMessage(msg){return '<div class="combatMessage" role="status">'+escapeHtml(msg||battle.feedback||'Choose your actions.')+'</div>'}
 function renderBattle(message){
