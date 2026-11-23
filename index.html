@@ -1167,6 +1167,35 @@ button,.btn,[role="button"],a,#world,.joystick{
 }
 /* At least 0.7s is reserved for the real battle VFX before advancing. */
 
+
+/* v75 — uncluttered overworld, joystick speed gesture, contextual Interact. */
+#game .hud{display:none!important}
+#game .joystick.walking{
+ border-color:#e7c879;
+ box-shadow:inset 0 4px 14px #0a1d2288,0 0 0 3px #efd68a77,0 4px 12px #081a1f88;
+}
+#game .joystick.walking .joystick-thumb{
+ border-color:#f3d58f;
+ background:linear-gradient(140deg,#8c8e65,#535f55);
+}
+#game .actions #talk,
+#game .actions #talk.primary{
+ background:rgba(164,93,72,0.12)!important;
+ border-color:rgba(244,221,182,0.25)!important;
+ color:rgba(255,247,227,0.42)!important;
+ opacity:.35!important;
+ box-shadow:none!important;
+ transition:background-color .12s ease,opacity .12s ease,color .12s ease!important;
+}
+#game .actions #talk.interactable,
+#game .actions #talk.interactable.primary{
+ background:#a45d48f2!important;
+ border-color:#f0cc9b!important;
+ color:#fff6e6!important;
+ opacity:1!important;
+ box-shadow:0 2px 10px #27130dae!important;
+}
+
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1180,13 +1209,12 @@ document.addEventListener('dblclick',function(event){
 <section id="game" class="screen" aria-label="Critters game">
   <div class="frame" id="gameFrame">
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
-    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v74</small></div><button class="btn" id="save" type="button">Save</button></div>
     <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
     <div class="mobile">
       <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
-      <div class="actions"><button class="btn movementMode" id="movementToggle" type="button" aria-pressed="false" aria-label="Movement speed: Run. Tap to switch.">🏃 Run</button><button class="btn primary" id="talk" type="button">Interact</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
+      <div class="actions"><button class="btn primary" id="talk" type="button">Interact</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
     </div>
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=74-auto-narrator-20261123" defer></script></body></html>
+</main><script src="game.js?v=75-joystick-contextual-interact-20261123" defer></script></body></html>

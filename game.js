@@ -262,7 +262,7 @@ function discoverExplorationSite(o){
  s.discoveries=s.discoveries||{};s.discoveries[o.id]=true;
  const messages=[o.title+'.',o.text];
  if(o.reward){s.inventory[o.reward]=(s.inventory[o.reward]||0)+(o.quantity||1);messages.push('Found '+o.reward+' ×'+(o.quantity||1)+'!')}
- if(o.credits){s.money+=o.credits;messages.push('Found '+o.credits+' credits!')}
+ if(o.credits){s.money+=o.credits;messages.push('Found '+o.credits+' money!')}
  save();say(messages);return true;
 }
 function drawExplorationSites(ox,oy){
@@ -309,12 +309,12 @@ function updateVisual(now=performance.now()){
 const movementStepInterval=()=>s?.movementMode==='walk'?235:135;
 const movementStepDuration=()=>s?.movementMode==='walk'?210:120;
 function syncMovementToggle(){
- const btn=$('movementToggle');if(!btn)return;
+ // Joystick is now the only run/walk selector. Keep its state readable.
  const walking=s?.movementMode==='walk';
- btn.textContent=walking?'🚶 Walk':'🏃 Run';
- btn.setAttribute('aria-pressed',String(walking));
- btn.setAttribute('aria-label','Movement speed: '+(walking?'Walk':'Run')+'. Tap to switch.');
- btn.classList.toggle('walking',walking);
+ const stick=$('joystick');
+ if(!stick)return;
+ stick.classList.toggle('walking',walking);
+ stick.setAttribute('aria-label','Movement joystick · '+(walking?'Walk':'Run')+' mode. Double tap to switch speed.');
 }
 function toggleMovementMode(){
  if(!s||screen!=='game'||modal)return;
@@ -554,7 +554,7 @@ function sideQuestProgress(q){
 }
 function sideQuestGoal(q){return q.kind==='landmark'?1:q.required}
 function sideQuestRewardLabel(q){
- return [q.reward.credits?q.reward.credits+' credits':'',q.reward.item?q.reward.item+' ×'+(q.reward.quantity||1):''].filter(Boolean).join(' + ');
+ return [q.reward.credits?q.reward.credits+' money':'',q.reward.item?q.reward.item+' ×'+(q.reward.quantity||1):''].filter(Boolean).join(' + ');
 }
 function talkSideQuest(id){
  const q=sideQuest(id);if(!q)return;
@@ -743,7 +743,7 @@ function build(){
   if(!found){s.x=17;s.y=16}
  }
  snapVisual();
- $('location').textContent={village:'Starting Village',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home',route1:'Route 1 · Rice Fields',town:'Small Town',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym'}[s.area];
+
 }
 function say(lines,callback){dialog=lines.slice();dialogDone=callback||null;advance()}
 function advance(){if(dialog.length){$('dialogText').textContent=dialog.shift();$('dialog').classList.add('show')}else{$('dialog').classList.remove('show');const fn=dialogDone;dialogDone=null;if(fn)fn()}}
@@ -1419,7 +1419,7 @@ function drawAtmosphereHUD(){
  ctx.font='bold 11px system-ui';
  const width=ctx.measureText?ctx.measureText(label).width+18:166;
  const x=Math.max(5,C.width/Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)))-width-8);
- const y=x<340?39:6; // On narrow phones, keep the clock below the main HUD.
+ const y=6; // The old player/starter/money/badges banner is gone.
  ctx.fillStyle='#162d36e3';ctx.fillRect(x,y,width,24);
  ctx.fillStyle='#f4e3b1';ctx.fillText(label,x+8,y+16);
 }
@@ -1434,6 +1434,7 @@ function draw(){
  resizeGameCanvas();
  tickAtmosphere();
  updateVisual();
+ updateInteractVisibility();
  const zoom=Math.max(0.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const viewportWidth=C.width/zoom,viewportHeight=C.height/zoom;
  const ox=W*S<=viewportWidth?(W*S-viewportWidth)/2:Math.max(0,Math.min(W*S-viewportWidth,visual.x*S-viewportWidth/2));
@@ -1467,7 +1468,6 @@ function draw(){
  const walkFrame=isMoving?Math.floor(performance.now()/105)%4:0;
  sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
  drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
- ctx.fillStyle='#1c3835dc';ctx.fillRect(5,5,330,28);ctx.fillStyle='#fff1ca';ctx.font='bold 13px system-ui';ctx.fillText(s.name+' · '+(s.starter||'Visit lab')+' · '+s.money+' ◇ · '+s.badges+' Badge',11,23);
  drawAtmosphereHUD()
 }
 function region(area,x,y,textLine){doorTransition=null;s.area=area;s.x=x;s.y=y;build();save();if(textLine)say([textLine])}
@@ -1515,6 +1515,33 @@ function move(d){
  const guaranteed=first&&s.earlyJourney.fieldSteps>=5;
  if(guaranteed||Math.random()<wildEncounterChance(s.area))startWild();
 }
+}
+
+function canInteractAhead(){
+ if(!s||screen!=='game'||modal||doorTransition)return false;
+ if($('dialog').classList.contains('show'))return true; // Interact advances dialogue.
+ const offset=dirs[s.face];
+ if(!offset)return false;
+ const x=s.x+offset[0],y=s.y+offset[1];
+ if(npcs.some(p=>p.x===x&&p.y===y))return true;
+ if(villageDoorAt(x,y))return true;
+ if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25)return true;
+ if(isInterior(s.area)&&interiorObjects.some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return true;
+ if(route1SiteAt(x,y))return true;
+ if(s.area==='garden'&&x===24&&y===10)return true;
+ if(s.area==='gym'&&x===17&&y===25)return true;
+ return false;
+}
+let lastInteractAvailable=null;
+function updateInteractVisibility(){
+ const available=canInteractAhead();
+ if(available===lastInteractAvailable)return;
+ lastInteractAvailable=available;
+ const button=$('talk');
+ if(!button)return;
+ button.classList.toggle('interactable',available);
+ button.setAttribute('aria-disabled',String(!available));
+ button.setAttribute('aria-label',available?'Interact with the object ahead':'Nothing to interact with ahead');
 }
 function interact(){
  if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
@@ -1800,7 +1827,7 @@ function migrateCollection(){
  }
 }
 function milestonePrize(m){
- return [m.credits+' credits',m.potions?m.potions+' Potions':'',m.revives?m.revives+' Revives':''].filter(Boolean).join(' · ');
+ return [m.credits+' money',m.potions?m.potions+' Potions':'',m.revives?m.revives+' Revives':''].filter(Boolean).join(' · ');
 }
 function claimCollectionMilestone(count){
  const m=COLLECTION_MILESTONES.find(x=>x.count===count),c=collectionData();
@@ -1963,7 +1990,7 @@ function renderIndex(){
  open('Critter Index','<div class="watchShell '+(battleViewing?'battleIndexShell battleQuickView':'')+'">'
   +(battleViewing?'<div class="watchSectionTitle">'+(indexTab==='items'?'Use battle item':'Choose a Critter')+'</div>'
     :'<div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
-     +'<div class="watchStats"><span>◇ '+s.money+' credits</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
+     +'<div class="watchStats"><span>◇ '+s.money+' money</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
      +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>')
   +'<div class="watchScreen" role="region" aria-label="Critter Index '+escapeHtml(indexTab)+' screen">'+content+'</div>'
   +'<div class="watchFooter">'+(battleViewing?
@@ -2257,7 +2284,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v74</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v75</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
@@ -2880,7 +2907,7 @@ async function resolveTeamTurn(){
 function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capture'})}
 
 // v30 Evolution progression. Chains are authored in data/critters.json.
-// Evolutions consume no items or credits, cannot affect opponents, and
+// Evolutions consume no items or money, cannot affect opponents, and
 // use the existing world species plus the reserved starter families.
 const EVOLUTION_STONE_TYPES=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting','Normal','Steel','Ground'];
 const EVOLUTION_STONES=Object.fromEntries(EVOLUTION_STONE_TYPES.map(type=>[type+' Stone',type]));
@@ -3153,13 +3180,26 @@ $('new').onclick=()=>show('selection');
 $('continue').onclick=()=>{backUpLegacySaveBeforeMigration();s=read();if(!s)return;migrate();build();show('game')};
 $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,' ');if(!name){$('error').textContent='Please enter a name.';return}
  s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4,movementMode:'run'};
- save();build();show('game');say(['Welcome, '+name+'!','Use the left joystick to move and tap Interact to use objects. Toggle Run / Walk to change speed.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
+ save();build();show('game');say(['Welcome, '+name+'!','Use the left joystick to move. Double tap it to switch Run / Walk. Interact lights up when facing something usable.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
-$('index2').onclick=index;$('save').onclick=()=>{save();say(['Your adventure has been saved.'])};$('talk').onclick=interact;$('movementToggle').onclick=toggleMovementMode;$('dialog').onclick=advance;$('close').onclick=close;
+$('index2').onclick=index;$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
 window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>movementStepInterval()){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
 window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});// Mobile joystick uses a pointer captured by the joystick base; keyboard controls stay unchanged.
 const stick=$('joystick'),thumb=$('joystickThumb');
 let stickPointer=null,stickDirection=null,stickActive=false,stickRepeatAt=0;
+let joystickTouchStarted=0,joystickStartX=0,joystickStartY=0,lastJoystickTap=0;
+const JOYSTICK_DOUBLE_TAP_MS=330;
+function checkJoystickDoubleTap(e){
+ if(e.type!=='pointerup'||e.pointerId!==stickPointer)return false;
+ const elapsed=performance.now()-joystickTouchStarted;
+ const distance=Math.hypot(e.clientX-joystickStartX,e.clientY-joystickStartY);
+ // Count intentional quick taps, not held movement or swipes.
+ if(elapsed>240||distance>18){lastJoystickTap=0;return false;}
+ const now=performance.now(),doubleTap=lastJoystickTap>0&&now-lastJoystickTap<=JOYSTICK_DOUBLE_TAP_MS;
+ lastJoystickTap=doubleTap?0:now;
+ if(doubleTap){toggleMovementMode();return true;}
+ return false;
+}
 function positionStick(dx=0,dy=0){
  thumb.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)';
 }
@@ -3186,12 +3226,13 @@ stick.addEventListener('pointerdown',e=>{
  if(e.pointerType==='mouse'&&e.button!==0)return;
  e.preventDefault();
  stickPointer=e.pointerId;stickActive=true;stickRepeatAt=0;stick.classList.add('active');
+ joystickTouchStarted=performance.now();joystickStartX=e.clientX;joystickStartY=e.clientY;
  if(stick.setPointerCapture)try{stick.setPointerCapture(e.pointerId)}catch(err){}
  aimStick(e);
 });
 stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();aimStick(e)}});
 for(const event of ['pointerup','pointercancel','lostpointercapture']){
- stick.addEventListener(event,e=>{if(stickPointer===e.pointerId){e.preventDefault();endStick(e.pointerId)}});
+ stick.addEventListener(event,e=>{if(stickPointer===e.pointerId){e.preventDefault();checkJoystickDoubleTap(e);endStick(e.pointerId)}});
 }
 stick.addEventListener('contextmenu',e=>e.preventDefault());
 window.addEventListener('pointerup',e=>endStick(e.pointerId));

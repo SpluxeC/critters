@@ -243,3 +243,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 ## v74 — Automatic battle narration
 - Narration automatically advances one second after a message finishes typing, while preserving the separate attack effect minimum animation time. Taps still optionally finish typing or skip ahead.
 - Removed the redundant “Resolving team turn…” overlay. Sequential player and opponent attacks are unchanged.
+
+## v75 — Minimal overworld HUD and contextual controls
+- Run/Walk button removed; double-tap the joystick (two short taps within 330ms) to switch, with a gold walking-mode ring on the joystick.
+- Interact fades nearly transparent until the player faces an NPC, usable door, interior object, route inspection point, or gym entrance; dialogue can still be advanced.
+- Removed the top Save button, the top DOM HUD, and the player/starter/money/badges canvas banner. The time/weather display remains.
+- Changed visible 'credits' currency labels to 'money', retaining internal reward property names and saved monetary balances for compatibility.

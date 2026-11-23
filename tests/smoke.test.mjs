@@ -413,3 +413,18 @@ test('v74 battle narrator advances automatically without resolving-turn popup',(
  assert.doesNotMatch(game,/Resolving team turn…/);
  assert.doesNotMatch(game,/class="combatProcessing"/);
 });
+
+test('v75 overworld removes run toggle, canvas banner and top Save button',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.doesNotMatch(html,/id="movementToggle"/);
+ assert.doesNotMatch(html,/id="save"/);
+ assert.doesNotMatch(html,/class="hud"><div>/);
+ assert.doesNotMatch(game,/ctx\.fillText\(s\.name\+' · '/);
+ assert.match(game,/function checkJoystickDoubleTap\(e\)/);
+ assert.match(game,/JOYSTICK_DOUBLE_TAP_MS=330/);
+ assert.match(game,/function canInteractAhead\(\)/);
+ assert.match(game,/function updateInteractVisibility\(\)/);
+ assert.match(html,/\.actions #talk\.interactable/);
+ assert.match(game,/Money: /);
+ assert.doesNotMatch(game,/ credits!/);
+});
