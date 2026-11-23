@@ -212,3 +212,7 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Allied active HP cards now use the opponent's original card colors and sit flush with the top of a full-width narrator strip.
 - Battle, Index, and Escape are vertically stacked without gaps directly above the narrator, while the narrator extends edge-to-edge underneath.
 - Removed redundant in-arena Critter name captions and the oval auras plus artificial arena ellipse overlays; battle sprites, background paintings, and genuine move effects remain intact.
+
+## v69 — Visible build identifier
+- Show the current v69 build label on the overworld and combat status header, correcting a stale v62 display that made successful battle deployments look unchanged.
+- Refresh the game script query token for a clean asset request when loading the updated index page.
