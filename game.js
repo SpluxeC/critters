@@ -2297,19 +2297,20 @@ function attachCombatNarrator(){
   if(state.shown===full.length){clearInterval(combatNarratorTick);combatNarratorTick=null;}
  },18);
 }
-function narrateCombatLine(text,withMoveEffect=false){
+function narrateCombatLine(text,moveEffect=null){
  if(!battle)return Promise.resolve();
  battle.feedback=text;
  // The move's VFX is inserted only for its own narration, never repeated
  // by subsequent HP/effectiveness lines or later menu interactions.
- if(!withMoveEffect){battle.lastVfx=null;battle.impact='';battle.lastTarget=null;}
+ battle.lastVfx=moveEffect;
+ if(!moveEffect){battle.impact='';battle.lastTarget=null;}
  renderBattle();
  return new Promise(resolve=>{
   const state=combatNarratorState;
   if(!state){resolve();return;}
-  state.ready=!withMoveEffect;
+  state.ready=!moveEffect;
   state.advance=resolve;
-  if(withMoveEffect){
+  if(moveEffect){
    setTimeout(()=>{if(combatNarratorState===state)state.ready=true;},820);
   }
  });
@@ -2320,7 +2321,7 @@ async function narrateCombatEvents(entries,moveEffect){
   // A move's attack animation runs with its "uses" announcement.
   const line=entries[n];
   const moveAnnouncement=/\suses\s.+\.$/.test(line)||/\sused\s.+\.$/.test(line);
-  await narrateCombatLine(line,!!moveEffect&&moveAnnouncement);
+  await narrateCombatLine(line,moveEffect&&moveAnnouncement?moveEffect:null);
   if(!battle)return;
  }
  if(battle){battle.lastVfx=null;battle.impact='';battle.lastTarget=null;}
