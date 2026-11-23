@@ -112,7 +112,7 @@ test('classic battle menus keep the three choices, move overlay and Index action
  assert.match(screen,/data-move-target="0"/);
  // Index is a separate full-screen watch; it should not be a small arena submenu.
  assert.match(game,/openBattleIndex\('items'\)/);
- assert.match(game,/openBattleIndex\('party'\)/);
+ assert.match(game,/openBattleIndex\('clock'\)/);
  battle.uiMenu='root';battle.kind='trainer';sandbox.renderBattle();
  assert.match(screen,/id="menuEscape" disabled/);
 });
@@ -357,7 +357,7 @@ test('v70 battle bag and 2x2 menu are wired to inventory and watch switching',()
  assert.match(game,/id="menuUse">Use<\/button>/);
  assert.match(game,/id="menuCritters">Critters<\/button>/);
  assert.match(game,/openBattleIndex\('items'\)/);
- assert.match(game,/openBattleIndex\('party'\)/);
+ assert.match(game,/openBattleIndex\('clock'\)/);
  assert.match(game,/case 'ppPotion'/);
  assert.match(game,/data-battle-pp-move/);
  assert.match(game,/watchBattleBeam/);

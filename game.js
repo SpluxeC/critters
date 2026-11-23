@@ -1675,7 +1675,7 @@ function indexClock(){
 function battleIndexActive(){return !!(battle&&battle.phase==='choose'&&battle.indexOpen)}
 function openBattleIndex(tab='party'){
  if(!battle||battle.phase!=='choose')return;
- battle.indexOpen=true;indexTab=tab==='items'?'items':'clock';indexSelection=battle.allySlots[battle.acting]??0;battle.ppPicker=false;renderIndex();
+ battle.indexOpen=true;indexTab=tab==='items'?'items':'clock';indexSelection=battle.allySlots?.[battle.acting]??0;battle.ppPicker=false;renderIndex();
 }
 function returnFromBattleIndex(){
  if(!battle||!battle.indexOpen)return;
