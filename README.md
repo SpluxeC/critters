@@ -239,3 +239,7 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Opening Attack displays “Choose a move…”; each move announces “[Critter] uses [move]” and displays effectiveness separately for type multipliers.
 - Player and opponent actions now resolve individually rather than simultaneously. The narrator displays one line at a time; tap to finish typing, tap again to advance. An attack animation gets at least 820 ms before the next narrated line can advance.
 - Preserves the previous turn ordering, PP rules, item usage, move effects, and save compatibility.
+
+## v74 — Automatic battle narration
+- Narration automatically advances one second after a message finishes typing, while preserving the separate attack effect minimum animation time. Taps still optionally finish typing or skip ahead.
+- Removed the redundant “Resolving team turn…” overlay. Sequential player and opponent attacks are unchanged.

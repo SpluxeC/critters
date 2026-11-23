@@ -404,3 +404,12 @@ test('v73 narrator stages attacks individually and exposes tap-to-finish typing'
  assert.match(game,/log.push\('Not very effective.'\)/);
  assert.match(html,/\.classicMainMenu \.btn,\s*#shade:has\(\.combatTop\) \.classicMainMenu \.classicCritters/);
 });
+
+test('v74 battle narrator advances automatically without resolving-turn popup',()=>{
+ assert.match(game,/combatNarratorDelay=setTimeout\(\(\)=>/);
+ assert.match(game,/\},1000\)/);
+ assert.match(game,/state.scheduleAdvance\(\)/);
+ assert.match(game,/if\(state.ready\)advance\(\)/);
+ assert.doesNotMatch(game,/Resolving team turn…/);
+ assert.doesNotMatch(game,/class="combatProcessing"/);
+});

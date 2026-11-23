@@ -2257,7 +2257,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v73</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v74</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
@@ -2265,36 +2265,56 @@ function battleHeader(moveOverlay=''){
 
 // Battle dialogue uses fast typewriter text. The first tap completes the line;
 // subsequent taps advance only once the current attack effect has finished.
-let combatNarratorState=null,combatNarratorTick=null;
+let combatNarratorState=null,combatNarratorTick=null,combatNarratorDelay=null;
 function clearCombatNarrator(){
  if(combatNarratorTick!==null){clearInterval(combatNarratorTick);combatNarratorTick=null;}
+ if(combatNarratorDelay!==null){clearTimeout(combatNarratorDelay);combatNarratorDelay=null;}
  combatNarratorState=null;
 }
 function attachCombatNarrator(){
  const el=document.querySelector?.('#shade .combatMessage');
  if(!el)return;
- if(combatNarratorTick!==null){clearInterval(combatNarratorTick);combatNarratorTick=null;}
+ clearCombatNarrator();
  const full=String(battle?.feedback||'Choose an action.');
- const state={text:full,shown:0,ready:true,advance:null};
+ const state={text:full,shown:0,ready:true,advance:null,typed:false};
  combatNarratorState=state;
  el.textContent='';
  el.setAttribute('role','button');
  el.setAttribute('tabindex','0');
- el.setAttribute('aria-label','Battle narrator. Tap once to finish typing, then again to continue.');
- const finish=()=>{state.shown=full.length;el.textContent=full;if(combatNarratorTick!==null){clearInterval(combatNarratorTick);combatNarratorTick=null;}};
+ el.setAttribute('aria-label','Battle narrator. Tap to finish typing or skip ahead.');
  const advance=()=>{
-  if(combatNarratorState!==state)return;
-  if(state.shown<full.length){finish();return;}
-  if(state.advance&&state.ready){const cb=state.advance;state.advance=null;cb();}
+  if(combatNarratorState!==state||!state.typed||!state.ready||!state.advance)return;
+  if(combatNarratorDelay!==null){clearTimeout(combatNarratorDelay);combatNarratorDelay=null;}
+  const cb=state.advance;state.advance=null;cb();
  };
- el.onclick=advance;
- el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();advance();}};
+ const scheduleAdvance=()=>{
+  if(combatNarratorState!==state||!state.typed||!state.advance||combatNarratorDelay!==null)return;
+  combatNarratorDelay=setTimeout(()=>{
+   combatNarratorDelay=null;
+   if(combatNarratorState!==state||!state.advance)return;
+   if(state.ready)advance();
+   else scheduleAdvance(); // Never cut a move animation short.
+  },1000);
+ };
+ state.scheduleAdvance=scheduleAdvance;
+ const finish=()=>{
+  if(combatNarratorState!==state)return;
+  state.shown=full.length;state.typed=true;el.textContent=full;
+  if(combatNarratorTick!==null){clearInterval(combatNarratorTick);combatNarratorTick=null;}
+  scheduleAdvance();
+ };
+ el.onclick=()=>{
+  if(combatNarratorState!==state)return;
+  if(!state.typed)finish();
+  else advance(); // Optional manual skip; battles also progress on their own.
+ };
+ el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.onclick();}};
  if(!full){finish();return;}
  combatNarratorTick=setInterval(()=>{
   if(combatNarratorState!==state){clearInterval(combatNarratorTick);combatNarratorTick=null;return;}
   state.shown=Math.min(full.length,state.shown+2);
   el.textContent=full.slice(0,state.shown);
-  if(state.shown===full.length){clearInterval(combatNarratorTick);combatNarratorTick=null;}
+  if(state.shown===full.length)finish();
  },18);
 }
 function narrateCombatLine(text,moveEffect=null){
@@ -2310,6 +2330,9 @@ function narrateCombatLine(text,moveEffect=null){
   if(!state){resolve();return;}
   state.ready=!moveEffect;
   state.advance=resolve;
+  // Narration auto-advances one second after typing completes.
+  // A move must also finish its attack animation before advancing.
+  state.scheduleAdvance();
   if(moveEffect){
    setTimeout(()=>{if(combatNarratorState===state)state.ready=true;},820);
   }
@@ -2382,7 +2405,7 @@ function renderBattle(message){
   }else{
    actions=battleMainActions('root');
   }
- }else if(battle.phase==='resolve')actions='<div class="combatProcessing">Resolving team turn…</div>';
+ }
  open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader(moveOverlay)+battleMessage(battle.feedback)
   +(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')
   +actions+recentBattleLog()+earlyBattleTip());
