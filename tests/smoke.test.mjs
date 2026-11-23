@@ -98,7 +98,7 @@ test('classic battle menus keep the three choices, move overlay and Index action
   activeEnemies:()=>[0],activeAllies:()=>[0],normalizeMoves:()=>{},
   validMove:id=>id==='tide-splash'?{id,name:'Tide Splash',type:'Water',target:'enemy',category:'special',power:40,pp:15}:null,
   getMove:()=>({name:'Tide Splash',type:'Water',target:'enemy',category:'special',power:40,pp:15}),
-  escapeHtml:v=>String(v),battleHeader:v=>'<div class="combatArena">'+v+'</div>',battleMessage:v=>v||'',
+  escapeHtml:v=>String(v),battleHeader:v=>'<div class="combatArena">'+v+'</div>',battleMessage:v=>v||'',attachCombatNarrator:()=>{},
   recentBattleLog:()=>'',earlyBattleTip:()=>'',open:(title,html)=>{screen=html},
   $:()=>({hidden:false}),document:{querySelectorAll:()=>[]},
   captureChance:()=>.5,itemQty:()=>2,queueBattleAction:()=>{},selectPoke:()=>{},selectRevive:()=>{}};
