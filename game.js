@@ -597,8 +597,8 @@ function sideQuestIndex(){
   +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
 }
 function build(preview=false){
- applyAreaSize(s.area);
- if(!preview)migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
+ if(!preview)migrate();
+ applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
  case 'village':
  // One art system: original house roof/wall tiles are NOT placed in the village.

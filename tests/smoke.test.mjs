@@ -528,7 +528,7 @@ test('v82 outer route graph has two loops and a cave fade',()=>{
  assert.match(game,/region\('cave',17,23/);
  assert.match(game,/\['forest',15,18\]/);
  assert.match(game,/\['garden',12,14\]/);
- assert.match(game,/regionMapArt" src="assets\/region-map.svg\?v=82-connected-loops"/);
+ assert.match(game,/regionMapArt" src="assets\/region-map.svg\?v=83-varied-districts"/);
 });
 
 test('v83 region sections have distinct dimensions, asymmetric borders, area HUD and longer fade',()=>{
