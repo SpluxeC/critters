@@ -105,13 +105,14 @@ test('classic battle menus keep the three choices, move overlay and Index action
  const sandbox=vm.createContext(context);
  vm.runInContext(game.slice(start,finish),sandbox);
  sandbox.renderBattle();
- assert.match(screen,/id="menuBattle"/);assert.match(screen,/id="menuIndex"/);assert.match(screen,/id="menuEscape"/);
+ assert.match(screen,/id="menuBattle"/);assert.match(screen,/id="menuUse"/);assert.match(screen,/id="menuCritters"/);assert.match(screen,/id="menuEscape"/);
  assert.doesNotMatch(screen,/battleMovesAround/);
  battle.uiMenu='battle';sandbox.renderBattle();
  assert.match(screen,/battleMovesAround/);assert.match(screen,/Tide Splash/);
  assert.match(screen,/data-move-target="0"/);
  // Index is a separate full-screen watch; it should not be a small arena submenu.
- assert.match(game,/if\(\$\('menuIndex'\)\)\$\('menuIndex'\)\.onclick=openBattleIndex/);
+ assert.match(game,/openBattleIndex\('items'\)/);
+ assert.match(game,/openBattleIndex\('party'\)/);
  battle.uiMenu='root';battle.kind='trainer';sandbox.renderBattle();
  assert.match(screen,/id="menuEscape" disabled/);
 });
@@ -349,4 +350,18 @@ test('portrait UI has the movement toggle directly above Interact',()=>{
  assert.match(game,/s\.movementMode=s\.movementMode==='walk'\?'walk':'run'/);
  assert.match(game,/stickRepeatAt=Date\.now\(\)\+movementStepInterval\(\)/);
  assert.match(game,/visual\.duration=movementStepDuration\(\)/);
+});
+
+test('v70 battle bag and 2x2 menu are wired to inventory and watch switching',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(game,/id="menuUse">Use<\/button>/);
+ assert.match(game,/id="menuCritters">Critters<\/button>/);
+ assert.match(game,/openBattleIndex\('items'\)/);
+ assert.match(game,/openBattleIndex\('party'\)/);
+ assert.match(game,/case 'ppPotion'/);
+ assert.match(game,/data-battle-pp-move/);
+ assert.match(game,/watchBattleBeam/);
+ assert.match(game,/\['PP Potion',45\]/);
+ assert.match(html,/\.classicMainMenu \.classicCritters/);
+ assert.match(html,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });

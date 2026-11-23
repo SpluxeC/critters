@@ -216,3 +216,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 ## v69 — Visible build identifier
 - Show the current v69 build label on the overworld and combat status header, correcting a stale v62 display that made successful battle deployments look unchanged.
 - Refresh the game script query token for a clean asset request when loading the updated index page.
+
+## v70 — Battle Use/Critters and PP supplies
+- Four black-bordered commands in a 2×2 cluster: Battle, Use, Critters (blue), Escape.
+- Use opens the watch bag with HP Potion, Revive, purchasable PP Potion (restores up to 10 PP to one move), and the capture beam during wild encounters; PP Potion is stocked in shops for 45 credits.
+- Critters opens the watch Party screen with existing legal in-battle switch actions; original turn cost is retained.
+- Allied health card now has an opaque pale background with dark lettering for contrast across battle scenery.
