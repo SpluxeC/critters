@@ -1647,7 +1647,9 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 // Party swapping and module configuration remain Center-exclusive.
 let indexTab='clock',indexSelection=0;
 let playerIndexSection='bag',encyclopediaSection='critters';
-const INDEX_TABS=[['clock','Index'],['player','Player'],['encyclopedia','Encyclopedia'],['tools','Tools']];
+const INDEX_TABS=[['clock','Index'],['player','Player'],['encyclopedia','Encyclopedia'],['settings','Settings']];
+const INDEX_SECTIONS=[['clock','Critters'],['tools','Tools']];
+let indexMainSection='clock',settingsSavedMessage=false;
 const PLAYER_INDEX_SECTIONS=[['bag','Bag'],['records','Records']];
 const ENCYCLOPEDIA_SECTIONS=[['critters','Critters'],['moves','Moves']];
 function indexSectionNav(sections,selected,attribute,label){
@@ -1664,12 +1666,23 @@ function indexEncyclopedia(){
  return indexSectionNav(ENCYCLOPEDIA_SECTIONS,encyclopediaSection,'data-encyclopedia-section','Encyclopedia sections')
   +(encyclopediaSection==='moves'?indexMoves():indexCritters());
 }
+function indexMain(){
+ return indexSectionNav(INDEX_SECTIONS,indexMainSection,'data-index-section','Index sections')
+  +(indexMainSection==='tools'?indexTools():indexClock());
+}
+function indexSettings(){
+ return '<div class="watchSectionTitle">Game settings</div>'
+  +(settingsSavedMessage?'<div class="watchBagNotice" role="status">Game saved successfully.</div>':'')
+  +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
+  +'<div class="watchToolCard watchSettingsCard"><strong>Audio controls</strong><p>Volume and sound controls will appear here when game audio is added.</p></div>'
+  +'<div class="watchToolCard watchSettingsCard"><strong>Main menu</strong><p>Save your progress and return to the title screen.</p><button type="button" class="btn" id="settingsReturnTitle">Save & Return to Title</button></div>';
+}
 let moveBookType='Water';
 let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
 
 function index(){
  if(screen!=='game'||battle)return;
- indexTab='clock';playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
+ indexTab='clock';indexMainSection='clock';settingsSavedMessage=false;playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
 }
 function indexSlotContent(i){
  if(i<8){
@@ -2081,20 +2094,23 @@ function renderIndex(){
   if(indexTab==='party')indexTab='clock';
   if(indexTab==='items'||indexTab==='records'){playerIndexSection=indexTab==='records'?'records':'bag';indexTab='player';}
   if(indexTab==='moves'||indexTab==='critters'){encyclopediaSection=indexTab;indexTab='encyclopedia';}
+  if(indexTab==='tools'){indexTab='clock';indexMainSection='tools';}
  }
  const tabs=battleViewing?'':INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+(key==='player'?escapeHtml(s.name):label)+'</button>').join('');
  let content=battleViewing?(indexTab==='items'?indexItems():indexClock()):
-   indexTab==='player'?indexPlayer():indexTab==='clock'?indexClock():indexTab==='encyclopedia'?indexEncyclopedia():indexTools();
+   indexTab==='player'?indexPlayer():indexTab==='clock'?indexMain():indexTab==='encyclopedia'?indexEncyclopedia():indexSettings();
  open('Critter Index','<div class="watchShell '+(battleViewing?'battleIndexShell battleQuickView':'')+'">'
   +(battleViewing?'<div class="watchSectionTitle">'+(indexTab==='items'?'Use battle item':'Choose a Critter')+'</div>'
     :'<nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>')
   +'<div class="watchScreen" role="region" aria-label="Critter Index '+escapeHtml(indexTab)+' screen">'+content+'</div>'
-  +'<div class="watchFooter">'+(battleViewing?
-    '<button type="button" class="btn primary" id="watchReturnBattle">Return to Battle</button>':
-    '<button type="button" class="btn" id="mSave">Save Adventure</button><button type="button" class="btn" id="mTitle">Return to Title</button>')+'</div></div>');
+  +(battleViewing?'<div class="watchFooter"><button type="button" class="btn primary" id="watchReturnBattle">Return to Battle</button></div>':'')+'</div>');
  document.querySelectorAll('[data-watch-tab]').forEach(b=>b.onclick=()=>{
   if(battleViewing||!INDEX_TABS.some(([key])=>key===b.dataset.watchTab))return;
   indexTab=b.dataset.watchTab;renderIndex();
+ });
+ document.querySelectorAll('[data-index-section]').forEach(b=>b.onclick=()=>{
+  if(battleViewing||indexTab!=='clock'||!INDEX_SECTIONS.some(([key])=>key===b.dataset.indexSection))return;
+  indexMainSection=b.dataset.indexSection;renderIndex();
  });
  document.querySelectorAll('[data-player-section]').forEach(b=>b.onclick=()=>{
   if(battleViewing||!PLAYER_INDEX_SECTIONS.some(([key])=>key===b.dataset.playerSection))return;
@@ -2159,7 +2175,7 @@ function renderIndex(){
   indexSelection=n;renderIndex();
  });
  const view=$('watchViewTab');
- if(view)view.onclick=()=>{if(battleViewing)return;indexTab='tools';renderIndex()};
+ if(view)view.onclick=()=>{if(battleViewing)return;indexTab='clock';indexMainSection='tools';renderIndex()};
  if(battleViewing){
   $('watchReturnBattle').onclick=returnFromBattleIndex;
   document.querySelectorAll('[data-index-battle-switch]').forEach(el=>el.onclick=()=>{
@@ -2188,8 +2204,10 @@ function renderIndex(){
   };
   const revive=$('watchBattleRevive');if(revive)revive.onclick=selectRevive;
  }else{
-  $('mSave').onclick=()=>{save();close()};
-  $('mTitle').onclick=()=>{save();close();show('title')};
+  const saveButton=$('settingsSaveGame');
+  if(saveButton)saveButton.onclick=()=>{save();settingsSavedMessage=true;renderIndex()};
+  const titleButton=$('settingsReturnTitle');
+  if(titleButton)titleButton.onclick=()=>{save();close();show('title')};
  }
 }
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
@@ -2409,7 +2427,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v78</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v79</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';

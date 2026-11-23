@@ -439,7 +439,7 @@ test('v76 inactive Interact is more visible and joystick hint does not move inpu
 
 test('v77 player and encyclopedia tabs consolidate former root tabs',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(game,/const INDEX_TABS=\[\['clock','Index'\],\['player','Player'\],\['encyclopedia','Encyclopedia'\],\['tools','Tools'\]\]/);
+ assert.match(game,/const INDEX_TABS=\[\['clock','Index'\],\['player','Player'\],\['encyclopedia','Encyclopedia'\],\['settings','Settings'\]\]/);
  assert.match(game,/data-player-section/);
  assert.match(game,/data-encyclopedia-section/);
  assert.match(game,/function indexPlayer\(\)/);
@@ -463,4 +463,14 @@ test('v78 Index first and field item use supports safe targeted consumables',()=
  assert.match(game,/fieldBagItem==='PP Potion'/);
  assert.match(game,/if\(battleIndexActive\(\)\)return battleTools/);
  assert.match(html,/\.fieldBagTargets/);
+});
+
+test('v79 Tools moved under Index and Settings houses Save',()=>{
+ assert.match(game,/const INDEX_SECTIONS=/);
+ assert.match(game,/function indexMain\(\)/);
+ assert.match(game,/function indexSettings\(\)/);
+ assert.match(game,/id="settingsSaveGame"/);
+ assert.match(game,/id="settingsReturnTitle"/);
+ assert.match(game,/Audio controls/);
+ assert.doesNotMatch(game,/id="mSave"/);
 });

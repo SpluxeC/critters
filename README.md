@@ -264,3 +264,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Index (formerly Clock) is the first and default top tab, before the player-name tab, Encyclopedia, and Tools. Top and inner tabs are text-only.
 - Field Bag now allows Potion healing, Revive, PP Potion (target then move), and eligible evolution stones by selecting a party Critter. Items are consumed only when successfully used, and all actions save normally.
 - Items not usable outside battle remain visible but unavailable; battle-only Capture Beam and battle menus are unchanged.
+
+## v79 — Watch Settings
+- Tools now lives in the Index tab as an internal section alongside the clock.
+- The former Tools top-level tab is Settings, containing Save Game, Save & Return to Title and a note for future audio settings. No nonfunctional volume controls were added.
+- Battle watch access still skips regular tabs.
