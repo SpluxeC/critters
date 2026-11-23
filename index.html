@@ -918,6 +918,92 @@ button,.btn,[role="button"],a,#world,.joystick{
  #game .actions #talk,#game .actions #index2{min-height:49px;padding:7px 9px}
 }
 
+
+/* v67: compact text-only controls; allied health below the player-side Critter. */
+#shade:has(.combatTop) .classicMainMenu{gap:6px}
+#shade:has(.combatTop) .classicMainMenu .btn{
+ min-height:clamp(34px,6.4dvh,49px)!important;
+ padding:5px 12px!important;
+ font-size:clamp(13px,1.7vw,18px)!important;
+ line-height:1.15;justify-content:center!important;
+}
+#shade:has(.combatTop) .combatRoster{justify-content:flex-end}
+#shade:has(.combatTop) .combatRoster>div{order:initial!important}
+#shade:has(.combatTop) .combatAllyStatus{
+ position:absolute;z-index:9;
+ left:max(11px,env(safe-area-inset-left));
+ bottom:calc(max(12px,env(safe-area-inset-bottom)) + 76px);
+ width:min(38vw,340px);
+ display:flex;flex-direction:column;gap:4px;
+ pointer-events:none;
+}
+#shade:has(.combatTop) .combatAllyStatus .combatCard{
+ margin:0;padding:5px 9px;
+ background:linear-gradient(125deg,#264a49ed,#19333de8);
+}
+#shade:has(.combatTop) .combatSide.allies{
+ left:7%;top:31%;width:47%;height:53%;
+ align-items:flex-end;
+}
+#shade:has(.combatTop) .combatSide.allies .combatFigure{
+ max-width:none;min-width:0;width:100%;height:100%;
+}
+#shade:has(.combatTop) .combatSide.allies .combatSprite{
+ width:clamp(165px,36vw,370px)!important;
+ height:clamp(185px,44dvh,430px)!important;
+ max-width:none!important;max-height:100%!important;
+ object-fit:contain;
+ animation:none!important;
+}
+#shade:has(.combatTop) .combatSide.allies .combatSymbol{
+ font-size:clamp(80px,12vw,156px);
+ animation:none!important;
+}
+/* Scene artwork must stay still when menus change; true attack effects remain. */
+#shade:has(.combatTop) .combatFigure .combatSprite,
+#shade:has(.combatTop) .combatSymbol{animation:none!important}
+@media(max-width:720px){
+ #shade:has(.combatTop) .combatAllyStatus{
+  width:min(46vw,270px);
+  bottom:calc(max(12px,env(safe-area-inset-bottom)) + 63px);
+ }
+ #shade:has(.combatTop) .combatSide.allies{
+  left:4%;top:34%;width:51%;height:47%;
+ }
+ #shade:has(.combatTop) .combatSide.allies .combatSprite{
+  width:clamp(160px,48vw,290px)!important;
+  height:clamp(160px,35dvh,290px)!important;
+ }
+ #shade:has(.combatTop) .classicMainMenu .btn{
+  min-height:clamp(32px,5.7dvh,43px)!important;padding:4px 9px!important;
+ }
+}
+@media(max-width:520px) and (orientation:portrait){
+ #shade:has(.combatTop) .combatSide.allies{
+  left:2%;top:36%;width:53%;height:44%;
+ }
+ #shade:has(.combatTop) .combatSide.allies .combatSprite{
+  width:clamp(155px,52vw,240px)!important;
+  height:clamp(175px,34dvh,310px)!important;
+ }
+ #shade:has(.combatTop) .combatAllyStatus{width:48vw}
+ #shade:has(.combatTop) .combatAllyStatus .combatCard{padding:4px 6px}
+}
+@media(max-height:430px) and (orientation:landscape){
+ #shade:has(.combatTop) .combatAllyStatus{
+  bottom:calc(max(8px,env(safe-area-inset-bottom)) + 49px);
+  width:min(36vw,280px);
+ }
+ #shade:has(.combatTop) .combatSide.allies{left:6%;top:23%;width:46%;height:59%}
+ #shade:has(.combatTop) .combatSide.allies .combatSprite{
+  height:clamp(125px,47dvh,220px)!important;
+  width:clamp(150px,34vw,260px)!important;
+ }
+ #shade:has(.combatTop) .classicMainMenu .btn{
+  min-height:31px!important;padding:3px 9px!important;
+ }
+}
+
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -940,4 +1026,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=66-natural-wild-encounters-20261122" defer></script></body></html>
+</main><script src="game.js?v=67-battle-ui-20261123" defer></script></body></html>

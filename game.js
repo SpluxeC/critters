@@ -2226,8 +2226,9 @@ function battleHeader(moveOverlay=''){
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
  return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
-  +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div><div><div class="rosterTitle">YOUR TEAM</div>'+ally+'</div></div>'
-  +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>';
+  +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
+  +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
+  +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
 }
 function battleMessage(msg){return '<div class="combatMessage" role="status">'+escapeHtml(msg||battle.feedback||'Choose your actions.')+'</div>'}
 function renderBattle(message){
@@ -2274,15 +2275,20 @@ function renderBattle(message){
      +'<button class="btn" id="battleBack">Back</button></div>';
   }else{
    actions='<div class="classicMenu classicMainMenu">'
-     +'<button class="btn classicBattle" id="menuBattle"><span>⚔</span> Battle</button>'
-     +'<button class="btn classicIndex" id="menuIndex"><span>⌚</span> Index</button>'
-     +'<button class="btn classicEscape" id="menuEscape" '+(battle.kind!=='wild'?'disabled title="Cannot escape a trainer battle"':'')+'><span>↗</span> Escape</button></div>'
+     +'<button class="btn classicBattle" id="menuBattle">Battle</button>'
+     +'<button class="btn classicIndex" id="menuIndex">Index</button>'
+     +'<button class="btn classicEscape" id="menuEscape" '+(battle.kind!=='wild'?'disabled title="Cannot escape a trainer battle"':'')+'>Escape</button></div>'
      +(battle.kind!=='wild'?'<p class="classicFootnote">Escape is unavailable against trainers.</p>':'');
   }
  }else if(battle.phase==='resolve')actions='<div class="combatProcessing">Resolving team turn…</div>';
  open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader(moveOverlay)+battleMessage(battle.feedback)
   +(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')
   +actions+recentBattleLog()+earlyBattleTip());
+ // A resolved move should animate exactly once. Keep the current DOM's effect,
+ // but do not reinsert it on every later Battle/Index/Back menu redraw.
+ battle.lastVfx=null;
+ battle.impact='';
+ battle.lastTarget=null;
  $('close').hidden=true;
  if(battle.phase!=='choose')return;
  const menuTo=(next)=>{battle.uiMenu=next;renderBattle()};

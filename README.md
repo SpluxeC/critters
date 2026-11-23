@@ -201,3 +201,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Removed encounter-count and battle-count species unlocking. Every species authored for a region can be encountered from the beginning when its habitat overlaps the area's currently permitted level range; normal legendary badge restrictions still apply.
 - Every eligible wild tile independently rolls that area's encounter probability rather than requiring a four-tile cooldown. The first Route 1 encounter guarantee remains for introductory progression.
 - Species selection remains weighted by rarity, discovery status and day/night influences; original habitats, level bands, badges, saves, capture mechanics and the full Critter library remain intact. Legacy regional encounter counters are ignored, not deleted, for old-save compatibility.
+
+## v67 — Battle interface refinement
+- Battle, Index, and Escape are text-only, shorter buttons.
+- Active allied HP cards appear beneath the player's Critter, above the battle narrator (including two allied cards in 2v2).
+- The player's combat artwork is larger and positioned closer to the foreground; opponent placement remains unchanged.
+- Attack and hit effects display once on resolution rather than replaying on Battle, Index, Back and other interface redraws. Ambient Critter hovering is disabled during battle menus.
