@@ -222,3 +222,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Use opens the watch bag with HP Potion, Revive, purchasable PP Potion (restores up to 10 PP to one move), and the capture beam during wild encounters; PP Potion is stocked in shops for 45 credits.
 - Critters opens the watch Party screen with existing legal in-battle switch actions; original turn cost is retained.
 - Allied health card now has an opaque pale background with dark lettering for contrast across battle scenery.
+
+## v71 — Focused watch access from battle
+- Use opens only battle-usable inventory actions and the Capture Beam (wild battles); no unrelated inventory or watch tabs.
+- Critters opens only the clock-style party selector, with switching directly from the selected clock slot; no tabs during combat.
+- Removed the redundant Party tab from the full Index; normal clock/party info remains accessible without duplicate tabs.
+- Blue Critters battle button now has black text.

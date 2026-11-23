@@ -1098,7 +1098,7 @@ button,.btn,[role="button"],a,#world,.joystick{
 #shade:has(.combatTop) .classicMainMenu .btn+.btn{border-top:2px solid #070c13!important}
 #shade:has(.combatTop) .classicMainMenu .classicCritters{
  background:linear-gradient(180deg,#419cf0,#1c58a3)!important;
- color:#fff!important;border-color:#060e1c!important;
+ color:#080b10!important;border-color:#060e1c!important;
 }
 #shade:has(.combatTop) .classicMainMenu .btn:focus-visible{
  outline:3px solid #fff5aa;outline-offset:2px;
@@ -1125,6 +1125,20 @@ button,.btn,[role="button"],a,#world,.joystick{
  }
 }
 
+
+/* v71: focused battle watch — no index tabs, bag list or unrelated controls. */
+#shade .battleQuickView .watchScreen{min-height:0}
+#shade .battleQuickView .watchSectionTitle{padding:7px 0}
+#shade .battleQuickView .watchFooter{margin-top:10px}
+#shade .battleQuickView .battleBagActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#shade .battleQuickView .battleBagActions .btn{min-width:0;flex:none}
+#shade:has(.combatTop) .classicMainMenu .classicCritters{
+ color:#080b10!important;text-shadow:none!important;
+}
+@media(max-width:520px){
+ #shade .battleQuickView .battleBagActions{grid-template-columns:1fr}
+}
+
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1138,7 +1152,7 @@ document.addEventListener('dblclick',function(event){
 <section id="game" class="screen" aria-label="Critters game">
   <div class="frame" id="gameFrame">
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
-    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v70</small></div><button class="btn" id="save" type="button">Save</button></div>
+    <div class="hud"><div><b>CRITTERS</b> · <span id="location">Starting Village</span> <small class="build-label">v71</small></div><button class="btn" id="save" type="button">Save</button></div>
     <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
     <div class="mobile">
       <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
@@ -1147,4 +1161,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=70-battle-controls-20261123" defer></script></body></html>
+</main><script src="game.js?v=71-focused-battle-watch-20261123" defer></script></body></html>

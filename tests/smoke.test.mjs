@@ -365,3 +365,15 @@ test('v70 battle bag and 2x2 menu are wired to inventory and watch switching',()
  assert.match(html,/\.classicMainMenu \.classicCritters/);
  assert.match(html,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
+
+test('v71 battle watch uses focused non-navigable bag and clock screens',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.doesNotMatch(game,/\['party','◇ Party'\]/);
+ assert.match(game,/openBattleIndex\('items'\)/);
+ assert.match(game,/openBattleIndex\('clock'\)/);
+ assert.match(game,/battleViewing\?'':INDEX_TABS/);
+ assert.match(game,/if\(battleIndexActive\(\)\)return battleTools/);
+ assert.match(game,/data-index-battle-switch/);
+ assert.match(game,/battleQuickView/);
+ assert.match(html,/color:#080b10!important;border-color:#060e1c!important/);
+});
