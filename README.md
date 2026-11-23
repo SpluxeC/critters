@@ -279,3 +279,11 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Visited areas are tracked in old-save-compatible discoveredAreas; Critter Centers unlock only after the player speaks to the technician. Existing lastCenter is recognized for returning saves.
 - Two legitimate destinations: Small Town Critter Center (tile 23,13) and Garden Town Critter Center (tile 14,14). Travel requires selecting the map marker and confirming, then uses the existing region transition/save logic.
 - Undiscovered locations remain unknown. Interior labels appear in the discovered list. No new areas are invented.
+
+## v82 — Connected non-linear overworld and fades
+- Reworked the outdoor geography into two interconnected route loops: Starting Village → Rice Fields → Small Town → Bamboo Forest → Hidden Forest → Rice Fields, and Small Town → Bamboo Forest → Foothills → Garden Town → Small Town.
+- All exterior chunks share a continuously scrolling camera and seamless tile drawing; moving across outdoor edges no longer cuts to a new screen.
+- Preserved alternate paths, vines unlocked by the first badge, and cave entrance as an interior. Both sides of the gates are cleared into traversable paths.
+- Added full-screen fade to black on building/cave entry and exit and prior to loading battles. Outdoor changes never invoke black fade.
+- Removed region arrival dialogue popups. Existing save states, wild battles, center travel and quest locations remain preserved.
+- Updated the illustrated Index > Map atlas to show the branching routes and loops.

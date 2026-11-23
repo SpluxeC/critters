@@ -107,7 +107,7 @@ function openVillageDoor(h){
  releaseMovement();
 }
 function finishDoorAnimation(){
- if(!doorTransition||performance.now()-doorTransition.start<240)return;
+ if(!doorTransition||worldTransitionBusy||performance.now()-doorTransition.start<240)return;
  const {house}=doorTransition;doorTransition=null;
  region(house.kind==='lab'?'lab':house.kind==='neighbor'?'neighbor':'home',17,23,
  house.kind==='home'?'You step inside your home.':house.kind==='neighbor'?'A neighbor welcomes you into their home.':'You enter the Critter Research Laboratory.');
@@ -596,8 +596,8 @@ function sideQuestIndex(){
   }).join('')
   +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
 }
-function build(){
- migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
+function build(preview=false){
+ if(!preview)migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
  case 'village':
  // One art system: original house roof/wall tiles are NOT placed in the village.
@@ -745,7 +745,11 @@ function build(){
   }
   if(!found){s.x=17;s.y=16}
  }
- snapVisual();
+ prepareOutdoorPortals();
+ if(!preview){
+  snapVisual();
+  if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked});
+ }
 
 }
 function say(lines,callback){dialog=lines.slice();dialogDone=callback||null;advance()}
@@ -1438,6 +1442,7 @@ function draw(){
  tickAtmosphere();
  updateVisual();
  updateInteractVisibility();
+ if(OUTDOOR_GRID[s.area])return drawOutdoorWorld();
  const zoom=Math.max(0.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const viewportWidth=C.width/zoom,viewportHeight=C.height/zoom;
  const ox=W*S<=viewportWidth?(W*S-viewportWidth)/2:Math.max(0,Math.min(W*S-viewportWidth,visual.x*S-viewportWidth/2));
@@ -1473,26 +1478,177 @@ function draw(){
  drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
  drawAtmosphereHUD()
 }
-function region(area,x,y,textLine){doorTransition=null;s.area=area;s.x=x;s.y=y;ensureMapDiscovery();build();save();if(textLine)say([textLine])}
+
+/* Two interconnected loops: forest/rice/town/bamboo and town/bamboo/foothills/garden.
+   Outdoor maps are separate simulation chunks but share one continuous camera. */
+const OUTDOOR_GRID=Object.freeze({
+ village:[0,1],route1:[1,1],town:[2,1],garden:[3,1],
+ forest:[1,0],route2:[2,0],route3:[3,0]
+});
+const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave']);
+const OUTDOOR_LINKS={
+ village:{right:['route1',12,14]},
+ route1:{left:['village',12,14],right:['town',12,14],up:['forest',15,18]},
+ town:{left:['route1',12,14],right:['garden',12,14],up:['route2',16,18]},
+ forest:{down:['route1',15,18],right:['route2',12,14]},
+ route2:{left:['forest',12,14],right:['route3',12,14],down:['town',16,18]},
+ route3:{left:['route2',12,14],down:['garden',17,19],up:['cave',19,21]},
+ garden:{left:['town',12,14],up:['route3',17,19]}
+};
+const outdoorChunks=new Map();
+let worldTransitionBusy=false,worldFadeTimer=null;
+function fadeWorldChange(effect){
+ if(worldTransitionBusy)return;
+ worldTransitionBusy=true;releaseMovement();
+ const curtain=document.getElementById('worldFade');
+ if(!curtain){try{effect()}finally{worldTransitionBusy=false}return}
+ curtain.classList.add('active');
+ worldFadeTimer=setTimeout(()=>{
+  try{effect()}finally{
+   worldFadeTimer=setTimeout(()=>{
+    curtain.classList.remove('active');
+    worldFadeTimer=setTimeout(()=>{worldTransitionBusy=false;worldFadeTimer=null},270);
+   },35);
+  }
+ },270);
+}
+function carveOutdoorPortal(side,a,b){
+ for(let n=a;n<=b;n++)for(let t=0;t<3;t++){
+  const x=side==='left'?t:side==='right'?W-1-t:n;
+  const y=side==='up'?t:side==='down'?H-1-t:n;
+  if(x<0||y<0||x>=W||y>=H)continue;
+  tiles[y][x]=T.path;
+  villageObstacles.delete(key(x,y));route1Blocked.delete(key(x,y));
+ }
+}
+function prepareOutdoorPortals(){
+ if(!OUTDOOR_GRID[s.area])return;
+ const links=OUTDOOR_LINKS[s.area]||{};
+ for(const [side,[dest,a,b]] of Object.entries(links))carveOutdoorPortal(side,a,b);
+ // Cut authored, walkable corridors to their edge openings. Do not create
+ // disconnected portals into thick trees, hedges or decorative rock.
+ const vertical=(x1,x2,y1,y2)=>{for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++){
+  tiles[y][x]=T.path;villageObstacles.delete(key(x,y));route1Blocked.delete(key(x,y));
+ }};
+ const horizontal=(x1,x2,y1,y2)=>{for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++){
+  tiles[y][x]=T.path;villageObstacles.delete(key(x,y));route1Blocked.delete(key(x,y));
+ }};
+ if(s.area==='route1')vertical(15,18,0,14);
+ if(s.area==='forest'){vertical(15,18,10,H-1);horizontal(15,W-1,12,14);}
+ if(s.area==='town')vertical(16,18,0,14);
+ if(s.area==='route2')vertical(16,18,12,H-1);
+ if(s.area==='route3')vertical(17,19,12,H-1);
+ if(s.area==='garden')vertical(17,19,0,14);
+}
+function outdoorChunk(area){
+ if(outdoorChunks.has(area))return outdoorChunks.get(area);
+ const current={area:s.area,x:s.x,y:s.y,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked};
+ try{
+  s.area=area;s.x=17;s.y=13;
+  build(true); // Preview geometry without migrating, saving or discovering areas.
+  const result={tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked};
+  outdoorChunks.set(area,result);
+  return result;
+ }finally{
+  s.area=current.area;s.x=current.x;s.y=current.y;
+  tiles=current.tiles;npcs=current.npcs;villageObstacles=current.villageObstacles;
+  route1Blocked=current.route1Blocked;interiorObjects=current.interiorObjects;interiorBlocked=current.interiorBlocked;
+ }
+}
+function tryOutdoorExit(d,x,y){
+ if(!OUTDOOR_GRID[s.area]||x>=0&&y>=0&&x<W&&y<H)return false;
+ const [dest,start,end]=OUTDOOR_LINKS[s.area]?.[d]||[];
+ if(!dest)return true;
+ const cross=d==='left'||d==='right'?y:x;
+ if(cross<start||cross>end)return true;
+ if(s.area==='village'&&!s.introComplete){
+  say(['Complete the laboratory tutorial before exploring the region.']);return true;
+ }
+ if(dest==='cave'){
+  if(!s.cut){say(['Thick vines block the mountain cave. The first badge unlocks the vegetation cutter.']);return true}
+  region('cave',17,23,'You enter Mountain Cave.');return true;
+ }
+ if(s.area==='forest'&&dest==='route2'&&!s.cut){
+  say(['Overgrown bamboo blocks the woodland shortcut. The first badge will let you clear it.']);return true;
+ }
+ if(s.area==='route2'&&dest==='forest'&&!s.cut){
+  say(['The western bamboo path is tangled in vines. Come back after the first badge.']);return true;
+ }
+ const targetX=d==='right'?0:d==='left'?W-1:x;
+ const targetY=d==='down'?0:d==='up'?H-1:y;
+ region(dest,targetX,targetY);
+ return true;
+}
+function drawOutdoorWorld(){
+ const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
+ const vw=C.width/zoom,vh=C.height/zoom;
+ const position=OUTDOOR_GRID[s.area],worldX=(position[0]*W+visual.x)*S,worldY=(position[1]*H+visual.y)*S;
+ const minX=0,maxX=W*4*S,minY=0,maxY=H*2*S;
+ const ox=Math.max(minX,Math.min(maxX-vw,worldX-vw/2)),oy=Math.max(minY,Math.min(maxY-vh,worldY-vh/2));
+ ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#5f8e5f';ctx.fillRect(0,0,C.width,C.height);
+ ctx.setTransform(zoom,0,0,zoom,0,0);
+ const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked};
+ // Nearby chunks are rendered within the same continuous world coordinate system.
+ for(const [area,grid] of Object.entries(OUTDOOR_GRID)){
+  const px=grid[0]*W*S,py=grid[1]*H*S;
+  if(px>ox+vw||py>oy+vh||px+W*S<ox||py+H*S<oy)continue;
+  const chunk=outdoorChunk(area);
+  s.area=area;tiles=chunk.tiles;npcs=chunk.npcs;
+  villageObstacles=chunk.villageObstacles;route1Blocked=chunk.route1Blocked;
+  const localOX=ox-px,localOY=oy-py;
+  const x1=Math.max(0,Math.floor(localOX/S)),x2=Math.min(W,Math.ceil((localOX+vw)/S));
+  const y1=Math.max(0,Math.floor(localOY/S)),y2=Math.min(H,Math.ceil((localOY+vh)/S));
+  for(let y=y1;y<y2;y++)for(let x=x1;x<x2;x++)drawTile(tiles[y][x],x*S-localOX,y*S-localOY,x,y);
+  if(area==='village')drawVillageDetails(localOX,localOY,vw,vh);
+  if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
+  drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
+  drawExplorationSites(localOX,localOY);
+  drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
+  for(const npc of npcs){
+   const x=npc.x*S+16-localOX,y=npc.y*S+32-localOY;
+   if(x< -40||x>vw+40||y< -70||y>vh+40)continue;
+   ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
+   drawNpc(npc,x,y);
+   if((npc.kind==='gymtrainer'||npc.kind==='routetrainer')&&!s.defeated[npc.id]){
+    ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
+   }
+  }
+ }
+ s.area=restore.area;tiles=restore.tiles;npcs=restore.npcs;
+ villageObstacles=restore.villageObstacles;route1Blocked=restore.route1Blocked;
+ interiorObjects=restore.interiorObjects;interiorBlocked=restore.interiorBlocked;
+ const moving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
+ const step=moving?Math.floor(performance.now()/105)%4:0;
+ sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25);
+ drawAtmosphereOverlay(ox-position[0]*W*S,oy-position[1]*H*S,vw,vh);
+ drawAtmosphereHUD();
+}
+
+function region(area,x,y,textLine='',forceFade=false){
+ if(worldTransitionBusy)return;
+ const previous=s.area,old=OUTDOOR_GRID[previous],next=OUTDOOR_GRID[area];
+ const change=()=>{
+  const oldX=old?(old[0]*W+visual.x):null,oldY=old?(old[1]*H+visual.y):null;
+  doorTransition=null;s.area=area;s.x=x;s.y=y;ensureMapDiscovery();build();save();
+  if(old&&next&&!forceFade){
+   // Retain interpolated world-space position when crossing a region boundary.
+   visual.x=oldX-next[0]*W;visual.y=oldY-next[1]*H;
+   visual.fromX=visual.x;visual.fromY=visual.y;
+   visual.toX=x;visual.toY=y;visual.start=performance.now();visual.duration=movementStepDuration();visual.ready=true;
+  }
+  // Region arrival dialogue banners are intentionally omitted.
+ };
+ if(forceFade||!old||!next)return fadeWorldChange(change);
+ change();
+}
+
 function move(d){
- if(screen!=='game'||modal||doorTransition||$('dialog').classList.contains('show'))return;
+ if(screen!=='game'||modal||doorTransition||worldTransitionBusy||$('dialog').classList.contains('show'))return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
- if(s.area==='village'&&d==='right'&&x>=W-2&&tiles[y]?.[W-1]!==T.tree&&!solidAt(W-2,y)){if(!s.introComplete)return say(['Complete the laboratory tutorial before exploring Route 1.']);return region('route1',2,y,'Route 1 — Rice Fields. Wild Critters hide in tall grass.')}
- if(s.area==='route1'&&d==='left'&&x<=1&&tiles[y]?.[0]!==T.tree&&!solidAt(1,y))return region('village',31,y);
- if(s.area==='route1'&&d==='right'&&x>=32&&[12,13,14].includes(y)&&tiles[y]?.[W-2]===T.path)return region('town',2,y,'You arrive at the first small town. Heal and shop here!');
- if(s.area==='town'&&d==='left'&&x<=1&&[12,13,14].includes(y))return region('route1',31,y);
- if(s.area==='town'&&d==='right'&&x>=32&&[13,14].includes(y))return region('route2',2,y,'Route 2 — Bamboo Forest.');
- if(s.area==='route2'&&d==='left'&&x<=1&&[13,14].includes(y))return region('town',31,y);
- if(s.area==='route2'&&d==='right'&&x>=32&&[13,14].includes(y))return region('route3',2,y,'Route 3 — Mountain Foothills.');
- if(s.area==='route2'&&d==='up'&&y<=1&&x>=10&&x<=12)return region('forest',17,23,'You discovered the optional Hidden Forest!');
- if(s.area==='forest'&&d==='down'&&y>=24&&x>=15&&x<=18)return region('route2',11,2);
- if(s.area==='route3'&&d==='left'&&x<=1&&[13,14].includes(y))return region('route2',31,y);
- if(s.area==='route3'&&d==='right'&&x>=32&&[13,14].includes(y))return region('garden',2,y,'You enter Garden Town, home of the first Grass Gym.');
- if(s.area==='route3'&&d==='up'&&y<=1&&x>=19&&x<=21){if(!s.cut)return say(['Thick vines block the cave entrance.','The first badge unlocks the Critter Index vegetation cutter.']);return region('cave',17,23,'The Critter Index cuts the vines! Mountain Cave is open.')}
- if(s.area==='cave'&&d==='down'&&y>=24&&x>=15&&x<=18)return region('route3',20,2);
- if(s.area==='garden'&&d==='left'&&x<=1&&[13,14].includes(y))return region('route3',31,y);
+ if(tryOutdoorExit(d,x,y))return;
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&d==='down'&&x===17&&y>=25)return region('garden',24,12);
+ if(s.area==='cave'&&d==='down'&&y>=H-2&&x>=15&&x<=18)return region('route3',20,2);
  if(x<0||y<0||x>=W||y>=H)return;
  const door=villageDoorAt(x,y);
  if(door){openVillageDoor(door);return}
@@ -1521,7 +1677,7 @@ function move(d){
 }
 
 function canInteractAhead(){
- if(!s||screen!=='game'||modal||doorTransition)return false;
+ if(!s||screen!=='game'||modal||doorTransition||worldTransitionBusy)return false;
  if($('dialog').classList.contains('show'))return true; // Interact advances dialogue.
  const offset=dirs[s.face];
  if(!offset)return false;
@@ -1547,7 +1703,7 @@ function updateInteractVisibility(){
  button.setAttribute('aria-label',available?'Interact with the object ahead':'Nothing to interact with ahead');
 }
 function interact(){
- if(modal||doorTransition)return;if($('dialog').classList.contains('show'))return advance();
+ if(modal||doorTransition||worldTransitionBusy)return;if($('dialog').classList.contains('show'))return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  if(p)p.face={up:'down',down:'up',left:'right',right:'left'}[s.face];
  if(p){if(p.kind==='sidequest')return talkSideQuest(p.id);
@@ -1677,14 +1833,14 @@ function indexMain(){
 /* The illustrated map shows the existing region, not a newly generated world.
    Only towns with real Critter Center NPCs are valid travel destinations. */
 const REGION_MAP_PLACES=[
- {id:'village',name:'Starting Village',x:12,y:73,kind:'town'},
- {id:'route1',name:'Route 1 · Rice Fields',x:28,y:73,kind:'route'},
- {id:'town',name:'Small Town',x:43,y:73,kind:'center',spawn:[23,13]},
- {id:'route2',name:'Route 2 · Bamboo Forest',x:57,y:73,kind:'route'},
- {id:'forest',name:'Hidden Forest',x:57,y:34,kind:'wild'},
- {id:'route3',name:'Route 3 · Foothills',x:73,y:73,kind:'route'},
- {id:'cave',name:'Mountain Cave',x:77,y:30,kind:'wild'},
- {id:'garden',name:'Garden Town',x:89,y:73,kind:'center',spawn:[14,14]}
+ {id:'village',name:'Starting Village',x:14,y:74,kind:'town'},
+ {id:'route1',name:'Route 1 · Rice Fields',x:30,y:72,kind:'route'},
+ {id:'town',name:'Small Town',x:48,y:73,kind:'center',spawn:[23,13]},
+ {id:'route2',name:'Route 2 · Bamboo Forest',x:49,y:39,kind:'route'},
+ {id:'forest',name:'Hidden Forest',x:30,y:36,kind:'wild'},
+ {id:'route3',name:'Route 3 · Foothills',x:72,y:34,kind:'route'},
+ {id:'cave',name:'Mountain Cave',x:89,y:20,kind:'wild'},
+ {id:'garden',name:'Garden Town',x:72,y:73,kind:'center',spawn:[14,14]}
 ];
 const REGION_MAP_INTERIORS=[
  {id:'home',name:'Player Home',parent:'village'},
@@ -1741,7 +1897,7 @@ function fastTravelToCenter(id){
  const [x,y]=place.spawn;
  mapTravelSelection=null;
  close(); // Remove watch modal before using the existing region transition.
- region(id,x,y,'Fast Travel complete — '+place.name+' Critter Center.');
+ region(id,x,y,'Fast Travel complete — '+place.name+' Critter Center.',true);
  s.face='up';save();
  return true;
 }
@@ -2433,6 +2589,10 @@ function battleEnvironment(){
  return {area,terrain,phase:worldPhase()};
 }
 function startBattle(data,msg){
+ if(worldTransitionBusy)return;
+ fadeWorldChange(()=>beginBattleAfterFade(data,msg));
+}
+function beginBattleAfterFade(data,msg){
  const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
  const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
  data.enemies.forEach(p=>{normalizeMoves(refreshSpeciesMetadata(p));noteCritterSeen(p)});
@@ -2521,7 +2681,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v81</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v82</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';

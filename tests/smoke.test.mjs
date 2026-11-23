@@ -503,3 +503,21 @@ test('v81 regional atlas and discovered-center travel are connected to Index',()
  assert.match(map,/<svg/);
  assert.match(map,/viewBox="0 0 900 560"/);
 });
+
+test('v82 continuous branching outdoor region with interior and battle fades',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const atlas=readFileSync(new URL('../assets/region-map.svg',import.meta.url),'utf8');
+ assert.match(game,/const OUTDOOR_GRID=Object\.freeze/);
+ assert.match(game,/const OUTDOOR_LINKS=/);
+ assert.match(game,/function drawOutdoorWorld\(\)/);
+ assert.match(game,/function outdoorChunk\(area\)/);
+ assert.match(game,/function tryOutdoorExit\(d,x,y\)/);
+ assert.match(game,/function fadeWorldChange\(effect\)/);
+ assert.match(game,/fadeWorldChange\(\(\)=>beginBattleAfterFade\(data,msg\)\)/);
+ assert.match(game,/if\(OUTDOOR_GRID\[s\.area\]\)return drawOutdoorWorld\(\)/);
+ assert.match(game,/if\(tryOutdoorExit\(d,x,y\)\)return/);
+ assert.match(game,/Region arrival dialogue banners are intentionally omitted/);
+ assert.match(html,/id="worldFade"/);
+ assert.match(html,/#worldFade\.active/);
+ assert.match(atlas,/viewBox="0 0 900 560"/);
+});
