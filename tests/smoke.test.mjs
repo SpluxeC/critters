@@ -321,14 +321,15 @@ test('starter sprite rendering is wired to battle, Index, and selection without 
  assert.match(html,/\.starterChoices/);
 });
 
-test('Run/Walk toggle persists and changes actual movement cadence',()=>{
+test('joystick run/walk mode persists and changes movement cadence',()=>{
  const start=game.indexOf('const movementStepInterval=');
  const end=game.indexOf('function beginStep(',start);
  assert.ok(start>=0&&end>start);
  const s={movementMode:'run'};
- const button={textContent:'',attrs:{},classes:new Set(),setAttribute(k,v){this.attrs[k]=v},classList:{toggle(k,on){button.classes[on?'add':'delete'](k)}}};
+ const state={labels:[],classes:[]};
+ const stick={setAttribute:(k,v)=>state.labels.push([k,v]),classList:{toggle:(k,on)=>state.classes.push([k,on])}};
  let saves=0;
- const sandbox=vm.createContext({s,screen:'game',modal:false,$:()=>button,save:()=>saves++});
+ const sandbox=vm.createContext({s,screen:'game',modal:false,$:()=>stick,save:()=>saves++});
  vm.runInContext(game.slice(start,end),sandbox);
  assert.equal(sandbox.movementStepInterval(),135);
  assert.equal(sandbox.movementStepDuration(),120);
@@ -336,20 +337,19 @@ test('Run/Walk toggle persists and changes actual movement cadence',()=>{
  assert.equal(s.movementMode,'walk');
  assert.equal(sandbox.movementStepInterval(),235);
  assert.equal(sandbox.movementStepDuration(),210);
- assert.equal(button.textContent,'🚶 Walk');
- assert.equal(button.attrs['aria-pressed'],'true');
+ assert.ok(state.labels.some(([k,v])=>k==='aria-label'&&v.includes('Walk mode')));
  sandbox.toggleMovementMode();
  assert.equal(s.movementMode,'run');
- assert.equal(button.textContent,'🏃 Run');
+ assert.ok(state.labels.some(([k,v])=>k==='aria-label'&&v.includes('Run mode')));
  assert.equal(saves,2);
 });
-test('portrait UI has the movement toggle directly above Interact',()=>{
+test('portrait UI has joystick double-tap speed and contextual Interact',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(html,/id="movementToggle"[^>]*>🏃 Run<\/button><button[^>]*id="talk"[^>]*>Interact<\/button>/);
- assert.match(html,/#game \.actions #movementToggle/);
+ assert.doesNotMatch(html,/id="movementToggle"/);
+ assert.match(html,/id="talk"[^>]*>Interact<\/button>/);
  assert.ok(!html.includes('Talk / Use</button>'));
- assert.match(game,/\$\('movementToggle'\)\.onclick=toggleMovementMode/);
- assert.match(game,/s\.movementMode=s\.movementMode==='walk'\?'walk':'run'/);
+ assert.match(game,/checkJoystickDoubleTap\(e\)/);
+ assert.match(game,/s\.movementMode=s\.movementMode==='walk'\?'run':'walk'/);
  assert.match(game,/stickRepeatAt=Date\.now\(\)\+movementStepInterval\(\)/);
  assert.match(game,/visual\.duration=movementStepDuration\(\)/);
 });

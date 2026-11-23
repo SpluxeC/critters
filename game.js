@@ -3161,7 +3161,7 @@ function shop(){
  const section=(title,items)=>'<h3>'+title+'</h3><div class="options">'
   +items.map(([name,price])=>'<button class="btn" data-buy="'+escapeHtml(name)+'" '+(s.money<price?'disabled':'')+'>'
    +escapeHtml(name)+' — '+price+' ◇'+(EVOLUTION_STONES[name]?' · Owned '+(s.inventory[name]||0):'')+'</button>').join('')+'</div>';
- open('Critter Shop','<p>Credits: '+s.money+' ◇</p>'
+ open('Critter Shop','<p>Money: '+s.money+' ◇</p>'
   +section('Healing items',supplies)+section('Index modules',modules)
   +section('Evolution stones',stones)
   +'<p class="muted">Evolution stones are used from the Critter Index Party screen after the required level is reached. Each successful stone evolution consumes one stone. Modules are installed at a Critter Center.</p>');
