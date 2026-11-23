@@ -287,3 +287,10 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Added full-screen fade to black on building/cave entry and exit and prior to loading battles. Outdoor changes never invoke black fade.
 - Removed region arrival dialogue popups. Existing save states, wild battles, center travel and quest locations remain preserved.
 - Updated the illustrated Index > Map atlas to show the branching routes and loops.
+
+## v83 — Varied-size terrain sections, longer fade and location HUD
+- Exterior sections now use different playable dimensions (column widths 40/44/51/46 tiles, row heights 34/40) rather than identical 34×26 rectangles; existing authored buildings, NPCs and save coordinates are preserved in their original parts.
+- New exterior terrain has deterministic tree lines, stone fringes, rice patches and irregular boundary outlines with pathways to the existing adjacent sections. Region crossing coordinates use each destination's actual dimensions so outward edges remain connected.
+- The Index atlas overlays seven irregular, differently sized district footprints.
+- Interior/battle fade-in and fade-out durations are each extended from ~250 to ~750 milliseconds, making the sequence about one second longer overall. Outdoor map travel remains continuous without fades.
+- Current location name now shares the top-right HUD banner with the right-aligned in-game time and phase; entrance popups remain removed.

@@ -530,3 +530,23 @@ test('v82 outer route graph has two loops and a cave fade',()=>{
  assert.match(game,/\['garden',12,14\]/);
  assert.match(game,/regionMapArt" src="assets\/region-map.svg\?v=82-connected-loops"/);
 });
+
+test('v83 region sections have distinct dimensions, asymmetric borders, area HUD and longer fade',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const atlas=readFileSync(new URL('../assets/region-map.svg',import.meta.url),'utf8');
+ assert.match(game,/const OUTDOOR_COL_WIDTHS=\[40,44,51,46\]/);
+ assert.match(game,/OUTDOOR_ROW_HEIGHTS=\[34,40\]/);
+ assert.match(game,/function outdoorSize\(area\)/);
+ assert.match(game,/function outdoorOrigin\(area\)/);
+ assert.match(game,/function decorateExpandedOutdoor\(\)/);
+ assert.match(game,/function applyAreaSize\(area\)/);
+ assert.match(game,/W=chunk\.w;H=chunk\.h/);
+ assert.match(game,/const destinationSize=outdoorSize\(dest\)/);
+ assert.match(game,/REGION_MAP_INTERIORS\.find\(p=>p\.id===s\.area\)/);
+ assert.match(game,/ctx\.fillText\(timeLabel,x\+width-8,y\+17\)/);
+ assert.match(game,/worldFadeTimer=setTimeout\(\(\)=>\{worldTransitionBusy=false;worldFadeTimer=null\},770\)/);
+ assert.match(html,/transition:opacity 750ms ease/);
+ assert.match(atlas,/region-district-shapes/);
+ assert.match(atlas,/region-bamboo/);
+ assert.match(atlas,/region-garden/);
+});

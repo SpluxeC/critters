@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id),C=$('world'),ctx=C.getContext('2d');ctx.imageSmoothingEnabled=false;
-const S=32,W=34,H=26;
+const S=32;let W=34,H=26;
 const T={grass:0,path:1,tree:2,roof:3,wall:4,door:5,rice:6,flower:7,wood:8,desk:9,mat:10,tall:11,rock:12,water:13,hedge:14,gate:15,stone:16};
 const palette=['#75a65e','#c6ae82','#38683d','#88684f','#baa78a','#403127','#b7bd6a','#88a961','#b38c6d','#856348','#d9c595','#507e41','#867c6b','#5a9aa5','#397b3e','#7b5c39','#b6b1a0'];
 const strengths={Fire:['Grass','Ice','Steel'],Water:['Fire','Rock','Ground'],Grass:['Water','Shadow','Ground'],Rock:['Electric','Venom'],Electric:['Water','Flying'],Ice:['Dragon','Ghost','Ground'],Flying:['Beast','Fighting'],Shadow:['Ghost','Psychic'],Ghost:['Psychic','Primordial'],Dragon:['Electric','Primordial'],Venom:['Grass','Flying'],Beast:['Dragon','Shadow'],Primordial:['Beast','Fire'],Psychic:['Fighting','Venom'],Fighting:['Rock','Ice','Normal','Steel'],Normal:[],Steel:['Rock','Ice'],Ground:['Electric','Steel','Venom']};
@@ -597,6 +597,7 @@ function sideQuestIndex(){
   +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
 }
 function build(preview=false){
+ applyAreaSize(s.area);
  if(!preview)migrate();tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
  case 'village':
@@ -745,10 +746,11 @@ function build(preview=false){
   }
   if(!found){s.x=17;s.y=16}
  }
+ decorateExpandedOutdoor();
  prepareOutdoorPortals();
  if(!preview){
   snapVisual();
-  if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked});
+  if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H});
  }
 
 }
@@ -1422,13 +1424,27 @@ function drawAtmosphereOverlay(ox,oy,w,h){
 function drawAtmosphereHUD(){
  const h=worldHour(),hours=Math.floor(h),minutes=Math.floor((h-hours)*60);
  const clock=String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0');
- const label='Day '+(s.worldDay||1)+' · '+clock+' · '+worldPhase();
+ const timeLabel='Day '+(s.worldDay||1)+' · '+clock+' · '+worldPhase();
+ const location=REGION_MAP_PLACES.find(p=>p.id===s.area)?.name
+  ||REGION_MAP_INTERIORS.find(p=>p.id===s.area)?.name
+  ||'The Valley';
+ const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
+ const viewportWidth=C.width/zoom;
+ ctx.save();
  ctx.font='bold 11px system-ui';
- const width=ctx.measureText?ctx.measureText(label).width+18:166;
- const x=Math.max(5,C.width/Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)))-width-8);
- const y=6; // The old player/starter/money/badges banner is gone.
- ctx.fillStyle='#162d36e3';ctx.fillRect(x,y,width,24);
- ctx.fillStyle='#f4e3b1';ctx.fillText(label,x+8,y+16);
+ const clockWidth=ctx.measureText(timeLabel).width,locationWidth=ctx.measureText(location).width;
+ const width=Math.min(viewportWidth-10,clockWidth+locationWidth+37);
+ const x=Math.max(5,viewportWidth-width-8),y=6;
+ ctx.fillStyle='#162d36e9';ctx.fillRect(x,y,width,25);
+ ctx.fillStyle='#f4e3b1';
+ const spaceForLocation=width-clockWidth-27;
+ ctx.save();ctx.beginPath();ctx.rect(x+7,y+2,Math.max(0,spaceForLocation),21);ctx.clip();
+ ctx.fillText(location,x+9,y+17);
+ ctx.restore();
+ ctx.fillStyle='#9bbeb7';ctx.fillRect(x+width-clockWidth-17,y+5,1,15);
+ ctx.textAlign='right';ctx.fillStyle='#f4e3b1';
+ ctx.fillText(timeLabel,x+width-8,y+17);
+ ctx.restore();
 }
 
 function resizeGameCanvas(){
@@ -1486,6 +1502,57 @@ const OUTDOOR_GRID=Object.freeze({
  forest:[1,0],route2:[2,0],route3:[3,0]
 });
 const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave']);
+
+/* Per-column widths and per-row heights keep outdoor sections edge-aligned
+   while giving the seven areas substantially different playable footprints. */
+const OUTDOOR_COL_WIDTHS=[40,44,51,46],OUTDOOR_ROW_HEIGHTS=[34,40];
+function outdoorSize(area){
+ const grid=OUTDOOR_GRID[area];
+ return grid?{w:OUTDOOR_COL_WIDTHS[grid[0]],h:OUTDOOR_ROW_HEIGHTS[grid[1]]}:{w:34,h:26};
+}
+function outdoorOrigin(area){
+ const grid=OUTDOOR_GRID[area];
+ if(!grid)return {x:0,y:0};
+ return {x:OUTDOOR_COL_WIDTHS.slice(0,grid[0]).reduce((a,b)=>a+b,0),
+         y:OUTDOOR_ROW_HEIGHTS.slice(0,grid[1]).reduce((a,b)=>a+b,0)};
+}
+function outdoorWorldBounds(){
+ return {width:OUTDOOR_COL_WIDTHS.reduce((a,b)=>a+b,0),
+         height:OUTDOOR_ROW_HEIGHTS.reduce((a,b)=>a+b,0)};
+}
+function applyAreaSize(area){
+ const size=outdoorSize(area);W=size.w;H=size.h;
+}
+/* Authored interior and classic 34x26 area content remains in place.
+   Irregular coastlines, forest fringes, and winding paths fill new space. */
+function decorateExpandedOutdoor(){
+ if(!OUTDOOR_GRID[s.area])return;
+ const area=s.area;
+ const forest=area==='forest'||area==='route2';
+ const rocky=area==='route3';
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+  if(x<34&&y<26)continue;
+  const seed=(x*67+y*113+x*y*17+(area.length*31))%131;
+  // Undulating, asymmetric natural edges, not identical rectangular tree walls.
+  const rightIndent=1+((Math.floor(y/4)+area.length)%4);
+  const lowerIndent=1+((Math.floor(x/7)+area.length)%3);
+  if(x>=W-rightIndent||y>=H-lowerIndent){
+   tiles[y][x]=rocky?T.rock:forest?T.tree:seed%3===0?T.rock:T.tree;
+  }else if(seed<12){tiles[y][x]=rocky?T.rock:forest?T.tree:T.tall}
+  else if(seed>=12&&seed<22){tiles[y][x]=forest?T.tall:rocky?T.stone:T.flower}
+  else if(area==='route1'&&seed%5===0)tiles[y][x]=T.rice;
+ }
+ // Meandering access to expanded corners and alternate routes.
+ const paving=(x,y)=>{if(x>0&&x<W-1&&y>0&&y<H-1){tiles[y][x]=T.path;villageObstacles.delete(key(x,y));route1Blocked.delete(key(x,y))}};
+ for(let x=32;x<W-1;x++)for(let y=12;y<=14;y++)paving(x,y);
+ for(let y=24;y<H-1;y++)for(let x=16;x<=18;x++)paving(x,y);
+ if(area==='route1'||area==='forest'||area==='route2'||area==='route3'){
+  for(let x=7;x<W-4;x++)for(let y=H-9;y<=H-7;y++)paving(x,y);
+  for(let y=14;y<H-8;y++)for(let x=10;x<=12;x++)paving(x,y);
+  for(let y=14;y<H-8;y++)for(let x=W-10;x<=W-8;x++)paving(x,y);
+ }
+}
+
 const OUTDOOR_LINKS={
  village:{right:['route1',12,14]},
  route1:{left:['village',12,14],right:['town',12,14],up:['forest',15,18]},
@@ -1507,10 +1574,10 @@ function fadeWorldChange(effect){
   try{effect()}finally{
    worldFadeTimer=setTimeout(()=>{
     curtain.classList.remove('active');
-    worldFadeTimer=setTimeout(()=>{worldTransitionBusy=false;worldFadeTimer=null},270);
+    worldFadeTimer=setTimeout(()=>{worldTransitionBusy=false;worldFadeTimer=null},770);
    },35);
   }
- },270);
+ },770);
 }
 function carveOutdoorPortal(side,a,b){
  for(let n=a;n<=b;n++)for(let t=0;t<3;t++){
@@ -1542,15 +1609,15 @@ function prepareOutdoorPortals(){
 }
 function outdoorChunk(area){
  if(outdoorChunks.has(area))return outdoorChunks.get(area);
- const current={area:s.area,x:s.x,y:s.y,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked};
+ const current={area:s.area,x:s.x,y:s.y,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H};
  try{
   s.area=area;s.x=17;s.y=13;
   build(true); // Preview geometry without migrating, saving or discovering areas.
-  const result={tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked};
+  const result={tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H};
   outdoorChunks.set(area,result);
   return result;
  }finally{
-  s.area=current.area;s.x=current.x;s.y=current.y;
+  s.area=current.area;s.x=current.x;s.y=current.y;W=current.w;H=current.h;
   tiles=current.tiles;npcs=current.npcs;villageObstacles=current.villageObstacles;
   route1Blocked=current.route1Blocked;interiorObjects=current.interiorObjects;interiorBlocked=current.interiorBlocked;
  }
@@ -1574,26 +1641,29 @@ function tryOutdoorExit(d,x,y){
  if(s.area==='route2'&&dest==='forest'&&!s.cut){
   say(['The western bamboo path is tangled in vines. Come back after the first badge.']);return true;
  }
- const targetX=d==='right'?0:d==='left'?W-1:x;
- const targetY=d==='down'?0:d==='up'?H-1:y;
+ const destinationSize=outdoorSize(dest);
+ const targetX=d==='right'?0:d==='left'?destinationSize.w-1:x;
+ const targetY=d==='down'?0:d==='up'?destinationSize.h-1:y;
  region(dest,targetX,targetY);
  return true;
 }
 function drawOutdoorWorld(){
  const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const vw=C.width/zoom,vh=C.height/zoom;
- const position=OUTDOOR_GRID[s.area],worldX=(position[0]*W+visual.x)*S,worldY=(position[1]*H+visual.y)*S;
- const minX=0,maxX=W*4*S,minY=0,maxY=H*2*S;
+ const position=outdoorOrigin(s.area),worldX=(position.x+visual.x)*S,worldY=(position.y+visual.y)*S;
+ const bounds=outdoorWorldBounds();
+ const minX=0,maxX=bounds.width*S,minY=0,maxY=bounds.height*S;
  const ox=Math.max(minX,Math.min(maxX-vw,worldX-vw/2)),oy=Math.max(minY,Math.min(maxY-vh,worldY-vh/2));
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#5f8e5f';ctx.fillRect(0,0,C.width,C.height);
  ctx.setTransform(zoom,0,0,zoom,0,0);
- const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked};
+ const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H};
  // Nearby chunks are rendered within the same continuous world coordinate system.
  for(const [area,grid] of Object.entries(OUTDOOR_GRID)){
-  const px=grid[0]*W*S,py=grid[1]*H*S;
-  if(px>ox+vw||py>oy+vh||px+W*S<ox||py+H*S<oy)continue;
+  const location=outdoorOrigin(area),size=outdoorSize(area);
+  const px=location.x*S,py=location.y*S;
+  if(px>ox+vw||py>oy+vh||px+size.w*S<ox||py+size.h*S<oy)continue;
   const chunk=outdoorChunk(area);
-  s.area=area;tiles=chunk.tiles;npcs=chunk.npcs;
+  s.area=area;W=chunk.w;H=chunk.h;tiles=chunk.tiles;npcs=chunk.npcs;
   villageObstacles=chunk.villageObstacles;route1Blocked=chunk.route1Blocked;
   const localOX=ox-px,localOY=oy-py;
   const x1=Math.max(0,Math.floor(localOX/S)),x2=Math.min(W,Math.ceil((localOX+vw)/S));
@@ -1614,13 +1684,13 @@ function drawOutdoorWorld(){
    }
   }
  }
- s.area=restore.area;tiles=restore.tiles;npcs=restore.npcs;
+ s.area=restore.area;W=restore.w;H=restore.h;tiles=restore.tiles;npcs=restore.npcs;
  villageObstacles=restore.villageObstacles;route1Blocked=restore.route1Blocked;
  interiorObjects=restore.interiorObjects;interiorBlocked=restore.interiorBlocked;
  const moving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const step=moving?Math.floor(performance.now()/105)%4:0;
  sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25);
- drawAtmosphereOverlay(ox-position[0]*W*S,oy-position[1]*H*S,vw,vh);
+ drawAtmosphereOverlay(ox-position.x*S,oy-position.y*S,vw,vh);
  drawAtmosphereHUD();
 }
 
@@ -1628,11 +1698,13 @@ function region(area,x,y,textLine='',forceFade=false){
  if(worldTransitionBusy)return;
  const previous=s.area,old=OUTDOOR_GRID[previous],next=OUTDOOR_GRID[area];
  const change=()=>{
-  const oldX=old?(old[0]*W+visual.x):null,oldY=old?(old[1]*H+visual.y):null;
+  const fromOrigin=outdoorOrigin(previous);
+  const oldX=old?(fromOrigin.x+visual.x):null,oldY=old?(fromOrigin.y+visual.y):null;
   doorTransition=null;s.area=area;s.x=x;s.y=y;ensureMapDiscovery();build();save();
   if(old&&next&&!forceFade){
    // Retain interpolated world-space position when crossing a region boundary.
-   visual.x=oldX-next[0]*W;visual.y=oldY-next[1]*H;
+   const toOrigin=outdoorOrigin(area);
+   visual.x=oldX-toOrigin.x;visual.y=oldY-toOrigin.y;
    visual.fromX=visual.x;visual.fromY=visual.y;
    visual.toX=x;visual.toY=y;visual.start=performance.now();visual.duration=movementStepDuration();visual.ready=true;
   }
@@ -1881,7 +1953,7 @@ function indexRegionMap(){
  const canTravel=destination&&mapCanFastTravel(destination.id);
  return '<div class="regionMapIntro"><strong>THE VALLEY REGION</strong><span>Locations appear as you explore · Centers unlock when visited</span></div>'
   +'<div class="regionMapBoard" role="group" aria-label="Top-down regional map with locations and Critter Centers">'
-  +'<img class="regionMapArt" src="assets/region-map.svg?v=82-connected-loops" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
+  +'<img class="regionMapArt" src="assets/region-map.svg?v=83-varied-districts" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
   +nodes+'</div>'
   +'<div class="regionMapLegend"><span>◆ Route</span><span>⌂ Town</span><span>▲ Landmark</span><span>✚ Center</span><span>● You</span></div>'
   +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(destination.name)+'</strong>'
@@ -2681,7 +2753,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v82</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v83</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
