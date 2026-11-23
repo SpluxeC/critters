@@ -396,7 +396,7 @@ test('v73 narrator stages attacks individually and exposes tap-to-finish typing'
  assert.match(game,/async function resolveTeamTurn\(\)/);
  assert.match(game,/await narrateCombatEvents\(log.slice\(before\),fx\)/);
  assert.match(game,/function attachCombatNarrator\(\)/);
- assert.match(game,/state.shown<full.length/);
+ assert.match(game,/if\(!state.typed\)finish\(\)/);
  assert.match(game,/combatNarratorTick=setInterval/);
  assert.match(game,/Choose a move…/);
  assert.match(game,/log.push\(name\+' uses '\+move.name/);
