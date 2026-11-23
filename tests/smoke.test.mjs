@@ -521,3 +521,12 @@ test('v82 continuous branching outdoor region with interior and battle fades',()
  assert.match(html,/#worldFade\.active/);
  assert.match(atlas,/viewBox="0 0 900 560"/);
 });
+
+test('v82 outer route graph has two loops and a cave fade',()=>{
+ const names=['village','route1','town','route2','route3','garden','forest'];
+ for(const id of names)assert.match(game,new RegExp(id+':\\['));
+ assert.match(game,/region\('cave',17,23/);
+ assert.match(game,/\['forest',15,18\]/);
+ assert.match(game,/\['garden',12,14\]/);
+ assert.match(game,/regionMapArt" src="assets\/region-map.svg\?v=82-connected-loops"/);
+});

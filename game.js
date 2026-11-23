@@ -1881,7 +1881,7 @@ function indexRegionMap(){
  const canTravel=destination&&mapCanFastTravel(destination.id);
  return '<div class="regionMapIntro"><strong>THE VALLEY REGION</strong><span>Locations appear as you explore · Centers unlock when visited</span></div>'
   +'<div class="regionMapBoard" role="group" aria-label="Top-down regional map with locations and Critter Centers">'
-  +'<img class="regionMapArt" src="assets/region-map.svg" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
+  +'<img class="regionMapArt" src="assets/region-map.svg?v=82-connected-loops" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
   +nodes+'</div>'
   +'<div class="regionMapLegend"><span>◆ Route</span><span>⌂ Town</span><span>▲ Landmark</span><span>✚ Center</span><span>● You</span></div>'
   +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(destination.name)+'</strong>'
