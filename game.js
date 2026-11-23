@@ -296,18 +296,27 @@ function solidAt(x,y){
 }
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
 let visual={x:0,y:0,fromX:0,fromY:0,toX:0,toY:0,start:0,duration:130,ready:false};
-function snapVisual(){if(!s)return;visual={x:s.x,y:s.y,fromX:s.x,fromY:s.y,toX:s.x,toY:s.y,start:performance.now(),duration:130,ready:true}}
+function snapVisual(){if(!s)return;gaitDistance=0;visual={x:s.x,y:s.y,fromX:s.x,fromY:s.y,toX:s.x,toY:s.y,start:performance.now(),duration:130,ready:true}}
 function updateVisual(now=performance.now()){
  if(!s)return;
  if(!visual.ready){snapVisual();return}
  const t=Math.min(1,Math.max(0,(now-visual.start)/visual.duration));
  // Linear interpolation produces a constant walking speed without slow-down at each tile.
- visual.x=visual.fromX+(visual.toX-visual.fromX)*t;
- visual.y=visual.fromY+(visual.toY-visual.fromY)*t;
+ const x=visual.fromX+(visual.toX-visual.fromX)*t,y=visual.fromY+(visual.toY-visual.fromY)*t;
+ gaitDistance+=Math.hypot(x-visual.x,y-visual.y);
+ visual.x=x;visual.y=y;
 }
 // Run is the original movement pace; Walk takes longer between grid steps.
 const movementStepInterval=()=>s?.movementMode==='walk'?235:135;
-const movementStepDuration=()=>s?.movementMode==='walk'?210:120;
+const movementStepDuration=()=>movementStepInterval();
+// Advance the gait by actual distance travelled, not keyboard state or wall-clock time.
+let gaitDistance=0;
+function playerGaitFrame(){
+ const moving=Math.abs(visual.x-visual.toX)+Math.abs(visual.y-visual.toY)>.001;
+ if(!moving)return 0;
+ const cycle=s?.movementMode==='walk'?2:2.5;
+ return [0,1,2,3][Math.floor(gaitDistance/cycle*4)%4];
+}
 function syncMovementToggle(){
  // Joystick is now the only run/walk selector. Keep its state readable.
  const walking=s?.movementMode==='walk';
@@ -482,6 +491,7 @@ async function loadCritterMoveData(){
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
+function critterGenderLabel(p){return p?.gender==='male'?' ♂':p?.gender==='female'?' ♀':'';}
 function critter(type,level=5){
  level=Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(level)||1)));
  const spec=speciesRegistry.get(type);
@@ -1489,7 +1499,7 @@ function draw(){
  }
 }
  const isMoving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
- const walkFrame=isMoving?Math.floor(performance.now()/105)%4:0;
+ const walkFrame=playerGaitFrame();
  sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
  drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
  drawAtmosphereHUD()
@@ -1708,7 +1718,7 @@ function drawOutdoorWorld(){
  villageObstacles=restore.villageObstacles;route1Blocked=restore.route1Blocked;
  interiorObjects=restore.interiorObjects;interiorBlocked=restore.interiorBlocked;
  const moving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
- const step=moving?Math.floor(performance.now()/105)%4:0;
+ const step=playerGaitFrame();
  sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25);
  drawAtmosphereOverlay(ox-position.x*S,oy-position.y*S,vw,vh);
  drawAtmosphereHUD();
@@ -1889,6 +1899,7 @@ function combatSpeed(side,index){
 }
 function refreshSpeciesMetadata(p){
  if(!p)return p;
+ if(p.gender!=='male'&&p.gender!=='female')p.gender=Math.random()<0.5?'male':'female';
  const species=speciesFor(p);
  if(species){
   p.type=species.types[0];
@@ -2021,7 +2032,7 @@ function index(){
 function indexSlotContent(i){
  if(i<8){
   const p=s.party[i];
-  return p?'<span class="watchSlotIcon">'+(critterSpriteTag(p,'watchSlotSprite')||symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.name||p.type)+'</span><small>Lv '+p.level+'</small>'
+  return p?'<span class="watchSlotIcon">'+(critterSpriteTag(p,'watchSlotSprite')||symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.name||p.type)+critterGenderLabel(p)+'</span><small>Lv '+p.level+'</small>'
    :'<span class="watchSlotIcon empty">◇</span><span class="watchSlotName">Empty</span>';
  }
  const module=s.installed[i-8];
@@ -2077,7 +2088,7 @@ function indexParty(){
   const p=s.party[i];
   if(!p)return '<div class="watchPartyCard empty"><span>Slot '+(i+1)+'</span><strong>◇ Empty</strong></div>';
   const pct=Math.round(100*p.hp/Math.max(1,p.maxHp));
-  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(critterSpriteTag(p,'watchPartySprite')||symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong>'
+  return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(critterSpriteTag(p,'watchPartySprite')||symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
    +'<div class="watchPartyMeta">HP '+p.hp+'/'+p.maxHp+' · '+escapeHtml(p.status||'Healthy')+'</div>'
     +'<div class="watchPartyMeta">'+(p.level>=MAX_CRITTER_LEVEL?'MAX LEVEL · Lv 100':'XP '+Math.floor(p.xp||0)+' / '+experienceToNextLevel(p)+' to Lv '+(p.level+1))+'</div>'
@@ -2155,7 +2166,7 @@ function fieldBagUI(){
   return '<div class="watchSectionTitle">Restore PP to '+escapeHtml(p.name||p.type)+'</div><div class="fieldBagTargets">'+moves+'</div>'+back;
  }
  return header+'<div class="fieldBagTargets">'+(targets.length?targets.map(({p,i})=>
-  '<button type="button" class="btn" data-field-target="'+i+'">'+escapeHtml(p.name||p.type)+' · Lv '+p.level+' · HP '+p.hp+'/'+p.maxHp+'</button>').join('')
+  '<button type="button" class="btn" data-field-target="'+i+'">'+escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+' · HP '+p.hp+'/'+p.maxHp+'</button>').join('')
   :'<div class="watchEmpty">No eligible Critters.</div>')+'</div>'+back;
 }
 
@@ -2714,7 +2725,7 @@ function hpCard(p,side,active=false){
  if(!p)return '';
  const pct=Math.max(0,Math.round(100*p.hp/Math.max(1,p.maxHp))),low=pct<=25;
  return '<div class="combatCard '+side+(active?' active':'')+(p.hp<=0?' fainted':'')+'">'
-  +'<div class="combatCardHead"><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+'</strong><small>Lv '+p.level+'</small></div>'
+  +'<div class="combatCardHead"><strong>'+(symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+'</strong><small>Lv '+p.level+'</small></div>'
   +'<div class="health"><div class="'+(low?'low':'')+'" style="width:'+pct+'%"></div></div>'
   +'<div class="combatCardFoot">HP '+p.hp+'/'+p.maxHp+(p.hp===0?' · Fainted':'')+' · '+escapeHtml(defendTypes(p).join('/'))+'</div></div>';
 }
@@ -2783,7 +2794,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v84</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v85</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
@@ -3257,7 +3268,7 @@ function performPlayerAction(action,log){
      const destination=addCapturedCritter(caught);
      s.questCaptureCounts=s.questCaptureCounts||{};
      s.questCaptureCounts[s.area]=(s.questCaptureCounts[s.area]||0)+1;
-     s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,area:s.area,storage:destination});s.captureLog=s.captureLog.slice(-80);
+     s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,gender:foe.gender,area:s.area,storage:destination});s.captureLog=s.captureLog.slice(-80);
      endBattle(true,'Capture successful! '+(foe.name||foe.type)+(destination==='Party'?' joined your party ('+s.party.length+'/'+PARTY_LIMIT+').':' was automatically sent to home storage ('+s.storage.length+' stored).'),false);
     }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
    }return;
@@ -3565,7 +3576,7 @@ const CENTER_STORAGE_PAGE_SIZE=16;
 function manageParty(){
  const partyCount=s.party.length;
  centerSwapSlot=Math.max(0,Math.min(centerSwapSlot,partyCount-1));
- const list=s.party.map((p,i)=>'<div class="centerPartyRow"><b>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
+ const list=s.party.map((p,i)=>'<div class="centerPartyRow"><b>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
   +'<button class="btn" data-party-up="'+i+'" '+(!i?'disabled':'')+'>↑</button> '
   +'<button class="btn" data-party-down="'+i+'" '+(i===partyCount-1?'disabled':'')+'>↓</button> '
   +'<button class="btn" data-store="'+i+'" '+(partyCount<=1?'disabled':'')+'>Send Home</button></div>').join('');
@@ -3578,7 +3589,7 @@ function manageParty(){
  const pages=Math.max(1,Math.ceil(matching.length/CENTER_STORAGE_PAGE_SIZE));
  centerStoragePage=Math.max(0,Math.min(centerStoragePage,pages-1));
  const selected=matching.slice(centerStoragePage*CENTER_STORAGE_PAGE_SIZE,(centerStoragePage+1)*CENTER_STORAGE_PAGE_SIZE);
- const stored=selected.map(({p,i})=>'<div class="centerPartyRow"><b>'+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
+ const stored=selected.map(({p,i})=>'<div class="centerPartyRow"><b>'+escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
   +'<button class="btn" data-retrieve="'+i+'" '+(partyCount>=PARTY_LIMIT?'disabled':'')+'>Add to Party</button> '
   +'<button class="btn" data-swap-storage="'+i+'" '+(!partyCount?'disabled':'')+'>Swap</button></div>').join('')
   ||'<p class="muted">No stored Critters match your search.</p>';
