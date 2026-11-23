@@ -2794,7 +2794,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v85</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v86</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
@@ -3273,8 +3273,9 @@ function performPlayerAction(action,log){
     }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
    }return;
   case 'run':if(battle.kind==='wild'){
-   if(Math.random()<0.82)endBattle(true,'You escaped safely.',false);
-   else log.push('Could not escape!');
+   const escaped=Math.random()<0.82;
+    battle.escapeOutcome=escaped?'success':'failure';
+    log.push(escaped?'You escaped safely.':'You failed to escape!');
   }return;
  }
 }
@@ -3380,9 +3381,19 @@ async function resolveTeamTurn(){
   const before=log.length;
   // A defeated combatant cannot attack again later in the same turn.
   performPlayerAction(action,log);
-  if(battle!==currentBattle)return; // capture / escape ended battle
-  const fx=battle.lastVfx;
-  await narrateCombatEvents(log.slice(before),fx);
+  if(battle!==currentBattle)return; // capture ended battle
+   const fx=battle.lastVfx;
+   await narrateCombatEvents(log.slice(before),fx);
+   if(battle!==currentBattle)return;
+   if(battle.escapeOutcome){
+    // Return to the overworld after either narrated escape outcome.
+    while(worldTransitionBusy&&battle===currentBattle)await new Promise(resolve=>setTimeout(resolve,50));
+    if(battle===currentBattle)fadeWorldChange(()=>{
+     if(battle!==currentBattle)return;
+     clearCombatNarrator();battle=null;close();save();
+    });
+    return;
+   }
  }
  if(battle!==currentBattle)return;
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
