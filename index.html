@@ -1180,10 +1180,10 @@ button,.btn,[role="button"],a,#world,.joystick{
 }
 #game .actions #talk,
 #game .actions #talk.primary{
- background:rgba(164,93,72,0.12)!important;
- border-color:rgba(244,221,182,0.25)!important;
- color:rgba(255,247,227,0.42)!important;
- opacity:.35!important;
+ background:rgba(164,93,72,0.30)!important;
+ border-color:rgba(244,221,182,0.45)!important;
+ color:rgba(255,247,227,0.72)!important;
+ opacity:.58!important;
  box-shadow:none!important;
  transition:background-color .12s ease,opacity .12s ease,color .12s ease!important;
 }
@@ -1194,6 +1194,32 @@ button,.btn,[role="button"],a,#world,.joystick{
  color:#fff6e6!important;
  opacity:1!important;
  box-shadow:0 2px 10px #27130dae!important;
+}
+
+
+/* v76: help text is fixed beneath the existing joystick, never affecting its layout. */
+#game .joystickHelp{
+ position:fixed;
+ left:max(12px,env(safe-area-inset-left));
+ bottom:0;
+ width:clamp(108px,29vw,150px);
+ display:block;
+ box-sizing:border-box;
+ text-align:center;
+ font:700 clamp(9px,1.75vw,11px)/1.1 system-ui,sans-serif;
+ white-space:nowrap;
+ letter-spacing:-.15px;
+ color:#f7ebcb;
+ text-shadow:0 1px 3px #071c23,0 0 5px #071c23;
+ pointer-events:none;
+ user-select:none;
+ z-index:6;
+}
+@media(max-height:500px){
+ #game .joystickHelp{width:100px;font-size:8px;letter-spacing:-.4px}
+}
+@media(max-height:430px) and (orientation:landscape){
+ #game .joystickHelp{width:clamp(76px,22dvh,112px);font-size:7.5px;letter-spacing:-.55px}
 }
 
 </style><script>
@@ -1211,10 +1237,10 @@ document.addEventListener('dblclick',function(event){
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
     <div id="dialog" class="dialog"><span id="dialogText"></span><small>Tap / Enter to continue ▸</small></div>
     <div class="mobile">
-      <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div>
+      <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div><span class="joystickHelp" aria-hidden="true">Double Tap-Run/Walk</span>
       <div class="actions"><button class="btn primary" id="talk" type="button">Interact</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
     </div>
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=75-joystick-contextual-interact-20261123" defer></script></body></html>
+</main><script src="game.js?v=76-joystick-label-20261123" defer></script></body></html>

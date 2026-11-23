@@ -428,3 +428,11 @@ test('v75 overworld removes run toggle, canvas banner and top Save button',()=>{
  assert.match(game,/Money: /);
  assert.doesNotMatch(game,/ credits!/);
 });
+
+test('v76 inactive Interact is more visible and joystick hint does not move input',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(html,/class="joystickHelp" aria-hidden="true">Double Tap-Run\/Walk<\/span>/);
+ assert.match(html,/#game \.joystickHelp\{\s*position:fixed/);
+ assert.match(html,/background:rgba\(164,93,72,0\.30\)!important/);
+ assert.match(html,/opacity:\.58!important/);
+});

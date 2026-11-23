@@ -249,3 +249,7 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Interact fades nearly transparent until the player faces an NPC, usable door, interior object, route inspection point, or gym entrance; dialogue can still be advanced.
 - Removed the top Save button, the top DOM HUD, and the player/starter/money/badges canvas banner. The time/weather display remains.
 - Changed visible 'credits' currency labels to 'money', retaining internal reward property names and saved monetary balances for compatibility.
+
+## v76 — Subtle interaction affordance and joystick hint
+- Increased the inactive Interact button visibility without changing the fully opaque interactable state.
+- Placed “Double Tap-Run/Walk” immediately below the joystick as noninteractive fixed text; the joystick's placement and touch handling are unchanged.
