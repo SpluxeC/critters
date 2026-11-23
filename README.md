@@ -259,3 +259,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Player tab now contains Money plus Bag and Records inner sections; removed player name and Money/Badges/Captures counters from above the top navigation.
 - Encyclopedia combines the previous Critters and Moves reference libraries, preserving their discovery, type, and search tools.
 - Battle Use remains locked to battle supplies; battle Critters remains locked to the clock interface.
+
+## v78 — Index-first watch with usable bag
+- Index (formerly Clock) is the first and default top tab, before the player-name tab, Encyclopedia, and Tools. Top and inner tabs are text-only.
+- Field Bag now allows Potion healing, Revive, PP Potion (target then move), and eligible evolution stones by selecting a party Critter. Items are consumed only when successfully used, and all actions save normally.
+- Items not usable outside battle remain visible but unavailable; battle-only Capture Beam and battle menus are unchanged.

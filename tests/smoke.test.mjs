@@ -439,7 +439,7 @@ test('v76 inactive Interact is more visible and joystick hint does not move inpu
 
 test('v77 player and encyclopedia tabs consolidate former root tabs',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(game,/const INDEX_TABS=\[\['player','Player'\],\['clock','⌚ Clock'\],\['encyclopedia','✦ Encyclopedia'\],\['tools','⚙ Tools'\]\]/);
+ assert.match(game,/const INDEX_TABS=\[\['clock','Index'\],\['player','Player'\],\['encyclopedia','Encyclopedia'\],\['tools','Tools'\]\]/);
  assert.match(game,/data-player-section/);
  assert.match(game,/data-encyclopedia-section/);
  assert.match(game,/function indexPlayer\(\)/);
@@ -449,4 +449,18 @@ test('v77 player and encyclopedia tabs consolidate former root tabs',()=>{
  assert.doesNotMatch(game,/class="watchStats"/);
  assert.match(game,/key==='player'\?escapeHtml\(s\.name\)/);
  assert.match(html,/\.watchTabs\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+});
+
+test('v78 Index first and field item use supports safe targeted consumables',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(game,/indexTab='clock';playerIndexSection='bag'/);
+ assert.match(game,/function fieldBagItemUsable\(name\)/);
+ assert.match(game,/function fieldBagTargets\(name\)/);
+ assert.match(game,/function useFieldBagItem\(name,target,moveId=null\)/);
+ assert.match(game,/data-field-target/);
+ assert.match(game,/data-field-move/);
+ assert.match(game,/data-field-item/);
+ assert.match(game,/fieldBagItem==='PP Potion'/);
+ assert.match(game,/if\(battleIndexActive\(\)\)return battleTools/);
+ assert.match(html,/\.fieldBagTargets/);
 });

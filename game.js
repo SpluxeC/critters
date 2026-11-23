@@ -1645,11 +1645,11 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 
 // Phase 4 — Index is a read-only wrist device outside a Critter Center.
 // Party swapping and module configuration remain Center-exclusive.
-let indexTab='player',indexSelection=0;
+let indexTab='clock',indexSelection=0;
 let playerIndexSection='bag',encyclopediaSection='critters';
-const INDEX_TABS=[['player','Player'],['clock','⌚ Clock'],['encyclopedia','✦ Encyclopedia'],['tools','⚙ Tools']];
-const PLAYER_INDEX_SECTIONS=[['bag','▣ Bag'],['records','◎ Records']];
-const ENCYCLOPEDIA_SECTIONS=[['critters','◈ Critters'],['moves','✦ Moves']];
+const INDEX_TABS=[['clock','Index'],['player','Player'],['encyclopedia','Encyclopedia'],['tools','Tools']];
+const PLAYER_INDEX_SECTIONS=[['bag','Bag'],['records','Records']];
+const ENCYCLOPEDIA_SECTIONS=[['critters','Critters'],['moves','Moves']];
 function indexSectionNav(sections,selected,attribute,label){
  return '<nav class="watchInnerTabs" aria-label="'+label+'">'
   +sections.map(([key,title])=>'<button type="button" class="watchInnerTab '+(selected===key?'selected':'')+'" '+attribute+'="'+key+'" aria-pressed="'+(selected===key)+'">'+title+'</button>').join('')
@@ -1669,7 +1669,7 @@ let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSel
 
 function index(){
  if(screen!=='game'||battle)return;
- indexTab='player';playerIndexSection='bag';indexSelection=0;renderIndex();
+ indexTab='clock';playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
 }
 function indexSlotContent(i){
  if(i<8){
@@ -1744,6 +1744,74 @@ function indexParty(){
  return (battleIndexActive()?'':evolutionNotification())+'<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
 }
+
+let fieldBagItem=null,fieldBagTarget=null,fieldBagResult='';
+function fieldBagItemUsable(name){
+ if(!s||battle||!s.inventory?.[name])return false;
+ if(name==='Potion')return s.party.some(p=>p.hp>0&&p.hp<p.maxHp);
+ if(name==='Revive')return s.party.some(p=>p.hp===0);
+ if(name==='PP Potion')return s.party.some(p=>{
+  if(p.hp<=0)return false;
+  normalizeMoves(p);
+  return p.moves.some(id=>p.movePP[id]<getMove(p,id).pp);
+ });
+ if(EVOLUTION_STONES[name])return s.party.some(p=>evolutionRule(p)?.stone===name&&evolutionReady(p,true));
+ return false;
+}
+function fieldBagTargets(name){
+ return s.party.map((p,i)=>({p,i})).filter(({p})=>{
+  if(!p||!s.inventory?.[name])return false;
+  if(name==='Potion')return p.hp>0&&p.hp<p.maxHp;
+  if(name==='Revive')return p.hp===0;
+  if(name==='PP Potion')return p.hp>0&&p.moves.some(id=>(p.movePP?.[id]??getMove(p,id).pp)<getMove(p,id).pp);
+  return !!EVOLUTION_STONES[name]&&evolutionRule(p)?.stone===name&&evolutionReady(p,true);
+ });
+}
+function useFieldBagItem(name,target,moveId=null){
+ if(battle||!s||!Number.isInteger(target)||!s.inventory?.[name])return false;
+ const p=s.party[target];
+ if(!p||!fieldBagTargets(name).some(candidate=>candidate.i===target))return false;
+ if(name==='Potion')p.hp=Math.min(p.maxHp,p.hp+20);
+ else if(name==='Revive')p.hp=Math.max(1,Math.floor(p.maxHp/2));
+ else if(name==='PP Potion'){
+  normalizeMoves(p);
+  if(!moveId||!p.moves.includes(moveId))return false;
+  const m=getMove(p,moveId),current=p.movePP[moveId];
+  if(current>=m.pp)return false;
+  p.movePP[moveId]=Math.min(m.pp,current+10);
+ }else if(EVOLUTION_STONES[name]){
+  const results=tryEvolveChain(p,1,true);
+  if(!results.length)return false;
+  fieldBagResult=results[0].from+' evolved into '+results[0].to+'!';
+  fieldBagItem=null;fieldBagTarget=null;save();return true;
+ }else return false;
+ s.inventory[name]--;
+ fieldBagResult=(p.name||p.type)+' used '+name+'.';
+ fieldBagItem=null;fieldBagTarget=null;
+ save();return true;
+}
+function fieldBagUI(){
+ if(!fieldBagItem)return '';
+ const name=fieldBagItem;
+ if(!s.inventory?.[name]){fieldBagItem=null;fieldBagTarget=null;return ''}
+ const targets=fieldBagTargets(name);
+ const header='<div class="watchSectionTitle">Use '+escapeHtml(name)+' on which Critter?</div>';
+ const back='<button type="button" class="btn watchMinor" id="fieldItemCancel">Back to bag</button>';
+ if(name==='PP Potion'&&Number.isInteger(fieldBagTarget)){
+  const p=s.party[fieldBagTarget];
+  if(!p||!targets.some(x=>x.i===fieldBagTarget)){fieldBagTarget=null;return fieldBagUI()}
+  normalizeMoves(p);
+  const moves=p.moves.filter(id=>p.movePP[id]<getMove(p,id).pp).map(id=>{
+   const m=getMove(p,id);
+   return '<button type="button" class="btn" data-field-move="'+escapeHtml(id)+'">'+escapeHtml(m.name)+' · '+p.movePP[id]+'/'+m.pp+' PP</button>';
+  }).join('');
+  return '<div class="watchSectionTitle">Restore PP to '+escapeHtml(p.name||p.type)+'</div><div class="fieldBagTargets">'+moves+'</div>'+back;
+ }
+ return header+'<div class="fieldBagTargets">'+(targets.length?targets.map(({p,i})=>
+  '<button type="button" class="btn" data-field-target="'+i+'">'+escapeHtml(p.name||p.type)+' · Lv '+p.level+' · HP '+p.hp+'/'+p.maxHp+'</button>').join('')
+  :'<div class="watchEmpty">No eligible Critters.</div>')+'</div>'+back;
+}
+
 function indexItems(){
  const items=Object.entries(s.inventory||{}).filter(([,v])=>v>0);
  const list=items.length?items.map(([k,v])=>'<div class="watchRow"><span>▣ '+escapeHtml(k)+'</span><strong>×'+v+'</strong></div>').join(''):'<div class="watchEmpty">Your bag is empty.</div>';
@@ -1766,9 +1834,17 @@ function indexItems(){
    :'';
 
  if(battleIndexActive())return battleTools;
- return '<div class="watchSectionTitle">Field inventory <small>View only</small></div>'+list
+ const fieldList=items.length?items.map(([name,count])=>{
+  const usable=fieldBagItemUsable(name);
+  return '<div class="watchRow fieldBagRow"><span>'+escapeHtml(name)+' ×'+count+'</span>'
+   +(usable?'<button type="button" class="btn watchMinor" data-field-item="'+escapeHtml(name)+'">Use</button>':
+    '<small>'+((name==='Potion'||name==='Revive'||name==='PP Potion'||EVOLUTION_STONES[name])?'No eligible Critter':'Not usable in the field')+'</small>')+'</div>';
+ }).join(''):'<div class="watchEmpty">Your bag is empty.</div>';
+ return '<div class="watchSectionTitle">Bag</div>'
+  +(fieldBagResult?'<div class="watchBagNotice" role="status">'+escapeHtml(fieldBagResult)+'</div>':'')
+  +(fieldBagItem?fieldBagUI():fieldList)
   +'<div class="watchSectionTitle">Available modules</div>'+(owned||'<div class="watchEmpty">No uninstalled modules owned.</div>')
-  +'<div class="watchReadOnly">'+(battleIndexActive()?'Choose a battle item above to queue an action. Simply browsing the Index does not spend a turn.':'Items are usable during battles; modules are installed at Critter Centers.')+'</div>';
+  +'<div class="watchReadOnly">Use healing supplies, PP Potions, Revives, and eligible evolution stones from the bag. Capture Beam is available during wild battles; modules are installed at Critter Centers.</div>';
 }
 
 // Collection phase: species IDs are the permanent keys, not editable names.
@@ -2024,6 +2100,27 @@ function renderIndex(){
   if(battleViewing||!PLAYER_INDEX_SECTIONS.some(([key])=>key===b.dataset.playerSection))return;
   playerIndexSection=b.dataset.playerSection;renderIndex();
  });
+ document.querySelectorAll('[data-field-item]').forEach(b=>b.onclick=()=>{
+  if(battleViewing||indexTab!=='player'||playerIndexSection!=='bag')return;
+  const name=b.dataset.fieldItem;
+  if(!fieldBagItemUsable(name))return;
+  fieldBagItem=name;fieldBagTarget=null;fieldBagResult='';renderIndex();
+ });
+ document.querySelectorAll('[data-field-target]').forEach(b=>b.onclick=()=>{
+  if(battleViewing||!fieldBagItem)return;
+  const target=Number(b.dataset.fieldTarget);
+  if(!Number.isInteger(target)||!fieldBagTargets(fieldBagItem).some(x=>x.i===target))return;
+  if(fieldBagItem==='PP Potion'){fieldBagTarget=target;renderIndex();return;}
+  if(useFieldBagItem(fieldBagItem,target))renderIndex();
+ });
+ document.querySelectorAll('[data-field-move]').forEach(b=>b.onclick=()=>{
+  if(battleViewing||fieldBagItem!=='PP Potion'||!Number.isInteger(fieldBagTarget))return;
+  if(useFieldBagItem('PP Potion',fieldBagTarget,b.dataset.fieldMove))renderIndex();
+ });
+ const fieldCancel=$('fieldItemCancel');if(fieldCancel)fieldCancel.onclick=()=>{
+  fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';renderIndex();
+ };
+
  document.querySelectorAll('[data-encyclopedia-section]').forEach(b=>b.onclick=()=>{
   if(battleViewing||!ENCYCLOPEDIA_SECTIONS.some(([key])=>key===b.dataset.encyclopediaSection))return;
   encyclopediaSection=b.dataset.encyclopediaSection;renderIndex();
@@ -2312,7 +2409,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v77</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v78</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';

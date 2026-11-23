@@ -1240,6 +1240,17 @@ button,.btn,[role="button"],a,#world,.joystick{
  #shade .watchInnerTab{font-size:11px}
 }
 
+
+/* v78: field inventory buttons, Critter targeting, and text-only navigation. */
+#shade .fieldBagRow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#shade .fieldBagRow .btn{min-width:70px;flex-shrink:0}
+#shade .fieldBagRow small{font-size:11px;color:#b2c8bd;text-align:right}
+#shade .fieldBagTargets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+#shade .fieldBagTargets .btn{min-width:0;white-space:normal}
+#shade .watchBagNotice{background:#2c5148;border:1px solid #8db49f;color:#f4e7b6;
+ padding:9px 12px;border-radius:8px;margin:8px 0}
+@media(max-width:480px){#shade .fieldBagTargets{grid-template-columns:1fr}}
+
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1261,4 +1272,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=77-index-restructure-20261123" defer></script></body></html>
+</main><script src="game.js?v=78-index-bag-usage-20261123" defer></script></body></html>
