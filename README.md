@@ -269,3 +269,7 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Tools now lives in the Index tab as an internal section alongside the clock.
 - The former Tools top-level tab is Settings, containing Save Game, Save & Return to Title and a note for future audio settings. No nonfunctional volume controls were added.
 - Battle watch access still skips regular tabs.
+
+## v80 — Route 1 artwork
+- Imported 14 front and back sprites from Kyle's Route 1 branch and six species Falquill, Falrift, Falgrath, Toxidot, Mothoxin and Scruffin, leaving existing species intact.
+- Front views appear for opponents and in Encyclopedia; rear views appear for players in battle. Scruffin's two color variants remain in the artwork registry.

@@ -404,7 +404,9 @@ function speciesFor(p){return p?.speciesId?speciesRegistry.get(p.speciesId):null
 // Render only approved local sprite paths. Legacy/non-art Critters retain their type icons.
 function critterSpritePath(p){
  const spec=p?.art?p:speciesFor(p);
- const path=spec?.art?.status==='ready'?spec.art.spritePath:null;
+ const art=spec?.art;
+ const variant=p?.gender&&art?.genderVariants?.[p.gender];
+ const path=art?.status==='ready'?(variant?.spritePath||art.spritePath):null;
  return typeof path==='string'&&/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(path)?path:null;
 }
 function critterSpriteTag(p,cssClass){
@@ -2392,6 +2394,15 @@ function battleFigureArtwork(p,side){
   return '<img class="combatSprite combatSpriteRear" src="'+path+'" alt="'+escapeHtml(p.name||speciesFor(p)?.name||'Critter')+' (rear view)" decoding="async"'+
    (fallback?' onerror="this.onerror=null;this.src=\''+fallback+'\'";':'')+'>';
  }
+
+ const art=speciesFor(p)?.art;
+ const variant=p?.gender&&art?.genderVariants?.[p.gender];
+ const rearPath=side==='ally'&&art?.status==='ready'?(variant?.rearSpritePath||art.rearSpritePath):null;
+ if(typeof rearPath==='string'&&rearPath.startsWith('assets/critters/')&&rearPath.endsWith('.png')&&!rearPath.includes('..')){
+  const fallback=critterSpritePath(p);
+  return '<img class="combatSprite combatSpriteRear" src="'+escapeHtml(rearPath)+'" alt="'+escapeHtml(p.name||speciesFor(p)?.name||'Critter')+' (rear view)" decoding="async"'+
+   (fallback?' onerror="this.onerror=null;this.src=&quot;'+fallback+'&quot;"':'')+'>';
+ }
  return critterSpriteTag(p,'combatSprite')||'<span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>';
 }
 function sceneFigure(p,side,i){
@@ -2427,7 +2438,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v79</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v80</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';

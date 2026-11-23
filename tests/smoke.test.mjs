@@ -474,3 +474,15 @@ test('v79 Tools moved under Index and Settings houses Save',()=>{
  assert.match(game,/Audio controls/);
  assert.doesNotMatch(game,/id="mSave"/);
 });
+
+test('v80 Route 1 sprite registry and rear battle views are wired',()=>{
+ const source=JSON.parse(readFileSync(new URL('../data/critters.json',import.meta.url),'utf8'));
+ for(const id of ['cr-210-falquill','cr-211-falrift','cr-212-falgrath','cr-213-toxidot','cr-214-mothoxin','cr-215-scruffin']){
+  const spec=source.species.find(s=>s.speciesId===id);
+  assert.ok(spec);
+  assert.equal(spec.art.status,'ready');
+  assert.ok(spec.art.spritePath.endsWith('-front.png'));
+  assert.ok(spec.art.rearSpritePath.endsWith('-back.png'));
+ }
+ assert.match(game,/variant\?\.rearSpritePath/);
+});
