@@ -486,3 +486,20 @@ test('v80 Route 1 sprite registry and rear battle views are wired',()=>{
  }
  assert.match(game,/variant\?\.rearSpritePath/);
 });
+
+test('v81 regional atlas and discovered-center travel are connected to Index',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const map=readFileSync(new URL('../assets/region-map.svg',import.meta.url),'utf8');
+ assert.match(game,/\['map','Map'\]/);
+ assert.match(game,/function indexRegionMap\(\)/);
+ assert.match(game,/function ensureMapDiscovery\(\)/);
+ assert.match(game,/function mapCanFastTravel\(id\)/);
+ assert.match(game,/function fastTravelToCenter\(id\)/);
+ assert.match(game,/if\(!mapCanFastTravel\(id\)\)return false/);
+ assert.match(game,/id="regionMapConfirm"/);
+ assert.match(game,/function center\(\)\{/);
+ assert.match(game,/s\.discoveredCenters\[s\.area\]=true/);
+ assert.match(html,/\.regionMapBoard/);
+ assert.match(map,/<svg/);
+ assert.match(map,/viewBox="0 0 900 560"/);
+});

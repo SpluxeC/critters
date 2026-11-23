@@ -498,6 +498,7 @@ function migrate(){
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
+ ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
  s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
@@ -1472,7 +1473,7 @@ function draw(){
  drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
  drawAtmosphereHUD()
 }
-function region(area,x,y,textLine){doorTransition=null;s.area=area;s.x=x;s.y=y;build();save();if(textLine)say([textLine])}
+function region(area,x,y,textLine){doorTransition=null;s.area=area;s.x=x;s.y=y;ensureMapDiscovery();build();save();if(textLine)say([textLine])}
 function move(d){
  if(screen!=='game'||modal||doorTransition||$('dialog').classList.contains('show'))return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
@@ -1650,7 +1651,7 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 let indexTab='clock',indexSelection=0;
 let playerIndexSection='bag',encyclopediaSection='critters';
 const INDEX_TABS=[['clock','Index'],['player','Player'],['encyclopedia','Encyclopedia'],['settings','Settings']];
-const INDEX_SECTIONS=[['clock','Critters'],['tools','Tools']];
+const INDEX_SECTIONS=[['clock','Critters'],['tools','Tools'],['map','Map']];
 let indexMainSection='clock',settingsSavedMessage=false;
 const PLAYER_INDEX_SECTIONS=[['bag','Bag'],['records','Records']];
 const ENCYCLOPEDIA_SECTIONS=[['critters','Critters'],['moves','Moves']];
@@ -1670,8 +1671,81 @@ function indexEncyclopedia(){
 }
 function indexMain(){
  return indexSectionNav(INDEX_SECTIONS,indexMainSection,'data-index-section','Index sections')
-  +(indexMainSection==='tools'?indexTools():indexClock());
+  +(indexMainSection==='tools'?indexTools():indexMainSection==='map'?indexRegionMap():indexClock());
 }
+
+/* The illustrated map shows the existing region, not a newly generated world.
+   Only towns with real Critter Center NPCs are valid travel destinations. */
+const REGION_MAP_PLACES=[
+ {id:'village',name:'Starting Village',x:12,y:73,kind:'town'},
+ {id:'route1',name:'Route 1 · Rice Fields',x:28,y:73,kind:'route'},
+ {id:'town',name:'Small Town',x:43,y:73,kind:'center',spawn:[23,13]},
+ {id:'route2',name:'Route 2 · Bamboo Forest',x:57,y:73,kind:'route'},
+ {id:'forest',name:'Hidden Forest',x:57,y:34,kind:'wild'},
+ {id:'route3',name:'Route 3 · Foothills',x:73,y:73,kind:'route'},
+ {id:'cave',name:'Mountain Cave',x:77,y:30,kind:'wild'},
+ {id:'garden',name:'Garden Town',x:89,y:73,kind:'center',spawn:[14,14]}
+];
+const REGION_MAP_INTERIORS=[
+ {id:'home',name:'Player Home',parent:'village'},
+ {id:'neighbor',name:'Village Home',parent:'village'},
+ {id:'lab',name:'Research Laboratory',parent:'village'},
+ {id:'gym',name:'Grass Gym',parent:'garden'}
+];
+function ensureMapDiscovery(){
+ if(!s)return;
+ if(!s.discoveredAreas||typeof s.discoveredAreas!=='object'||Array.isArray(s.discoveredAreas))s.discoveredAreas={};
+ if(!s.discoveredCenters||typeof s.discoveredCenters!=='object'||Array.isArray(s.discoveredCenters))s.discoveredCenters={};
+ if(s.area)s.discoveredAreas[s.area]=true;
+ // Existing saves record the most recently used Critter Center.
+ if(s.lastCenter&&REGION_MAP_PLACES.some(p=>p.kind==='center'&&p.id===s.lastCenter)){
+  s.discoveredAreas[s.lastCenter]=true;s.discoveredCenters[s.lastCenter]=true;
+ }
+}
+function mapCanFastTravel(id){
+ return !battle&&screen==='game'&&!!s?.discoveredCenters?.[id]&&REGION_MAP_PLACES.some(p=>p.id===id&&p.kind==='center'&&p.spawn);
+}
+let mapTravelSelection=null;
+function indexRegionMap(){
+ ensureMapDiscovery();
+ const destination=REGION_MAP_PLACES.find(p=>p.id===mapTravelSelection);
+ const nodes=REGION_MAP_PLACES.map(p=>{
+  const seen=!!s.discoveredAreas[p.id],unlocked=p.kind==='center'&&!!s.discoveredCenters[p.id];
+  const selected=p.id===mapTravelSelection,here=p.id===s.area;
+  return '<button type="button" class="regionMapPin '+(seen?'discovered ':'fogged ')+(unlocked?'unlocked ':'')+(here?'here ':'')+(selected?'picked':'')+'"'
+   +' data-map-place="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+escapeHtml(seen?p.name:'Undiscovered location')+'"'
+   +' style="left:'+p.x+'%;top:'+p.y+'%"><span class="regionMapPinSymbol">'+(p.kind==='center'?'✚':p.kind==='town'?'⌂':p.kind==='route'?'◆':'▲')+'</span>'
+   +'<span class="regionMapPinName">'+escapeHtml(seen?p.name:'Unknown')+'</span></button>';
+ }).join('');
+ const discovered=REGION_MAP_PLACES.filter(p=>s.discoveredAreas[p.id]).map(p=>
+  '<div class="regionMapLocation"><strong>'+escapeHtml(p.name)+'</strong>'
+  +(p.kind==='center'?'<small>'+(s.discoveredCenters[p.id]?'Fast Travel unlocked':'Visit the Critter Center to unlock Fast Travel')+'</small>':'')+'</div>').join('');
+ const interiors=REGION_MAP_INTERIORS.filter(p=>s.discoveredAreas[p.id]).map(p=>
+  '<div class="regionMapLocation"><strong>'+escapeHtml(p.name)+'</strong><small>'+escapeHtml(REGION_MAP_PLACES.find(a=>a.id===p.parent)?.name||'Location')+'</small></div>').join('');
+ const canTravel=destination&&mapCanFastTravel(destination.id);
+ return '<div class="regionMapIntro"><strong>THE VALLEY REGION</strong><span>Locations appear as you explore · Centers unlock when visited</span></div>'
+  +'<div class="regionMapBoard" role="group" aria-label="Top-down regional map with locations and Critter Centers">'
+  +'<img class="regionMapArt" src="assets/region-map.svg" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
+  +nodes+'</div>'
+  +'<div class="regionMapLegend"><span>◆ Route</span><span>⌂ Town</span><span>▲ Landmark</span><span>✚ Center</span><span>● You</span></div>'
+  +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(destination.name)+'</strong>'
+    +'<p>'+(destination.kind!=='center'?'Only Critter Centers are fast travel destinations.':canTravel?'Fast Travel to this Critter Center?':'Find and speak to the Critter Center technician to unlock Fast Travel.')+'</p>'
+    +(canTravel?'<button type="button" class="btn primary" id="regionMapConfirm">Confirm Fast Travel</button>':'')
+    +'<button type="button" class="btn" id="regionMapCancel">Cancel</button></div>':'')
+  +'<div class="watchSectionTitle">Discovered locations</div><div class="regionMapLocationList">'
+  +(discovered+interiors||'<div class="watchEmpty">Explore to discover places.</div>')+'</div>';
+}
+function fastTravelToCenter(id){
+ if(!mapCanFastTravel(id))return false;
+ const place=REGION_MAP_PLACES.find(p=>p.id===id);
+ const [x,y]=place.spawn;
+ mapTravelSelection=null;
+ close(); // Remove watch modal before using the existing region transition.
+ region(id,x,y,'Fast Travel complete — '+place.name+' Critter Center.');
+ s.face='up';save();
+ return true;
+}
+
 function indexSettings(){
  return '<div class="watchSectionTitle">Game settings</div>'
   +(settingsSavedMessage?'<div class="watchBagNotice" role="status">Game saved successfully.</div>':'')
@@ -1684,7 +1758,7 @@ let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSel
 
 function index(){
  if(screen!=='game'||battle)return;
- indexTab='clock';indexMainSection='clock';settingsSavedMessage=false;playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
+ indexTab='clock';indexMainSection='clock';mapTravelSelection=null;settingsSavedMessage=false;playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
 }
 function indexSlotContent(i){
  if(i<8){
@@ -2112,8 +2186,17 @@ function renderIndex(){
  });
  document.querySelectorAll('[data-index-section]').forEach(b=>b.onclick=()=>{
   if(battleViewing||indexTab!=='clock'||!INDEX_SECTIONS.some(([key])=>key===b.dataset.indexSection))return;
-  indexMainSection=b.dataset.indexSection;renderIndex();
+  indexMainSection=b.dataset.indexSection;if(indexMainSection!=='map')mapTravelSelection=null;renderIndex();
  });
+ document.querySelectorAll('[data-map-place]').forEach(b=>b.onclick=()=>{
+  if(battleViewing||indexTab!=='clock'||indexMainSection!=='map')return;
+  if(!REGION_MAP_PLACES.some(p=>p.id===b.dataset.mapPlace))return;
+  mapTravelSelection=b.dataset.mapPlace;renderIndex();
+ });
+ const mapConfirm=$('regionMapConfirm');if(mapConfirm)mapConfirm.onclick=()=>{
+  if(mapTravelSelection)fastTravelToCenter(mapTravelSelection);
+ };
+ const mapCancel=$('regionMapCancel');if(mapCancel)mapCancel.onclick=()=>{mapTravelSelection=null;renderIndex()};
  document.querySelectorAll('[data-player-section]').forEach(b=>b.onclick=()=>{
   if(battleViewing||!PLAYER_INDEX_SECTIONS.some(([key])=>key===b.dataset.playerSection))return;
   playerIndexSection=b.dataset.playerSection;renderIndex();
@@ -2438,7 +2521,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v80</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v81</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
@@ -3209,6 +3292,7 @@ function blackout(){
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
+ ensureMapDiscovery();if(REGION_MAP_PLACES.some(p=>p.id===s.area&&p.kind==='center'))s.discoveredCenters[s.area]=true;
  s.lastCenter=s.area;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)});save();
  open('Critter Center','<p>Your Critters were fully healed! The technician can also manage party storage and install modules.</p><div class="options"><button class="btn" id="manageParty">Manage Party / Home Storage</button><button class="btn" id="manageModules">Install Critter Index Modules</button><button class="btn" id="centerDone">Leave</button></div>');
  $('manageParty').onclick=manageParty;$('manageModules').onclick=manageModules;$('centerDone').onclick=close

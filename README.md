@@ -273,3 +273,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 ## v80 — Route 1 artwork
 - Imported 14 front and back sprites from Kyle's Route 1 branch and six species Falquill, Falrift, Falgrath, Toxidot, Mothoxin and Scruffin, leaving existing species intact.
 - Front views appear for opponents and in Encyclopedia; rear views appear for players in battle. Scruffin's two color variants remain in the artwork registry.
+
+## v81 — Regional atlas and Critter Center fast travel
+- Index now has Critters, Tools, and Map inner tabs. Map shows a detailed, top-down illustrated atlas of the existing region with discovered location labels and a current-location indicator.
+- Visited areas are tracked in old-save-compatible discoveredAreas; Critter Centers unlock only after the player speaks to the technician. Existing lastCenter is recognized for returning saves.
+- Two legitimate destinations: Small Town Critter Center (tile 23,13) and Garden Town Critter Center (tile 14,14). Travel requires selecting the map marker and confirming, then uses the existing region transition/save logic.
+- Undiscovered locations remain unknown. Interior labels appear in the discovered list. No new areas are invented.
