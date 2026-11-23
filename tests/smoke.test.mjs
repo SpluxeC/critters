@@ -88,7 +88,7 @@ test('Last Resort never writes itself into the learned move slots',()=>{
 });
 
 test('classic battle menus keep the three choices, move overlay and Index actions',()=>{
- const start=game.indexOf('function renderBattle(message){');
+ const start=game.indexOf('function battleMainActions(mode){');
  const finish=game.indexOf('\nfunction queueBattleAction(',start);
  assert.ok(start>=0&&finish>start,'Battle renderer exists');
  const s={party:[{name:'Tester',type:'Water',level:8,hp:20,maxHp:30,moves:['tide-splash'],movePP:{'tide-splash':10}}],inventory:{Potion:2,Revive:0}};
@@ -109,6 +109,8 @@ test('classic battle menus keep the three choices, move overlay and Index action
  assert.doesNotMatch(screen,/battleMovesAround/);
  battle.uiMenu='battle';sandbox.renderBattle();
  assert.match(screen,/battleMovesAround/);assert.match(screen,/Tide Splash/);
+ assert.match(screen,/id="menuBattle" aria-pressed="true">Attack<\/button>/);
+ assert.doesNotMatch(screen,/classicSubmenu|id="battleGuard"|id="battleFocus"|Choose a move/);
  assert.match(screen,/data-move-target="0"/);
  // Index is a separate full-screen watch; it should not be a small arena submenu.
  assert.match(game,/openBattleIndex\('items'\)/);
@@ -376,4 +378,15 @@ test('v71 battle watch uses focused non-navigable bag and clock screens',()=>{
  assert.match(game,/data-index-battle-switch/);
  assert.match(game,/battleQuickView/);
  assert.match(html,/color:#080b10!important;border-color:#060e1c!important/);
+});
+
+test('v72 Attack uses move overlay without a Guard/Focus popup',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(game,/function battleMainActions\(mode\)/);
+ assert.match(game,/battleMainActions\('battle'\)/);
+ assert.match(game,/battleMainActions\('root'\)/);
+ assert.match(game,/menuTo\(mode==='battle'\?'root':'battle'\)/);
+ assert.match(game,/id="menuBattle" aria-pressed=/);
+ assert.doesNotMatch(game,/id="battleGuard"|id="battleFocus"|Choose a move/);
+ assert.match(html,/color:#0b1016!important/);
 });

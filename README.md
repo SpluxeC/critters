@@ -228,3 +228,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Critters opens only the clock-style party selector, with switching directly from the selected clock slot; no tabs during combat.
 - Removed the redundant Party tab from the full Index; normal clock/party info remains accessible without duplicate tabs.
 - Blue Critters battle button now has black text.
+
+## v72 — Simplified Attack selection
+- Renamed the primary battle command from Battle to Attack.
+- Tapping Attack displays only the existing move choices around the active Critter. The previous Guard/Focus/Back pop-up is removed, and Attack toggles the move choices closed.
+- Blue Critters button now has a dark label matching the rest of the battle menu's dark text style.

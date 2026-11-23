@@ -2257,12 +2257,20 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v71</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v72</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
 }
 function battleMessage(msg){return '<div class="combatMessage" role="status">'+escapeHtml(msg||battle.feedback||'Choose your actions.')+'</div>'}
+function battleMainActions(mode){
+ return '<div class="classicMenu classicMainMenu">'
+  +'<button class="btn classicBattle" id="menuBattle" aria-pressed="'+(mode==='battle')+'">Attack</button>'
+  +'<button class="btn classicIndex" id="menuUse">Use</button>'
+  +'<button class="btn classicCritters" id="menuCritters">Critters</button>'
+  +'<button class="btn classicEscape" id="menuEscape" '+(battle.kind!=='wild'?'disabled title="Cannot escape a trainer battle"':'')+'>Escape</button></div>'
+  +(battle.kind!=='wild'?'<p class="classicFootnote">Escape is unavailable against trainers.</p>':'');
+}
 function renderBattle(message){
  if(!battle)return;
  if(typeof message==='string')battle.feedback=message;
@@ -2293,8 +2301,9 @@ function renderBattle(message){
     });
    }).join('')+(noUsableMoves?'<button class="btn combatAttack battleMove type-typeless" data-use-move="opening-flick" data-move-target="'+(targets[0]??i)+'"><span class="moveName">Last Resort</span><span class="moveMeta">No PP needed</span></button>':'');
    moveOverlay='<div class="battleMovesAround" role="group" aria-label="Moves for '+escapeHtml(actor.name||actor.type)+'">'+moveButtons+'</div>';
-   actions='<div class="classicSubmenu"><strong>'+escapeHtml(actor.name||actor.type)+' · Choose a move'+(battle.mode===2?' and target':'')+'</strong>'
-     +'<button class="btn" id="battleGuard">Guard</button><button class="btn" id="battleFocus">Focus</button><button class="btn" id="battleBack">Back</button></div>';
+   // Attack reveals move choices around the Critter, without a secondary popup.
+   // Keep the four commands visible so Attack can toggle the moves closed.
+   actions=battleMainActions('battle');
   }else if(mode==='index'){
    actions='<div class="classicMenu classicIndexMenu"><button class="btn" id="indexSwitch">↔ Switch Critter</button>'
      +'<button class="btn" id="indexItem">▣ Use Item</button>'
@@ -2306,12 +2315,7 @@ function renderBattle(message){
      +'<button class="btn" id="revive" '+(!itemQty('Revive')||!s.party.some(q=>q.hp===0)?'disabled':'')+'>Revive · '+itemQty('Revive')+'</button>'
      +'<button class="btn" id="battleBack">Back</button></div>';
   }else{
-   actions='<div class="classicMenu classicMainMenu">'
-     +'<button class="btn classicBattle" id="menuBattle">Battle</button>'
-     +'<button class="btn classicIndex" id="menuUse">Use</button>'
-     +'<button class="btn classicCritters" id="menuCritters">Critters</button>'
-     +'<button class="btn classicEscape" id="menuEscape" '+(battle.kind!=='wild'?'disabled title="Cannot escape a trainer battle"':'')+'>Escape</button></div>'
-     +(battle.kind!=='wild'?'<p class="classicFootnote">Escape is unavailable against trainers.</p>':'');
+   actions=battleMainActions('root');
   }
  }else if(battle.phase==='resolve')actions='<div class="combatProcessing">Resolving team turn…</div>';
  open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader(moveOverlay)+battleMessage(battle.feedback)
@@ -2325,7 +2329,7 @@ function renderBattle(message){
  $('close').hidden=true;
  if(battle.phase!=='choose')return;
  const menuTo=(next)=>{battle.uiMenu=next;renderBattle()};
- if($('menuBattle'))$('menuBattle').onclick=()=>menuTo('battle');
+ if($('menuBattle'))$('menuBattle').onclick=()=>menuTo(mode==='battle'?'root':'battle');
  if($('menuUse'))$('menuUse').onclick=()=>openBattleIndex('items');
  if($('menuCritters'))$('menuCritters').onclick=()=>openBattleIndex('clock');
  if($('menuEscape'))$('menuEscape').onclick=()=>{if(battle.kind==='wild')queueBattleAction({kind:'run'})};
@@ -2335,8 +2339,6 @@ function renderBattle(message){
   if(!validMove(moveId)||((actor.movePP[moveId]||0)<1&&!(moveId==='opening-flick'&&noUsableMoves)))return;
   queueBattleAction({kind:'move',moveId,target});
  });
- if($('battleGuard'))$('battleGuard').onclick=()=>queueBattleAction({kind:'guard'});
- if($('battleFocus'))$('battleFocus').onclick=()=>queueBattleAction({kind:'focus'});
  if($('indexSwitch'))$('indexSwitch').onclick=selectPoke;
  if($('indexItem'))$('indexItem').onclick=()=>menuTo('items');
  if($('indexCapture'))$('indexCapture').onclick=()=>{if(battle.kind==='wild')queueBattleAction({kind:'capture'})};
