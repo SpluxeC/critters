@@ -1004,6 +1004,63 @@ button,.btn,[role="button"],a,#world,.joystick{
  }
 }
 
+
+/* v68 — full-width battle narrator and flush-to-narrator controls. */
+#shade:has(.combatTop) #modalBody{
+ --battle-narrator-height:clamp(62px,11dvh,88px);
+ --battle-safe-bottom:env(safe-area-inset-bottom,0px);
+}
+#shade:has(.combatTop) .combatMessage{
+ box-sizing:border-box!important;
+ position:absolute!important;
+ left:0!important;right:0!important;bottom:0!important;
+ width:100%!important;max-width:none!important;
+ min-height:var(--battle-narrator-height);
+ height:calc(var(--battle-narrator-height) + var(--battle-safe-bottom))!important;
+ max-height:none!important;
+ margin:0!important;
+ padding:10px max(14px,env(safe-area-inset-right)) calc(10px + var(--battle-safe-bottom)) max(14px,env(safe-area-inset-left))!important;
+ border:2px solid #bcd4c8b5!important;border-left:5px solid #f2d494!important;
+ border-radius:0!important;
+ background:linear-gradient(100deg,#253d55,#2f575a)!important;
+ z-index:10!important;overflow-y:auto;
+}
+#shade:has(.combatTop) .classicMainMenu{
+ position:absolute!important;
+ bottom:calc(var(--battle-narrator-height) + var(--battle-safe-bottom))!important;
+ gap:0!important;margin:0!important;
+}
+#shade:has(.combatTop) .classicMainMenu .btn{
+ margin:0!important;border-radius:0!important;
+ box-shadow:none!important;
+}
+#shade:has(.combatTop) .classicMainMenu .btn:first-child{border-radius:8px 8px 0 0!important}
+#shade:has(.combatTop) .classicMainMenu .btn:last-child{
+ border-radius:0!important;
+}
+#shade:has(.combatTop) .classicMainMenu .btn+.btn{border-top:0!important}
+#shade:has(.combatTop) .combatAllyStatus{
+ bottom:calc(var(--battle-narrator-height) + var(--battle-safe-bottom))!important;
+ gap:3px!important;
+}
+#shade:has(.combatTop) .combatAllyStatus .combatCard{
+ background:linear-gradient(125deg,#2e4d48,#233a3c)!important;
+ border:1px solid #80968d!important;
+ box-shadow:0 3px 10px #101e2a75!important;
+ color:inherit!important;
+}
+#shade:has(.combatTop) .combatArena::before,
+#shade:has(.combatTop) .combatArena::after{content:none!important;display:none!important}
+#shade:has(.combatTop) .combatAura{display:none!important}
+@media(max-width:720px){
+ #shade:has(.combatTop) #modalBody{--battle-narrator-height:clamp(56px,10dvh,72px)}
+ #shade:has(.combatTop) .combatMessage{font-size:clamp(11px,2.6vw,14px)!important}
+}
+@media(max-height:430px) and (orientation:landscape){
+ #shade:has(.combatTop) #modalBody{--battle-narrator-height:48px}
+ #shade:has(.combatTop) .combatMessage{font-size:11px!important;padding-top:6px!important}
+}
+
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1026,4 +1083,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=67-battle-ui-20261123" defer></script></body></html>
+</main><script src="game.js?v=68-battle-layout-20261123" defer></script></body></html>

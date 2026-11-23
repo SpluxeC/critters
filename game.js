@@ -2194,8 +2194,7 @@ function battleFigureArtwork(p,side){
 function sceneFigure(p,side,i){
  if(!p||p.hp<=0)return '';
  return '<div class="combatFigure '+side+' '+(battle.impact===side&&battle.lastTarget===i?'hit':'')+'" aria-label="'+escapeHtml(p.name||p.type)+'">'
-  +'<span class="combatAura"></span>'+battleFigureArtwork(p,side)
-  +'<small>'+escapeHtml(p.name||p.type)+'</small></div>';
+  +battleFigureArtwork(p,side)+'</div>';
 }
 function battleVisual(){
  const fx=battle?.lastVfx;

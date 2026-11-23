@@ -207,3 +207,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Active allied HP cards appear beneath the player's Critter, above the battle narrator (including two allied cards in 2v2).
 - The player's combat artwork is larger and positioned closer to the foreground; opponent placement remains unchanged.
 - Attack and hit effects display once on resolution rather than replaying on Battle, Index, Back and other interface redraws. Ambient Critter hovering is disabled during battle menus.
+
+## v68 — Battle narrator, health and overlay polish
+- Allied active HP cards now use the opponent's original card colors and sit flush with the top of a full-width narrator strip.
+- Battle, Index, and Escape are vertically stacked without gaps directly above the narrator, while the narrator extends edge-to-edge underneath.
+- Removed redundant in-arena Critter name captions and the oval auras plus artificial arena ellipse overlays; battle sprites, background paintings, and genuine move effects remain intact.
