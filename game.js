@@ -2257,11 +2257,75 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v72</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v73</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
 }
+
+// Battle dialogue uses fast typewriter text. The first tap completes the line;
+// subsequent taps advance only once the current attack effect has finished.
+let combatNarratorState=null,combatNarratorTick=null;
+function clearCombatNarrator(){
+ if(combatNarratorTick!==null){clearInterval(combatNarratorTick);combatNarratorTick=null;}
+ combatNarratorState=null;
+}
+function attachCombatNarrator(){
+ const el=document.querySelector?.('#shade .combatMessage');
+ if(!el)return;
+ if(combatNarratorTick!==null){clearInterval(combatNarratorTick);combatNarratorTick=null;}
+ const full=String(battle?.feedback||'Choose an action.');
+ const state={text:full,shown:0,ready:true,advance:null};
+ combatNarratorState=state;
+ el.textContent='';
+ el.setAttribute('role','button');
+ el.setAttribute('tabindex','0');
+ el.setAttribute('aria-label','Battle narrator. Tap once to finish typing, then again to continue.');
+ const finish=()=>{state.shown=full.length;el.textContent=full;if(combatNarratorTick!==null){clearInterval(combatNarratorTick);combatNarratorTick=null;}};
+ const advance=()=>{
+  if(combatNarratorState!==state)return;
+  if(state.shown<full.length){finish();return;}
+  if(state.advance&&state.ready){const cb=state.advance;state.advance=null;cb();}
+ };
+ el.onclick=advance;
+ el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();advance();}};
+ if(!full){finish();return;}
+ combatNarratorTick=setInterval(()=>{
+  if(combatNarratorState!==state){clearInterval(combatNarratorTick);combatNarratorTick=null;return;}
+  state.shown=Math.min(full.length,state.shown+2);
+  el.textContent=full.slice(0,state.shown);
+  if(state.shown===full.length){clearInterval(combatNarratorTick);combatNarratorTick=null;}
+ },18);
+}
+function narrateCombatLine(text,withMoveEffect=false){
+ if(!battle)return Promise.resolve();
+ battle.feedback=text;
+ // The move's VFX is inserted only for its own narration, never repeated
+ // by subsequent HP/effectiveness lines or later menu interactions.
+ if(!withMoveEffect){battle.lastVfx=null;battle.impact='';battle.lastTarget=null;}
+ renderBattle();
+ return new Promise(resolve=>{
+  const state=combatNarratorState;
+  if(!state){resolve();return;}
+  state.ready=!withMoveEffect;
+  state.advance=resolve;
+  if(withMoveEffect){
+   setTimeout(()=>{if(combatNarratorState===state)state.ready=true;},820);
+  }
+ });
+}
+async function narrateCombatEvents(entries,moveEffect){
+ for(let n=0;n<entries.length;n++){
+  if(!battle)return;
+  // A move's attack animation runs with its "uses" announcement.
+  const line=entries[n];
+  const moveAnnouncement=/\suses\s.+\.$/.test(line)||/\sused\s.+\.$/.test(line);
+  await narrateCombatLine(line,!!moveEffect&&moveAnnouncement);
+  if(!battle)return;
+ }
+ if(battle){battle.lastVfx=null;battle.impact='';battle.lastTarget=null;}
+}
+
 function battleMessage(msg){return '<div class="combatMessage" role="status">'+escapeHtml(msg||battle.feedback||'Choose your actions.')+'</div>'}
 function battleMainActions(mode){
  return '<div class="classicMenu classicMainMenu">'
@@ -2327,9 +2391,14 @@ function renderBattle(message){
  battle.impact='';
  battle.lastTarget=null;
  $('close').hidden=true;
+ attachCombatNarrator();
  if(battle.phase!=='choose')return;
  const menuTo=(next)=>{battle.uiMenu=next;renderBattle()};
- if($('menuBattle'))$('menuBattle').onclick=()=>menuTo(mode==='battle'?'root':'battle');
+ if($('menuBattle'))$('menuBattle').onclick=()=>{
+  const next=mode==='battle'?'root':'battle';
+  battle.uiMenu=next;
+  renderBattle(next==='battle'?'Choose a move…':'Choose an action.');
+ };
  if($('menuUse'))$('menuUse').onclick=()=>openBattleIndex('items');
  if($('menuCritters'))$('menuCritters').onclick=()=>openBattleIndex('clock');
  if($('menuEscape'))$('menuEscape').onclick=()=>{if(battle.kind==='wild')queueBattleAction({kind:'run'})};
@@ -2534,7 +2603,7 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  // Conditions can disrupt a turn without consuming PP.
  const interruption={jolt:.20,chill:.17,stagger:.18,confuse:.22,disorient:.15,entangle:.08}[actor.status]||0;
  if(interruption&&Math.random()<interruption){log.push(name+' cannot act because of '+actor.status+'!');return}
- log.push(name+' used '+move.name+'.');
+ log.push(name+' uses '+move.name+'.');
  // Store the final animated action only; the damage and turn system are unchanged.
  battle.lastVfx={name:move.name,type:move.type,side,missed:false};
  const hitChance=Math.min(100,Math.max(5,(move.accuracy??100)*
@@ -2562,7 +2631,11 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
   target.hp=Math.max(0,target.hp-dmg);
   if(side==='ally')battle.focus[actorIndex]=0;
   battle.impact=targetSide;battle.lastTarget=targetIndex;
-  log.push(dmg+' damage.'+(factor>=4?' Devastatingly effective (4×)!':factor>1?' Super effective!':factor<=.25?' Barely effective (¼×).':factor<1?' Not very effective.':''));
+  log.push(dmg+' damage.');
+  if(factor>=4)log.push('Super effective! (4× damage)');
+  else if(factor>1)log.push('Super effective!');
+  else if(factor<=.25)log.push('Not very effective. (¼× damage)');
+  else if(factor<1)log.push('Not very effective.');
   if(target.hp===0)recordFaint(targetSide,targetIndex,log);
  }
  if(move.effect){
@@ -2730,40 +2803,47 @@ function recentBattleLog(){
   +'<ol>'+battle.lastTurnLog.slice(-18).map(entry=>'<li>'+escapeHtml(entry)+'</li>').join('')+'</ol></details>';
 }
 
-function resolveTeamTurn(){
+async function resolveTeamTurn(){
  if(!battle)return;
- const log=[];
+ const currentBattle=battle,log=[];
  battle.phase='resolve';battle.impact='';battle.lastTarget=null;battle.lastVfx=null;
  const actions=battle.pending.slice();battle.pending=[];
- // Team order: one player action per deployed Critter, followed by all living enemies.
- // Resolve priority within a team without changing the approved team-turn order.
+ // Preserve team-turn order, but apply and narrate actions one by one.
  actions.sort((a,b)=>{
   const ma=a.kind==='move'?validMove(a.moveId):null,mb=b.kind==='move'?validMove(b.moveId):null;
   const pa=ma?.priority||0,pb=mb?.priority||0;
   return pb-pa||combatSpeed('ally',b.actor)-combatSpeed('ally',a.actor);
  });
  for(const action of actions){
-  if(!battle)return;
+  if(battle!==currentBattle)return;
+  const before=log.length;
+  // A defeated combatant cannot attack again later in the same turn.
   performPlayerAction(action,log);
+  if(battle!==currentBattle)return; // capture / escape ended battle
+  const fx=battle.lastVfx;
+  await narrateCombatEvents(log.slice(before),fx);
  }
- if(!battle)return; // capture / escape can end the battle mid-phase
- const livingEnemy=battle.enemies.some(p=>p.hp>0);
- if(!livingEnemy)return endBattle(true,log.join(' ')+' Victory!',true);
- // The opposing team uses exactly the same move executor and PP rules.
+ if(battle!==currentBattle)return;
+ if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  const enemyChoices=activeEnemies().map(chooseTrainerAction).filter(Boolean)
   .sort((a,b)=>(b.move.priority||0)-(a.move.priority||0)
    ||combatSpeed('enemy',b.enemyIndex)-combatSpeed('enemy',a.enemyIndex));
  for(const {enemyIndex,move,target} of enemyChoices){
-  if(!battle)return;
+  if(battle!==currentBattle)return;
   const foe=battle.enemies[enemyIndex];
-  if(foe.hp<=0||!activeAllies().length)continue;
-  // A target may faint during this team turn; performMove retargets safely.
+  if(!foe||foe.hp<=0||!activeAllies().length)continue;
+  const before=log.length;
   performMove(foe,move,'enemy',enemyIndex,target,log);
+  if(battle!==currentBattle)return;
+  const fx=battle.lastVfx;
+  await narrateCombatEvents(log.slice(before),fx);
  }
- // Conditions tick after both teams act. Guard remains active through these ticks,
- // then expires before the next team's action selection.
+ if(battle!==currentBattle)return;
+ const beforeEffects=log.length;
  endOfTeamTurn(log);
  battle.guards={};battle.enemyGuards={};
+ await narrateCombatEvents(log.slice(beforeEffects),null);
+ if(battle!==currentBattle)return;
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  if(!s.party.some(p=>p.hp>0))return blackout();
  battle.enemySlots=battle.enemySlots.filter(i=>battle.enemies[i]?.hp>0);
@@ -2771,7 +2851,7 @@ function resolveTeamTurn(){
  battle.lastTurnLog=log.slice(-30);
  battle.turn++;battle.acting=0;battle.phase='choose';battle.uiMenu='root';
  save();
- renderBattle(log.slice(-3).join(' '));
+ renderBattle('Choose an action.');
 }
 function capture(){if(battle&&battle.kind==='wild')queueBattleAction({kind:'capture'})}
 
@@ -2905,7 +2985,7 @@ function awardExperience(p,xp){
  return events;
 }
 function endBattle(won,message,defeated){
- const b=battle;battle=null;$('close').hidden=false;
+ const b=battle;clearCombatNarrator();battle=null;$('close').hidden=false;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)})}
  else if(defeated&&won){s.money+=b.award||0;if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
@@ -2918,7 +2998,7 @@ function endBattle(won,message,defeated){
  $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader')build()}
 }
 function blackout(){
- const wasTutorial=battle?.kind==='tutorial';battle=null;$('close').hidden=false;
+ const wasTutorial=battle?.kind==='tutorial';clearCombatNarrator();battle=null;$('close').hidden=false;
  if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);
  if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>refillMovePP(p))}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close

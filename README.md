@@ -233,3 +233,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - Renamed the primary battle command from Battle to Attack.
 - Tapping Attack displays only the existing move choices around the active Critter. The previous Guard/Focus/Back pop-up is removed, and Attack toggles the move choices closed.
 - Blue Critters button now has a dark label matching the rest of the battle menu's dark text style.
+
+## v73 — Battle narration and sequential attack turns
+- Attack, Use, Critters, and Escape now share dark text on their colored buttons.
+- Opening Attack displays “Choose a move…”; each move announces “[Critter] uses [move]” and displays effectiveness separately for type multipliers.
+- Player and opponent actions now resolve individually rather than simultaneously. The narrator displays one line at a time; tap to finish typing, tap again to advance. An attack animation gets at least 820 ms before the next narrated line can advance.
+- Preserves the previous turn ordering, PP rules, item usage, move effects, and save compatibility.

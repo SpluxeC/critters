@@ -390,3 +390,17 @@ test('v72 Attack uses move overlay without a Guard/Focus popup',()=>{
  assert.doesNotMatch(game,/id="battleGuard"|id="battleFocus"|Choose a move/);
  assert.match(html,/color:#0b1016!important/);
 });
+
+test('v73 narrator stages attacks individually and exposes tap-to-finish typing',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(game,/async function resolveTeamTurn\(\)/);
+ assert.match(game,/await narrateCombatEvents\(log.slice\(before\),fx\)/);
+ assert.match(game,/function attachCombatNarrator\(\)/);
+ assert.match(game,/state.shown<full.length/);
+ assert.match(game,/combatNarratorTick=setInterval/);
+ assert.match(game,/Choose a move…/);
+ assert.match(game,/log.push\(name\+' uses '\+move.name/);
+ assert.match(game,/log.push\('Super effective!'\)/);
+ assert.match(game,/log.push\('Not very effective.'\)/);
+ assert.match(html,/\.classicMainMenu \.btn,\s*#shade:has\(\.combatTop\) \.classicMainMenu \.classicCritters/);
+});
