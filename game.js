@@ -340,7 +340,7 @@ function backUpLegacySaveBeforeMigration(){
  }catch(err){console.warn('Could not back up pre-migration save',err)}
 }
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){snapVisual();resizeGameCanvas();syncMovementToggle()}}
+function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
@@ -1647,13 +1647,33 @@ function tryOutdoorExit(d,x,y){
  region(dest,targetX,targetY);
  return true;
 }
+// Persist the outdoor camera between chunks; never re-center it when an
+// adjoining area becomes current. Damping smooths minor tile-step timing.
+const outdoorCamera={x:0,y:0,last:0,ready:false};
+function resetOutdoorCamera(){outdoorCamera.ready=false;outdoorCamera.last=0}
+function followOutdoorCamera(targetX,targetY,now=performance.now()){
+ if(!outdoorCamera.ready){
+  outdoorCamera.x=targetX;outdoorCamera.y=targetY;
+  outdoorCamera.ready=true;outdoorCamera.last=now;
+ }else{
+  const dt=Math.max(0,Math.min(70,now-outdoorCamera.last));
+  const factor=1-Math.exp(-dt/85);
+  outdoorCamera.x+=(targetX-outdoorCamera.x)*factor;
+  outdoorCamera.y+=(targetY-outdoorCamera.y)*factor;
+  outdoorCamera.last=now;
+ }
+ return outdoorCamera;
+}
 function drawOutdoorWorld(){
  const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const vw=C.width/zoom,vh=C.height/zoom;
  const position=outdoorOrigin(s.area),worldX=(position.x+visual.x)*S,worldY=(position.y+visual.y)*S;
  const bounds=outdoorWorldBounds();
  const minX=0,maxX=bounds.width*S,minY=0,maxY=bounds.height*S;
- const ox=Math.max(minX,Math.min(maxX-vw,worldX-vw/2)),oy=Math.max(minY,Math.min(maxY-vh,worldY-vh/2));
+ const targetX=Math.max(minX,Math.min(Math.max(minX,maxX-vw),worldX-vw/2));
+ const targetY=Math.max(minY,Math.min(Math.max(minY,maxY-vh),worldY-vh/2));
+ const camera=followOutdoorCamera(targetX,targetY);
+ const ox=camera.x,oy=camera.y;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#5f8e5f';ctx.fillRect(0,0,C.width,C.height);
  ctx.setTransform(zoom,0,0,zoom,0,0);
  const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H};
@@ -1697,18 +1717,28 @@ function drawOutdoorWorld(){
 function region(area,x,y,textLine='',forceFade=false){
  if(worldTransitionBusy)return;
  const previous=s.area,old=OUTDOOR_GRID[previous],next=OUTDOOR_GRID[area];
+ // Capture the exact on-screen position before rebuilding either chunk.
+ // A rebuild snaps the normal local animation; the saved WORLD position
+ // prevents that snap from showing as a jump at a section boundary.
+ if(old&&next&&!forceFade)updateVisual();
+ const origin=outdoorOrigin(previous);
+ const beginX=old?origin.x+visual.x:null,beginY=old?origin.y+visual.y:null;
  const change=()=>{
-  const fromOrigin=outdoorOrigin(previous);
-  const oldX=old?(fromOrigin.x+visual.x):null,oldY=old?(fromOrigin.y+visual.y):null;
   doorTransition=null;s.area=area;s.x=x;s.y=y;ensureMapDiscovery();build();save();
   if(old&&next&&!forceFade){
-   // Retain interpolated world-space position when crossing a region boundary.
-   const toOrigin=outdoorOrigin(area);
-   visual.x=oldX-toOrigin.x;visual.y=oldY-toOrigin.y;
+   const targetOrigin=outdoorOrigin(area);
+   const endX=targetOrigin.x+x,endY=targetOrigin.y+y;
+   const tilesToTravel=Math.hypot(endX-beginX,endY-beginY);
+   visual.x=beginX-targetOrigin.x;visual.y=beginY-targetOrigin.y;
    visual.fromX=visual.x;visual.fromY=visual.y;
-   visual.toX=x;visual.toY=y;visual.start=performance.now();visual.duration=movementStepDuration();visual.ready=true;
+   visual.toX=x;visual.toY=y;visual.start=performance.now();
+   visual.duration=Math.max(movementStepDuration(),Math.min(300,tilesToTravel*movementStepDuration()));
+   visual.ready=true;
+   // Deliberately do not reset outdoorCamera here.
+  }else{
+   resetOutdoorCamera();
   }
-  // Region arrival dialogue banners are intentionally omitted.
+  // Arrival popups remain disabled.
  };
  if(forceFade||!old||!next)return fadeWorldChange(change);
  change();
@@ -2753,7 +2783,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v83</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v84</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';

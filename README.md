@@ -294,3 +294,8 @@ The Index reads the 200-species registry and 312-move library, including habitat
 - The Index atlas overlays seven irregular, differently sized district footprints.
 - Interior/battle fade-in and fade-out durations are each extended from ~250 to ~750 milliseconds, making the sequence about one second longer overall. Outdoor map travel remains continuous without fades.
 - Current location name now shares the top-right HUD banner with the right-aligned in-game time and phase; entrance popups remain removed.
+
+## v84 — Smooth outdoor boundary crossings
+- Preserve the precise interpolated player position in WORLD coordinates across outdoor area rebuilds instead of snapping to the next area's local origin.
+- Add a persistent spring-smoothed camera that follows the same world position across sections, eliminating camera recentering at transitions.
+- Keep existing run/walk speeds, destination tile coordinates, save states, collision and outdoor no-fade rules unchanged.

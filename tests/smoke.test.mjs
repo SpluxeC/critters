@@ -550,3 +550,15 @@ test('v83 region sections have distinct dimensions, asymmetric borders, area HUD
  assert.match(atlas,/region-bamboo/);
  assert.match(atlas,/region-garden/);
 });
+
+test('v84 outdoor transitions keep world-space animation and a continuous damped camera',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(game,/function followOutdoorCamera\(targetX,targetY/);
+ assert.match(game,/outdoorCamera\.x\+=\(targetX-outdoorCamera\.x\)\*factor/);
+ assert.match(game,/const beginX=old\?origin\.x\+visual\.x:null/);
+ assert.match(game,/visual\.x=beginX-targetOrigin\.x/);
+ assert.match(game,/visual\.duration=Math\.max\(movementStepDuration\(\)/);
+ assert.match(game,/Deliberately do not reset outdoorCamera here/);
+ assert.match(game,/const camera=followOutdoorCamera\(targetX,targetY\)/);
+ assert.match(html,/game\.js\?v=84-smooth-boundaries-20261123/);
+});
