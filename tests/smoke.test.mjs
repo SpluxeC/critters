@@ -436,3 +436,17 @@ test('v76 inactive Interact is more visible and joystick hint does not move inpu
  assert.match(html,/background:rgba\(164,93,72,0\.30\)!important/);
  assert.match(html,/opacity:\.58!important/);
 });
+
+test('v77 player and encyclopedia tabs consolidate former root tabs',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(game,/const INDEX_TABS=\[\['player','Player'\],\['clock','⌚ Clock'\],\['encyclopedia','✦ Encyclopedia'\],\['tools','⚙ Tools'\]\]/);
+ assert.match(game,/data-player-section/);
+ assert.match(game,/data-encyclopedia-section/);
+ assert.match(game,/function indexPlayer\(\)/);
+ assert.match(game,/function indexEncyclopedia\(\)/);
+ assert.match(game,/indexTab==='encyclopedia'\?indexEncyclopedia\(\)/);
+ assert.doesNotMatch(game,/class="watchStatus"/);
+ assert.doesNotMatch(game,/class="watchStats"/);
+ assert.match(game,/key==='player'\?escapeHtml\(s\.name\)/);
+ assert.match(html,/\.watchTabs\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+});

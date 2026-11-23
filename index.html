@@ -1222,6 +1222,24 @@ button,.btn,[role="button"],a,#world,.joystick{
  #game .joystickHelp{width:clamp(76px,22dvh,112px);font-size:7.5px;letter-spacing:-.55px}
 }
 
+
+/* v77: compact four-tab Index with focused player and encyclopedia sections. */
+#shade .watchTabs{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:3px 0 12px}
+#shade .watchTabs .watchTab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:11px 4px}
+#shade .watchInnerTabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0 14px}
+#shade .watchInnerTab{min-width:0;cursor:pointer;padding:9px 7px;border-radius:8px;
+ background:#294a51;color:#d7e5de;border:1px solid #73988b;font:700 12px system-ui}
+#shade .watchInnerTab.selected{background:#f0d397;color:#21373c;border-color:#f0d397}
+#shade .watchInnerTab:focus-visible{outline:2px solid #fff2c7;outline-offset:2px}
+#shade .watchPlayerMoney{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ background:#254349;border:1px solid #789c8b;border-radius:9px;padding:12px 14px}
+#shade .watchPlayerMoney span{color:#bcd7c8;font-size:12px;font-weight:700}
+#shade .watchPlayerMoney strong{color:#ffe3a4;font-size:18px}
+@media(max-width:440px){
+ #shade .watchTabs .watchTab{font-size:clamp(9px,2.4vw,12px);padding:10px 2px}
+ #shade .watchInnerTab{font-size:11px}
+}
+
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1243,4 +1261,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-</main><script src="game.js?v=76-joystick-label-20261123" defer></script></body></html>
+</main><script src="game.js?v=77-index-restructure-20261123" defer></script></body></html>

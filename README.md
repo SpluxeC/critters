@@ -253,3 +253,9 @@ The Index reads the 200-species registry and 312-move library, including habitat
 ## v76 — Subtle interaction affordance and joystick hint
 - Increased the inactive Interact button visibility without changing the fully opaque interactable state.
 - Placed “Double Tap-Run/Walk” immediately below the joystick as noninteractive fixed text; the joystick's placement and touch handling are unchanged.
+
+## v77 — Index navigation reorganization
+- Replaced the six top-level watch tabs with the player-name tab, Clock, Encyclopedia, and Tools.
+- Player tab now contains Money plus Bag and Records inner sections; removed player name and Money/Badges/Captures counters from above the top navigation.
+- Encyclopedia combines the previous Critters and Moves reference libraries, preserving their discovery, type, and search tools.
+- Battle Use remains locked to battle supplies; battle Critters remains locked to the clock interface.

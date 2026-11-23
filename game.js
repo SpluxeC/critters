@@ -476,7 +476,7 @@ async function loadCritterMoveData(){
      speciesRegistry.set(sp.speciesId,sp);
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
- if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='critters'&&screen==='game'&&!battle)renderIndex()}
+ if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='encyclopedia'&&encyclopediaSection==='critters'&&screen==='game'&&!battle)renderIndex()}
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
@@ -1645,14 +1645,31 @@ function activeModifier(side){let value=0;for(const m of s.installed){if(!m)cont
 
 // Phase 4 — Index is a read-only wrist device outside a Critter Center.
 // Party swapping and module configuration remain Center-exclusive.
-let indexTab='clock',indexSelection=0;
-const INDEX_TABS=[['clock','⌚ Clock'],['items','▣ Bag'],['records','◎ Records'],['moves','✦ Moves'],['critters','◈ Critters'],['tools','⚙ Tools']];
+let indexTab='player',indexSelection=0;
+let playerIndexSection='bag',encyclopediaSection='critters';
+const INDEX_TABS=[['player','Player'],['clock','⌚ Clock'],['encyclopedia','✦ Encyclopedia'],['tools','⚙ Tools']];
+const PLAYER_INDEX_SECTIONS=[['bag','▣ Bag'],['records','◎ Records']];
+const ENCYCLOPEDIA_SECTIONS=[['critters','◈ Critters'],['moves','✦ Moves']];
+function indexSectionNav(sections,selected,attribute,label){
+ return '<nav class="watchInnerTabs" aria-label="'+label+'">'
+  +sections.map(([key,title])=>'<button type="button" class="watchInnerTab '+(selected===key?'selected':'')+'" '+attribute+'="'+key+'" aria-pressed="'+(selected===key)+'">'+title+'</button>').join('')
+  +'</nav>';
+}
+function indexPlayer(){
+ return '<div class="watchPlayerMoney"><span>Money</span><strong>◇ '+s.money+'</strong></div>'
+  +indexSectionNav(PLAYER_INDEX_SECTIONS,playerIndexSection,'data-player-section','Player sections')
+  +(playerIndexSection==='records'?indexRecords():indexItems());
+}
+function indexEncyclopedia(){
+ return indexSectionNav(ENCYCLOPEDIA_SECTIONS,encyclopediaSection,'data-encyclopedia-section','Encyclopedia sections')
+  +(encyclopediaSection==='moves'?indexMoves():indexCritters());
+}
 let moveBookType='Water';
 let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
 
 function index(){
  if(screen!=='game'||battle)return;
- indexTab='clock';indexSelection=0;renderIndex();
+ indexTab='player';playerIndexSection='bag';indexSelection=0;renderIndex();
 }
 function indexSlotContent(i){
  if(i<8){
@@ -1982,16 +1999,19 @@ function indexTools(){
 function renderIndex(){
  if(!s||screen!=='game'||(battle&&!battleIndexActive()))return;
  const battleViewing=battleIndexActive();
- // Battle access is intentionally locked to its originating clock or bag screen.
+ // Battle quick views remain strictly limited to the clock or battle-item screen.
  if(battleViewing)indexTab=indexTab==='items'?'items':'clock';
- else if(indexTab==='party')indexTab='clock'; // previous saves / old navigation
- const tabs=battleViewing?'':INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+label+'</button>').join('');
- let content=indexTab==='clock'?indexClock():indexTab==='items'?indexItems():indexTab==='records'?indexRecords():indexTab==='moves'?indexMoves():indexTab==='critters'?indexCritters():indexTools();
+ else{
+  if(indexTab==='party')indexTab='clock';
+  if(indexTab==='items'||indexTab==='records'){playerIndexSection=indexTab==='records'?'records':'bag';indexTab='player';}
+  if(indexTab==='moves'||indexTab==='critters'){encyclopediaSection=indexTab;indexTab='encyclopedia';}
+ }
+ const tabs=battleViewing?'':INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+(key==='player'?escapeHtml(s.name):label)+'</button>').join('');
+ let content=battleViewing?(indexTab==='items'?indexItems():indexClock()):
+   indexTab==='player'?indexPlayer():indexTab==='clock'?indexClock():indexTab==='encyclopedia'?indexEncyclopedia():indexTools();
  open('Critter Index','<div class="watchShell '+(battleViewing?'battleIndexShell battleQuickView':'')+'">'
   +(battleViewing?'<div class="watchSectionTitle">'+(indexTab==='items'?'Use battle item':'Choose a Critter')+'</div>'
-    :'<div class="watchStatus"><span>◉ WATCH CONNECTED</span><strong>'+escapeHtml(s.name)+'</strong></div>'
-     +'<div class="watchStats"><span>◇ '+s.money+' money</span><span>✧ '+s.badges+' badge'+(s.badges===1?'':'s')+'</span>'
-     +'<span>▤ '+s.captureCount+' captures</span></div><nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>')
+    :'<nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>')
   +'<div class="watchScreen" role="region" aria-label="Critter Index '+escapeHtml(indexTab)+' screen">'+content+'</div>'
   +'<div class="watchFooter">'+(battleViewing?
     '<button type="button" class="btn primary" id="watchReturnBattle">Return to Battle</button>':
@@ -1999,6 +2019,14 @@ function renderIndex(){
  document.querySelectorAll('[data-watch-tab]').forEach(b=>b.onclick=()=>{
   if(battleViewing||!INDEX_TABS.some(([key])=>key===b.dataset.watchTab))return;
   indexTab=b.dataset.watchTab;renderIndex();
+ });
+ document.querySelectorAll('[data-player-section]').forEach(b=>b.onclick=()=>{
+  if(battleViewing||!PLAYER_INDEX_SECTIONS.some(([key])=>key===b.dataset.playerSection))return;
+  playerIndexSection=b.dataset.playerSection;renderIndex();
+ });
+ document.querySelectorAll('[data-encyclopedia-section]').forEach(b=>b.onclick=()=>{
+  if(battleViewing||!ENCYCLOPEDIA_SECTIONS.some(([key])=>key===b.dataset.encyclopediaSection))return;
+  encyclopediaSection=b.dataset.encyclopediaSection;renderIndex();
  });
  document.querySelectorAll('[data-move-type]').forEach(b=>b.onclick=()=>{
   if(!Object.keys(strengths).concat('Typeless').includes(b.dataset.moveType))return;
@@ -2284,7 +2312,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v75</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v77</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
