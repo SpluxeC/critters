@@ -373,7 +373,7 @@ function migrateSpeciesIds(){
   if(p.speciesId)p.speciesId=translate(p.speciesId);
   for(const e of p.evolutionHistory||[]){if(e.from)e.from=translate(e.from);if(e.to)e.to=translate(e.to)}
  };
- for(const p of [...(s.party||[]),...(s.storage||[])])moveRecord(p);
+ for(const p of [...(s.party||[]),...(s.storage||[]),...(s.homestead?.pairs||[]).flatMap(q=>[...(q?.parents||[]),...(q?.egg?.parents||[])])])moveRecord(p);
  // Never guess a legacy starter from party position, type, or level.
  // Same-type wild catches may be in any party slot or Home storage.
  // Only explicit provenance written when the starter was chosen is trustworthy.
@@ -1718,7 +1718,7 @@ function tryOutdoorExit(d,x,y){
  const destinationSize=outdoorSize(dest);
  const targetX=d==='right'?0:d==='left'?destinationSize.w-1:x;
  const targetY=d==='down'?0:d==='up'?destinationSize.h-1:y;
- region(dest,targetX,targetY);
+ recordWalkingStep();region(dest,targetX,targetY);
  return true;
 }
 // Persist the outdoor camera between chunks; never re-center it when an
@@ -1859,7 +1859,7 @@ function move(d){
  if(door){openVillageDoor(door);return}
  if(npcs.some(p=>p.x===x&&p.y===y)||solidAt(x,y))return;
  const t=tiles[y][x];
- beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;
+ beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;recordWalkingStep();
  // Village doors use the shared door interaction and short opening animation.
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
   const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);
@@ -1867,7 +1867,7 @@ function move(d){
  }
  if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
- if((s.steps=(s.steps||0)+1)%10===0)save();
+ 
  const exploration=explorationSiteAt(s.area,s.x,s.y);
  if(exploration&&discoverExplorationSite(exploration))return;
  if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
@@ -1949,6 +1949,62 @@ function farmSlots(){
  while(home.incubators.length<cap.incubators)home.incubators.push(null);
  return home;
 }
+const BREED_STEPS={common:500,uncommon:750,rare:1000,'very rare':1500};
+function breedingBase(sp){
+ const seen=new Set();while(sp?.evolvesFrom){if(seen.has(sp.speciesId))return null;seen.add(sp.speciesId);sp=speciesRegistry.get(sp.evolvesFrom);if(!sp)return null}return sp;
+}
+function breedingLegendary(sp){return !!sp&&(sp.types?.some(t=>['Dragon','Primordial','Beast'].includes(t))||sp.habitats?.some(h=>h.rarity==='legendary')||sp.rarity==='legendary')}
+function breedingRarity(sp){
+ const norm=x=>String(x||'').toLowerCase().replace(/[-_]/g,' ');
+ const direct=norm(sp.rarity);if(BREED_STEPS[direct])return direct;
+ const known=(sp.habitats||[]).map(h=>norm(h.rarity)).filter(v=>BREED_STEPS[v]);
+ return known.sort((a,b)=>BREED_STEPS[a]-BREED_STEPS[b])[0]||'common';
+}
+function breedingCompatible(a,b){
+ if(!a||!b||a===b||!a.speciesId||a.speciesId!==b.speciesId||!['male','female'].includes(a.gender)||!['male','female'].includes(b.gender)||a.gender===b.gender)return false;
+ const sp=speciesRegistry.get(a.speciesId),base=breedingBase(sp);
+ return !!sp&&!!base&&!breedingLegendary(sp)&&!breedingLegendary(base);
+}
+function farmAccess(){return s?.area==='homesteadHome'&&!!s.homestead?.owned&&farmCapacity().pairs>0}
+function validPasture(i){return Number.isInteger(i)&&i>=0&&i<farmCapacity().pairs}
+function assignFarmPair(i,maleIndex,femaleIndex){
+ if(!farmAccess()||!validPasture(i)||!Number.isInteger(maleIndex)||!Number.isInteger(femaleIndex)||maleIndex===femaleIndex)return false;
+ const home=farmSlots(),old=home.pairs[i];if(old)return false;
+ const male=s.storage[maleIndex],female=s.storage[femaleIndex];
+ if(male?.gender!=='male'||female?.gender!=='female'||!breedingCompatible(male,female))return false;
+ const base=breedingBase(speciesRegistry.get(male.speciesId)),rarity=breedingRarity(base);
+ home.pairs[i]={parents:[male,female],progress:0,required:BREED_STEPS[rarity],speciesId:base.speciesId,rarity,egg:null};
+ for(const index of [maleIndex,femaleIndex].sort((a,b)=>b-a))s.storage.splice(index,1);
+ save();return true;
+}
+function retrieveFarmParent(i,parentIndex){
+ if(!farmAccess()||!validPasture(i)||!Number.isInteger(parentIndex)||parentIndex<0||parentIndex>1)return false;
+ const home=farmSlots(),pair=home.pairs[i],p=pair?.parents?.[parentIndex];if(!p)return false;
+ s.storage.push(p);pair.parents[parentIndex]=null;pair.progress=0;
+ if(!pair.parents.some(Boolean)&&!pair.egg)home.pairs[i]=null;
+ save();return true;
+}
+function replaceFarmParent(i,index){
+ if(!farmAccess()||!validPasture(i)||!Number.isInteger(index))return false;
+ const pair=farmSlots().pairs[i],p=s.storage[index];if(!pair?.parents||!p)return false;
+ const missing=pair.parents.findIndex(x=>!x);if(missing<0||!breedingCompatible(p,pair.parents[1-missing]))return false;
+ pair.parents[missing]=s.storage.splice(index,1)[0];pair.progress=0;save();return true;
+}
+function advanceFarmBreeding(){
+ if(!s?.homestead?.owned||!farmCapacity().pairs)return;
+ let completed=false;
+ for(const pair of farmSlots().pairs.slice(0,farmCapacity().pairs)){
+  if(!pair||pair.egg||!breedingCompatible(pair.parents?.[0],pair.parents?.[1]))continue;
+  if(!Number.isFinite(pair.required)||pair.required<1)continue;
+  pair.progress=Math.min(pair.required,(Number(pair.progress)||0)+1);
+  if(pair.progress>=pair.required){
+   pair.egg={speciesId:pair.speciesId,rarity:pair.rarity,parents:pair.parents.map(p=>JSON.parse(JSON.stringify(p))),progress:0};
+   completed=true;notifyWorld('An egg is ready to collect at your farm!');
+  }
+ }
+ if(completed)save();
+}
+function recordWalkingStep(){s.steps=(s.steps||0)+1;advanceFarmBreeding();if(s.steps%10===0)save()}
 function canUpgradeFarm(next){return s?.area==='homesteadHome'&&!!s.homestead?.owned&&Number.isInteger(next)&&next===farmStage()+1&&next>=2&&next<=4&&s.money>=FARM_STAGES[next].price}
 function purchaseFarmUpgrade(next){
  if(!canUpgradeFarm(next))return false;
@@ -1998,12 +2054,39 @@ function confirmFarmUpgrade(next){
  open('Confirm Expansion','<h3>'+p.name+'</h3><p>Cost: '+p.price.toLocaleString()+' money</p><p>Available: '+s.money.toLocaleString()+'</p><p>'+p.pairs+' pairs · '+p.incubators+' incubators</p><button class="btn primary" id="estateConfirm" '+(canUpgradeFarm(next)?'':'disabled')+'>Purchase Expansion</button> <button class="btn" id="estateBack">Back</button>');
  $('estateBack').onclick=homesteadTerminal;$('estateConfirm').onclick=()=>{if(!purchaseFarmUpgrade(next))return;close();indexNotice(p.name+' expansion complete!')};
 }
+function farmParentName(p){return p?escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level:'Empty'}
 function farmManagement(kind){
- if(!s.homestead?.owned||s.area!=='homesteadHome'||!['pairs','incubators'].includes(kind))return;
+ if(!farmAccess()||!['pairs','incubators'].includes(kind))return;
  const count=farmCapacity()[kind],slots=farmSlots()[kind];
  if(!count)return homesteadTerminal();
- open(kind==='pairs'?'Breeding Pairs':'Farm Incubators','<p>'+slots.slice(0,count).filter(Boolean).length+' / '+count+' occupied</p>'+Array.from({length:count},(_,i)=>'<div class="centerPartyRow">'+(kind==='pairs'?'Pasture ':'Incubator ')+(i+1)+' · '+(slots[i]?'Occupied':'Empty')+'</div>').join('')+'<p>Parent assignment and egg actions will be enabled in the breeding update.</p><button class="btn" id="estateBack">Back</button>');
+ const rows=Array.from({length:count},(_,i)=>{
+  const p=slots[i];
+  if(kind==='incubators')return '<div class="centerPartyRow">Incubator '+(i+1)+' · '+(p?'Occupied':'Empty')+'</div>';
+  if(!p)return '<div class="centerPartyRow"><b>Pasture '+(i+1)+'</b> · Empty <button class="btn" data-farm-assign="'+i+'">Assign Parents</button></div>';
+  return '<div class="centerPartyRow"><b>Pasture '+(i+1)+'</b><p>'+farmParentName(p.parents?.[0])+' / '+farmParentName(p.parents?.[1])+'</p><p>'+(p.egg?'Egg ready — breeding paused':p.parents?.every(Boolean)?(p.progress||0)+' / '+p.required+' steps':'Waiting for compatible parent')+'</p>'
+  +[0,1].map(j=>p.parents?.[j]?'<button class="btn" data-farm-return="'+i+':'+j+'">Return '+(j===0?'male':'female')+' to storage</button>':'').join('')+(p.parents?.filter(Boolean).length===1?'<button class="btn" data-farm-replace="'+i+'">Assign replacement</button>':'')+'</div>';
+ }).join('');
+ open(kind==='pairs'?'Breeding Pairs':'Farm Incubators','<p>'+slots.slice(0,count).filter(Boolean).length+' / '+count+' occupied</p>'+rows+(kind==='pairs'?'<p>Parents must be the same species and opposite genders. Select from shared home storage. Completed eggs remain safe; collection and incubation will be enabled in the next update.</p>':'<p>Incubation will be enabled in the next update.</p>')+'<button class="btn" id="estateBack">Back</button>');
  $('estateBack').onclick=homesteadTerminal;
+ document.querySelectorAll('[data-farm-assign]').forEach(el=>el.onclick=()=>farmChooseParents(Number(el.dataset.farmAssign)));
+ document.querySelectorAll('[data-farm-replace]').forEach(el=>el.onclick=()=>farmChooseReplacement(Number(el.dataset.farmReplace)));
+ document.querySelectorAll('[data-farm-return]').forEach(el=>el.onclick=()=>{const [i,j]=el.dataset.farmReturn.split(':').map(Number);open('Return Parent','<p>Returning a parent cancels unfinished breeding progress. A completed egg is retained.</p><button class="btn primary" id="farmReturnConfirm">Return Parent</button><button class="btn" id="estateBack">Cancel</button>');$('estateBack').onclick=()=>farmManagement('pairs');$('farmReturnConfirm').onclick=()=>{if(retrieveFarmParent(i,j)){indexNotice('Parent returned to home storage.');farmManagement('pairs')}}});
+}
+function farmChooseParents(i,maleIndex=null){
+ if(!farmAccess()||!validPasture(i)||farmSlots().pairs[i])return;
+ const candidates=s.storage.map((p,j)=>({p,j})).filter(({p,j})=>maleIndex===null?p.gender==='male'&&s.storage.some(q=>q.gender==='female'&&breedingCompatible(p,q)):p.gender==='female'&&breedingCompatible(s.storage[maleIndex],p));
+ open(maleIndex===null?'Choose Male Parent':'Choose Female Parent','<p>Select a compatible Critter from home storage.</p>'+ (candidates.map(({p,j})=>'<div class="centerPartyRow">'+farmParentName(p)+' <button class="btn" data-farm-parent="'+j+'">Select</button></div>').join('')||'<p>No compatible parents in storage. Transfer Critters to storage at a Critter Center.</p>')+'<button class="btn" id="estateBack">Back</button>');
+ $('estateBack').onclick=()=>maleIndex===null?farmManagement('pairs'):farmChooseParents(i);
+ document.querySelectorAll('[data-farm-parent]').forEach(el=>el.onclick=()=>{const j=Number(el.dataset.farmParent);if(maleIndex===null)return farmChooseParents(i,j);if(assignFarmPair(i,maleIndex,j)){indexNotice('Breeding pair assigned. Walk or run to produce an egg.');farmManagement('pairs')}});
+}
+function farmChooseReplacement(i){
+ if(!farmAccess()||!validPasture(i))return;
+ const pair=farmSlots().pairs[i];if(!pair?.parents||pair.parents.filter(Boolean).length!==1)return;
+ const existing=pair.parents.find(Boolean);
+ const candidates=s.storage.map((p,j)=>({p,j})).filter(({p})=>breedingCompatible(existing,p));
+ open('Choose Replacement Parent',(candidates.map(({p,j})=>'<div class="centerPartyRow">'+farmParentName(p)+' <button class="btn" data-farm-replacement="'+j+'">Select</button></div>').join('')||'<p>No compatible Critters in home storage.</p>')+'<button class="btn" id="estateBack">Back</button>');
+ $('estateBack').onclick=()=>farmManagement('pairs');
+ document.querySelectorAll('[data-farm-replacement]').forEach(el=>el.onclick=()=>{if(replaceFarmParent(i,Number(el.dataset.farmReplacement))){indexNotice('Replacement parent assigned.');farmManagement('pairs')}});
 }
 function homesteadStorage(){
  if(!s.homestead?.owned)return;
