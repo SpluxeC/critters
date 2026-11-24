@@ -350,10 +350,44 @@ function discoverExplorationSite(o){
  if(o.credits){s.money+=o.credits;messages.push('Found '+o.credits+' money!')}
  save();notifyWorld(messages);return true;
 }
+// Detail art is bounded by existing geometry; no new blockers or discoveries.
+function routeSiteArt(kind){
+ return {sign:'sign-arrow',notice:'sign-board',shrine:'lantern-stone',satchel:'sack',chest:'crate'}[kind]||null;
+}
+function explorationGroundArt(id){
+ return {'exp-bamboo':'pebbles','exp-forest':'ruin-paving','exp-foothills':'stone-circle','exp-cave':'rubble-01','exp-garden':'ruin-inscription'}[id]||null;
+}
+function environmentalRockArt(area,x,y){
+ const seed=naturalSeed(x,y);
+ if(area==='cave')return ['stalagmite-01','stalagmite-02','rubble-01','rubble-02','stalactite-01','stalactite-02'][seed%6];
+ if(area==='forest'&&seed%7===0)return ['ruin-column-broken','ruin-column-base','ruin-wall-01'][seed%3];
+ if(area==='route3'&&seed%11===0)return 'rubble-02';
+ return null;
+}
+function drawEnvironmentalDetails(ox,oy,w,h){
+ const area=s.area;
+ if(!['cave','forest','route3'].includes(area))return;
+ const x0=Math.max(0,Math.floor(ox/S)),x1=Math.min(W,Math.ceil((ox+w)/S));
+ const y0=Math.max(0,Math.floor(oy/S)),y1=Math.min(H,Math.ceil((oy+h)/S));
+ for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+  // Only existing solid rock tiles may host upright formations.
+  if(tiles[y]?.[x]!==T.rock||npcs.some(p=>p.x===x&&p.y===y)||explorationSiteAt(area,x,y))continue;
+  const art=environmentalRockArt(area,x,y);if(art)drawUploadedFit(art,x*S-ox,y*S-oy,S,S);
+ }
+}
+function drawBridgeDeck(x,y,w,ox,oy){
+ if(!uploadedArt('wood-horizontal'))return false;
+ for(let i=0;i<w;i++)if(tiles[y]?.[x+i]!==T.path)return false;
+ for(let i=0;i<w;i++)drawUploadedArt('wood-horizontal',(x+i)*S-ox,y*S-oy,S,S);
+ return true;
+}
 function drawExplorationSites(ox,oy){
  for(const o of EXPLORATION_SITES){
-  if(o.area!==s.area||s.discoveries?.[o.id])continue;
+  if(o.area!==s.area)continue;
   const x=o.x*S+16-ox,y=o.y*S+16-oy;
+  const art=explorationGroundArt(o.id);
+  if(art)drawUploadedFit(art,x-16,y-16,S,S);
+  if(s.discoveries?.[o.id])continue;
   ctx.fillStyle='#12372a';ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='#ffe49a';ctx.lineWidth=2;ctx.stroke();
   ctx.fillStyle='#fff1a0';ctx.font='bold 17px system-ui';ctx.textAlign='center';
@@ -1269,6 +1303,11 @@ function drawTownExteriors(ox,oy,w,h){
   if(!exteriorFootprintIntact(b))continue;
   if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
   if(b.label)drawExteriorSign(b,ox,oy);
+  if(b.art?.startsWith('shop-')){
+   const y=b.y+b.h;
+   if(tiles[y]?.[b.x]===T.wall)drawUploadedFit('barrel',b.x*S-ox,y*S-oy,S,S);
+   if(tiles[y]?.[b.x+b.w-1]===T.wall)drawUploadedFit('crate-wide',(b.x+b.w-1)*S-ox,y*S-oy,S,S);
+  }
  }
 }
 function drawHomesteadBuildingExteriors(ox,oy){
@@ -1383,6 +1422,10 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  }
  // Fences are drawn in the *same cells* blocked by the collision map.
  for(const [x1,y1,x2,y2] of VILLAGE_FENCES){
+  if(uploadedArt('fence-timber-horizontal')){
+   for(let x=x1;x<x2;x++)drawUploadedArt('fence-timber-horizontal',x*S-ox,y1*S-oy,S,S);
+   continue;
+  }
   const xa=x1+.15,xb=x2-.15,yy=y1+.52;
   segment(xa,yy,xb,yy,4,'#4c3d32');
   segment(xa,yy-.19,xb,yy-.19,3,'#b18b61');
@@ -1393,6 +1436,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   }
  }
  for(const [x,y] of VILLAGE_STONES){
+  if(drawUploadedFit('rock-moss',x*S-ox,y*S-oy,S,S))continue;
   const [px,py]=pos(x+.5,y+.55);
   ctx.fillStyle='#29433880';ctx.beginPath();ctx.ellipse(px,py+9,14,6,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#77756c';ctx.beginPath();ctx.ellipse(px,py,11,8,-.2,0,Math.PI*2);ctx.fill();
@@ -1402,6 +1446,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  for(const [x,y] of VILLAGE_LANTERNS){
   const [px,py]=pos(x+.5,y+.55);
   ctx.fillStyle='#ffce7750';ctx.beginPath();ctx.arc(px,py-12,22,0,Math.PI*2);ctx.fill();
+  if(drawUploadedFit('lantern-stone',x*S-ox,y*S-oy-12,S,S+12))continue;
   ctx.fillStyle='#56554b';ctx.fillRect(px-3,py-12,6,21);
   ctx.fillStyle='#c6b298';ctx.fillRect(px-9,py-17,18,5);
   ctx.fillStyle='#f7d89b';ctx.fillRect(px-6,py-30,12,14);
@@ -1476,6 +1521,7 @@ function drawRoute1Details(ox,oy,viewW,viewH){
  }
  // Raised wooden footbridges are decorative and align to safe path tiles.
  for(const [x,y,w] of [[11,9,3],[22,19,3]]){
+  if(drawBridgeDeck(x,y,w,ox,oy))continue;
   block(x,y,w,1,'#7d6548');
   for(let k=0;k<w*3;k++)block(x+k/3,y+.09,.025,.82,'#453c33aa');
   stroke(x,y+.14,x+w,y+.14,3,'#c8a375');
@@ -1508,7 +1554,10 @@ function drawRoute1Details(ox,oy,viewW,viewH){
   const bx=px(o.x),by=py(o.y);
   const already=!!s.discoveries?.[o.id];
   ctx.fillStyle='#203e315e';ctx.beginPath();ctx.ellipse(bx+16,by+29,14,6,0,0,Math.PI*2);ctx.fill();
-  if(o.kind==='sign'||o.kind==='notice'){
+  const art=routeSiteArt(o.kind);
+  if(art&&drawUploadedFit(art,bx,by,S,S)){
+   // Reward marker below remains governed by existing discovery state.
+  }else if(o.kind==='sign'||o.kind==='notice'){
    ctx.fillStyle='#604a35';ctx.fillRect(bx+13,by+7,6,25);
    ctx.fillStyle='#d1ab71';ctx.fillRect(bx+3,by+5,26,14);
    ctx.fillStyle='#533e30';ctx.fillRect(bx+3,by+5,26,3);
@@ -1948,6 +1997,7 @@ function draw(){
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
  if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
  drawCinematicTrees(ox,oy,viewportWidth,viewportHeight,performance.now());
+ drawEnvironmentalDetails(ox,oy,viewportWidth,viewportHeight);
  drawExplorationSites(ox,oy);
  drawAtmosphericMotion(ox,oy,viewportWidth,viewportHeight,performance.now());
  drawRegionAtmosphere(ox,oy,viewportWidth,viewportHeight,performance.now());
@@ -2346,6 +2396,7 @@ function drawOutdoorWorld(){
   if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY);drawHomesteadBuildingExteriors(localOX,localOY)}
   drawNaturalDetails(localOX,localOY,vw,vh);
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
+  drawEnvironmentalDetails(localOX,localOY,vw,vh);
   drawExplorationSites(localOX,localOY);
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
   if(area==='homestead'&&s.homestead?.owned)drawLivingPastures(localOX,localOY,vw,vh);
@@ -2987,7 +3038,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.09</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.10</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
