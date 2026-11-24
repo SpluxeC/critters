@@ -317,11 +317,7 @@ function playerGaitFrame(){
  const cycle=s?.movementMode==='walk'?2:2.5;
  return [0,1,2,3][Math.floor(gaitDistance/cycle*4)%4];
 }
-function syncMovementToggle(){
- // Joystick is now the only run/walk selector. Keep its state readable.
- const walking=s?.movementMode==='walk';
- const label=$('movementModeLabel');if(label)label.textContent=walking?'Walk':'Run';
-}
+function syncMovementToggle(){ /* Movement mode is intentionally hidden in the overworld. */ }
 function toggleMovementMode(){
  if(!s||screen!=='game'||modal)return;
  s.movementMode=s.movementMode==='walk'?'run':'walk';
@@ -2057,6 +2053,7 @@ function indexSettings(){
  return '<div class="watchSectionTitle">Game settings</div>'
   +(settingsSavedMessage?'<div class="watchBagNotice" role="status">Game saved successfully.</div>':'')
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
+  +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Audio controls</strong><p>Volume and sound controls will appear here when game audio is added.</p></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Main menu</strong><p>Save your progress and return to the title screen.</p><button type="button" class="btn" id="settingsReturnTitle">Save & Return to Title</button></div>';
 }

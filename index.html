@@ -1305,9 +1305,9 @@ button,.btn,[role="button"],a,#world,.joystick{
 #game .dialog.idle{pointer-events:none}
 #game .dialog.idle small{display:none}
 #game .mobile,#game.narrating .mobile{bottom:calc(var(--world-narrator-height) + env(safe-area-inset-bottom) + 8px)!important}
-#game .movementModeLabel{font-size:11px;font-weight:700;color:#f6f2d8;text-shadow:0 1px 3px #102025;background:#182e36aa;border-radius:5px;padding:4px 8px;pointer-events:none;align-self:flex-end}
 #game #world{touch-action:none!important}
 @media(max-height:500px){#game{--world-narrator-height:58px}}
+#game .mobile{justify-content:flex-end!important}
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1323,10 +1323,10 @@ document.addEventListener('dblclick',function(event){
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
     <div id="dialog" class="dialog show idle" role="status" aria-live="polite"><span id="dialogText"></span><small id="dialogHint">Interact / tap to continue ▸</small></div>
     <div class="mobile">
-      <span id="movementModeLabel" class="movementModeLabel" aria-live="polite">Run</span>
+      
       <div class="actions"><button class="btn primary" id="talk" type="button">Interact</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
     </div>
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=90-touch-anywhere" defer></script></body></html>
+<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=91-controls-settings" defer></script></body></html>
