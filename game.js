@@ -607,7 +607,8 @@ function backUpLegacySaveBeforeMigration(){
   if(existing&&existing.speciesIdSchema!==2)localStorage.setItem(key,raw);
  }catch(err){console.warn('Could not back up pre-migration save',err)}
 }
-function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
+let saveWarningShown=false;
+function save(){if(!s)return false;try{s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false;saveWarningShown=false;return true}catch(err){console.warn('Save unavailable',err);if(!saveWarningShown&&screen==='game'){saveWarningShown=true;notifyWorld('Save unavailable. Check browser storage before leaving the game.')}return false}}
 function show(page){cancelTrainerApproach();clearWorldNarrator();releaseMovement();if(page==='title'){outdoorChunks.clear();pastureActors.clear();}document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
@@ -982,7 +983,7 @@ function npcStepAllowed(p,x,y,patrol=false,residential=false){
  const home=residential&&npcResidence(s.area,p);
  const doorstep=home&&Math.abs(x-home.x)<=1&&y>=home.y&&y<=home.y+1;
  if((npcReservedCell(s.area,x,y,W,H)&&!doorstep)||solidAt(x,y)||tiles[y]?.[x]===T.door)return false;
- if(s.x===x&&s.y===y||npcs.some(q=>q!==p&&((q.x===x&&q.y===y)||(q.walking&&q.fromX===x&&q.fromY===y)||(q.homeX===x&&q.homeY===y))))return false;
+ if(s.x===x&&s.y===y||npcs.some(q=>q!==p&&!q.indoors&&((q.x===x&&q.y===y)||(q.walking&&q.fromX===x&&q.fromY===y)||(q.homeX===x&&q.homeY===y))))return false;
  if(explorationSiteAt(s.area,x,y))return false;
  if(!patrol&&tiles[y]?.[x]===T.path&&y>=12&&y<=14&&OUTDOOR_GRID[s.area]&&!(x===p.homeX&&y===p.homeY))return false;
  return true;
@@ -1349,7 +1350,10 @@ function build(preview=false){
  }
  // Older saves may place the character inside geometry introduced by the rebuild.
  // Relocate only when necessary, to the closest free walkable square.
- if(s.area==='village'&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y))){
+ decorateExpandedOutdoor();
+ prepareOutdoorPortals();
+ prepareExplorationGeometry();
+ if(!preview&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y))){
   const originX=s.x,originY=s.y;
   let found=false;
   for(let radius=1;radius<Math.max(W,H)&&!found;radius++){
@@ -1362,9 +1366,6 @@ function build(preview=false){
   }
   if(!found){s.x=17;s.y=16}
  }
- decorateExpandedOutdoor();
- prepareOutdoorPortals();
- prepareExplorationGeometry();
  // Reconstruct overnight occupancy from saved time, including preview chunks.
  if(npcNight())for(const p of npcs){if(npcResidence(s.area,p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
  if(!preview){
@@ -2217,12 +2218,16 @@ const WEATHER_PROFILES={
 };
 const WEATHER_NAMES=['clear','rain','storm','fog','snow'];
 const WEATHER_LABELS={clear:'Clear',rain:'Rain',storm:'Thunderstorm',fog:'Fog',snow:'Snow',sheltered:'Sheltered'};
+const weatherCache=new Map();
+let weatherCachePeriod='';
 function regionalWeather(area=s?.area,day=s?.worldDay||1,minutes=s?.worldMinutes??480){
  const profile=WEATHER_PROFILES[area];if(!profile)return 'sheltered';
+ const period=day+':'+Math.floor(minutes/180);if(period!==weatherCachePeriod){weatherCache.clear();weatherCachePeriod=period}
+ if(weatherCache.has(area))return weatherCache.get(area);
  const zone=['village','town','route1','homestead'].includes(area)?'valley':area;
  let hash=2166136261;for(const ch of zone+':'+day+':'+Math.floor(minutes/180)){hash=Math.imul(hash^ch.charCodeAt(0),16777619)}
  let roll=(hash>>>0)%100;
- for(let i=0;i<profile.length;i++){roll-=profile[i];if(roll<0)return WEATHER_NAMES[i]}
+ for(let i=0;i<profile.length;i++){roll-=profile[i];if(roll<0){weatherCache.set(area,WEATHER_NAMES[i]);return WEATHER_NAMES[i]}}
  return 'clear';
 }
 function weatherWind(){const weather=regionalWeather();return weather==='storm'?2.8:weather==='rain'?1.7:weather==='snow'?1.2:1}
@@ -2457,14 +2462,15 @@ function drawAtmosphereHUD(){
  ctx.restore();
 }
 
+let canvasSizeDirty=true;
 function resizeGameCanvas(){
  const width=Math.max(1,Math.round(C.clientWidth||C.getBoundingClientRect().width));
  const height=Math.max(1,Math.round(C.clientHeight||C.getBoundingClientRect().height));
- if(C.width!==width||C.height!==height){C.width=width;C.height=height;ctx.imageSmoothingEnabled=false}
+ if(C.width!==width||C.height!==height){C.width=width;C.height=height;ctx.imageSmoothingEnabled=false}canvasSizeDirty=false;
 }
 function draw(){
  if(screen!=='game'||!s)return;
- resizeGameCanvas();
+ if(canvasSizeDirty)resizeGameCanvas();
  tickAtmosphere();
  updateVisual();
  updateInteractVisibility();
@@ -3578,7 +3584,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.21</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.22</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -4132,9 +4138,9 @@ function renderIndex(){
   document.querySelectorAll('[data-index-style]').forEach(b=>b.onclick=()=>{const v=b.dataset.indexStyle;if(['classic','jade','slate'].includes(v)&&(v==='classic'||s.badges>=1)){s.trainerProgress.indexStyle=v;save();renderIndex()}});
   const volume=$('ambientVolume');if(volume)volume.oninput=()=>{ambientVolume=Number(volume.value)/100;try{localStorage.setItem('critters-ambient-volume',String(ambientVolume))}catch{}unlockAmbient()};
   const saveButton=$('settingsSaveGame');
-  if(saveButton)saveButton.onclick=()=>{save();indexNotice('Game saved successfully.');close()};
+  if(saveButton)saveButton.onclick=()=>{if(save()){indexNotice('Game saved successfully.');close()}else{close();notifyWorld('Game could not be saved.')}};
   const titleButton=$('settingsReturnTitle');
-  if(titleButton)titleButton.onclick=()=>{save();close();show('title')};
+  if(titleButton)titleButton.onclick=()=>{if(save()){close();show('title')}else{close();notifyWorld('Game could not be saved. You are still in your adventure.')}};
  }
 }
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
@@ -4276,7 +4282,7 @@ function chooseWildSpecies(area,roll=Math.random()){
  const total=weights.reduce((a,b)=>a+b,0);if(total<=0)return null;
  let target=Math.max(0,Math.min(.999999999,roll))*total;
  for(let i=0;i<pool.length;i++){target-=weights[i];if(target<0)return pool[i]}
- return pool[pool.length-1]||null;
+ for(let i=pool.length-1;i>=0;i--)if(weights[i]>0)return pool[i];return null;
 }
 function wildEncounterChance(area){return WILD_AREA_BALANCE[SECRET_AREAS[area]?.parent||area]?.stepRate||0}
 function areaTypes(){return {route1:['Grass','Water','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Shadow'],route3:['Rock','Electric','Fighting'],cave:['Rock','Ghost','Ice'],garden:['Grass','Water','Psychic']}[s.area]||['Grass']}
@@ -4339,7 +4345,8 @@ function startTrainer(id){
 const BATTLE_AREAS=['village','route1','town','route2','forest','route3','cave','garden','gym','lab','home','neighbor'];
 const BATTLE_AREA_LABELS={village:'Starting Village',route1:'Rice Fields',town:'First Town',route2:'Bamboo Trail',forest:'Hidden Forest',route3:'Mountain Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home'};
 function battleEnvironment(){
- const area=BATTLE_AREAS.includes(s.area)?s.area:'route1';
+ const sourceArea=SECRET_AREAS[s.area]?.parent||s.area;
+ const area=BATTLE_AREAS.includes(sourceArea)?sourceArea:'route1';
  const tile=tiles?.[s.y]?.[s.x];
  const terrain=tile===T.rice?'rice':tile===T.tall?'grass':tile===T.stone?'stone':tile===T.flower?'flowers':tile===T.path?'path':tile===T.water?'water':'field';
  return {area,terrain,phase:worldPhase()};
@@ -4780,7 +4787,7 @@ function runMoveEffect(effect,side,actorIndex,targetSide,targetIndex,log){
  }
 }
 function performMove(actor,move,side,actorIndex,targetIndex,log){
- if(!battle||!actor||actor.hp<=0)return;
+ if(!battle||!actor||actor.hp<=0||!(side==='ally'?activeAllies():activeEnemies()).includes(actorIndex))return;
  const recharge=battle.recharges?.[side]?.[actorIndex]||0;
  if(recharge>0){
   battle.recharges[side][actorIndex]=recharge-1;
@@ -4796,9 +4803,7 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  // Never overwrite one of the Critter's four equipped attacks.
  const fallback=moveId==='opening-flick'&&(actor.movePP[moveId]||0)<=0;
  if(fallback&&actor.moves.some(id=>(actor.movePP[id]||0)>0))return;
- if(fallback){
-  log.push((actor.name||actor.type)+' has no remaining PP and uses Last Resort!');
- }else actor.movePP[moveId]--;
+
  let targetSide=move.target==='enemy'?enemySide(side):side;
  let target=getCombatant(targetSide,targetIndex);
  if(move.target==='enemy'){
@@ -4814,6 +4819,7 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  // Conditions can disrupt a turn without consuming PP.
  const interruption={jolt:.20,chill:.17,stagger:.18,confuse:.22,disorient:.15,entangle:.08}[actor.status]||0;
  if(interruption&&Math.random()<interruption){log.push(name+' cannot act because of '+actor.status+'!');return}
+ if(fallback)log.push(name+' has no remaining PP and uses Last Resort!');else actor.movePP[moveId]--;
  log.push(name+' uses '+move.name+'.');
  // Store the final animated action only; the damage and turn system are unchanged.
  battle.lastVfx={name:move.name,type:move.type,side,actorIndex,targetSide,targetIndex,category:move.category,effect:move.effect?.id,missed:false};
@@ -4941,7 +4947,7 @@ function refillEnemyTeam(){
 function refillAllyTeam(log){
  battle.allySlots=battle.allySlots.filter(i=>s.party[i]?.hp>0);
  for(let i=0;i<s.party.length&&battle.allySlots.length<battle.mode;i++){
-  if(s.party[i].hp>0&&!battle.allySlots.includes(i)){
+  if(!isEgg(s.party[i])&&s.party[i].hp>0&&!battle.allySlots.includes(i)){
    battle.allySlots.push(i);claimParticipant(i);log.push(s.party[i].type+' joins your active team.');
   }
  }
@@ -5055,8 +5061,9 @@ async function resolveTeamTurn(){
    const fx=battle.lastVfx;
    await narrateCombatEvents(log.slice(before),fx);
    if(battle!==currentBattle)return;
-   if(battle.escapeOutcome){
-    // Return to the overworld after either narrated escape outcome.
+   if(battle.escapeOutcome==='failure')battle.escapeOutcome=null;
+   if(battle.escapeOutcome==='success'){
+    // Only successful escape returns to the overworld.
     while(worldTransitionBusy&&battle===currentBattle)await new Promise(resolve=>setTimeout(resolve,50));
     if(battle===currentBattle)fadeWorldChange(()=>{
      if(battle!==currentBattle)return;
@@ -5085,7 +5092,7 @@ async function resolveTeamTurn(){
  await narrateCombatEvents(log.slice(beforeEffects),null);
  if(battle!==currentBattle)return;
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
- if(!s.party.some(p=>p.hp>0))return blackout();
+ if(!s.party.some(p=>!isEgg(p)&&p.hp>0))return blackout();
  battle.enemySlots=battle.enemySlots.filter(i=>battle.enemies[i]?.hp>0);
  refillEnemyTeam();refillAllyTeam(log);
  battle.lastTurnLog=log.slice(-30);
@@ -5454,10 +5461,11 @@ document.addEventListener('touchmove',e=>{
  if(screen==='game'&&!e.target.closest('#shade'))e.preventDefault();
 },{passive:false});
 document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault()},{passive:false});
-window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
-if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
+window.addEventListener('resize',()=>{canvasSizeDirty=true;releaseMovement()});
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{canvasSizeDirty=true}).observe(C);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{canvasSizeDirty=true});
 if(read()?.name)$('continue').hidden=false;
-function loop(){tickAmbient();if(screen==='game'){tickStoryScenes();finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){tickAmbient();if(screen==='game'&&!document.hidden){tickStoryScenes();finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}if(!battle)draw();else atmospherePreviousFrame=0}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
