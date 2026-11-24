@@ -44,6 +44,7 @@ const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
  const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
  if(kind in special)return special[kind];
+ if(kind==='construction-worker')return x%2?17:18;
  if(kind==='gymtrainer')return 20;
  if(kind==='routetrainer')return (x+y)%2?19:13;
  const area=s?.area||'village';
@@ -140,7 +141,7 @@ function buildVillageColliders(){
 // Phase 1: curated indoor scenes. Objects share one definition for rendering,
 // inspection and solid footprints. No party swapping/module work outside Centers.
 let interiorObjects=[],interiorBlocked=new Set();
-const isInterior=area=>['home','neighbor','lab'].includes(area);
+const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area);
 function addInteriorObject(id,x,y,w,h,kind,title,description,action=''){
  const o={id,x,y,w,h,kind,title,description,action};
  interiorObjects.push(o);
@@ -150,7 +151,13 @@ function addInteriorObject(id,x,y,w,h,kind,title,description,action=''){
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
  // Always maintain a free central aisle and unobstructed exit at (17,25).
- if(area==='lab'){
+ if(area==='homesteadHome'){
+  addInteriorObject('estate-bed',5,6,6,4,'bed','Your Bed',['Rest and restore your Critters.'],'estate-rest');
+  addInteriorObject('estate-terminal',24,6,4,3,'terminal','Home Terminal',['Manage your property.'],'estate-terminal');
+  addInteriorObject('estate-storage',26,19,4,2,'chest','Home Storage',['Access your shared family storage.'],'estate-storage');
+  addInteriorObject('estate-table',22,13,5,3,'table','Dining Table',['A quiet place to relax.']);
+  addInteriorObject('estate-books',5,16,4,4,'bookshelf','Bookshelf',['Your field guides and adventure keepsakes.']);
+ }else if(area==='lab'){
   addInteriorObject('lab-left',4,5,7,4,'counter','Field Research Bench',[
    'Sample jars, carefully labeled leaf specimens and a magnifying lens fill the workbench.',
    'The researchers are studying how different environments affect Critter behavior.'
@@ -218,6 +225,9 @@ function furnishInterior(area){
  }
 }
 function inspectInterior(o){
+ if(o.action==='estate-rest'&&s.homestead?.owned){s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)});save();return notifyWorld('You rested. Your party has fully recovered.');}
+ if(o.action==='estate-terminal'&&s.homestead?.owned)return homesteadTerminal();
+ if(o.action==='estate-storage'&&s.homestead?.owned)return homesteadStorage();
  if(o.action==='potion'){
   s.discoveries=s.discoveries||{};
   if(!s.discoveries[o.id]){
@@ -505,7 +515,7 @@ function migrate(){
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
- s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead'].includes(s.area))s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome'].includes(s.area))s.area='village';
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
@@ -518,6 +528,7 @@ function migrate(){
  s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];collectionData();s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
  s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
+ migrateHomestead();
  s.rivalPassed=!!s.rivalPassed;s.introComplete=!!s.introComplete;
  s.worldMinutes=Number.isFinite(s.worldMinutes)?((s.worldMinutes%1440)+1440)%1440:8*60;
  s.worldDay=Number.isFinite(s.worldDay)&&s.worldDay>=1?Math.floor(s.worldDay):1;
@@ -607,13 +618,28 @@ function sideQuestIndex(){
 }
 function build(preview=false){
  if(!preview)migrate();
- applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
+ applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
- case 'homestead':
+ case 'homestead':{
+ const stage=homesteadConstructionStage(),owned=!!s.homestead?.owned;
  borders();rect(15,12,W-16,3,T.path);rect(15,10,3,4,T.path);
- rect(3,3,12,8,T.hedge);rect(4,4,10,6,T.grass);houses([[6,5,6,3]]);
- npc(16,10,['Private property. The village will announce when it becomes available.'],'property-sign');
+ // Fixed lot perimeter and a gate which remains closed until purchase.
+ rect(3,3,12,8,T.hedge);rect(4,4,10,6,T.grass);
+ rect(6,5,6,5,T.path);
+ if(stage===1)rect(6,5,6,2,T.stone);
+ if(stage===2){rect(6,5,6,3,T.wall);rect(6,8,6,2,T.stone)}
+ if(stage>=3)houses([[6,5,6,3]]);
+ if(owned){put(9,10,T.path);rect(9,11,2,3,T.path);rect(9,9,1,1,T.door);rect(9,14,7,1,T.path)}
+ if(stage<4){
+  npc(13,11,['We are working on the new building. Please keep clear of the site.'],'construction-worker','builder1');
+  npc(18,10,['There is still work to do.'],'construction-worker','builder2');
+  if(stage<3)npc(5,12,['Mind the materials!'],'construction-worker','builder3');
+ }else if(!owned)npc(16,10,['The work here is finished.'],'property-sign');
+ else npc(16,10,['Welcome home.'],'property-sign');
  break;
+ }
+ case 'homesteadHome':
+ borders(T.wall);put(17,25,T.door);furnishInterior('homesteadHome');break;
  case 'village':
  // One art system: original house roof/wall tiles are NOT placed in the village.
  borders();roads();rect(16,12,3,13,T.path);rect(7,10,2,3,T.path);rect(24,11,2,2,T.path);
@@ -764,7 +790,7 @@ function build(preview=false){
  prepareOutdoorPortals();
  if(!preview){
   snapVisual();
-  if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H});
+  if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null});
  }
 
 }
@@ -1469,7 +1495,7 @@ function drawAtmosphereHUD(){
  const h=worldHour(),hours=Math.floor(h),minutes=Math.floor((h-hours)*60);
  const clock=String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0');
  const timeLabel='Day '+(s.worldDay||1)+' · '+clock+' · '+worldPhase();
- const location=REGION_MAP_PLACES.find(p=>p.id===s.area)?.name
+ const location=(s.area==='homestead'&&s.homestead?.owned?'Personal Home':REGION_MAP_PLACES.find(p=>p.id===s.area)?.name)
   ||REGION_MAP_INTERIORS.find(p=>p.id===s.area)?.name
   ||'The Valley';
  const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
@@ -1545,7 +1571,7 @@ const OUTDOOR_GRID=Object.freeze({
  homestead:[0,1],village:[1,1],route1:[2,1],town:[3,1],garden:[4,1],
  forest:[2,0],route2:[3,0],route3:[4,0]
 });
-const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave']);
+const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome']);
 
 /* Per-column widths and per-row heights keep outdoor sections edge-aligned
    while giving the seven areas substantially different playable footprints. */
@@ -1654,12 +1680,13 @@ function prepareOutdoorPortals(){
  if(s.area==='garden')vertical(17,19,0,14);
 }
 function outdoorChunk(area){
+ if(area==='homestead'&&outdoorChunks.get(area)?.constructionKey!==homesteadGeometryKey())outdoorChunks.delete(area);
  if(outdoorChunks.has(area))return outdoorChunks.get(area);
- const current={area:s.area,x:s.x,y:s.y,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H};
+ const current={area:s.area,x:s.x,y:s.y,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null};
  try{
   s.area=area;s.x=17;s.y=13;
   build(true); // Preview geometry without migrating, saving or discovering areas.
-  const result={tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H};
+  const result={tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null};
   outdoorChunks.set(area,result);
   return result;
  }finally{
@@ -1710,6 +1737,17 @@ function followOutdoorCamera(targetX,targetY,now=performance.now()){
  }
  return outdoorCamera;
 }
+function drawHomesteadConstruction(ox,oy){
+ const stage=homesteadConstructionStage();
+ if(stage>=4)return;
+ const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
+ // Materials and scaffold remain inside the fenced, inaccessible lot.
+ for(let i=0;i<3;i++)box(4.2,4.3+i*.27,1.3,.18,'#87623e');
+ if(stage>=1&&stage<=3){
+  for(const x of [5.8,12.1]){box(x,4.5,.12,4.9,'#7b5433');for(let y=5;y<9.3;y+=.7)box(x,y,.55,.09,'#bc925b')}
+  box(5.8,4.7,6.8,.12,'#ad8553');
+ }
+}
 function drawOutdoorWorld(){
  const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const vw=C.width/zoom,vh=C.height/zoom;
@@ -1722,7 +1760,7 @@ function drawOutdoorWorld(){
  const ox=camera.x,oy=camera.y;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#5f8e5f';ctx.fillRect(0,0,C.width,C.height);
  ctx.setTransform(zoom,0,0,zoom,0,0);
- const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H};
+ const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null};
  // Nearby chunks are rendered within the same continuous world coordinate system.
  for(const [area,grid] of Object.entries(OUTDOOR_GRID)){
   const location=outdoorOrigin(area),size=outdoorSize(area);
@@ -1737,6 +1775,7 @@ function drawOutdoorWorld(){
   for(let y=y1;y<y2;y++)for(let x=x1;x<x2;x++)drawTile(tiles[y][x],x*S-localOX,y*S-localOY,x,y);
   if(area==='village')drawVillageDetails(localOX,localOY,vw,vh);
   if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
+  if(area==='homestead')drawHomesteadConstruction(localOX,localOY);
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawExplorationSites(localOX,localOY);
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
@@ -1794,6 +1833,8 @@ function move(d){
  if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
+ if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned)return region('homesteadHome',17,23);
+ if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&d==='down'&&x===17&&y>=25)return region('garden',24,12);
  if(s.area==='cave'&&d==='down'&&y>=H-2&&x>=15&&x<=18)return region('route3',20,2);
@@ -1831,6 +1872,8 @@ function canInteractAhead(){
  if(!offset)return false;
  const x=s.x+offset[0],y=s.y+offset[1];
  if(npcs.some(p=>p.x===x&&p.y===y))return true;
+ if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return true;
+ if(s.area==='homesteadHome'&&x===17&&y===25)return true;
  if(villageDoorAt(x,y))return true;
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25)return true;
  if(isInterior(s.area)&&interiorObjects.some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return true;
@@ -1854,7 +1897,7 @@ function interact(){
  if(modal||doorTransition||worldTransitionBusy)return;if(narratorBlocking())return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  if(p)p.face={up:'down',down:'up',left:'right',right:'left'}[s.face];
- if(p){if(p.kind==='property-sign')return say([s.badges>=4?'Property for sale. Speak to your mother in Starting Village.':'Private property. Available after your fourth Gym badge.']);if(s.area==='home'&&p.x===14&&p.y===11&&s.badges>=4)return say(['Mom: A property has become available west of the village.','You could make a lovely home of your own there.']);if(p.kind==='sidequest')return talkSideQuest(p.id);
+ if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.x===14&&p.y===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return talkSideQuest(p.id);
  if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -1862,6 +1905,8 @@ function interact(){
  if(p.kind==='leader')return s.badges?say(['Gym Leader: Your first badge is well earned.']):!s.defeated.g1||!s.defeated.g2||!s.defeated.g3||!s.puzzles.gate?say(['Gym Leader: Defeat all three trainers and open the garden mechanism first.']):startTrainer('leader');
  if(p.kind==='switch'){if(s.defeated.g1&&s.defeated.g2&&s.defeated.g3){s.puzzles.gate=true;build();save();return notifyWorld(['You activate the garden mechanism. The roots withdraw!'])}return say(['The mechanism is tangled in roots. Defeat all three Gym trainers first.'])}
  return say(p.text)}
+ if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return region('homesteadHome',17,23);
+ if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
  const door=villageDoorAt(x,y);
  if(door)return openVillageDoor(door);
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
@@ -1874,6 +1919,46 @@ function interact(){
  if(routeSite)return inspectRoute1Site(routeSite);
  if(s.area==='garden'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&x===17&&y===25)return region('garden',24,12);
+}
+// Homestead ownership is independent of breeding and expansion mechanics.
+const HOMESTEAD_PRICE=10000;
+function homesteadConstructionStage(){return Math.max(0,Math.min(4,Math.floor(Number(s?.badges)||0)))}
+function homesteadGeometryKey(){return homesteadConstructionStage()+':'+Number(!!s?.homestead?.owned)}
+function migrateHomestead(){
+ const old=s.homestead&&typeof s.homestead==='object'?s.homestead:{};
+ s.homestead={...old,offered:!!old.offered||!!old.owned,owned:!!old.owned,stage:old.owned?Math.max(1,Math.min(4,Math.floor(Number(old.stage)||1))):0};
+ if(s.area==='homesteadHome'&&!s.homestead.owned){s.area='homestead';s.x=17;s.y=13}
+}
+function talkMomProperty(){
+ if(s.homestead.owned)return say(['Mom: I hope you are enjoying your new home!']);
+ return say(['Mom: I have some exciting news! The new property west of the village is finished and available to purchase.','Mom: It costs 10,000. Speak with the caretaker there if you would like a place of your own.'],()=>{s.homestead.offered=true;save()});
+}
+function canBuyHomestead(){return homesteadConstructionStage()===4&&s.homestead?.offered&&!s.homestead.owned&&s.money>=HOMESTEAD_PRICE}
+function purchaseHomestead(){
+ if(!canBuyHomestead())return false;
+ s.money-=HOMESTEAD_PRICE;s.homestead.owned=true;s.homestead.stage=1;
+ s.discoveredAreas.homestead=true;outdoorChunks.delete('homestead');build();save();
+ return true;
+}
+function talkPropertyAgent(){
+ if(s.homestead?.owned)return say(['Caretaker: Enjoy your new home!']);
+ if(homesteadConstructionStage()<4||!s.homestead?.offered)return say(['Caretaker: The work here is finished. Have a pleasant day.']);
+ return say(['Caretaker: Your mother mentioned you might be interested in this property.'],()=>{
+  open('Purchase Property','<p>Personal Home — 10,000 money.</p><p>Available funds: '+s.money+'</p><button class="btn primary" id="buyEstate" '+(canBuyHomestead()?'':'disabled')+'>Purchase Home</button> <button class="btn" id="cancelEstate">Not now</button>');
+  $('cancelEstate').onclick=close;
+  $('buyEstate').onclick=()=>{if(!purchaseHomestead())return;close();indexNotice('Personal Home purchased. Fast Travel unlocked!')};
+ });
+}
+function homesteadTerminal(){
+ if(!s.homestead?.owned)return;
+ open('Home Terminal','<p>Personal Home · Property owned</p><p>Functional farm expansions and breeding facilities will become available in a future update.</p><div class="options"><button class="btn" id="estateStorage">Home Storage</button><button class="btn" id="estateClose">Close</button></div>');
+ $('estateStorage').onclick=homesteadStorage;$('estateClose').onclick=close;
+}
+function homesteadStorage(){
+ if(!s.homestead?.owned)return;
+ // Shared storage is viewable at home; party maintenance still requires a Center.
+ open('Home Storage','<p>Stored Critters: '+s.storage.length+'</p>'+s.storage.map(p=>'<div class="centerPartyRow">'+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</div>').join('')+'<p>Visit a Critter Center to change your active party.</p><button class="btn" id="estateBack">Back</button>');
+ $('estateBack').onclick=homesteadTerminal;
 }
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
 function enterGym(){if(!s.rivalPassed){s.rivalPassed=true;save();return say(['Your childhood rival is waiting at the Grass Gym entrance!'],()=>startTrainer('rival'))}return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
@@ -1982,7 +2067,7 @@ function indexMain(){
 /* The illustrated map shows the existing region, not a newly generated world.
    Only towns with real Critter Center NPCs are valid travel destinations. */
 const REGION_MAP_PLACES=[
- {id:'homestead',name:'Western Homestead',x:4,y:74,kind:'wild'},
+ {id:'homestead',name:'Western Grounds',x:4,y:74,kind:'wild',spawn:[17,13]},
  {id:'village',name:'Starting Village',x:14,y:74,kind:'town'},
  {id:'route1',name:'Route 1 · Rice Fields',x:30,y:72,kind:'route'},
  {id:'town',name:'Small Town',x:48,y:73,kind:'center',spawn:[23,13]},
@@ -1993,7 +2078,8 @@ const REGION_MAP_PLACES=[
  {id:'garden',name:'Garden Town',x:72,y:73,kind:'center',spawn:[14,14]}
 ];
 const REGION_MAP_INTERIORS=[
- {id:'home',name:'Player Home',parent:'village'},
+ {id:'home',name:'Family Home',parent:'village'},
+ {id:'homesteadHome',name:'Personal Home',parent:'homestead'},
  {id:'neighbor',name:'Village Home',parent:'village'},
  {id:'lab',name:'Research Laboratory',parent:'village'},
  {id:'gym',name:'Grass Gym',parent:'garden'}
@@ -2009,23 +2095,27 @@ function ensureMapDiscovery(){
  }
 }
 function mapCanFastTravel(id){
- return !battle&&screen==='game'&&!!s?.discoveredCenters?.[id]&&REGION_MAP_PLACES.some(p=>p.id===id&&p.kind==='center'&&p.spawn);
+ if(battle||screen!=='game'||!s)return false;
+ if(id==='homestead')return !!s.homestead?.owned&&s.area!=='homestead'&&s.area!=='homesteadHome';
+ return !!s.discoveredCenters?.[id]&&REGION_MAP_PLACES.some(p=>p.id===id&&p.kind==='center'&&p.spawn);
 }
+function regionalPlaceName(p){return p.id==='homestead'&&s?.homestead?.owned?'Personal Home':p.name}
+function regionalPlaceUnlocked(p){return p.id==='homestead'?!!s.homestead?.owned:p.kind==='center'&&!!s.discoveredCenters?.[p.id]}
 let mapTravelSelection=null;
 function indexRegionMap(){
  ensureMapDiscovery();
  const destination=REGION_MAP_PLACES.find(p=>p.id===mapTravelSelection);
  const nodes=REGION_MAP_PLACES.map(p=>{
-  const seen=!!s.discoveredAreas[p.id],unlocked=p.kind==='center'&&!!s.discoveredCenters[p.id];
+  const seen=!!s.discoveredAreas[p.id],unlocked=regionalPlaceUnlocked(p);
   const selected=p.id===mapTravelSelection,here=p.id===s.area;
   return '<button type="button" class="regionMapPin '+(seen?'discovered ':'fogged ')+(unlocked?'unlocked ':'')+(here?'here ':'')+(selected?'picked':'')+'"'
-   +' data-map-place="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+escapeHtml(seen?p.name:'Undiscovered location')+'"'
+   +' data-map-place="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+escapeHtml(seen?regionalPlaceName(p):'Undiscovered location')+'"'
    +' style="left:'+p.x+'%;top:'+p.y+'%"><span class="regionMapPinSymbol">'+(p.kind==='center'?'✚':p.kind==='town'?'⌂':p.kind==='route'?'◆':'▲')+'</span>'
-   +'<span class="regionMapPinName">'+escapeHtml(seen?p.name:'Unknown')+'</span></button>';
+   +'<span class="regionMapPinName">'+escapeHtml(seen?regionalPlaceName(p):'Unknown')+'</span></button>';
  }).join('');
  const discovered=REGION_MAP_PLACES.filter(p=>s.discoveredAreas[p.id]).map(p=>
   '<div class="regionMapLocation"><strong>'+escapeHtml(p.name)+'</strong>'
-  +(p.kind==='center'?'<small>'+(s.discoveredCenters[p.id]?'Fast Travel unlocked':'Visit the Critter Center to unlock Fast Travel')+'</small>':'')+'</div>').join('');
+  +(p.id==='homestead'&&s.homestead?.owned?'<small>Fast Travel unlocked</small>':p.kind==='center'?'<small>'+(s.discoveredCenters[p.id]?'Fast Travel unlocked':'Visit the Critter Center to unlock Fast Travel')+'</small>':'')+'</div>').join('');
  const interiors=REGION_MAP_INTERIORS.filter(p=>s.discoveredAreas[p.id]).map(p=>
   '<div class="regionMapLocation"><strong>'+escapeHtml(p.name)+'</strong><small>'+escapeHtml(REGION_MAP_PLACES.find(a=>a.id===p.parent)?.name||'Location')+'</small></div>').join('');
  const canTravel=destination&&mapCanFastTravel(destination.id);
@@ -2034,8 +2124,8 @@ function indexRegionMap(){
   +'<img class="regionMapArt" src="assets/region-map.svg?v=83-varied-districts" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
   +nodes+'</div>'
   +'<div class="regionMapLegend"><span>◆ Route</span><span>⌂ Town</span><span>▲ Landmark</span><span>✚ Center</span><span>● You</span></div>'
-  +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(destination.name)+'</strong>'
-    +'<p>'+(destination.kind!=='center'?'Only Critter Centers are fast travel destinations.':canTravel?'Fast Travel to this Critter Center?':'Find and speak to the Critter Center technician to unlock Fast Travel.')+'</p>'
+  +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(regionalPlaceName(destination))+'</strong>'
+    +'<p>'+(destination.id==='homestead'?(s.homestead?.owned?(canTravel?'Fast Travel home?':'You are already home.'):'Western grounds.'):destination.kind!=='center'?'Not a fast travel destination.':canTravel?'Fast Travel to this Critter Center?':'Find and speak to the Critter Center technician to unlock Fast Travel.')+'</p>'
     +(canTravel?'<button type="button" class="btn primary" id="regionMapConfirm">Confirm Fast Travel</button>':'')
     +'<button type="button" class="btn" id="regionMapCancel">Cancel</button></div>':'')
   +'<div class="watchSectionTitle">Discovered locations</div><div class="regionMapLocationList">'
@@ -2047,7 +2137,7 @@ function fastTravelToCenter(id){
  const [x,y]=place.spawn;
  mapTravelSelection=null;
  close(); // Remove watch modal before using the existing region transition.
- region(id,x,y,'Fast Travel complete — '+place.name+' Critter Center.',true);
+ region(id==='homestead'?'homesteadHome':id,id==='homestead'?17:x,id==='homestead'?23:y,'',true);indexNotice('Fast Travel complete — '+regionalPlaceName(place)+'.');
  s.face='up';save();
  return true;
 }

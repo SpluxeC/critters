@@ -1,0 +1,3 @@
+# Homestead ownership v93
+
+Construction is derived from badge count 0–4. Workers and temporary scaffolding use existing drawing systems. Sale dialogue remains hidden until Mom's post-fourth-badge conversation is completed. Personal Home costs 10,000, grants access to interior, resting, shared storage viewing and a basic terminal, and is a fast travel destination. Existing Center-only party changes remain intact. Breeding, functional farm expansions, cosmetics and asset integration are deferred. Current playable game awards only the first badge; the later badge gates are wired for future gyms and existing saves with higher badge counts.

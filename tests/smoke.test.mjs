@@ -584,3 +584,5 @@ test('v92 routes field notices and Index confirmations through overworld narrato
  assert.match(game,/function routeEvolutionNotices\(/);
  assert.doesNotMatch(game,/fieldBagResult\?'<div class="watchBagNotice"/);
 });
+
+test('v93 homestead sale is gated behind badge four and mother conversation',()=>{assert.match(game,/function canBuyHomestead\(\)/);assert.match(game,/homesteadConstructionStage\(\)===4&&s\.homestead\?\.offered/);assert.match(game,/s\.homestead\.offered=true;save\(\)/);assert.match(game,/const HOMESTEAD_PRICE=10000/);assert.match(game,/homesteadHome/)});
