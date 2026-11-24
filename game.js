@@ -226,7 +226,7 @@ function furnishInterior(area){
  }
 }
 function inspectInterior(o){
- if(o.action==='estate-rest'&&s.homestead?.owned){s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)});save();return notifyWorld('You rested. Your party has fully recovered.');}
+ if(o.action==='estate-rest'&&s.homestead?.owned){s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)});save();return notifyWorld('You rested. Your party has fully recovered.');}
  if(o.action==='estate-terminal'&&s.homestead?.owned)return homesteadTerminal();
  if(o.action==='estate-storage'&&s.homestead?.owned)return homesteadStorage();
  if(o.action==='potion'){
@@ -441,7 +441,7 @@ function legalLearnedMoves(p){
  return defaultMoveIds(p.type,p.level);
 }
 function normalizeMoves(p){
- if(!p)return p;
+ if(!p||isEgg(p))return p;
  const current=Array.isArray(p.moves)?p.moves:[];
  const legacy=new Set(['Strike','Guard','Focus',p.type+' Pulse','Pulse']);
  const mapped=current.map(v=>typeof v==='string'?(validMove(v)?v:moveSlug(v)):null)
@@ -496,7 +496,7 @@ async function loadCritterMoveData(){
      {if(sp.art?.status==='ready'&&!completeCritterArt(sp.art))sp.art={...sp.art,status:'awaiting-upload'};speciesRegistry.set(sp.speciesId,sp);}
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
- if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='encyclopedia'&&encyclopediaSection==='critters'&&screen==='game'&&!battle)renderIndex()}
+ if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){if(isEgg(p))continue;refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='encyclopedia'&&encyclopediaSection==='critters'&&screen==='game'&&!battle)renderIndex()}
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
@@ -520,7 +520,7 @@ function migrate(){
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
- s.party=s.party.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
+ s.party=s.party.map(p=>isEgg(p)?eggPartyEntry(p.egg):normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
  if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp})));
  // Preserve excess Critters from older saves instead of silently dropping them.
  if(s.party.length>PARTY_LIMIT)s.storage.push(...s.party.splice(PARTY_LIMIT));
@@ -2004,7 +2004,64 @@ function advanceFarmBreeding(){
  }
  if(completed)save();
 }
-function recordWalkingStep(){s.steps=(s.steps||0)+1;advanceFarmBreeding();if(s.steps%10===0)save()}
+// Incubation uses integer units: walking with an egg adds two, farm adds one.
+const HATCH_STEPS={common:5000,uncommon:7500,rare:10000,'very rare':15000};
+function isEgg(p){return p?.isEgg===true&&!!p.egg}
+function eggRequired(e){return 2*(HATCH_STEPS[e.rarity]||HATCH_STEPS.common)}
+function eggUnits(e){return Math.max(0,Math.min(eggRequired(e),Math.floor(Number(e.incubationUnits)||0)))}
+function eggReady(e){return !!e&&eggUnits(e)>=eggRequired(e)}
+function eggLabel(e){return escapeHtml(e.rarity||'common')+' egg'}
+function eggProgress(e,party){const rate=party?2:1;return Math.floor(eggUnits(e)/rate).toLocaleString()+' / '+(eggRequired(e)/rate).toLocaleString()+' steps'}
+function eggPartyEntry(e){return {isEgg:true,egg:e,name:'Egg',type:'Egg',types:[],hp:-1,maxHp:0,level:0,moves:[],movePP:{},xp:0}}
+function validIncubator(i){return Number.isInteger(i)&&i>=0&&i<farmCapacity().incubators}
+function collectFarmEgg(i,destination){
+ if(!farmAccess()||!validPasture(i))return false;
+ const home=farmSlots(),pair=home.pairs[i];if(!pair?.egg)return false;
+ if(destination==='party'){if(s.party.length>=PARTY_LIMIT)return false;s.party.push(eggPartyEntry(pair.egg))}
+ else{if(!validIncubator(destination)||home.incubators[destination])return false;home.incubators[destination]=pair.egg}
+ pair.egg=null;pair.progress=0;if(!pair.parents?.some(Boolean))home.pairs[i]=null;save();return true;
+}
+function transferEgg(from,index,to){
+ if(!farmAccess()||!Number.isInteger(index))return false;
+ const home=farmSlots();
+ if(from==='party'){
+  if(!isEgg(s.party[index])||!validIncubator(to)||home.incubators[to])return false;
+  home.incubators[to]=s.party.splice(index,1)[0].egg;
+ }else if(from==='farm'){
+  if(!validIncubator(index)||!home.incubators[index]||s.party.length>=PARTY_LIMIT)return false;
+  s.party.push(eggPartyEntry(home.incubators[index]));home.incubators[index]=null;
+ }else return false;
+ save();return true;
+}
+function advanceEggIncubation(){
+ if(!s?.homestead?.owned)return;
+ let ready=false;
+ const step=(e,rate)=>{if(!e||eggReady(e))return;e.incubationUnits=Math.min(eggRequired(e),eggUnits(e)+rate);if(eggReady(e)){ready=true;notifyWorld(rate===2?'An egg in your party is ready to hatch!':'An egg at your farm is ready to hatch!')}};
+ for(const p of s.party)if(isEgg(p))step(p.egg,2);
+ for(const e of farmSlots().incubators.slice(0,farmCapacity().incubators))step(e,1);
+ if(ready)save();
+}
+function hatchEgg(from,i){
+ if(!Number.isInteger(i)||i<0||battle)return null;
+ const party=from==='party';if(!party&&(from!=='farm'||!farmAccess()||!validIncubator(i)))return null;
+ const home=farmSlots(),e=party?(isEgg(s.party[i])?s.party[i].egg:null):home.incubators[i];
+ if(!eggReady(e)||!speciesRegistry.has(e.speciesId))return null;
+ const newborn=critter(e.speciesId,1);
+ // Keep parental snapshots for later inheritance implementation.
+ newborn.breedingParents=e.parents||[];
+ if(party)s.party[i]=newborn;else{home.incubators[i]=null;s.storage.push(newborn)}
+ const c=collectionData(),stamp=encounterStamp(),id=newborn.speciesId;
+ if(!c.seen[id])c.seen[id]={firstArea:stamp.area,firstDay:stamp.day,encounters:0,discoveredBy:'hatching'};
+ if(!c.caught[id])c.caught[id]={firstArea:stamp.area,firstDay:stamp.day,firstLevel:1,captures:0,obtainedBy:'hatching'};
+ save();return newborn;
+}
+function hatchEggUI(from,i){
+ if(battle)return;
+ const e=from==='party'?s.party[i]?.egg:farmSlots().incubators[i];if(!eggReady(e))return;
+ open('Egg Hatching','<div class="eggHatchArt">🥚</div><p>Your egg is ready to hatch!</p><button class="btn primary" id="eggHatchConfirm">Hatch Egg</button>');
+ $('eggHatchConfirm').onclick=()=>{const p=hatchEgg(from,i);if(!p)return;open('Egg Hatched','<div class="eggHatchArt eggReveal">'+(critterSpriteTag(p,'eggHatchSprite')||symbols[p.type]||'✦')+'</div><h3>'+escapeHtml(p.name)+' · Level 1</h3><p>'+(from==='farm'?'Sent to home storage.':'Joined your party.')+'</p><button class="btn primary" id="eggDone">Continue</button>');$('eggDone').onclick=()=>{close();indexNotice(p.name+' hatched!')}};
+}
+function recordWalkingStep(){s.steps=(s.steps||0)+1;advanceFarmBreeding();advanceEggIncubation();if(s.steps%10===0)save()}
 function canUpgradeFarm(next){return s?.area==='homesteadHome'&&!!s.homestead?.owned&&Number.isInteger(next)&&next===farmStage()+1&&next>=2&&next<=4&&s.money>=FARM_STAGES[next].price}
 function purchaseFarmUpgrade(next){
  if(!canUpgradeFarm(next))return false;
@@ -2061,16 +2118,27 @@ function farmManagement(kind){
  if(!count)return homesteadTerminal();
  const rows=Array.from({length:count},(_,i)=>{
   const p=slots[i];
-  if(kind==='incubators')return '<div class="centerPartyRow">Incubator '+(i+1)+' · '+(p?'Occupied':'Empty')+'</div>';
+  if(kind==='incubators')return '<div class="centerPartyRow">Incubator '+(i+1)+' · '+(p?eggLabel(p)+' · '+eggProgress(p,false)+(eggReady(p)?' <button class="btn" data-farm-hatch="'+i+'">Hatch</button>':'')+' <button class="btn" data-farm-to-party="'+i+'" '+(s.party.length>=PARTY_LIMIT?'disabled':'')+'>Move to Party</button>':'Empty')+'</div>';
   if(!p)return '<div class="centerPartyRow"><b>Pasture '+(i+1)+'</b> · Empty <button class="btn" data-farm-assign="'+i+'">Assign Parents</button></div>';
   return '<div class="centerPartyRow"><b>Pasture '+(i+1)+'</b><p>'+farmParentName(p.parents?.[0])+' / '+farmParentName(p.parents?.[1])+'</p><p>'+(p.egg?'Egg ready — breeding paused':p.parents?.every(Boolean)?(p.progress||0)+' / '+p.required+' steps':'Waiting for compatible parent')+'</p>'
-  +[0,1].map(j=>p.parents?.[j]?'<button class="btn" data-farm-return="'+i+':'+j+'">Return '+(j===0?'male':'female')+' to storage</button>':'').join('')+(p.parents?.filter(Boolean).length===1?'<button class="btn" data-farm-replace="'+i+'">Assign replacement</button>':'')+'</div>';
+  +[0,1].map(j=>p.parents?.[j]?'<button class="btn" data-farm-return="'+i+':'+j+'">Return '+(j===0?'male':'female')+' to storage</button>':'').join('')+(p.egg?'<button class="btn primary" data-collect-egg="'+i+'">Collect Egg</button>':'')+(p.parents?.filter(Boolean).length===1?'<button class="btn" data-farm-replace="'+i+'">Assign replacement</button>':'')+'</div>';
  }).join('');
- open(kind==='pairs'?'Breeding Pairs':'Farm Incubators','<p>'+slots.slice(0,count).filter(Boolean).length+' / '+count+' occupied</p>'+rows+(kind==='pairs'?'<p>Parents must be the same species and opposite genders. Select from shared home storage. Completed eggs remain safe; collection and incubation will be enabled in the next update.</p>':'<p>Incubation will be enabled in the next update.</p>')+'<button class="btn" id="estateBack">Back</button>');
+ open(kind==='pairs'?'Breeding Pairs':'Farm Incubators','<p>'+slots.slice(0,count).filter(Boolean).length+' / '+count+' occupied</p>'+rows+(kind==='pairs'?'<p>Parents must be the same species and opposite genders. Select from shared home storage. Completed eggs remain safe until collected.</p>':'<p>Farm eggs incubate at half party speed.</p>'+s.party.map((p,i)=>isEgg(p)?'<div class="centerPartyRow">Party slot '+(i+1)+' · '+eggProgress(p.egg,true)+' <button class="btn" data-party-to-farm="'+i+'">Move to Incubator</button></div>':'').join('')+'')+'<button class="btn" id="estateBack">Back</button>');
  $('estateBack').onclick=homesteadTerminal;
+ document.querySelectorAll('[data-collect-egg]').forEach(el=>el.onclick=()=>eggDestination('collect',Number(el.dataset.collectEgg)));
+ document.querySelectorAll('[data-party-to-farm]').forEach(el=>el.onclick=()=>eggDestination('transfer',Number(el.dataset.partyToFarm)));
+ document.querySelectorAll('[data-farm-to-party]').forEach(el=>el.onclick=()=>{if(transferEgg('farm',Number(el.dataset.farmToParty)))farmManagement('incubators')});
+ document.querySelectorAll('[data-farm-hatch]').forEach(el=>el.onclick=()=>hatchEggUI('farm',Number(el.dataset.farmHatch)));
  document.querySelectorAll('[data-farm-assign]').forEach(el=>el.onclick=()=>farmChooseParents(Number(el.dataset.farmAssign)));
  document.querySelectorAll('[data-farm-replace]').forEach(el=>el.onclick=()=>farmChooseReplacement(Number(el.dataset.farmReplace)));
  document.querySelectorAll('[data-farm-return]').forEach(el=>el.onclick=()=>{const [i,j]=el.dataset.farmReturn.split(':').map(Number);open('Return Parent','<p>Returning a parent cancels unfinished breeding progress. A completed egg is retained.</p><button class="btn primary" id="farmReturnConfirm">Return Parent</button><button class="btn" id="estateBack">Cancel</button>');$('estateBack').onclick=()=>farmManagement('pairs');$('farmReturnConfirm').onclick=()=>{if(retrieveFarmParent(i,j)){indexNotice('Parent returned to home storage.');farmManagement('pairs')}}});
+}
+function eggDestination(mode,i){
+ if(!farmAccess())return;
+ const slots=farmSlots().incubators.slice(0,farmCapacity().incubators);
+ open('Choose Egg Destination','<p>Incubation progress is preserved when transferring.</p>'+(mode==='collect'?'<button class="btn" data-egg-dest="party" '+(s.party.length>=PARTY_LIMIT?'disabled':'')+'>Party</button>':'')+slots.map((e,j)=>'<button class="btn" data-egg-dest="'+j+'" '+(e?'disabled':'')+'>Incubator '+(j+1)+(e?' (occupied)':'')+'</button>').join('')+'<button class="btn" id="estateBack">Back</button>');
+ $('estateBack').onclick=()=>farmManagement(mode==='collect'?'pairs':'incubators');
+ document.querySelectorAll('[data-egg-dest]').forEach(el=>el.onclick=()=>{const dest=el.dataset.eggDest==='party'?'party':Number(el.dataset.eggDest);if(mode==='collect'?collectFarmEgg(i,dest):transferEgg('party',i,dest)){indexNotice('Egg moved to '+(dest==='party'?'party':'farm incubator')+'.');farmManagement(mode==='collect'?'pairs':'incubators')}});
 }
 function farmChooseParents(i,maleIndex=null){
  if(!farmAccess()||!validPasture(i)||farmSlots().pairs[i])return;
@@ -2153,7 +2221,7 @@ function combatSpeed(side,index){
  return actor?combatStat(actor,'speed')*statFactor(side,index,'speed'):0;
 }
 function refreshSpeciesMetadata(p){
- if(!p)return p;
+ if(!p||isEgg(p))return p;
  if(p.gender!=='male'&&p.gender!=='female')p.gender=Math.random()<0.5?'male':'female';
  const species=speciesFor(p);
  if(species){
@@ -2295,6 +2363,7 @@ function index(){
 function indexSlotContent(i){
  if(i<8){
   const p=s.party[i];
+  if(isEgg(p))return '<span class="watchSlotIcon">🥚</span><span class="watchSlotName">Egg</span><small>'+eggProgress(p.egg,true)+'</small>';
   return p?'<span class="watchSlotIcon">'+(critterSpriteTag(p,'watchSlotSprite')||symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.name||p.type)+critterGenderLabel(p)+'</span><small>Lv '+p.level+'</small>'
    :'<span class="watchSlotIcon empty">◇</span><span class="watchSlotName">Empty</span>';
  }
@@ -2310,12 +2379,13 @@ function indexClock(){
   const x=50+39*Math.cos(angle),y=50+39*Math.sin(angle);
   clock+='<button type="button" class="watchPosition '+(i>=8?'isModule ':'')+(indexSelection===i?'selected':'')+'" data-index-slot="'+i+'" '
     +'style="left:'+x.toFixed(2)+'%;top:'+y.toFixed(2)+'%" aria-label="'+(i+1)+' o’clock slot">'
-    +'<span class="watchTime">'+(i+1)+'</span><span class="watchTinyIcon">'+(i<8?(s.party[i]?critterSpriteTag(s.party[i],'watchTinySprite')||symbols[s.party[i].type]||'◇':'·'):'✧')+'</span></button>';
+    +'<span class="watchTime">'+(i+1)+'</span><span class="watchTinyIcon">'+(i<8?(s.party[i]?(isEgg(s.party[i])?'🥚':critterSpriteTag(s.party[i],'watchTinySprite'))||symbols[s.party[i].type]||'◇':'·'):'✧')+'</span></button>';
  }
  clock+='</div>';
  const i=indexSelection,p=s.party[i],mod=s.installed[i-8];
  let detail;
- if(i<8&&p){
+ if(i<8&&isEgg(p))detail='<div class="watchSelectionHeading">🥚 Egg</div><p>'+eggProgress(p.egg,true)+'</p>'+(!battleIndexActive()&&eggReady(p.egg)?'<button class="btn" data-hatch-party="'+i+'">Hatch Egg</button>':'');
+ else if(i<8&&p){
   const pct=Math.max(0,Math.min(100,Math.round(p.hp/Math.max(1,p.maxHp)*100)));
   detail='<div class="watchSelectionHeading">'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+' <span>Lv '+p.level+'</span></div>'
    +'<div class="watchMeter"><div style="width:'+pct+'%"></div></div><div class="watchSelectionStats">HP '+p.hp+' / '+p.maxHp+' · XP '+(p.xp||0)+' / '+p.level*12+'</div>'
@@ -2328,7 +2398,7 @@ function indexClock(){
  }
  return '<div class="watchClockLayout">'+clock+'<div class="watchSelection">'
   +'<span class="watchEyebrow">'+(i+1)+' O’CLOCK '+(i<8?'· PARTY':'· MODULE')+'</span>'+detail
-  +(battleIndexActive()&&i<8&&p
+  +(battleIndexActive()&&i<8&&p&&!isEgg(p)
      ?'<div class="watchSelectionStats">'+escapeHtml(p.name||p.type)+' · '+escapeHtml(defendTypes(p).join('/'))+'</div>'
       +(battle.allySlots.includes(i)?'<div class="watchSelectionStats">Currently battling</div>'
        :p.hp<=0?'<div class="watchSelectionStats">Fainted — cannot switch</div>'
@@ -2350,6 +2420,7 @@ function indexParty(){
  const cards=Array.from({length:8},(_,i)=>{
   const p=s.party[i];
   if(!p)return '<div class="watchPartyCard empty"><span>Slot '+(i+1)+'</span><strong>◇ Empty</strong></div>';
+  if(isEgg(p))return '<div class="watchPartyCard"><strong>🥚 Egg · Slot '+(i+1)+'</strong><p>'+eggProgress(p.egg,true)+'</p>'+(!battleIndexActive()&&eggReady(p.egg)?'<button class="btn" data-hatch-party="'+i+'">Hatch Egg</button>':'')+'</div>';
   const pct=Math.round(100*p.hp/Math.max(1,p.maxHp));
   return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(critterSpriteTag(p,'watchPartySprite')||symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
@@ -2372,7 +2443,7 @@ function fieldBagItemUsable(name){
  if(name==='Potion')return s.party.some(p=>p.hp>0&&p.hp<p.maxHp);
  if(name==='Revive')return s.party.some(p=>p.hp===0);
  if(name==='PP Potion')return s.party.some(p=>{
-  if(p.hp<=0)return false;
+  if(isEgg(p)||p.hp<=0)return false;
   normalizeMoves(p);
   return p.moves.some(id=>p.movePP[id]<getMove(p,id).pp);
  });
@@ -2381,7 +2452,7 @@ function fieldBagItemUsable(name){
 }
 function fieldBagTargets(name){
  return s.party.map((p,i)=>({p,i})).filter(({p})=>{
-  if(!p||!s.inventory?.[name])return false;
+  if(!p||isEgg(p)||!s.inventory?.[name])return false;
   if(name==='Potion')return p.hp>0&&p.hp<p.maxHp;
   if(name==='Revive')return p.hp===0;
   if(name==='PP Potion')return p.hp>0&&p.moves.some(id=>(p.movePP?.[id]??getMove(p,id).pp)<getMove(p,id).pp);
@@ -2762,6 +2833,7 @@ function renderIndex(){
   if(!Object.keys(strengths).concat('Typeless').includes(b.dataset.moveType))return;
   moveBookType=b.dataset.moveType;renderIndex();
  });
+ document.querySelectorAll('[data-hatch-party]').forEach(el=>el.onclick=()=>{if(!battleViewing)hatchEggUI('party',Number(el.dataset.hatchParty))});
  document.querySelectorAll('[data-evolve-party]').forEach(b=>b.onclick=()=>{
   if(battleViewing)return;
   const i=Number(b.dataset.evolveParty),p=s.party[i];if(!p||!evolutionReady(p,true))return;
@@ -3826,7 +3898,7 @@ function awardExperience(p,xp){
 }
 function endBattle(won,message,defeated){
  const b=battle;clearCombatNarrator();battle=null;$('close').hidden=false;
- if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)})}
+ if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)})}
  else if(defeated&&won){s.money+=b.award||0;if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
  }
@@ -3840,12 +3912,12 @@ function endBattle(won,message,defeated){
 function blackout(){
  const wasTutorial=battle?.kind==='tutorial';clearCombatNarrator();battle=null;$('close').hidden=false;
  if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);
- if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>refillMovePP(p))}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
+ if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>{if(!isEgg(p))refillMovePP(p)})}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
  ensureMapDiscovery();if(REGION_MAP_PLACES.some(p=>p.id===s.area&&p.kind==='center'))s.discoveredCenters[s.area]=true;
- s.lastCenter=s.area;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)});save();indexNotice('Your party has been fully healed.');
+ s.lastCenter=s.area;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)});save();indexNotice('Your party has been fully healed.');
  open('Critter Center','<p>Manage party storage or install modules.</p><div class="options"><button class="btn" id="manageParty">Manage Party / Home Storage</button><button class="btn" id="manageModules">Install Critter Index Modules</button><button class="btn" id="centerDone">Leave</button></div>');
  $('manageParty').onclick=manageParty;$('manageModules').onclick=manageModules;$('centerDone').onclick=close
 }
@@ -3855,7 +3927,7 @@ const CENTER_STORAGE_PAGE_SIZE=16;
 function manageParty(){
  const partyCount=s.party.length;
  centerSwapSlot=Math.max(0,Math.min(centerSwapSlot,partyCount-1));
- const list=s.party.map((p,i)=>'<div class="centerPartyRow"><b>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
+ const list=s.party.map((p,i)=>isEgg(p)?'<div class="centerPartyRow">Slot '+(i+1)+' · Egg (transfer at home terminal)</div>':'<div class="centerPartyRow"><b>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
   +'<button class="btn" data-party-up="'+i+'" '+(!i?'disabled':'')+'>↑</button> '
   +'<button class="btn" data-party-down="'+i+'" '+(i===partyCount-1?'disabled':'')+'>↓</button> '
   +'<button class="btn" data-store="'+i+'" '+(partyCount<=1?'disabled':'')+'>Send Home</button></div>').join('');
@@ -3898,7 +3970,7 @@ function manageParty(){
   [s.party[i],s.party[j]]=[s.party[j],s.party[i]];save();manageParty();
  });
  document.querySelectorAll('[data-store]').forEach(b=>b.onclick=()=>{
-  const i=Number(b.dataset.store);if(s.party.length<=1||i<0||i>=s.party.length)return;
+  const i=Number(b.dataset.store);if(s.party.length<=1||i<0||i>=s.party.length||isEgg(s.party[i])||s.party.filter(p=>!isEgg(p)).length<=1)return;
   const p=s.party.splice(i,1)[0];s.storage.push(p);save();indexNotice((p.name||p.type)+' sent to home storage.');manageParty()
  });
  document.querySelectorAll('[data-retrieve]').forEach(b=>b.onclick=()=>{
@@ -3907,7 +3979,7 @@ function manageParty(){
  });
  document.querySelectorAll('[data-swap-storage]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.swapStorage),slot=centerSwapSlot;
-  if(!Number.isInteger(i)||!Number.isInteger(slot)||!s.storage[i]||!s.party[slot])return;
+  if(!Number.isInteger(i)||!Number.isInteger(slot)||!s.storage[i]||!s.party[slot]||isEgg(s.party[slot]))return;
   [s.party[slot],s.storage[i]]=[s.storage[i],s.party[slot]];
   save();indexNotice((s.party[slot].name||s.party[slot].type)+' joined your party; '+(s.storage[i].name||s.storage[i].type)+' sent home.');manageParty();
  });
