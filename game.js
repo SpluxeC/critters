@@ -894,6 +894,7 @@ function migrate(){
  s.questCaptureCounts=s.questCaptureCounts&&typeof s.questCaptureCounts==='object'&&!Array.isArray(s.questCaptureCounts)?s.questCaptureCounts:{};
  s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'&&!Array.isArray(s.earlyJourney)?s.earlyJourney:{};
  normalizeStoryState();
+ normalizeTrainerProgress();
  if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
  if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
@@ -1456,6 +1457,7 @@ function sprite(gender,x,y,d,f,scale=1){
  // The character's feet stay on the same world coordinate in all frames.
  const pixelScale=1.58*scale;
  ctx.drawImage(im,sx,sy,sw,sh,x-anchorX*pixelScale,y-sh*pixelScale,sw*pixelScale,sh*pixelScale);
+ const outfit=trainerOutfitColor();if(outfit){ctx.save();ctx.fillStyle=outfit;ctx.fillRect(x-3*scale,y-sh*pixelScale*.53,6*scale,4*scale);ctx.fillRect(x-2*scale,y-sh*pixelScale*.53+4*scale,3*scale,4*scale);ctx.restore()}
 }
 // Terrain topology is visual only: N/E/S/W mask, with stable world-edge links.
 function terrainNeighbor(a,b,dx,dy){
@@ -3432,7 +3434,48 @@ let playerIndexSection='bag',encyclopediaSection='critters';
 const INDEX_TABS=[['clock','Index'],['player','Player'],['encyclopedia','Encyclopedia'],['settings','Settings']];
 const INDEX_SECTIONS=[['clock','Critters'],['tools','Tools'],['map','Map']];
 let indexMainSection='clock',settingsSavedMessage=false;
-const PLAYER_INDEX_SECTIONS=[['bag','Bag'],['records','Records']];
+const PLAYER_INDEX_SECTIONS=[['bag','Bag'],['records','Records'],['trainer','Trainer'],['wardrobe','Wardrobe']];
+const TRAINER_OUTFITS=[{id:'original',name:'Original',color:null},{id:'explorer',name:'Forest Explorer',color:'#54865b'},{id:'researcher',name:'Field Researcher',color:'#577fa8'},{id:'challenger',name:'Gym Challenger',color:'#ad594b'},{id:'veteran',name:'Veteran Traveler',color:'#8a729c'},{id:'caretaker',name:'Community Helper',color:'#c4a05d'}];
+const TRAINER_ACHIEVEMENTS=[
+ {id:'first-catch',name:'First Capture',goal:1,metric:'captures',credits:50},
+ {id:'collector',name:'Field Researcher',goal:10,metric:'unique',credits:150,outfit:'researcher'},
+ {id:'explorer',name:'Forest Explorer',goal:5,metric:'finds',credits:100,outfit:'explorer'},
+ {id:'badge',name:'Gym Challenger',goal:1,metric:'badges',credits:150,outfit:'challenger'},
+ {id:'traveler',name:'Veteran Traveler',goal:2000,metric:'steps',credits:150,outfit:'veteran'},
+ {id:'helper',name:'Community Helper',goal:5,metric:'quests',credits:200,outfit:'caretaker'},
+ {id:'trainer',name:'Battle Tested',goal:10,metric:'wins',credits:200},
+ {id:'estate',name:'A Place of Your Own',goal:1,metric:'estate',credits:250,decor:'style-9'}
+];
+function normalizeTrainerProgress(){
+ const p=s.trainerProgress&&typeof s.trainerProgress==='object'&&!Array.isArray(s.trainerProgress)?s.trainerProgress:{};
+ s.trainerProgress=p;
+ p.claimed=Array.isArray(p.claimed)?p.claimed.filter(id=>TRAINER_ACHIEVEMENTS.some(a=>a.id===id)):[];
+ p.outfits=Array.isArray(p.outfits)?p.outfits.filter(id=>TRAINER_OUTFITS.some(o=>o.id===id)):['original'];
+ if(!p.outfits.includes('original'))p.outfits.push('original');
+ if(!p.outfits.includes(p.outfit))p.outfit='original';
+ p.wins=Number.isFinite(p.wins)?Math.max(0,Math.floor(p.wins)):Object.keys(s.defeated||{}).filter(id=>s.defeated[id]&&id!=='tutorial').length;
+ p.losses=Math.max(0,Math.floor(Number(p.losses)||0));
+ p.indexStyle=p.indexStyle==='jade'||p.indexStyle==='slate'?p.indexStyle:'classic';
+}
+function trainerMetrics(){return {captures:s.captureCount||0,unique:collectionCounts().captured,finds:allExplorationFinds().filter(o=>s.discoveries?.[o.id]).length,badges:s.badges||0,steps:s.steps||0,quests:SIDE_QUESTS.filter(q=>s.sideQuests?.[q.id]?.status==='complete').length,wins:s.trainerProgress.wins,estate:s.homestead?.owned?1:0}}
+function trainerProfile(){
+ const m=trainerMetrics(),p=s.trainerProgress;
+ return '<div class="watchSectionTitle">Trainer profile · '+escapeHtml(s.name)+'</div><div class="watchMetrics">'+[['Steps',m.steps],['Trainer wins',m.wins],['Battle losses',p.losses],['Quests',m.quests],['Badges',m.badges],['Discoveries',m.finds]].map(([k,v])=>'<div><strong>'+v.toLocaleString()+'</strong><span>'+k+'</span></div>').join('')+'</div><div class="watchSectionTitle">Achievements</div>'+TRAINER_ACHIEVEMENTS.map(a=>'<div class="watchToolCard"><strong>'+a.name+'</strong><p>'+Math.min(a.goal,m[a.metric])+' / '+a.goal+' · '+a.metric+' · Reward '+a.credits+' money'+(a.outfit?' + outfit':a.decor?' + home decoration':'')+'</p>'+(p.claimed.includes(a.id)?'<span>Claimed</span>':'<button class="btn" data-achievement="'+a.id+'" '+(m[a.metric]<a.goal?'disabled':'')+'>Claim reward</button>')+'</div>').join('');
+}
+function claimTrainerAchievement(id){
+ const a=TRAINER_ACHIEVEMENTS.find(a=>a.id===id),p=s.trainerProgress;
+ if(!a||p.claimed.includes(id)||trainerMetrics()[a.metric]<a.goal)return;
+ p.claimed.push(id);s.money+=a.credits;
+ if(a.outfit&&!p.outfits.includes(a.outfit))p.outfits.push(a.outfit);
+ if(a.decor&&s.homestead?.owned){const c=cosmeticState();if(!c.owned.includes(a.decor))c.owned.push(a.decor)}
+ save();renderIndex();
+}
+function trainerWardrobe(){
+ const p=s.trainerProgress;
+ return '<div class="watchSectionTitle">Collectible outfits</div><p class="muted">Unlock cosmetic travel colors through achievements. No battle bonuses.</p>'+TRAINER_OUTFITS.map(o=>'<div class="watchToolCard"><strong>'+o.name+'</strong><p>'+(o.color?'<span style="display:inline-block;width:18px;height:18px;background:'+o.color+';border:1px solid #eee;border-radius:4px"></span> ':'')+(p.outfit===o.id?'Equipped':p.outfits.includes(o.id)?'Owned':'Achievement reward')+'</p><button class="btn" data-outfit="'+o.id+'" '+(!p.outfits.includes(o.id)||p.outfit===o.id?'disabled':'')+'>Equip</button></div>').join('');
+}
+function trainerOutfitColor(){return TRAINER_OUTFITS.find(o=>o.id===s?.trainerProgress?.outfit)?.color||null}
+
 const ENCYCLOPEDIA_SECTIONS=[['critters','Critters'],['moves','Moves']];
 function indexSectionNav(sections,selected,attribute,label){
  return '<nav class="watchInnerTabs" aria-label="'+label+'">'
@@ -3442,7 +3485,7 @@ function indexSectionNav(sections,selected,attribute,label){
 function indexPlayer(){
  return '<div class="watchPlayerMoney"><span>Money</span><strong>◇ '+s.money+'</strong></div>'
   +indexSectionNav(PLAYER_INDEX_SECTIONS,playerIndexSection,'data-player-section','Player sections')
-  +(playerIndexSection==='records'?indexRecords():indexItems());
+  +(playerIndexSection==='records'?indexRecords():playerIndexSection==='trainer'?trainerProfile():playerIndexSection==='wardrobe'?trainerWardrobe():indexItems());
 }
 function indexEncyclopedia(){
  return indexSectionNav(ENCYCLOPEDIA_SECTIONS,encyclopediaSection,'data-encyclopedia-section','Encyclopedia sections')
@@ -3535,7 +3578,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.20</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.21</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -3952,7 +3995,7 @@ function indexTools(){
   +'<div class="watchToolCard"><strong>✧ Capture Beam</strong><span>'+(beamStatus().charge?'ONLINE':'EMPTY')+'</span><p>'+beamStatus().name+' · '+beamChargeLabel()+'. Recharge and upgrade at Critter Shops.</p>'+beamMeterHTML()+'</div>'
   +'<div class="watchToolCard"><strong>⚙ Vegetation Cutter</strong><span>'+(cutter?'UNLOCKED':'LOCKED')+'</span><p>'+(cutter?'First-badge cutting function is active.':'Earn the first Grass Gym badge to unlock vegetation cutting.')+'</p></div>'
   +'<div class="watchToolCard"><strong>◇ Module Access</strong><span>'+level.toUpperCase()+'</span><p>Basic at 0 badges · Advanced at 2 · Rare at 5.</p></div>'
-  +'<div class="watchSectionTitle">Module sockets</div>'+modules
+  +'<div class="watchSectionTitle">Index appearance upgrades</div><div class="watchToolCard"><p>Earn the first badge to unlock Jade and Slate watch finishes. Cosmetic only.</p>'+['classic','jade','slate'].map(v=>'<button class="btn" data-index-style="'+v+'" '+(s.trainerProgress.indexStyle===v||v!=='classic'&&s.badges<1?'disabled':'')+'>'+v+'</button>').join('')+'</div><div class="watchSectionTitle">Module sockets</div>'+modules
   +'<div class="watchReadOnly">Your watch is read-only away from a Critter Center. Modules are automatic after installation.</div>';
 }
 function renderIndex(){
@@ -3969,7 +4012,7 @@ function renderIndex(){
  const tabs=battleViewing?'':INDEX_TABS.map(([key,label])=>'<button type="button" class="watchTab '+(indexTab===key?'selected':'')+'" data-watch-tab="'+key+'" aria-pressed="'+(indexTab===key)+'">'+(key==='player'?escapeHtml(s.name):label)+'</button>').join('');
  let content=battleViewing?(indexTab==='items'?indexItems():indexClock()):
    indexTab==='player'?indexPlayer():indexTab==='clock'?indexMain():indexTab==='encyclopedia'?indexEncyclopedia():indexSettings();
- open('Critter Index','<div class="watchShell '+(battleViewing?'battleIndexShell battleQuickView':'')+'">'
+ open('Critter Index','<div class="watchShell index-finish-'+(s.trainerProgress?.indexStyle||'classic')+' '+(battleViewing?'battleIndexShell battleQuickView':'')+'">'
   +(battleViewing?'<div class="watchSectionTitle">'+(indexTab==='items'?'Use battle item':'Choose a Critter')+'</div>'
     :'<nav class="watchTabs" aria-label="Critter Index screens">'+tabs+'</nav>')
   +'<div class="watchScreen" role="region" aria-label="Critter Index '+escapeHtml(indexTab)+' screen">'+content+'</div>'
@@ -4084,6 +4127,9 @@ function renderIndex(){
   };
   const revive=$('watchBattleRevive');if(revive)revive.onclick=selectRevive;
  }else{
+  document.querySelectorAll('[data-achievement]').forEach(b=>b.onclick=()=>claimTrainerAchievement(b.dataset.achievement));
+  document.querySelectorAll('[data-outfit]').forEach(b=>b.onclick=()=>{if(s.trainerProgress.outfits.includes(b.dataset.outfit)){s.trainerProgress.outfit=b.dataset.outfit;save();renderIndex()}});
+  document.querySelectorAll('[data-index-style]').forEach(b=>b.onclick=()=>{const v=b.dataset.indexStyle;if(['classic','jade','slate'].includes(v)&&(v==='classic'||s.badges>=1)){s.trainerProgress.indexStyle=v;save();renderIndex()}});
   const volume=$('ambientVolume');if(volume)volume.oninput=()=>{ambientVolume=Number(volume.value)/100;try{localStorage.setItem('critters-ambient-volume',String(ambientVolume))}catch{}unlockAmbient()};
   const saveButton=$('settingsSaveGame');
   if(saveButton)saveButton.onclick=()=>{save();indexNotice('Game saved successfully.');close()};
@@ -5186,6 +5232,7 @@ function awardExperience(p,xp){
 }
 function endBattle(won,message,defeated){
  const b=battle;clearCombatNarrator();battle=null;$('close').hidden=false;
+ if(b.kind==='trainer'&&won&&defeated)s.trainerProgress.wins++;else if(!won&&b.kind!=='tutorial')s.trainerProgress.losses++;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)})}
  else if(defeated&&won){s.money+=b.award||0;if(b.id==='quest-garden'&&s.sideQuests?.['garden-challenge']?.status==='active')s.sideQuests['garden-challenge'].won=true;else if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
@@ -5198,7 +5245,7 @@ function endBattle(won,message,defeated){
  $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
- const wasTutorial=battle?.kind==='tutorial';clearCombatNarrator();battle=null;$('close').hidden=false;
+ const wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
  if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});
  if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>{if(!isEgg(p))refillMovePP(p)})}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
