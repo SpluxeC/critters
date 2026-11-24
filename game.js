@@ -1482,6 +1482,7 @@ function build(preview=false){
   const [dx,dy]=room.door;put(dx,dy,T.door);
   for(let xx=dx-1;xx<=dx+1;xx++)for(let yy=dy+1;yy<=dy+2;yy++)if(tiles[yy]?.[xx]!==T.roof&&tiles[yy]?.[xx]!==T.wall)put(xx,yy,T.path);
  }
+ if(!preview&&TOWN_ROOMS[s.area]&&(s.x<1||s.x>=W-1||s.y<1||s.y>=H-1)){const [ex,ey]=roomExit(s.area);s.x=ex;s.y=ey-2}
  if(!preview&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y&&!p.indoors))){
   const originX=s.x,originY=s.y;
   let found=false;
@@ -3139,7 +3140,7 @@ function move(d){
  if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return exitTownRoom();
  if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned){recordWalkingStep();return region('homesteadHome',17,23)}
  if(s.area==='homesteadHome'&&x===17&&y===25){recordWalkingStep();return region('homestead',9,10)}
- if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
+ if(s.area==='garden'&&d==='up'&&x===24&&(y===10||y===9))return enterGym();
  if(s.area==='gym'&&d==='down'&&x===17&&y>=25){recordWalkingStep();return region('garden',24,12)}
  if(SECRET_AREAS[s.area]&&x===17&&y===25)return exitSecret();
  if(s.area==='cave'&&d==='down'&&y>=H-2&&x>=15&&x<=18){recordWalkingStep();return region('route3',20,2)}
