@@ -1311,6 +1311,28 @@ button,.btn,[role="button"],a,#world,.joystick{
  .eggHatchArt{text-align:center;font-size:64px;padding:20px}.eggHatchSprite{width:120px;max-height:150px;object-fit:contain}.eggReveal{animation:eggReveal .65s ease-out}@keyframes eggReveal{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
 .geneticsStats{margin:8px 0;font-size:11px;line-height:1.4}.geneticsStats strong{font-size:11px}.geneticsStats>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.geneticsStats span{padding:3px 4px;border:1px solid #8e9e9380;border-radius:4px}.geneticsStats b{color:inherit}
 .decorRow{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.decorSwatch{width:22px;height:22px;border-radius:4px;border:1px solid #666}.decorRow small{flex:1 1 100%}
+
+/* v1.19 — actor-specific attack animation and distinct doubles layout */
+#shade .combatArena .combatFigure.actingFx .combatSprite,#shade .combatArena .combatFigure.actingFx .combatSymbol{animation:critterStrike .62s ease-in-out both}
+#shade .combatArena .combatFigure.enemy.actingFx .combatSprite,#shade .combatArena .combatFigure.enemy.actingFx .combatSymbol{animation:critterStrikeReverse .62s ease-in-out both}
+#shade .combatArena .combatFigure.receivingFx .combatSprite,#shade .combatArena .combatFigure.receivingFx .combatSymbol{animation:critterImpact .7s ease-out both}
+#shade .combatArena .combatFigure.faintFx{animation:critterFaint .82s ease-in both}
+.targetImpact{position:absolute;inset:20% 12%;border:2px solid #fff2bd;border-radius:50%;pointer-events:none;animation:targetPulse .65s ease-out both}
+.battleVfxParticles{position:absolute;left:65%;top:32%;width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:15px -12px currentColor,-12px -18px currentColor,20px 8px currentColor,-18px 10px currentColor;animation:targetPulse .65s ease-out both;pointer-events:none}
+.battleVfx.reverse .battleVfxParticles{left:30%;top:58%}
+.battleVfx.fx-status .battleVfxBeam,.battleVfx.fx-support .battleVfxBeam{display:none}
+.battleVfx.fx-support .battleVfxCore,.battleVfx.fx-support .battleVfxBurst,.battleVfx.fx-support .battleVfxParticles,.battleVfx.missed .battleVfxParticles{display:none}
+.battleVfx.fx-physical .battleVfxBeam{opacity:.35}
+#shade:has(.combatTop) .combatArena.arena-doubles .combatSide.allies{left:5%;width:46%}
+#shade:has(.combatTop) .combatArena.arena-doubles .combatSide.enemies{left:53%;width:44%}
+#shade:has(.combatTop) .combatArena.arena-doubles .combatFigure{flex:1;min-width:0;max-width:48%}
+#shade:has(.combatTop) .combatArena.arena-doubles .combatSprite{max-width:100%;object-fit:contain}
+@keyframes critterStrike{0%,100%{translate:0 0}40%{translate:12px -7px}60%{translate:5px -2px}}
+@keyframes critterStrikeReverse{0%,100%{translate:0 0}40%{translate:-12px 7px}60%{translate:-5px 2px}}
+@keyframes critterImpact{0%,100%{filter:none;translate:0 0}35%{filter:brightness(1.5);translate:4px 0}50%{translate:-4px 0}65%{translate:3px 0}}
+@keyframes critterFaint{0%,55%{opacity:1}100%{opacity:0;translate:0 12px}}
+@keyframes targetPulse{0%,20%{opacity:0;scale:.45}45%{opacity:1;scale:1}100%{opacity:0;scale:1.7}}
+@media(prefers-reduced-motion:reduce){#shade .combatArena .combatFigure.actingFx .combatSprite,#shade .combatArena .combatFigure.actingFx .combatSymbol,#shade .combatArena .combatFigure.receivingFx .combatSprite,#shade .combatArena .combatFigure.receivingFx .combatSymbol,#shade .combatArena .combatFigure.faintFx,.targetImpact,.battleVfxParticles{animation:none!important}.targetImpact,.battleVfxParticles{display:none}}
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1332,4 +1354,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=1.18-side-quests" defer></script></body></html>
+<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=1.19-combat-depth" defer></script></body></html>
