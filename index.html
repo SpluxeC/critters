@@ -1299,6 +1299,15 @@ button,.btn,[role="button"],a,#world,.joystick{
 #game .dialog.notice small{display:none}
 #game.narrating .mobile{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 74px)!important}
 @media(max-height:500px){#game.narrating .mobile{bottom:calc(8px + 62px + env(safe-area-inset-bottom))!important}#game .dialog{min-height:48px!important;font-size:11px}}
+/* v90: invisible movement surface and persistent narrator. */
+#game{--world-narrator-height:76px}
+#game .dialog{display:block!important;visibility:visible!important;opacity:1!important;height:calc(var(--world-narrator-height) + env(safe-area-inset-bottom))!important;min-height:0!important;max-height:none!important;box-sizing:border-box;overflow:auto}
+#game .dialog.idle{pointer-events:none}
+#game .dialog.idle small{display:none}
+#game .mobile,#game.narrating .mobile{bottom:calc(var(--world-narrator-height) + env(safe-area-inset-bottom) + 8px)!important}
+#game .movementModeLabel{font-size:11px;font-weight:700;color:#f6f2d8;text-shadow:0 1px 3px #102025;background:#182e36aa;border-radius:5px;padding:4px 8px;pointer-events:none;align-self:flex-end}
+#game #world{touch-action:none!important}
+@media(max-height:500px){#game{--world-narrator-height:58px}}
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1312,12 +1321,12 @@ document.addEventListener('dblclick',function(event){
 <section id="game" class="screen" aria-label="Critters game">
   <div class="frame" id="gameFrame">
     <canvas id="world" width="640" height="480" aria-label="Game world"></canvas>
-    <div id="dialog" class="dialog" role="status" aria-live="polite"><span id="dialogText"></span><small id="dialogHint">Interact / tap to continue ▸</small></div>
+    <div id="dialog" class="dialog show idle" role="status" aria-live="polite"><span id="dialogText"></span><small id="dialogHint">Interact / tap to continue ▸</small></div>
     <div class="mobile">
-      <div class="joystick" id="joystick" role="group" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-thumb" id="joystickThumb"></div></div><span class="joystickHelp" aria-hidden="true">Double Tap-Run/Walk</span>
+      <span id="movementModeLabel" class="movementModeLabel" aria-live="polite">Run</span>
       <div class="actions"><button class="btn primary" id="talk" type="button">Interact</button><button class="btn" id="index2" type="button">⌚ Index</button></div>
     </div>
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=89-world-narrator" defer></script></body></html>
+<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=90-touch-anywhere" defer></script></body></html>

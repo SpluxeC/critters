@@ -320,10 +320,7 @@ function playerGaitFrame(){
 function syncMovementToggle(){
  // Joystick is now the only run/walk selector. Keep its state readable.
  const walking=s?.movementMode==='walk';
- const stick=$('joystick');
- if(!stick)return;
- stick.classList.toggle('walking',walking);
- stick.setAttribute('aria-label','Movement joystick · '+(walking?'Walk':'Run')+' mode. Double tap to switch speed.');
+ const label=$('movementModeLabel');if(label)label.textContent=walking?'Walk':'Run';
 }
 function toggleMovementMode(){
  if(!s||screen!=='game'||modal)return;
@@ -512,7 +509,7 @@ function migrate(){
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
- s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym'].includes(s.area))s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead'].includes(s.area))s.area='village';
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
@@ -776,7 +773,7 @@ function build(preview=false){
 }
 const worldNarratorQueue=[];let worldNarratorCurrent=null,worldNarratorTimer=null;
 function narratorBlocking(){return !!worldNarratorCurrent&&!worldNarratorCurrent.notice}
-function hideWorldNarrator(){clearTimeout(worldNarratorTimer);worldNarratorTimer=null;$('dialog').classList.remove('show','notice');$('game').classList.remove('narrating')}
+function hideWorldNarrator(){clearTimeout(worldNarratorTimer);worldNarratorTimer=null;$('dialog').classList.remove('notice');$('dialog').classList.add('show','idle');$('dialogText').textContent='';$('dialogHint').textContent='';$('game').classList.remove('narrating')}
 function clearWorldNarrator(){hideWorldNarrator();worldNarratorQueue.length=0;worldNarratorCurrent=null}
 function suspendWorldNotice(){if(worldNarratorCurrent?.notice){worldNarratorQueue.unshift(worldNarratorCurrent);worldNarratorCurrent=null;hideWorldNarrator()}}
 function say(lines,callback){enqueueWorldNarration(lines,false,callback)}
@@ -794,7 +791,7 @@ function pumpWorldNarrator(){
 }
 function renderWorldNarrator(){
  const n=worldNarratorCurrent;if(!n)return;
- $('dialogText').textContent=n.lines[0];$('dialog').classList.toggle('notice',n.notice);$('dialog').classList.add('show');$('game').classList.add('narrating');
+ $('dialogText').textContent=n.lines[0];$('dialog').classList.remove('idle');$('dialog').classList.toggle('notice',n.notice);$('dialog').classList.add('show');$('game').classList.add('narrating');
  $('dialogHint').textContent=n.notice?'':'Interact / tap to continue ▸';
  if(n.notice)worldNarratorTimer=setTimeout(advance,Math.max(2700,Math.min(6500,n.lines[0].length*45)));
 }
@@ -3743,60 +3740,61 @@ $('new').onclick=()=>show('selection');
 $('continue').onclick=()=>{backUpLegacySaveBeforeMigration();s=read();if(!s)return;migrate();build();show('game')};
 $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,' ');if(!name){$('error').textContent='Please enter a name.';return}
  s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4,movementMode:'run'};
- save();build();show('game');say(['Welcome, '+name+'!','Use the left joystick to move. Double tap it to switch Run / Walk. Interact lights up when facing something usable.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
+ save();build();show('game');say(['Welcome, '+name+'!','Touch and slide anywhere in the world to move. Double tap the world to switch Run / Walk. Interact lights up when facing something usable.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
 $('index2').onclick=index;$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
 window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d){e.preventDefault();held[d]=true;if(Date.now()-last>movementStepInterval()){move(d);last=Date.now()}}else if(['KeyE','Enter','Space'].includes(e.code)&&!modal){e.preventDefault();interact()}else if(e.code==='KeyI'&&!modal)index();else if(e.code==='Escape'&&modal&&!battle)close()});
 window.addEventListener('keyup',e=>{const d={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(d)held[d]=false});// Mobile joystick uses a pointer captured by the joystick base; keyboard controls stay unchanged.
-const stick=$('joystick'),thumb=$('joystickThumb');
+// Invisible, floating touch origin: each drag starts wherever the player touches.
+const stick=C;
 let stickPointer=null,stickDirection=null,stickActive=false,stickRepeatAt=0;
-let joystickTouchStarted=0,joystickStartX=0,joystickStartY=0,lastJoystickTap=0;
-const JOYSTICK_DOUBLE_TAP_MS=330;
-function checkJoystickDoubleTap(e){
- if(e.type!=='pointerup'||e.pointerId!==stickPointer)return false;
- const elapsed=performance.now()-joystickTouchStarted;
- const distance=Math.hypot(e.clientX-joystickStartX,e.clientY-joystickStartY);
- // Count intentional quick taps, not held movement or swipes.
- if(elapsed>240||distance>18){lastJoystickTap=0;return false;}
- const now=performance.now(),doubleTap=lastJoystickTap>0&&now-lastJoystickTap<=JOYSTICK_DOUBLE_TAP_MS;
- lastJoystickTap=doubleTap?0:now;
- if(doubleTap){toggleMovementMode();return true;}
- return false;
-}
-function positionStick(dx=0,dy=0){
- thumb.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)';
-}
+let touchStarted=0,touchStartX=0,touchStartY=0,touchDragged=false,lastWorldTap=null;
+const WORLD_DOUBLE_TAP_MS=330,WORLD_DRAG_DEADZONE=12;
 function endStick(pointerId){
  if(pointerId!==undefined&&stickPointer!==pointerId)return;
- stickPointer=null;stickDirection=null;stickActive=false;stickRepeatAt=0;
- stick.classList.remove('active');positionStick();
+ const captured=stickPointer;stickPointer=null;stickDirection=null;stickActive=false;stickRepeatAt=0;
+ if(captured!==null&&stick.hasPointerCapture?.(captured))try{stick.releasePointerCapture(captured)}catch{}
 }
-function releaseMovement(){held={};endStick()}
+function releaseMovement(){held={};endStick();lastWorldTap=null}
+function touchDirection(dx,dy){
+ if(Math.hypot(dx,dy)<WORLD_DRAG_DEADZONE)return null;
+ return Math.abs(dx)>=Math.abs(dy)?(dx>=0?'right':'left'):(dy>=0?'down':'up');
+}
 function aimStick(e){
  if(stickPointer!==e.pointerId)return;
- const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
- const dx=e.clientX-cx,dy=e.clientY-cy;
- const distance=Math.hypot(dx,dy),range=Math.min(r.width,r.height)*0.29;
- const length=distance?Math.min(1,range/distance):0;
- positionStick(dx*length,dy*length);
- // Deliberate neutral deadzone avoids accidental steps when the stick is released.
- if(distance<Math.min(r.width,r.height)*0.18){stickDirection=null;return}
- const next=Math.abs(dx)>=Math.abs(dy)?(dx>=0?'right':'left'):(dy>=0?'down':'up');
+ const dx=e.clientX-touchStartX,dy=e.clientY-touchStartY;
+ const next=touchDirection(dx,dy);
+ if(next){touchDragged=true;lastWorldTap=null}
  if(next!==stickDirection){stickDirection=next;stickRepeatAt=0}
 }
 stick.addEventListener('pointerdown',e=>{
- if(screen!=='game'||modal||stickPointer!==null)return;
+ if(screen!=='game'||modal||narratorBlocking()||doorTransition||worldTransitionBusy||stickPointer!==null)return;
  if(e.pointerType==='mouse'&&e.button!==0)return;
+ e.preventDefault();stickPointer=e.pointerId;stickActive=true;stickRepeatAt=0;
+ touchStarted=performance.now();touchStartX=e.clientX;touchStartY=e.clientY;touchDragged=false;
+ try{stick.setPointerCapture(e.pointerId)}catch{}
+});
+stick.addEventListener('pointermove',e=>{
+ if(stickPointer!==e.pointerId)return;
  e.preventDefault();
- stickPointer=e.pointerId;stickActive=true;stickRepeatAt=0;stick.classList.add('active');
- joystickTouchStarted=performance.now();joystickStartX=e.clientX;joystickStartY=e.clientY;
- if(stick.setPointerCapture)try{stick.setPointerCapture(e.pointerId)}catch(err){}
+ // Crossing a real control stops movement until the next fresh world touch.
+ const target=document.elementFromPoint(e.clientX,e.clientY);
+ if(target?.closest('button,input,select,textarea,#dialog,#shade,a')){lastWorldTap=null;endStick(e.pointerId);return}
  aimStick(e);
 });
-stick.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();aimStick(e)}});
-for(const event of ['pointerup','pointercancel','lostpointercapture']){
- stick.addEventListener(event,e=>{if(stickPointer===e.pointerId){e.preventDefault();checkJoystickDoubleTap(e);endStick(e.pointerId)}});
-}
+stick.addEventListener('pointerup',e=>{
+ if(stickPointer!==e.pointerId)return;
+ e.preventDefault();
+ const now=performance.now(),distance=Math.hypot(e.clientX-touchStartX,e.clientY-touchStartY);
+ const target=document.elementFromPoint(e.clientX,e.clientY);
+ if(!touchDragged&&distance<WORLD_DRAG_DEADZONE&&now-touchStarted<=240&&target===stick&&!modal&&!narratorBlocking()){
+  if(lastWorldTap&&now-lastWorldTap.time<=WORLD_DOUBLE_TAP_MS&&Math.hypot(e.clientX-lastWorldTap.x,e.clientY-lastWorldTap.y)<=48){
+   lastWorldTap=null;toggleMovementMode();
+  }else lastWorldTap={time:now,x:e.clientX,y:e.clientY};
+ }else lastWorldTap=null;
+ endStick(e.pointerId);
+});
+for(const event of ['pointercancel','lostpointercapture'])stick.addEventListener(event,e=>{if(stickPointer===e.pointerId){lastWorldTap=null;endStick(e.pointerId)}});
 stick.addEventListener('contextmenu',e=>e.preventDefault());
 window.addEventListener('pointerup',e=>endStick(e.pointerId));
 window.addEventListener('pointercancel',e=>endStick(e.pointerId));
