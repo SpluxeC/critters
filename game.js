@@ -224,7 +224,7 @@ function inspectInterior(o){
    s.discoveries[o.id]=true;
    s.inventory.Potion=(s.inventory.Potion||0)+1;
    save();
-   return say(['Inside the supply box is a Potion!','Potion ×1 added to your inventory.']);
+   return notifyWorld(['Inside the supply box is a Potion!','Potion ×1 added to your inventory.']);
   }
   return say(['The travel supply box is empty. You already collected its Potion.']);
  }
@@ -263,7 +263,7 @@ function discoverExplorationSite(o){
  const messages=[o.title+'.',o.text];
  if(o.reward){s.inventory[o.reward]=(s.inventory[o.reward]||0)+(o.quantity||1);messages.push('Found '+o.reward+' ×'+(o.quantity||1)+'!')}
  if(o.credits){s.money+=o.credits;messages.push('Found '+o.credits+' money!')}
- save();say(messages);return true;
+ save();notifyWorld(messages);return true;
 }
 function drawExplorationSites(ox,oy){
  for(const o of EXPLORATION_SITES){
@@ -282,7 +282,7 @@ function inspectRoute1Site(o){
   s.discoveries=s.discoveries||{};
   if(s.discoveries[o.id])return say(['The '+o.title.toLowerCase()+' is empty.']);
   s.discoveries[o.id]=true;s.inventory[o.reward]=(s.inventory[o.reward]||0)+1;
-  save();return say([o.text[0],'You found '+o.reward+' ×1! It was added to your inventory.']);
+  save();return notifyWorld([o.text[0],'You found '+o.reward+' ×1! It was added to your inventory.']);
  }
  return say(o.text);
 }
@@ -349,7 +349,7 @@ function backUpLegacySaveBeforeMigration(){
  }catch(err){console.warn('Could not back up pre-migration save',err)}
 }
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
+function show(page){clearWorldNarrator();releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
@@ -615,6 +615,11 @@ function build(preview=false){
  if(!preview)migrate();
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
+ case 'homestead':
+ borders();rect(15,12,W-16,3,T.path);rect(15,10,3,4,T.path);
+ rect(3,3,12,8,T.hedge);rect(4,4,10,6,T.grass);houses([[6,5,6,3]]);
+ npc(16,10,['Private property. The village will announce when it becomes available.'],'property-sign');
+ break;
  case 'village':
  // One art system: original house roof/wall tiles are NOT placed in the village.
  borders();roads();rect(16,12,3,13,T.path);rect(7,10,2,3,T.path);rect(24,11,2,2,T.path);
@@ -769,8 +774,36 @@ function build(preview=false){
  }
 
 }
-function say(lines,callback){dialog=lines.slice();dialogDone=callback||null;advance()}
-function advance(){if(dialog.length){$('dialogText').textContent=dialog.shift();$('dialog').classList.add('show')}else{$('dialog').classList.remove('show');const fn=dialogDone;dialogDone=null;if(fn)fn()}}
+const worldNarratorQueue=[];let worldNarratorCurrent=null,worldNarratorTimer=null;
+function narratorBlocking(){return !!worldNarratorCurrent&&!worldNarratorCurrent.notice}
+function hideWorldNarrator(){clearTimeout(worldNarratorTimer);worldNarratorTimer=null;$('dialog').classList.remove('show','notice');$('game').classList.remove('narrating')}
+function clearWorldNarrator(){hideWorldNarrator();worldNarratorQueue.length=0;worldNarratorCurrent=null}
+function suspendWorldNotice(){if(worldNarratorCurrent?.notice){worldNarratorQueue.unshift(worldNarratorCurrent);worldNarratorCurrent=null;hideWorldNarrator()}}
+function say(lines,callback){enqueueWorldNarration(lines,false,callback)}
+function notifyWorld(lines){enqueueWorldNarration(lines,true)}
+function enqueueWorldNarration(lines,notice,callback){
+ const list=(Array.isArray(lines)?lines:[lines]).filter(x=>typeof x==='string'&&x.trim());
+ if(!list.length){if(callback)callback();return}
+ const entry={lines:list.slice(),notice,callback};
+ if(!notice&&worldNarratorCurrent?.notice){suspendWorldNotice();worldNarratorQueue.unshift(entry)}else worldNarratorQueue.push(entry);
+ pumpWorldNarrator();
+}
+function pumpWorldNarrator(){
+ if(worldNarratorCurrent||!worldNarratorQueue.length||modal||screen!=='game')return;
+ worldNarratorCurrent=worldNarratorQueue.shift();if(!worldNarratorCurrent.notice)releaseMovement();renderWorldNarrator();
+}
+function renderWorldNarrator(){
+ const n=worldNarratorCurrent;if(!n)return;
+ $('dialogText').textContent=n.lines[0];$('dialog').classList.toggle('notice',n.notice);$('dialog').classList.add('show');$('game').classList.add('narrating');
+ $('dialogHint').textContent=n.notice?'':'Interact / tap to continue ▸';
+ if(n.notice)worldNarratorTimer=setTimeout(advance,Math.max(2700,Math.min(6500,n.lines[0].length*45)));
+}
+function advance(){
+ if(!worldNarratorCurrent||modal)return;
+ clearTimeout(worldNarratorTimer);worldNarratorTimer=null;
+ const n=worldNarratorCurrent;n.lines.shift();if(n.lines.length){renderWorldNarrator();return}
+ worldNarratorCurrent=null;hideWorldNarrator();if(n.callback)n.callback();pumpWorldNarrator();
+}
 // Extract each sprite's visible alpha bounds once. Different walk frames contain
 // different transparent padding; cropping and centering on feet eliminates the
 // apparent sideways drifting and keeps every frame on the same ground line.
@@ -1513,14 +1546,14 @@ function draw(){
 /* Two interconnected loops: forest/rice/town/bamboo and town/bamboo/foothills/garden.
    Outdoor maps are separate simulation chunks but share one continuous camera. */
 const OUTDOOR_GRID=Object.freeze({
- village:[0,1],route1:[1,1],town:[2,1],garden:[3,1],
- forest:[1,0],route2:[2,0],route3:[3,0]
+ homestead:[0,1],village:[1,1],route1:[2,1],town:[3,1],garden:[4,1],
+ forest:[2,0],route2:[3,0],route3:[4,0]
 });
 const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave']);
 
 /* Per-column widths and per-row heights keep outdoor sections edge-aligned
    while giving the seven areas substantially different playable footprints. */
-const OUTDOOR_COL_WIDTHS=[40,44,51,46],OUTDOOR_ROW_HEIGHTS=[34,40];
+const OUTDOOR_COL_WIDTHS=[36,40,44,51,46],OUTDOOR_ROW_HEIGHTS=[34,40];
 function outdoorSize(area){
  const grid=OUTDOOR_GRID[area];
  return grid?{w:OUTDOOR_COL_WIDTHS[grid[0]],h:OUTDOOR_ROW_HEIGHTS[grid[1]]}:{w:34,h:26};
@@ -1543,6 +1576,7 @@ function applyAreaSize(area){
 function decorateExpandedOutdoor(){
  if(!OUTDOOR_GRID[s.area])return;
  const area=s.area;
+ if(area==='homestead')return;
  const forest=area==='forest'||area==='route2';
  const rocky=area==='route3';
  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
@@ -1569,7 +1603,8 @@ function decorateExpandedOutdoor(){
 }
 
 const OUTDOOR_LINKS={
- village:{right:['route1',12,14]},
+ homestead:{right:['village',12,14]},
+ village:{left:['homestead',12,14],right:['route1',12,14]},
  route1:{left:['village',12,14],right:['town',12,14],up:['forest',15,18]},
  town:{left:['route1',12,14],right:['garden',12,14],up:['route2',16,18]},
  forest:{down:['route1',15,18],right:['route2',12,14]},
@@ -1760,7 +1795,7 @@ function region(area,x,y,textLine='',forceFade=false){
 }
 
 function move(d){
- if(screen!=='game'||modal||doorTransition||worldTransitionBusy||$('dialog').classList.contains('show'))return;
+ if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
@@ -1795,7 +1830,7 @@ function move(d){
 
 function canInteractAhead(){
  if(!s||screen!=='game'||modal||doorTransition||worldTransitionBusy)return false;
- if($('dialog').classList.contains('show'))return true; // Interact advances dialogue.
+ if(narratorBlocking())return true; // Interact advances dialogue.
  const offset=dirs[s.face];
  if(!offset)return false;
  const x=s.x+offset[0],y=s.y+offset[1];
@@ -1820,10 +1855,10 @@ function updateInteractVisibility(){
  button.setAttribute('aria-label',available?'Interact with the object ahead':'Nothing to interact with ahead');
 }
 function interact(){
- if(modal||doorTransition||worldTransitionBusy)return;if($('dialog').classList.contains('show'))return advance();
+ if(modal||doorTransition||worldTransitionBusy)return;if(narratorBlocking())return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  if(p)p.face={up:'down',down:'up',left:'right',right:'left'}[s.face];
- if(p){if(p.kind==='sidequest')return talkSideQuest(p.id);
+ if(p){if(p.kind==='property-sign')return say([s.badges>=4?'Property for sale. Speak to your mother in Starting Village.':'Private property. Available after your fourth Gym badge.']);if(s.area==='home'&&p.x===14&&p.y===11&&s.badges>=4)return say(['Mom: A property has become available west of the village.','You could make a lovely home of your own there.']);if(p.kind==='sidequest')return talkSideQuest(p.id);
  if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -1847,14 +1882,14 @@ function interact(){
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
 function enterGym(){if(!s.rivalPassed){s.rivalPassed=true;save();return say(['Your childhood rival is waiting at the Grass Gym entrance!'],()=>startTrainer('rival'))}return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
 function open(title,body){
- releaseMovement();modal=true;
+ suspendWorldNotice();releaseMovement();modal=true;
  const host=$('shade'),panel=host.querySelector('.modal'),watch=body.includes('class="watchShell"');
  const preserve=watch&&panel&&host.classList.contains('show')&&panel.dataset?.screenMode==='watch';
  const previous=preserve?panel.scrollTop:0;
  $('modalTitle').textContent=title;$('modalBody').innerHTML=body;host.classList.add('show');
  if(panel){panel.dataset.screenMode=watch?'watch':'other';panel.scrollTop=preserve?previous:0}
 }
-function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false;releaseMovement()}
+function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false;releaseMovement();pumpWorldNarrator()}
 function firstAlive(){return s.party.findIndex(p=>p.hp>0)}
 function lead(){return s.party[firstAlive()]}
 // Phase 1 battle-stat engine: every Critter has an independent six-stat profile.
@@ -1951,6 +1986,7 @@ function indexMain(){
 /* The illustrated map shows the existing region, not a newly generated world.
    Only towns with real Critter Center NPCs are valid travel destinations. */
 const REGION_MAP_PLACES=[
+ {id:'homestead',name:'Western Homestead',x:4,y:74,kind:'wild'},
  {id:'village',name:'Starting Village',x:14,y:74,kind:'town'},
  {id:'route1',name:'Route 1 · Rice Fields',x:30,y:72,kind:'route'},
  {id:'town',name:'Small Town',x:48,y:73,kind:'center',spawn:[23,13]},
@@ -2031,7 +2067,7 @@ let moveBookType='Water';
 let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
 
 function index(){
- if(screen!=='game'||battle)return;
+ if(screen!=='game'||battle||narratorBlocking())return;
  indexTab='clock';indexMainSection='clock';mapTravelSelection=null;settingsSavedMessage=false;playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
 }
 function indexSlotContent(i){
@@ -3775,7 +3811,7 @@ document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!$('dialog').classList.contains('show')&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
