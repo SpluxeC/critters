@@ -149,3 +149,32 @@ Local art is not included in this commit. Preserve working files and default fal
 ## Completion gate
 
 Do not confuse this source-art consolidation with playable integration. Species mapping, additional sprite cleanup/upload, final tileset production, NPC animation bindings, and runtime testing remain separate tasks. No registry, game.js, index.html, save format, encounters, stats, evolution mechanics, or existing artwork is altered by this inventory commit.
+
+## v87 paired-art registration update (supersedes previous unassigned status)
+
+22 new consecutive species IDs #216–237 use the 24 recovered front/rear pairs (two extra pairs are Scruffin-family coat variants). 37 species are now ready; 200 remain awaiting art. The three rear-only Beetle files remain unregistered. New names, stats and learnsets are draft; no new wild habitats or evolution rules were enabled. The nine existing starters now declare rear paths explicitly.
+
+| ID | Draft name | Type | Art |
+|---|---|---|---|
+| cr-216-ruffguard | Ruffguard | Fighting | Both coats, front/rear |
+| cr-217-barkwarden | Barkwarden | Fighting | Both coats, front/rear |
+| cr-218-mossplate | Mossplate | Grass | Front/rear |
+| cr-219-bramblevault | Bramblevault | Grass | Front/rear |
+| cr-220-sparkhorn | Sparkhorn | Electric | Front/rear |
+| cr-221-thundelope | Thundelope | Electric | Front/rear |
+| cr-222-pebblusk | Pebblusk | Rock | Front/rear |
+| cr-223-mastolith | Mastolith | Rock | Front/rear |
+| cr-224-quilldash | Quilldash | Flying | Front/rear |
+| cr-225-aerosaur | Aerosaur | Flying | Front/rear |
+| cr-226-emberpuff | Emberpuff | Fire | Front/rear |
+| cr-227-sludgip | Sludgip | Water/Venom | Front/rear |
+| cr-228-toxotter | Toxotter | Water/Venom | Front/rear |
+| cr-229-venomwake | Venomwake | Water/Venom | Front/rear |
+| cr-230-thornix | Thornix | Venom | Front/rear |
+| cr-231-wispurr | Wispurr | Ghost | Front/rear |
+| cr-232-phantompaw | Phantompaw | Ghost | Front/rear |
+| cr-233-mindwink | Mindwink | Psychic | Front/rear |
+| cr-234-seerclaw | Seerclaw | Psychic | Front/rear |
+| cr-235-duskhound | Duskhound | Shadow | Front/rear |
+| cr-236-noctirush | Noctirush | Shadow | Front/rear |
+| cr-237-froststoat | Froststoat | Ice | Front/rear |

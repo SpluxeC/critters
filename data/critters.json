@@ -1,6 +1,6 @@
 {
   "schemaVersion": 8,
-  "description": "200 editable Critters with 18 types, including Normal, Steel and Ground, using 312 original moves. All special-type restrictions, evolution IDs and habitats remain intact.",
+  "description": "237 editable Critters with 18 types and original moves. Ready artwork requires matching front and rear PNGs, including all cosmetic variants. Newly registered artwork-only designs await habitat and evolution assignment.",
   "species": [
     {
       "speciesId": "cr-001-starter-water-1",
@@ -62,7 +62,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/starters/water.png"
+        "spritePath": "assets/critters/starters/water.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/water-starter-stage-1-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Water",
@@ -134,7 +135,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/gallery/water-starter-stage-2.png"
+        "spritePath": "assets/critters/gallery/water-starter-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/water-starter-stage-2-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Water",
@@ -207,7 +209,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/gallery/water-starter-stage-3.png"
+        "spritePath": "assets/critters/gallery/water-starter-stage-3.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/water-starter-stage-3-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Water",
@@ -276,7 +279,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/starters/rock.png"
+        "spritePath": "assets/critters/starters/rock.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/rock-starter-stage-1-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Rock",
@@ -348,7 +352,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/gallery/rock-starter-stage-2.png"
+        "spritePath": "assets/critters/gallery/rock-starter-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/rock-starter-stage-2-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Rock",
@@ -421,7 +426,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/gallery/rock-starter-stage-3.png"
+        "spritePath": "assets/critters/gallery/rock-starter-stage-3.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/rock-starter-stage-3-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Rock",
@@ -490,7 +496,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/starters/electric.png"
+        "spritePath": "assets/critters/starters/electric.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/electric-starter-stage-1-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Electric",
@@ -562,7 +569,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/gallery/electric-starter-stage-2.png"
+        "spritePath": "assets/critters/gallery/electric-starter-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/electric-starter-stage-2-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Electric",
@@ -635,7 +643,8 @@
       ],
       "art": {
         "status": "ready",
-        "spritePath": "assets/critters/gallery/electric-starter-stage-3.png"
+        "spritePath": "assets/critters/gallery/electric-starter-stage-3.png",
+        "rearSpritePath": "assets/critters/battle-backs/starters/electric-starter-stage-3-back.png"
       },
       "notes": "Official starter name and sprite approved; evolution, stats, signature moves, and save identity are preserved.",
       "starterFamily": "Electric",
@@ -14350,6 +14359,1129 @@
         }
       },
       "notes": "Australian Shepherd pup; female red merle and male blue merle are cosmetic variants of the same species."
+    },
+    {
+      "speciesId": "cr-216-ruffguard",
+      "name": "Ruffguard",
+      "types": [
+        "Fighting"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 34,
+        "attack": 19,
+        "defense": 17,
+        "specialAttack": 18,
+        "specialDefense": 17,
+        "speed": 19
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "training-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "spirit-thrust"
+        },
+        {
+          "level": 7,
+          "moveId": "battle-breath"
+        },
+        {
+          "level": 10,
+          "moveId": "feint-stare"
+        },
+        {
+          "level": 13,
+          "moveId": "breaker-kick"
+        },
+        {
+          "level": 16,
+          "moveId": "force-palm"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/aussie-red-merle-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-2-back.png",
+        "genderVariants": {
+          "female": {
+            "spritePath": "assets/critters/gallery/aussie-red-merle-stage-2.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-2-back.png"
+          },
+          "male": {
+            "spritePath": "assets/critters/gallery/aussie-blue-merle-stage-2.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-blue-merle-stage-2-back.png"
+          }
+        }
+      },
+      "notes": "Artwork-registered aussie design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-217-barkwarden",
+      "name": "Barkwarden",
+      "types": [
+        "Fighting"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 43,
+        "attack": 26,
+        "defense": 23,
+        "specialAttack": 25,
+        "specialDefense": 23,
+        "speed": 26
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "training-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "spirit-thrust"
+        },
+        {
+          "level": 7,
+          "moveId": "battle-breath"
+        },
+        {
+          "level": 10,
+          "moveId": "feint-stare"
+        },
+        {
+          "level": 13,
+          "moveId": "breaker-kick"
+        },
+        {
+          "level": 16,
+          "moveId": "force-palm"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/aussie-red-merle-stage-3.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-3-back.png",
+        "genderVariants": {
+          "female": {
+            "spritePath": "assets/critters/gallery/aussie-red-merle-stage-3.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-3-back.png"
+          },
+          "male": {
+            "spritePath": "assets/critters/gallery/aussie-blue-merle-stage-3.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-blue-merle-stage-3-back.png"
+          }
+        }
+      },
+      "notes": "Artwork-registered aussie design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-218-mossplate",
+      "name": "Mossplate",
+      "types": [
+        "Grass"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 28,
+        "attack": 10,
+        "defense": 15,
+        "specialAttack": 9,
+        "specialDefense": 13,
+        "speed": 8
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "leaf-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "pollen-stitch"
+        },
+        {
+          "level": 7,
+          "moveId": "green-vigor"
+        },
+        {
+          "level": 10,
+          "moveId": "frond-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "briar-swipe"
+        },
+        {
+          "level": 16,
+          "moveId": "clover-gust"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/grass-glyptodont-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/grass-glyptodont-stage-1-back.png"
+      },
+      "notes": "Artwork-registered grass-glyptodont design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-219-bramblevault",
+      "name": "Bramblevault",
+      "types": [
+        "Grass"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 37,
+        "attack": 17,
+        "defense": 21,
+        "specialAttack": 16,
+        "specialDefense": 19,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "leaf-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "pollen-stitch"
+        },
+        {
+          "level": 7,
+          "moveId": "green-vigor"
+        },
+        {
+          "level": 10,
+          "moveId": "frond-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "briar-swipe"
+        },
+        {
+          "level": 16,
+          "moveId": "clover-gust"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/grass-glyptodont-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/grass-glyptodont-stage-2-back.png"
+      },
+      "notes": "Artwork-registered grass-glyptodont design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-220-sparkhorn",
+      "name": "Sparkhorn",
+      "types": [
+        "Electric"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "spark-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "circuit-flicker"
+        },
+        {
+          "level": 7,
+          "moveId": "coil-charge"
+        },
+        {
+          "level": 10,
+          "moveId": "static-blur"
+        },
+        {
+          "level": 13,
+          "moveId": "arc-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "voltstream"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/electric-pronghorn-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/electric-pronghorn-stage-1-back.png"
+      },
+      "notes": "Artwork-registered electric-pronghorn design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-221-thundelope",
+      "name": "Thundelope",
+      "types": [
+        "Electric"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "spark-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "circuit-flicker"
+        },
+        {
+          "level": 7,
+          "moveId": "coil-charge"
+        },
+        {
+          "level": 10,
+          "moveId": "static-blur"
+        },
+        {
+          "level": 13,
+          "moveId": "arc-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "voltstream"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/electric-pronghorn-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/electric-pronghorn-stage-2-back.png"
+      },
+      "notes": "Artwork-registered electric-pronghorn design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-222-pebblusk",
+      "name": "Pebblusk",
+      "types": [
+        "Rock"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 28,
+        "attack": 10,
+        "defense": 15,
+        "specialAttack": 9,
+        "specialDefense": 13,
+        "speed": 8
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "pebble-knock"
+        },
+        {
+          "level": 4,
+          "moveId": "quartz-ray"
+        },
+        {
+          "level": 7,
+          "moveId": "stone-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "grit-cloud"
+        },
+        {
+          "level": 13,
+          "moveId": "crag-tackle"
+        },
+        {
+          "level": 16,
+          "moveId": "shardbeam"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/rock-mastodon-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/rock-mastodon-stage-1-back.png"
+      },
+      "notes": "Artwork-registered rock-mastodon design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-223-mastolith",
+      "name": "Mastolith",
+      "types": [
+        "Rock"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 37,
+        "attack": 17,
+        "defense": 21,
+        "specialAttack": 16,
+        "specialDefense": 19,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "pebble-knock"
+        },
+        {
+          "level": 4,
+          "moveId": "quartz-ray"
+        },
+        {
+          "level": 7,
+          "moveId": "stone-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "grit-cloud"
+        },
+        {
+          "level": 13,
+          "moveId": "crag-tackle"
+        },
+        {
+          "level": 16,
+          "moveId": "shardbeam"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/rock-mastodon-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/rock-mastodon-stage-2-back.png"
+      },
+      "notes": "Artwork-registered rock-mastodon design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-224-quilldash",
+      "name": "Quilldash",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 10,
+          "moveId": "dustwing"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        },
+        {
+          "level": 16,
+          "moveId": "zephyr-needle"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/flying-microraptor-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/flying-microraptor-stage-1-back.png"
+      },
+      "notes": "Artwork-registered flying-microraptor design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-225-aerosaur",
+      "name": "Aerosaur",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 10,
+          "moveId": "dustwing"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        },
+        {
+          "level": 16,
+          "moveId": "zephyr-needle"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/flying-microraptor-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/flying-microraptor-stage-2-back.png"
+      },
+      "notes": "Artwork-registered flying-microraptor design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-226-emberpuff",
+      "name": "Emberpuff",
+      "types": [
+        "Fire"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "cinder-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "embercoil"
+        },
+        {
+          "level": 7,
+          "moveId": "kindle-heart"
+        },
+        {
+          "level": 10,
+          "moveId": "ash-veil"
+        },
+        {
+          "level": 13,
+          "moveId": "furnace-claw"
+        },
+        {
+          "level": 16,
+          "moveId": "blazeline"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/fire-red-panda-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/fire-red-panda-stage-1-back.png"
+      },
+      "notes": "Artwork-registered fire-red-panda design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-227-sludgip",
+      "name": "Sludgip",
+      "types": [
+        "Water",
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "ripple-jab"
+        },
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "brook-dart"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "tidal-calm"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-venom-otter-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-1-back.png"
+      },
+      "notes": "Artwork-registered water-venom-otter design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-228-toxotter",
+      "name": "Toxotter",
+      "types": [
+        "Water",
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 34,
+        "attack": 19,
+        "defense": 17,
+        "specialAttack": 18,
+        "specialDefense": 17,
+        "speed": 19
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "ripple-jab"
+        },
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "brook-dart"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "tidal-calm"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-venom-otter-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-2-back.png"
+      },
+      "notes": "Artwork-registered water-venom-otter design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-229-venomwake",
+      "name": "Venomwake",
+      "types": [
+        "Water",
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 43,
+        "attack": 26,
+        "defense": 23,
+        "specialAttack": 25,
+        "specialDefense": 23,
+        "speed": 26
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "ripple-jab"
+        },
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "brook-dart"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "tidal-calm"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-venom-otter-stage-3.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-3-back.png"
+      },
+      "notes": "Artwork-registered water-venom-otter design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-230-thornix",
+      "name": "Thornix",
+      "types": [
+        "Venom"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 28,
+        "attack": 10,
+        "defense": 15,
+        "specialAttack": 9,
+        "specialDefense": 13,
+        "speed": 8
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "noxious-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "fang-drip"
+        },
+        {
+          "level": 16,
+          "moveId": "venom-hiss"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/venom-thorny-devil-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/venom-thorny-devil-stage-1-back.png"
+      },
+      "notes": "Artwork-registered venom-thorny-devil design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-231-wispurr",
+      "name": "Wispurr",
+      "types": [
+        "Ghost"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "specter-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "wisp-murmur"
+        },
+        {
+          "level": 7,
+          "moveId": "spirit-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "fading-curtain"
+        },
+        {
+          "level": 13,
+          "moveId": "phantom-clasp"
+        },
+        {
+          "level": 16,
+          "moveId": "ectoshard"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/ghost-cat-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/ghost-cat-stage-1-back.png"
+      },
+      "notes": "Artwork-registered ghost-cat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-232-phantompaw",
+      "name": "Phantompaw",
+      "types": [
+        "Ghost"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "specter-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "wisp-murmur"
+        },
+        {
+          "level": 7,
+          "moveId": "spirit-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "fading-curtain"
+        },
+        {
+          "level": 13,
+          "moveId": "phantom-clasp"
+        },
+        {
+          "level": 16,
+          "moveId": "ectoshard"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/ghost-cat-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/ghost-cat-stage-2-back.png"
+      },
+      "notes": "Artwork-registered ghost-cat design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-233-mindwink",
+      "name": "Mindwink",
+      "types": [
+        "Psychic"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "mind-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "thought-needle"
+        },
+        {
+          "level": 7,
+          "moveId": "calm-center"
+        },
+        {
+          "level": 10,
+          "moveId": "blurred-senses"
+        },
+        {
+          "level": 13,
+          "moveId": "psyche-push"
+        },
+        {
+          "level": 16,
+          "moveId": "neuron-prism"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/psychic-aye-aye-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/psychic-aye-aye-stage-1-back.png"
+      },
+      "notes": "Artwork-registered psychic-aye-aye design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-234-seerclaw",
+      "name": "Seerclaw",
+      "types": [
+        "Psychic"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 34,
+        "attack": 19,
+        "defense": 17,
+        "specialAttack": 18,
+        "specialDefense": 17,
+        "speed": 19
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "mind-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "thought-needle"
+        },
+        {
+          "level": 7,
+          "moveId": "calm-center"
+        },
+        {
+          "level": 10,
+          "moveId": "blurred-senses"
+        },
+        {
+          "level": 13,
+          "moveId": "psyche-push"
+        },
+        {
+          "level": 16,
+          "moveId": "neuron-prism"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/psychic-aye-aye-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/psychic-aye-aye-stage-2-back.png"
+      },
+      "notes": "Artwork-registered psychic-aye-aye design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-235-duskhound",
+      "name": "Duskhound",
+      "types": [
+        "Shadow"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "shade-scratch"
+        },
+        {
+          "level": 4,
+          "moveId": "dusk-thread"
+        },
+        {
+          "level": 7,
+          "moveId": "quiet-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "blindfold-mist"
+        },
+        {
+          "level": 13,
+          "moveId": "umbral-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "gloam-dart"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/shadow-borzoi-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/shadow-borzoi-stage-1-back.png"
+      },
+      "notes": "Artwork-registered shadow-borzoi design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-236-noctirush",
+      "name": "Noctirush",
+      "types": [
+        "Shadow"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "shade-scratch"
+        },
+        {
+          "level": 4,
+          "moveId": "dusk-thread"
+        },
+        {
+          "level": 7,
+          "moveId": "quiet-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "blindfold-mist"
+        },
+        {
+          "level": 13,
+          "moveId": "umbral-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "gloam-dart"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/shadow-borzoi-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/shadow-borzoi-stage-2-back.png"
+      },
+      "notes": "Artwork-registered shadow-borzoi design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-237-froststoat",
+      "name": "Froststoat",
+      "types": [
+        "Ice"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "frost-nip"
+        },
+        {
+          "level": 4,
+          "moveId": "snowmelt-ray"
+        },
+        {
+          "level": 7,
+          "moveId": "cold-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "hail-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "rime-claw"
+        },
+        {
+          "level": 16,
+          "moveId": "glacier-lance"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/ice-winter-stoat-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/ice-winter-stoat-stage-1-back.png"
+      },
+      "notes": "Artwork-registered ice-winter-stoat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true
     }
   ],
   "encounterBalanceVersion": 2

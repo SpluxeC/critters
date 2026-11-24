@@ -411,11 +411,16 @@ const defaultMoveIds=(type,level)=>{
 function validMove(id){return moveRegistry.get(id)||null}
 function speciesFor(p){return p?.speciesId?speciesRegistry.get(p.speciesId):null}
 // Render only approved local sprite paths. Legacy/non-art Critters retain their type icons.
+function completeCritterArt(art){
+ const valid=p=>typeof p==='string'&&/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(p);
+ const pair=v=>v&&valid(v.spritePath)&&valid(v.rearSpritePath);
+ return art?.status==='ready'&&!!pair(art)&&Object.values(art.genderVariants||{}).every(pair);
+}
 function critterSpritePath(p){
  const spec=p?.art?p:speciesFor(p);
  const art=spec?.art;
  const variant=p?.gender&&art?.genderVariants?.[p.gender];
- const path=art?.status==='ready'?(variant?.spritePath||art.spritePath):null;
+ const path=completeCritterArt(art)?(variant?.spritePath||art.spritePath):null;
  return typeof path==='string'&&/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(path)?path:null;
 }
 function critterSpriteTag(p,cssClass){
@@ -478,13 +483,13 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=65-starter-renames',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=87-paired-art',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
    if(typeof sp.speciesId==='string'&&sp.speciesId&&!speciesRegistry.has(sp.speciesId)
     &&Array.isArray(sp.types)&&sp.types.length&&sp.types.every(isKnownType))
-     speciesRegistry.set(sp.speciesId,sp);
+     {if(sp.art?.status==='ready'&&!completeCritterArt(sp.art))sp.art={...sp.art,status:'awaiting-upload'};speciesRegistry.set(sp.speciesId,sp);}
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
  if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='encyclopedia'&&encyclopediaSection==='critters'&&screen==='game'&&!battle)renderIndex()}
@@ -2392,7 +2397,7 @@ function indexCritters(){
   body='<button class="btn speciesBack" type="button" id="critterBack">← Back to all Critters</button>'
    +'<div class="speciesIdentity">'+critterArtwork(selection)+'<div><span class="speciesNumber">#'+String(critterIndexNumber(selection)).padStart(3,'0')+'</span>'
    +'<h3>'+escapeHtml(selection.name)+'</h3><p>'+selection.types.map(escapeHtml).join(' / ')+'</p>'
-   +'<small>'+escapeHtml(selection.role||'balanced')+' · '+(selection.art?.status==='ready'?'Art uploaded':'Awaiting original art')+'</small>'
+   +'<small>'+escapeHtml(selection.role||'balanced')+' · '+(completeCritterArt(selection.art)?'Art uploaded':'Awaiting front and rear art')+'</small>'
    +'<div class="collectionStatus '+discoveryStatus(selection.speciesId)+'">'+discoveryStatus(selection.speciesId).toUpperCase()+'</div></div></div>'
    +'<div class="watchSectionTitle">Level 1 base stats</div>'+critterStatTable(selection)
    +collectionSpeciesHistory(selection.speciesId)
@@ -2753,7 +2758,7 @@ function battleFigureArtwork(p,side){
 
  const art=speciesFor(p)?.art;
  const variant=p?.gender&&art?.genderVariants?.[p.gender];
- const rearPath=side==='ally'&&art?.status==='ready'?(variant?.rearSpritePath||art.rearSpritePath):null;
+ const rearPath=side==='ally'&&completeCritterArt(art)?(variant?.rearSpritePath||art.rearSpritePath):null;
  if(typeof rearPath==='string'&&rearPath.startsWith('assets/critters/')&&rearPath.endsWith('.png')&&!rearPath.includes('..')){
   const fallback=critterSpritePath(p);
   return '<img class="combatSprite combatSpriteRear" src="'+escapeHtml(rearPath)+'" alt="'+escapeHtml(p.name||speciesFor(p)?.name||'Critter')+' (rear view)" decoding="async"'+

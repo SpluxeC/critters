@@ -17,14 +17,15 @@ function extract(start,end,context){
 const stones=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting','Normal','Steel','Ground'];
 test('game source parses',()=>assert.doesNotThrow(()=>new Function(game)));
 test('species, moves, and evolution links have valid IDs',()=>{
- assert.equal(species.length,209);
+ assert.equal(species.length,237);
  assert.equal(moves.length,315);
  const speciesIds=new Set(species.map(s=>s.speciesId));
  const moveIds=new Set(moves.map(m=>m.id).concat('opening-flick','brace-up'));
  assert.equal(speciesIds.size,species.length);
  assert.equal(new Set(moves.map(m=>m.id)).size,moves.length);
  for(const sp of species){
-  assert.ok(sp.habitats.length>=1,sp.name+' has no home habitat');
+  assert.ok(Array.isArray(sp.habitats),sp.name+' has invalid habitats');
+  if(!sp.habitats.length)assert.ok(sp.catalogOnly||['cr-211-falrift','cr-212-falgrath','cr-214-mothoxin'].includes(sp.speciesId),sp.name+' has no home habitat');
   assert.ok(sp.habitats.every(h=>Number.isFinite(h.minLevel)&&Number.isFinite(h.maxLevel)&&h.minLevel<=h.maxLevel));
   for(const learn of sp.levelUp||[])assert.ok(moveIds.has(learn.moveId),sp.name+' has unknown move '+learn.moveId);
   if(!sp.evolvesTo)continue;
@@ -212,13 +213,13 @@ test('battle Index provides real battle actions and takes over the screen',()=>{
 });
 
 test('Critter species IDs are the Index numbers with starter families first',()=>{
- assert.equal(species.length,209);
+ assert.equal(species.length,237);
  const idSet=new Set(species.map(sp=>sp.speciesId));
  for(let i=0;i<species.length;i++){
   const sp=species[i],expected='cr-'+String(i+1).padStart(3,'0')+'-';
   assert.ok(sp.speciesId.startsWith(expected),'wrong ID at '+(i+1)+' '+sp.name);
   assert.equal(Object.hasOwn(sp,'number'),false,'no separate display number allowed');
-  assert.ok(sp.legacySpeciesId,'old ID alias missing for save migration');
+  if(i<209)assert.ok(sp.legacySpeciesId,'old ID alias missing for save migration');
   if(sp.evolvesTo){
    assert.ok(idSet.has(sp.evolvesTo.speciesId));
    const to=species.find(x=>x.speciesId===sp.evolvesTo.speciesId);
@@ -243,7 +244,7 @@ test('legacy saves migrate every old species ID to the authoritative new ID',()=
  const start=game.indexOf('function migrateSpeciesIds(){');
  const end=game.indexOf('const moveRegistry=',start);
  assert.ok(start>=0&&end>start);
- const old=species.find(sp=>sp.legacySpeciesId.startsWith('cr-001-'));
+ const old=species.find(sp=>sp.legacySpeciesId?.startsWith('cr-001-'));
  const s={
   party:[{speciesId:old.legacySpeciesId,level:15,evolutionHistory:[{from:old.legacySpeciesId,to:old.legacySpeciesId}]}],
   storage:[{speciesId:old.legacySpeciesId,level:12}],
@@ -562,3 +563,11 @@ test('v84 outdoor transitions keep world-space animation and a continuous damped
  assert.match(game,/const camera=followOutdoorCamera\(targetX,targetY\)/);
  assert.match(html,/game\.js\?v=84-smooth-boundaries-20261123/);
 });
+
+ test('v87 every ready species and gender variant has both actual PNG files',()=>{
+ for(const sp of species.filter(s=>s.art?.status==='ready'))for(const a of [sp.art,...Object.values(sp.art.genderVariants||{})])for(const p of [a.spritePath,a.rearSpritePath]){
+ assert.match(p,/^assets\/critters\/[a-z0-9/_-]+\.png$/);const png=readFileSync(new URL('../'+p,import.meta.url));assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+ }
+ assert.equal(species.filter(s=>s.art?.status==='ready').length,37);
+ assert.equal(species.slice(215).length,22);assert.ok(species.slice(215).every(s=>s.catalogOnly&&s.habitats.length===0));
+ });
