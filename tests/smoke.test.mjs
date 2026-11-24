@@ -17,7 +17,7 @@ function extract(start,end,context){
 const stones=['Grass','Water','Fire','Rock','Electric','Ice','Flying','Shadow','Ghost','Venom','Psychic','Fighting','Normal','Steel','Ground'];
 test('game source parses',()=>assert.doesNotThrow(()=>new Function(game)));
 test('species, moves, and evolution links have valid IDs',()=>{
- assert.equal(species.length,237);
+ assert.equal(species.length,209);
  assert.equal(moves.length,315);
  const speciesIds=new Set(species.map(s=>s.speciesId));
  const moveIds=new Set(moves.map(m=>m.id).concat('opening-flick','brace-up'));
@@ -25,7 +25,7 @@ test('species, moves, and evolution links have valid IDs',()=>{
  assert.equal(new Set(moves.map(m=>m.id)).size,moves.length);
  for(const sp of species){
   assert.ok(Array.isArray(sp.habitats),sp.name+' has invalid habitats');
-  if(!sp.habitats.length)assert.ok(sp.catalogOnly||['cr-211-falrift','cr-212-falgrath','cr-214-mothoxin'].includes(sp.speciesId),sp.name+' has no home habitat');
+  if(!sp.habitats.length)assert.ok(sp.catalogOnly||['cr-011-falrift','cr-012-falgrath','cr-014-mothoxin'].includes(sp.speciesId),sp.name+' has no home habitat');
   assert.ok(sp.habitats.every(h=>Number.isFinite(h.minLevel)&&Number.isFinite(h.maxLevel)&&h.minLevel<=h.maxLevel));
   for(const learn of sp.levelUp||[])assert.ok(moveIds.has(learn.moveId),sp.name+' has unknown move '+learn.moveId);
   if(!sp.evolvesTo)continue;
@@ -213,7 +213,7 @@ test('battle Index provides real battle actions and takes over the screen',()=>{
 });
 
 test('Critter species IDs are the Index numbers with starter families first',()=>{
- assert.equal(species.length,237);
+ assert.equal(species.length,209);
  const idSet=new Set(species.map(sp=>sp.speciesId));
  for(let i=0;i<species.length;i++){
   const sp=species[i],expected='cr-'+String(i+1).padStart(3,'0')+'-';
@@ -478,7 +478,7 @@ test('v79 Tools moved under Index and Settings houses Save',()=>{
 
 test('v80 Route 1 sprite registry and rear battle views are wired',()=>{
  const source=JSON.parse(readFileSync(new URL('../data/critters.json',import.meta.url),'utf8'));
- for(const id of ['cr-210-falquill','cr-211-falrift','cr-212-falgrath','cr-213-toxidot','cr-214-mothoxin','cr-215-scruffin']){
+ for(const id of ['cr-010-falquill','cr-011-falrift','cr-012-falgrath','cr-013-toxidot','cr-014-mothoxin','cr-015-scruffin']){
   const spec=source.species.find(s=>s.speciesId===id);
   assert.ok(spec);
   assert.equal(spec.art.status,'ready');
@@ -569,5 +569,5 @@ test('v84 outdoor transitions keep world-space animation and a continuous damped
  assert.match(p,/^assets\/critters\/[a-z0-9/_-]+\.png$/);const png=readFileSync(new URL('../'+p,import.meta.url));assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
  }
  assert.equal(species.filter(s=>s.art?.status==='ready').length,37);
- assert.equal(species.slice(215).length,22);assert.ok(species.slice(215).every(s=>s.catalogOnly&&s.habitats.length===0));
+ assert.equal(species.slice(9,37).length,28);assert.ok(species.slice(9,37).every(s=>s.art.status==='ready'));assert.ok(species.slice(37).every(s=>s.art.status!=='ready'));
  });

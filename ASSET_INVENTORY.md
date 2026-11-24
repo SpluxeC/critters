@@ -178,3 +178,38 @@ Do not confuse this source-art consolidation with playable integration. Species 
 | cr-235-duskhound | Duskhound | Shadow | Front/rear |
 | cr-236-noctirush | Noctirush | Shadow | Front/rear |
 | cr-237-froststoat | Froststoat | Ice | Front/rear |
+
+## v88 roster correction (supersedes v87 numbering)
+
+The roster remains at 209 entries. IDs 001–009 are starters, IDs 010–037 are creator-uploaded complete designs, and 038–209 are generated placeholders. Former IDs 210–237 are migration aliases. Future complete creator designs replace the next generated slot rather than append. Existing captured displaced placeholders retain their saved data as legacy creatures; they are no longer active registry entries. One remaining generated evolution form (Brinefin) has its removed parent reference cleared. No new habitats or evolution links are introduced.
+
+| Previous ID | Current ID |
+|---|---|
+| cr-210-falquill | cr-010-falquill |
+| cr-211-falrift | cr-011-falrift |
+| cr-212-falgrath | cr-012-falgrath |
+| cr-213-toxidot | cr-013-toxidot |
+| cr-214-mothoxin | cr-014-mothoxin |
+| cr-215-scruffin | cr-015-scruffin |
+| cr-216-ruffguard | cr-016-ruffguard |
+| cr-217-barkwarden | cr-017-barkwarden |
+| cr-218-mossplate | cr-018-mossplate |
+| cr-219-bramblevault | cr-019-bramblevault |
+| cr-220-sparkhorn | cr-020-sparkhorn |
+| cr-221-thundelope | cr-021-thundelope |
+| cr-222-pebblusk | cr-022-pebblusk |
+| cr-223-mastolith | cr-023-mastolith |
+| cr-224-quilldash | cr-024-quilldash |
+| cr-225-aerosaur | cr-025-aerosaur |
+| cr-226-emberpuff | cr-026-emberpuff |
+| cr-227-sludgip | cr-027-sludgip |
+| cr-228-toxotter | cr-028-toxotter |
+| cr-229-venomwake | cr-029-venomwake |
+| cr-230-thornix | cr-030-thornix |
+| cr-231-wispurr | cr-031-wispurr |
+| cr-232-phantompaw | cr-032-phantompaw |
+| cr-233-mindwink | cr-033-mindwink |
+| cr-234-seerclaw | cr-034-seerclaw |
+| cr-235-duskhound | cr-035-duskhound |
+| cr-236-noctirush | cr-036-noctirush |
+| cr-237-froststoat | cr-037-froststoat |

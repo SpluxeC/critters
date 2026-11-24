@@ -1,6 +1,6 @@
 {
   "schemaVersion": 8,
-  "description": "237 editable Critters with 18 types and original moves. Ready artwork requires matching front and rear PNGs, including all cosmetic variants. Newly registered artwork-only designs await habitat and evolution assignment.",
+  "description": "209 Critters: nine starters, creator-uploaded complete front/rear designs in slots 010 onward, then generated placeholders. New creator designs replace generated slots rather than expanding the roster.",
   "species": [
     {
       "speciesId": "cr-001-starter-water-1",
@@ -654,1890 +654,1438 @@
       "legacySpeciesId": "starter-electric-3"
     },
     {
-      "speciesId": "cr-010-grovehorn",
-      "name": "Grovehorn",
-      "types": [
-        "Grass",
-        "Rock"
-      ],
-      "role": "support",
-      "baseStats": {
-        "hp": 23,
-        "attack": 7,
-        "defense": 7,
-        "specialAttack": 7,
-        "specialDefense": 7,
-        "speed": 7
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "vine-scythe"
-        },
-        {
-          "level": 8,
-          "moveId": "canopy-ray"
-        },
-        {
-          "level": 13,
-          "moveId": "frond-screen"
-        },
-        {
-          "level": 20,
-          "moveId": "obsidian-edge"
-        },
-        {
-          "level": 27,
-          "moveId": "gravel-snare"
-        },
-        {
-          "level": 36,
-          "moveId": "bark-shelter"
-        },
-        {
-          "level": 45,
-          "moveId": "ironwood-crash"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-014-grovehorn"
-    },
-    {
-      "speciesId": "cr-011-bloomtail",
-      "name": "Bloomtail",
-      "types": [
-        "Grass",
-        "Electric"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 24,
-        "attack": 14,
-        "defense": 18,
-        "specialAttack": 12,
-        "specialDefense": 16,
-        "speed": 10
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "quickstep"
-        },
-        {
-          "level": 4,
-          "moveId": "ironwood-crash"
-        },
-        {
-          "level": 8,
-          "moveId": "elderbloom"
-        },
-        {
-          "level": 13,
-          "moveId": "spore-tangle"
-        },
-        {
-          "level": 20,
-          "moveId": "tempest-conduit"
-        },
-        {
-          "level": 27,
-          "moveId": "grounding-field"
-        },
-        {
-          "level": 36,
-          "moveId": "verdant-field"
-        },
-        {
-          "level": 45,
-          "moveId": "elderbloom"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-015-bloomtail"
-    },
-    {
-      "speciesId": "cr-012-verdantusk",
-      "name": "Verdantusk",
-      "types": [
-        "Grass"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 26,
-        "attack": 15,
-        "defense": 14,
-        "specialAttack": 9,
-        "specialDefense": 8,
-        "speed": 16
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "briar-swipe"
-        },
-        {
-          "level": 8,
-          "moveId": "clover-gust"
-        },
-        {
-          "level": 13,
-          "moveId": "verdant-field"
-        },
-        {
-          "level": 20,
-          "moveId": "vine-scythe"
-        },
-        {
-          "level": 27,
-          "moveId": "canopy-ray"
-        },
-        {
-          "level": 36,
-          "moveId": "green-vigor"
-        },
-        {
-          "level": 45,
-          "moveId": "elderbloom"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-017-verdantusk"
-    },
-    {
-      "speciesId": "cr-013-foamlark",
-      "name": "Foamlark",
-      "types": [
-        "Water",
-        "Psychic"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 22,
-        "attack": 19,
-        "defense": 11,
-        "specialAttack": 10,
-        "specialDefense": 15,
-        "speed": 14
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "abyss-break"
-        },
-        {
-          "level": 8,
-          "moveId": "moonwell-deluge"
-        },
-        {
-          "level": 13,
-          "moveId": "tidal-calm"
-        },
-        {
-          "level": 20,
-          "moveId": "infinite-focus"
-        },
-        {
-          "level": 27,
-          "moveId": "blurred-senses"
-        },
-        {
-          "level": 36,
-          "moveId": "drench-mark"
-        },
-        {
-          "level": 45,
-          "moveId": "moonwell-deluge"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-025-foamlark"
-    },
-    {
-      "speciesId": "cr-014-reeflet",
-      "name": "Reeflet",
-      "types": [
-        "Water",
-        "Grass"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 24,
-        "attack": 7,
-        "defense": 7,
-        "specialAttack": 7,
-        "specialDefense": 7,
-        "speed": 7
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "quickstep"
-        },
-        {
-          "level": 4,
-          "moveId": "current-lash"
-        },
-        {
-          "level": 8,
-          "moveId": "foam-burst"
-        },
-        {
-          "level": 13,
-          "moveId": "drench-mark"
-        },
-        {
-          "level": 20,
-          "moveId": "clover-gust"
-        },
-        {
-          "level": 27,
-          "moveId": "bark-shelter"
-        },
-        {
-          "level": 36,
-          "moveId": "floodplain"
-        },
-        {
-          "level": 45,
-          "moveId": "moonwell-deluge"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-027-reeflet"
-    },
-    {
-      "speciesId": "cr-015-granipup",
-      "name": "Granipup",
-      "types": [
-        "Rock",
-        "Steel"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 18,
-        "attack": 9,
-        "defense": 17,
-        "specialAttack": 14,
-        "specialDefense": 17,
-        "speed": 19
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "rivet-jab"
-        },
-        {
-          "level": 8,
-          "moveId": "shardbeam"
-        },
-        {
-          "level": 13,
-          "moveId": "chrome-beam"
-        },
-        {
-          "level": 20,
-          "moveId": "neuron-prism"
-        },
-        {
-          "level": 27,
-          "moveId": "alloy-rush"
-        },
-        {
-          "level": 36,
-          "moveId": "seismic-ridge"
-        },
-        {
-          "level": 45,
-          "moveId": "continental-split"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "evolvesTo": {
-        "speciesId": "cr-016-geodillo",
-        "minLevel": 23,
-        "condition": {
-          "kind": "badge",
-          "minimum": 1
-        },
-        "stone": "Steel Stone"
-      },
-      "legacySpeciesId": "cr-057-granipup"
-    },
-    {
-      "speciesId": "cr-016-geodillo",
-      "name": "Geodillo",
-      "types": [
-        "Ground",
-        "Rock"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 19,
-        "attack": 16,
-        "defense": 15,
-        "specialAttack": 19,
-        "specialDefense": 13,
-        "speed": 9
-      },
-      "habitats": [
-        {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 23,
-          "maxLevel": 25,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "dust-kick"
-        },
-        {
-          "level": 8,
-          "moveId": "geode-burst"
-        },
-        {
-          "level": 13,
-          "moveId": "sand-veil"
-        },
-        {
-          "level": 20,
-          "moveId": "boulderfall"
-        },
-        {
-          "level": 27,
-          "moveId": "dune-spear"
-        },
-        {
-          "level": 36,
-          "moveId": "mountain-stance"
-        },
-        {
-          "level": 45,
-          "moveId": "boulderfall"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-015-granipup",
-      "legacySpeciesId": "cr-058-geodillo"
-    },
-    {
-      "speciesId": "cr-017-joltling",
-      "name": "Joltling",
-      "types": [
-        "Electric"
-      ],
-      "role": "support",
-      "baseStats": {
-        "hp": 28,
-        "attack": 7,
-        "defense": 7,
-        "specialAttack": 7,
-        "specialDefense": 7,
-        "speed": 7
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "quickstep"
-        },
-        {
-          "level": 4,
-          "moveId": "thunderhook"
-        },
-        {
-          "level": 8,
-          "moveId": "skywire-flash"
-        },
-        {
-          "level": 13,
-          "moveId": "coil-charge"
-        },
-        {
-          "level": 20,
-          "moveId": "spark-nudge"
-        },
-        {
-          "level": 27,
-          "moveId": "circuit-flicker"
-        },
-        {
-          "level": 36,
-          "moveId": "nerve-jolt"
-        },
-        {
-          "level": 45,
-          "moveId": "tempest-conduit"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-079-joltling"
-    },
-    {
-      "speciesId": "cr-018-gliderill",
-      "name": "Gliderill",
+      "speciesId": "cr-010-falquill",
+      "name": "Falquill",
       "types": [
         "Flying"
       ],
       "role": "swift",
       "baseStats": {
-        "hp": 23,
-        "attack": 16,
-        "defense": 10,
-        "specialAttack": 19,
-        "specialDefense": 13,
-        "speed": 9
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "stormtalon"
-        },
-        {
-          "level": 8,
-          "moveId": "horizon-break"
-        },
-        {
-          "level": 13,
-          "moveId": "dustwing"
-        },
-        {
-          "level": 20,
-          "moveId": "wingline-cut"
-        },
-        {
-          "level": 27,
-          "moveId": "zephyr-needle"
-        },
-        {
-          "level": 36,
-          "moveId": "tailwind-shroud"
-        },
-        {
-          "level": 45,
-          "moveId": "stormtalon"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-110-gliderill"
-    },
-    {
-      "speciesId": "cr-019-runnelot",
-      "name": "Runnelot",
-      "types": [
-        "Water",
-        "Ghost"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 20,
-        "attack": 18,
-        "defense": 15,
-        "specialAttack": 13,
-        "specialDefense": 10,
-        "speed": 8
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "quickstep"
-        },
-        {
-          "level": 4,
-          "moveId": "undertow-grip"
-        },
-        {
-          "level": 8,
-          "moveId": "rainneedle"
-        },
-        {
-          "level": 13,
-          "moveId": "floodplain"
-        },
-        {
-          "level": 20,
-          "moveId": "moonlit-echo"
-        },
-        {
-          "level": 27,
-          "moveId": "afterimage-waltz"
-        },
-        {
-          "level": 36,
-          "moveId": "tidal-calm"
-        },
-        {
-          "level": 45,
-          "moveId": "moonwell-deluge"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesTo": {
-        "speciesId": "cr-020-shellune",
-        "minLevel": 23
-      },
-      "legacySpeciesId": "cr-023-runnelot"
-    },
-    {
-      "speciesId": "cr-020-shellune",
-      "name": "Shellune",
-      "types": [
-        "Water"
-      ],
-      "role": "support",
-      "baseStats": {
-        "hp": 21,
+        "hp": 22,
         "attack": 12,
-        "defense": 13,
-        "specialAttack": 18,
-        "specialDefense": 19,
-        "speed": 11
-      },
-      "habitats": [
-        {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 23,
-          "maxLevel": 25,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "measured-blow"
-        },
-        {
-          "level": 4,
-          "moveId": "breaker-fang"
-        },
-        {
-          "level": 8,
-          "moveId": "tidewell"
-        },
-        {
-          "level": 13,
-          "moveId": "riverstep"
-        },
-        {
-          "level": 20,
-          "moveId": "ripple-jab"
-        },
-        {
-          "level": 27,
-          "moveId": "brook-dart"
-        },
-        {
-          "level": 36,
-          "moveId": "mist-curtain"
-        },
-        {
-          "level": 45,
-          "moveId": "abyss-break"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-019-runnelot",
-      "legacySpeciesId": "cr-024-shellune"
-    },
-    {
-      "speciesId": "cr-021-mistmew",
-      "name": "Mistmew",
-      "types": [
-        "Water"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 23,
-        "attack": 13,
         "defense": 9,
-        "specialAttack": 15,
-        "specialDefense": 11,
-        "speed": 17
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "ripple-jab"
-        },
-        {
-          "level": 8,
-          "moveId": "brook-dart"
-        },
-        {
-          "level": 13,
-          "moveId": "mist-curtain"
-        },
-        {
-          "level": 20,
-          "moveId": "undertow-grip"
-        },
-        {
-          "level": 27,
-          "moveId": "rainneedle"
-        },
-        {
-          "level": 36,
-          "moveId": "reef-shell"
-        },
-        {
-          "level": 45,
-          "moveId": "abyss-break"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-026-mistmew"
-    },
-    {
-      "speciesId": "cr-022-scorchub",
-      "name": "Scorchub",
-      "types": [
-        "Fire",
-        "Fighting"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 27,
-        "attack": 8,
-        "defense": 16,
-        "specialAttack": 17,
-        "specialDefense": 12,
-        "speed": 13
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "furnace-claw"
-        },
-        {
-          "level": 8,
-          "moveId": "blazeline"
-        },
-        {
-          "level": 13,
-          "moveId": "wildfire-rhythm"
-        },
-        {
-          "level": 20,
-          "moveId": "breaker-kick"
-        },
-        {
-          "level": 27,
-          "moveId": "battle-breath"
-        },
-        {
-          "level": 36,
-          "moveId": "ash-veil"
-        },
-        {
-          "level": 45,
-          "moveId": "volcanic-rend"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-042-scorchub"
-    },
-    {
-      "speciesId": "cr-023-blazefin",
-      "name": "Blazefin",
-      "types": [
-        "Fire"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 18,
-        "attack": 16,
-        "defense": 10,
-        "specialAttack": 19,
-        "specialDefense": 13,
-        "speed": 9
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "volcanic-rend"
-        },
-        {
-          "level": 8,
-          "moveId": "sunforge-surge"
-        },
-        {
-          "level": 13,
-          "moveId": "singe-mark"
-        },
-        {
-          "level": 20,
-          "moveId": "furnace-claw"
-        },
-        {
-          "level": 27,
-          "moveId": "blazeline"
-        },
-        {
-          "level": 36,
-          "moveId": "heat-haze"
-        },
-        {
-          "level": 45,
-          "moveId": "sunforge-surge"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-045-blazefin"
-    },
-    {
-      "speciesId": "cr-024-pebblit",
-      "name": "Pebblit",
-      "types": [
-        "Ground",
-        "Rock"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 25,
-        "attack": 13,
-        "defense": 14,
-        "specialAttack": 15,
-        "specialDefense": 11,
-        "speed": 17
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "measured-blow"
-        },
-        {
-          "level": 4,
-          "moveId": "dust-kick"
-        },
-        {
-          "level": 8,
-          "moveId": "shardbeam"
-        },
-        {
-          "level": 13,
-          "moveId": "sand-veil"
-        },
-        {
-          "level": 20,
-          "moveId": "rime-claw"
-        },
-        {
-          "level": 27,
-          "moveId": "dune-spear"
-        },
-        {
-          "level": 36,
-          "moveId": "mountain-stance"
-        },
-        {
-          "level": 45,
-          "moveId": "boulderfall"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesTo": {
-        "speciesId": "cr-025-craggle",
-        "minLevel": 12,
-        "stone": "Ground Stone"
-      },
-      "legacySpeciesId": "cr-052-pebblit"
-    },
-    {
-      "speciesId": "cr-025-craggle",
-      "name": "Craggle",
-      "types": [
-        "Ground",
-        "Rock"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 26,
-        "attack": 7,
-        "defense": 12,
-        "specialAttack": 7,
-        "specialDefense": 7,
-        "speed": 7
-      },
-      "habitats": [
-        {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 12,
-          "maxLevel": 14,
-          "rarity": "rare"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "burrow-jab"
-        },
-        {
-          "level": 8,
-          "moveId": "geode-burst"
-        },
-        {
-          "level": 13,
-          "moveId": "clay-shot"
-        },
-        {
-          "level": 20,
-          "moveId": "cloudpiercer"
-        },
-        {
-          "level": 27,
-          "moveId": "dust-cloud"
-        },
-        {
-          "level": 36,
-          "moveId": "stone-resolve"
-        },
-        {
-          "level": 45,
-          "moveId": "continental-split"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-024-pebblit",
-      "evolvesTo": {
-        "speciesId": "cr-026-shardlet",
-        "minLevel": 28
-      },
-      "legacySpeciesId": "cr-053-craggle"
-    },
-    {
-      "speciesId": "cr-026-shardlet",
-      "name": "Shardlet",
-      "types": [
-        "Steel",
-        "Rock"
-      ],
-      "role": "support",
-      "baseStats": {
-        "hp": 27,
-        "attack": 14,
-        "defense": 23,
-        "specialAttack": 12,
-        "specialDefense": 16,
-        "speed": 10
-      },
-      "habitats": [
-        {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 28,
-          "maxLevel": 32,
-          "rarity": "rare"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "tin-tap"
-        },
-        {
-          "level": 8,
-          "moveId": "crystal-fault"
-        },
-        {
-          "level": 13,
-          "moveId": "steel-iron-guard"
-        },
-        {
-          "level": 20,
-          "moveId": "pebble-knock"
-        },
-        {
-          "level": 27,
-          "moveId": "mirror-shield"
-        },
-        {
-          "level": 36,
-          "moveId": "grit-cloud"
-        },
-        {
-          "level": 45,
-          "moveId": "boulderfall"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "evolvesFrom": "cr-025-craggle",
-      "legacySpeciesId": "cr-054-shardlet"
-    },
-    {
-      "speciesId": "cr-027-bouldibble",
-      "name": "Bouldibble",
-      "types": [
-        "Ground",
-        "Rock"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 28,
-        "attack": 8,
-        "defense": 21,
-        "specialAttack": 17,
-        "specialDefense": 12,
-        "speed": 13
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "quickstep"
-        },
-        {
-          "level": 4,
-          "moveId": "burrow-jab"
-        },
-        {
-          "level": 8,
-          "moveId": "continental-split"
-        },
-        {
-          "level": 13,
-          "moveId": "clay-shot"
-        },
-        {
-          "level": 20,
-          "moveId": "crag-tackle"
-        },
-        {
-          "level": 27,
-          "moveId": "dust-cloud"
-        },
-        {
-          "level": 36,
-          "moveId": "gravel-snare"
-        },
-        {
-          "level": 45,
-          "moveId": "continental-split"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesTo": {
-        "speciesId": "cr-028-flintpaw",
-        "minLevel": 18,
-        "stone": "Rock Stone"
-      },
-      "legacySpeciesId": "cr-055-bouldibble"
-    },
-    {
-      "speciesId": "cr-028-flintpaw",
-      "name": "Flintpaw",
-      "types": [
-        "Ground",
-        "Rock"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 17,
-        "attack": 15,
-        "defense": 19,
-        "specialAttack": 9,
-        "specialDefense": 8,
-        "speed": 16
-      },
-      "habitats": [
-        {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 18,
-          "maxLevel": 24,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "measured-blow"
-        },
-        {
-          "level": 4,
-          "moveId": "dust-kick"
-        },
-        {
-          "level": 8,
-          "moveId": "quartz-ray"
-        },
-        {
-          "level": 13,
-          "moveId": "sand-veil"
-        },
-        {
-          "level": 20,
-          "moveId": "flint-hammer"
-        },
-        {
-          "level": 27,
-          "moveId": "dune-spear"
-        },
-        {
-          "level": 36,
-          "moveId": "bedrock-brace"
-        },
-        {
-          "level": 45,
-          "moveId": "boulderfall"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesFrom": "cr-027-bouldibble",
-      "legacySpeciesId": "cr-056-flintpaw"
-    },
-    {
-      "speciesId": "cr-029-obsiduck",
-      "name": "Obsiduck",
-      "types": [
-        "Rock",
-        "Steel"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 22,
-        "attack": 11,
-        "defense": 22,
-        "specialAttack": 8,
-        "specialDefense": 14,
-        "speed": 18
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "rivet-jab"
-        },
-        {
-          "level": 8,
-          "moveId": "quartz-ray"
-        },
-        {
-          "level": 13,
-          "moveId": "chrome-beam"
-        },
-        {
-          "level": 20,
-          "moveId": "embercoil"
-        },
-        {
-          "level": 27,
-          "moveId": "alloy-rush"
-        },
-        {
-          "level": 36,
-          "moveId": "gravel-snare"
-        },
-        {
-          "level": 45,
-          "moveId": "continental-split"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-061-obsiduck"
-    },
-    {
-      "speciesId": "cr-030-luminix",
-      "name": "Luminix",
-      "types": [
-        "Electric"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 26,
-        "attack": 19,
-        "defense": 11,
         "specialAttack": 10,
-        "specialDefense": 15,
-        "speed": 14
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "arc-talon"
-        },
-        {
-          "level": 8,
-          "moveId": "voltstream"
-        },
-        {
-          "level": 13,
-          "moveId": "storm-net"
-        },
-        {
-          "level": 20,
-          "moveId": "thunderhook"
-        },
-        {
-          "level": 27,
-          "moveId": "skywire-flash"
-        },
-        {
-          "level": 36,
-          "moveId": "coil-charge"
-        },
-        {
-          "level": 45,
-          "moveId": "tempest-conduit"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-077-luminix"
-    },
-    {
-      "speciesId": "cr-031-spindleleaf",
-      "name": "Spindleleaf",
-      "types": [
-        "Grass"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 25,
-        "attack": 8,
-        "defense": 16,
-        "specialAttack": 17,
-        "specialDefense": 12,
-        "speed": 13
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "rare"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "measured-blow"
-        },
-        {
-          "level": 4,
-          "moveId": "leaf-nudge"
-        },
-        {
-          "level": 8,
-          "moveId": "pollen-stitch"
-        },
-        {
-          "level": 13,
-          "moveId": "bark-shelter"
-        },
-        {
-          "level": 20,
-          "moveId": "thornpath"
-        },
-        {
-          "level": 27,
-          "moveId": "sunpetal"
-        },
-        {
-          "level": 36,
-          "moveId": "rootbound-tempo"
-        },
-        {
-          "level": 45,
-          "moveId": "ironwood-crash"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-016-spindleleaf"
-    },
-    {
-      "speciesId": "cr-032-windoodle",
-      "name": "Windoodle",
-      "types": [
-        "Flying"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 25,
-        "attack": 17,
-        "defense": 19,
-        "specialAttack": 16,
-        "specialDefense": 18,
+        "specialDefense": 9,
         "speed": 15
       },
       "habitats": [
         {
           "areaId": "route1",
-          "areaName": "Route 1 — Rice Fields",
+          "areaName": "Route 1 · Rice Fields",
           "minLevel": 2,
           "maxLevel": 5,
-          "rarity": "rare"
+          "rarity": "common",
+          "wildOnly": true
         }
       ],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "measured-blow"
+          "moveId": "feather-jab"
         },
         {
           "level": 4,
-          "moveId": "wingline-cut"
+          "moveId": "gale-whisper"
         },
         {
-          "level": 8,
-          "moveId": "zephyr-needle"
+          "level": 7,
+          "moveId": "updraft-poise"
         },
         {
           "level": 13,
-          "moveId": "tailwind-shroud"
-        },
-        {
-          "level": 20,
-          "moveId": "raptor-dive"
-        },
-        {
-          "level": 27,
-          "moveId": "cyclone-sweep"
-        },
-        {
-          "level": 36,
-          "moveId": "aerial-rhythm"
-        },
-        {
-          "level": 45,
-          "moveId": "stormtalon"
+          "moveId": "wingline-cut"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-1-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-1-back.png"
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-112-windoodle"
+      "notes": "Falcon line, stage 1 of 3. Evolution requirements are not assigned.",
+      "legacySpeciesId": "cr-210-falquill"
     },
     {
-      "speciesId": "cr-033-mosslilt",
-      "name": "Mosslilt",
+      "speciesId": "cr-011-falrift",
+      "name": "Falrift",
       "types": [
-        "Grass",
-        "Fire"
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 19,
+        "defense": 14,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-2-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-2-back.png"
+      },
+      "notes": "Falcon line, stage 2 of 3. Evolution requirements are not assigned.",
+      "legacySpeciesId": "cr-211-falrift"
+    },
+    {
+      "speciesId": "cr-012-falgrath",
+      "name": "Falgrath",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 41,
+        "attack": 27,
+        "defense": 21,
+        "specialAttack": 23,
+        "specialDefense": 22,
+        "speed": 30
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-3-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-3-back.png"
+      },
+      "notes": "Falcon line, stage 3 of 3. Evolution requirements are not assigned.",
+      "legacySpeciesId": "cr-212-falgrath"
+    },
+    {
+      "speciesId": "cr-013-toxidot",
+      "name": "Toxidot",
+      "types": [
+        "Venom"
       ],
       "role": "balanced",
       "baseStats": {
-        "hp": 22,
-        "attack": 7,
-        "defense": 7,
-        "specialAttack": 7,
-        "specialDefense": 7,
-        "speed": 7
-      },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
-          "moveId": "leaf-nudge"
-        },
-        {
-          "level": 8,
-          "moveId": "pollen-stitch"
-        },
-        {
-          "level": 13,
-          "moveId": "green-vigor"
-        },
-        {
-          "level": 20,
-          "moveId": "embercoil"
-        },
-        {
-          "level": 27,
-          "moveId": "ash-veil"
-        },
-        {
-          "level": 36,
-          "moveId": "spore-tangle"
-        },
-        {
-          "level": 45,
-          "moveId": "elderbloom"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesTo": {
-        "speciesId": "cr-034-fernlet",
-        "minLevel": 12
-      },
-      "legacySpeciesId": "cr-001-mosslilt"
-    },
-    {
-      "speciesId": "cr-034-fernlet",
-      "name": "Fernlet",
-      "types": [
-        "Grass",
-        "Rock"
-      ],
-      "role": "attacker",
-      "baseStats": {
         "hp": 23,
-        "attack": 14,
-        "defense": 18,
+        "attack": 10,
+        "defense": 11,
         "specialAttack": 12,
-        "specialDefense": 16,
-        "speed": 10
+        "specialDefense": 10,
+        "speed": 12
       },
       "habitats": [
         {
-          "areaId": "garden",
-          "areaName": "Garden Town Outskirts",
-          "minLevel": 12,
-          "maxLevel": 19,
-          "rarity": "uncommon"
+          "areaId": "route1",
+          "areaName": "Route 1 · Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
+          "rarity": "common",
+          "wildOnly": true
         }
       ],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "brace-up"
+          "moveId": "toxin-pin"
         },
         {
           "level": 4,
-          "moveId": "briar-swipe"
+          "moveId": "mire-spray"
         },
         {
-          "level": 8,
-          "moveId": "clover-gust"
+          "level": 7,
+          "moveId": "bitter-focus"
         },
         {
           "level": 13,
-          "moveId": "frond-screen"
-        },
-        {
-          "level": 20,
-          "moveId": "crag-tackle"
-        },
-        {
-          "level": 27,
-          "moveId": "gravel-snare"
-        },
-        {
-          "level": 36,
-          "moveId": "bark-shelter"
-        },
-        {
-          "level": 45,
-          "moveId": "ironwood-crash"
+          "moveId": "fang-drip"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/venom-moth/venom-larva-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-larva-back.png"
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-033-mosslilt",
-      "evolvesTo": {
-        "speciesId": "cr-035-bramblemuff",
-        "minLevel": 28,
-        "condition": {
-          "kind": "night"
-        }
-      },
-      "legacySpeciesId": "cr-002-fernlet"
+      "notes": "Venom moth line, stage 1 of 2. Evolution requirements are not assigned.",
+      "legacySpeciesId": "cr-213-toxidot"
     },
     {
-      "speciesId": "cr-035-bramblemuff",
-      "name": "Bramblemuff",
+      "speciesId": "cr-014-mothoxin",
+      "name": "Mothoxin",
       "types": [
-        "Grass"
+        "Venom"
       ],
-      "role": "defender",
+      "role": "balanced",
       "baseStats": {
-        "hp": 24,
-        "attack": 8,
+        "hp": 34,
+        "attack": 17,
         "defense": 16,
-        "specialAttack": 17,
-        "specialDefense": 12,
+        "specialAttack": 23,
+        "specialDefense": 19,
+        "speed": 21
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        },
+        {
+          "level": 13,
+          "moveId": "fang-drip"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/venom-moth/venom-owl-moth-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-owl-moth-back.png"
+      },
+      "notes": "Venom moth line, stage 2 of 2. Evolution requirements are not assigned.",
+      "legacySpeciesId": "cr-214-mothoxin"
+    },
+    {
+      "speciesId": "cr-015-scruffin",
+      "name": "Scruffin",
+      "types": [
+        "Fighting"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 8,
+        "specialDefense": 10,
         "speed": 13
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 28,
-          "maxLevel": 32,
-          "rarity": "rare"
+          "areaId": "route1",
+          "areaName": "Route 1 · Rice Fields",
+          "minLevel": 2,
+          "maxLevel": 5,
+          "rarity": "common",
+          "wildOnly": true
         }
       ],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "quickstep"
+          "moveId": "training-jab"
         },
         {
           "level": 4,
-          "moveId": "thornpath"
+          "moveId": "spirit-thrust"
         },
         {
-          "level": 8,
-          "moveId": "sunpetal"
+          "level": 7,
+          "moveId": "battle-breath"
         },
         {
           "level": 13,
-          "moveId": "spore-tangle"
-        },
-        {
-          "level": 20,
-          "moveId": "ironwood-crash"
-        },
-        {
-          "level": 27,
-          "moveId": "elderbloom"
-        },
-        {
-          "level": 36,
-          "moveId": "verdant-field"
-        },
-        {
-          "level": 45,
-          "moveId": "elderbloom"
+          "moveId": "breaker-kick"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-front.png",
+        "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-back.png",
+        "genderVariants": {
+          "female": {
+            "spritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-front.png",
+            "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-back.png"
+          },
+          "male": {
+            "spritePath": "assets/critters/route-one-designs/roster/aussie-blue-merle-stage-1-front.png",
+            "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-blue-merle-stage-1-back.png"
+          }
+        }
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-034-fernlet",
-      "legacySpeciesId": "cr-003-bramblemuff"
+      "notes": "Australian Shepherd pup; female red merle and male blue merle are cosmetic variants of the same species.",
+      "legacySpeciesId": "cr-215-scruffin"
     },
     {
-      "speciesId": "cr-036-rootwhisp",
-      "name": "Rootwhisp",
+      "speciesId": "cr-016-ruffguard",
+      "name": "Ruffguard",
       "types": [
-        "Grass"
+        "Fighting"
       ],
       "role": "balanced",
       "baseStats": {
-        "hp": 20,
-        "attack": 12,
-        "defense": 13,
+        "hp": 34,
+        "attack": 19,
+        "defense": 17,
         "specialAttack": 18,
-        "specialDefense": 19,
-        "speed": 11
-      },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "quickstep"
-        },
-        {
-          "level": 4,
-          "moveId": "leaf-nudge"
-        },
-        {
-          "level": 8,
-          "moveId": "pollen-stitch"
-        },
-        {
-          "level": 13,
-          "moveId": "verdant-field"
-        },
-        {
-          "level": 20,
-          "moveId": "thornpath"
-        },
-        {
-          "level": 27,
-          "moveId": "sunpetal"
-        },
-        {
-          "level": 36,
-          "moveId": "green-vigor"
-        },
-        {
-          "level": 45,
-          "moveId": "elderbloom"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-011-rootwhisp"
-    },
-    {
-      "speciesId": "cr-037-puddlepip",
-      "name": "Puddlepip",
-      "types": [
-        "Water",
-        "Ground"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 27,
-        "attack": 9,
-        "defense": 12,
-        "specialAttack": 14,
         "specialDefense": 17,
         "speed": 19
       },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
+      "habitats": [],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "brace-up"
+          "moveId": "training-jab"
         },
         {
           "level": 4,
-          "moveId": "dust-kick"
+          "moveId": "spirit-thrust"
         },
         {
-          "level": 8,
-          "moveId": "rainneedle"
+          "level": 7,
+          "moveId": "battle-breath"
+        },
+        {
+          "level": 10,
+          "moveId": "feint-stare"
         },
         {
           "level": 13,
-          "moveId": "sand-veil"
+          "moveId": "breaker-kick"
         },
         {
-          "level": 20,
-          "moveId": "flint-hammer"
-        },
-        {
-          "level": 27,
-          "moveId": "dune-spear"
-        },
-        {
-          "level": 36,
-          "moveId": "mist-curtain"
-        },
-        {
-          "level": 45,
-          "moveId": "abyss-break"
+          "level": 16,
+          "moveId": "force-palm"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/aussie-red-merle-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-2-back.png",
+        "genderVariants": {
+          "female": {
+            "spritePath": "assets/critters/gallery/aussie-red-merle-stage-2.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-2-back.png"
+          },
+          "male": {
+            "spritePath": "assets/critters/gallery/aussie-blue-merle-stage-2.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-blue-merle-stage-2-back.png"
+          }
+        }
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "evolvesTo": {
-        "speciesId": "cr-038-brinefin",
-        "minLevel": 12
+      "notes": "Artwork-registered aussie design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-216-ruffguard"
+    },
+    {
+      "speciesId": "cr-017-barkwarden",
+      "name": "Barkwarden",
+      "types": [
+        "Fighting"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 43,
+        "attack": 26,
+        "defense": 23,
+        "specialAttack": 25,
+        "specialDefense": 23,
+        "speed": 26
       },
-      "legacySpeciesId": "cr-018-puddlepip"
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "training-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "spirit-thrust"
+        },
+        {
+          "level": 7,
+          "moveId": "battle-breath"
+        },
+        {
+          "level": 10,
+          "moveId": "feint-stare"
+        },
+        {
+          "level": 13,
+          "moveId": "breaker-kick"
+        },
+        {
+          "level": 16,
+          "moveId": "force-palm"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/aussie-red-merle-stage-3.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-3-back.png",
+        "genderVariants": {
+          "female": {
+            "spritePath": "assets/critters/gallery/aussie-red-merle-stage-3.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-3-back.png"
+          },
+          "male": {
+            "spritePath": "assets/critters/gallery/aussie-blue-merle-stage-3.png",
+            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-blue-merle-stage-3-back.png"
+          }
+        }
+      },
+      "notes": "Artwork-registered aussie design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-217-barkwarden"
+    },
+    {
+      "speciesId": "cr-018-mossplate",
+      "name": "Mossplate",
+      "types": [
+        "Grass"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 28,
+        "attack": 10,
+        "defense": 15,
+        "specialAttack": 9,
+        "specialDefense": 13,
+        "speed": 8
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "leaf-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "pollen-stitch"
+        },
+        {
+          "level": 7,
+          "moveId": "green-vigor"
+        },
+        {
+          "level": 10,
+          "moveId": "frond-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "briar-swipe"
+        },
+        {
+          "level": 16,
+          "moveId": "clover-gust"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/grass-glyptodont-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/grass-glyptodont-stage-1-back.png"
+      },
+      "notes": "Artwork-registered grass-glyptodont design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-218-mossplate"
+    },
+    {
+      "speciesId": "cr-019-bramblevault",
+      "name": "Bramblevault",
+      "types": [
+        "Grass"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 37,
+        "attack": 17,
+        "defense": 21,
+        "specialAttack": 16,
+        "specialDefense": 19,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "leaf-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "pollen-stitch"
+        },
+        {
+          "level": 7,
+          "moveId": "green-vigor"
+        },
+        {
+          "level": 10,
+          "moveId": "frond-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "briar-swipe"
+        },
+        {
+          "level": 16,
+          "moveId": "clover-gust"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/grass-glyptodont-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/grass-glyptodont-stage-2-back.png"
+      },
+      "notes": "Artwork-registered grass-glyptodont design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-219-bramblevault"
+    },
+    {
+      "speciesId": "cr-020-sparkhorn",
+      "name": "Sparkhorn",
+      "types": [
+        "Electric"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "spark-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "circuit-flicker"
+        },
+        {
+          "level": 7,
+          "moveId": "coil-charge"
+        },
+        {
+          "level": 10,
+          "moveId": "static-blur"
+        },
+        {
+          "level": 13,
+          "moveId": "arc-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "voltstream"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/electric-pronghorn-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/electric-pronghorn-stage-1-back.png"
+      },
+      "notes": "Artwork-registered electric-pronghorn design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-220-sparkhorn"
+    },
+    {
+      "speciesId": "cr-021-thundelope",
+      "name": "Thundelope",
+      "types": [
+        "Electric"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "spark-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "circuit-flicker"
+        },
+        {
+          "level": 7,
+          "moveId": "coil-charge"
+        },
+        {
+          "level": 10,
+          "moveId": "static-blur"
+        },
+        {
+          "level": 13,
+          "moveId": "arc-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "voltstream"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/electric-pronghorn-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/electric-pronghorn-stage-2-back.png"
+      },
+      "notes": "Artwork-registered electric-pronghorn design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-221-thundelope"
+    },
+    {
+      "speciesId": "cr-022-pebblusk",
+      "name": "Pebblusk",
+      "types": [
+        "Rock"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 28,
+        "attack": 10,
+        "defense": 15,
+        "specialAttack": 9,
+        "specialDefense": 13,
+        "speed": 8
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "pebble-knock"
+        },
+        {
+          "level": 4,
+          "moveId": "quartz-ray"
+        },
+        {
+          "level": 7,
+          "moveId": "stone-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "grit-cloud"
+        },
+        {
+          "level": 13,
+          "moveId": "crag-tackle"
+        },
+        {
+          "level": 16,
+          "moveId": "shardbeam"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/rock-mastodon-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/rock-mastodon-stage-1-back.png"
+      },
+      "notes": "Artwork-registered rock-mastodon design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-222-pebblusk"
+    },
+    {
+      "speciesId": "cr-023-mastolith",
+      "name": "Mastolith",
+      "types": [
+        "Rock"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 37,
+        "attack": 17,
+        "defense": 21,
+        "specialAttack": 16,
+        "specialDefense": 19,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "pebble-knock"
+        },
+        {
+          "level": 4,
+          "moveId": "quartz-ray"
+        },
+        {
+          "level": 7,
+          "moveId": "stone-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "grit-cloud"
+        },
+        {
+          "level": 13,
+          "moveId": "crag-tackle"
+        },
+        {
+          "level": 16,
+          "moveId": "shardbeam"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/rock-mastodon-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/rock-mastodon-stage-2-back.png"
+      },
+      "notes": "Artwork-registered rock-mastodon design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-223-mastolith"
+    },
+    {
+      "speciesId": "cr-024-quilldash",
+      "name": "Quilldash",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 10,
+          "moveId": "dustwing"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        },
+        {
+          "level": 16,
+          "moveId": "zephyr-needle"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/flying-microraptor-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/flying-microraptor-stage-1-back.png"
+      },
+      "notes": "Artwork-registered flying-microraptor design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-224-quilldash"
+    },
+    {
+      "speciesId": "cr-025-aerosaur",
+      "name": "Aerosaur",
+      "types": [
+        "Flying"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "feather-jab"
+        },
+        {
+          "level": 4,
+          "moveId": "gale-whisper"
+        },
+        {
+          "level": 7,
+          "moveId": "updraft-poise"
+        },
+        {
+          "level": 10,
+          "moveId": "dustwing"
+        },
+        {
+          "level": 13,
+          "moveId": "wingline-cut"
+        },
+        {
+          "level": 16,
+          "moveId": "zephyr-needle"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/flying-microraptor-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/flying-microraptor-stage-2-back.png"
+      },
+      "notes": "Artwork-registered flying-microraptor design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-225-aerosaur"
+    },
+    {
+      "speciesId": "cr-026-emberpuff",
+      "name": "Emberpuff",
+      "types": [
+        "Fire"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "cinder-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "embercoil"
+        },
+        {
+          "level": 7,
+          "moveId": "kindle-heart"
+        },
+        {
+          "level": 10,
+          "moveId": "ash-veil"
+        },
+        {
+          "level": 13,
+          "moveId": "furnace-claw"
+        },
+        {
+          "level": 16,
+          "moveId": "blazeline"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/fire-red-panda-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/fire-red-panda-stage-1-back.png"
+      },
+      "notes": "Artwork-registered fire-red-panda design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-226-emberpuff"
+    },
+    {
+      "speciesId": "cr-027-sludgip",
+      "name": "Sludgip",
+      "types": [
+        "Water",
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "ripple-jab"
+        },
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "brook-dart"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "tidal-calm"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-venom-otter-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-1-back.png"
+      },
+      "notes": "Artwork-registered water-venom-otter design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-227-sludgip"
+    },
+    {
+      "speciesId": "cr-028-toxotter",
+      "name": "Toxotter",
+      "types": [
+        "Water",
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 34,
+        "attack": 19,
+        "defense": 17,
+        "specialAttack": 18,
+        "specialDefense": 17,
+        "speed": 19
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "ripple-jab"
+        },
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "brook-dart"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "tidal-calm"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-venom-otter-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-2-back.png"
+      },
+      "notes": "Artwork-registered water-venom-otter design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-228-toxotter"
+    },
+    {
+      "speciesId": "cr-029-venomwake",
+      "name": "Venomwake",
+      "types": [
+        "Water",
+        "Venom"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 43,
+        "attack": 26,
+        "defense": 23,
+        "specialAttack": 25,
+        "specialDefense": 23,
+        "speed": 26
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "ripple-jab"
+        },
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "brook-dart"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "tidal-calm"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/water-venom-otter-stage-3.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-3-back.png"
+      },
+      "notes": "Artwork-registered water-venom-otter design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-229-venomwake"
+    },
+    {
+      "speciesId": "cr-030-thornix",
+      "name": "Thornix",
+      "types": [
+        "Venom"
+      ],
+      "role": "defender",
+      "baseStats": {
+        "hp": 28,
+        "attack": 10,
+        "defense": 15,
+        "specialAttack": 9,
+        "specialDefense": 13,
+        "speed": 8
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "toxin-pin"
+        },
+        {
+          "level": 4,
+          "moveId": "mire-spray"
+        },
+        {
+          "level": 7,
+          "moveId": "bitter-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "noxious-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "fang-drip"
+        },
+        {
+          "level": 16,
+          "moveId": "venom-hiss"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/venom-thorny-devil-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/venom-thorny-devil-stage-1-back.png"
+      },
+      "notes": "Artwork-registered venom-thorny-devil design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-230-thornix"
+    },
+    {
+      "speciesId": "cr-031-wispurr",
+      "name": "Wispurr",
+      "types": [
+        "Ghost"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "specter-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "wisp-murmur"
+        },
+        {
+          "level": 7,
+          "moveId": "spirit-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "fading-curtain"
+        },
+        {
+          "level": 13,
+          "moveId": "phantom-clasp"
+        },
+        {
+          "level": 16,
+          "moveId": "ectoshard"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/ghost-cat-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/ghost-cat-stage-1-back.png"
+      },
+      "notes": "Artwork-registered ghost-cat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-231-wispurr"
+    },
+    {
+      "speciesId": "cr-032-phantompaw",
+      "name": "Phantompaw",
+      "types": [
+        "Ghost"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "specter-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "wisp-murmur"
+        },
+        {
+          "level": 7,
+          "moveId": "spirit-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "fading-curtain"
+        },
+        {
+          "level": 13,
+          "moveId": "phantom-clasp"
+        },
+        {
+          "level": 16,
+          "moveId": "ectoshard"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/ghost-cat-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/ghost-cat-stage-2-back.png"
+      },
+      "notes": "Artwork-registered ghost-cat design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-232-phantompaw"
+    },
+    {
+      "speciesId": "cr-033-mindwink",
+      "name": "Mindwink",
+      "types": [
+        "Psychic"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "mind-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "thought-needle"
+        },
+        {
+          "level": 7,
+          "moveId": "calm-center"
+        },
+        {
+          "level": 10,
+          "moveId": "blurred-senses"
+        },
+        {
+          "level": 13,
+          "moveId": "psyche-push"
+        },
+        {
+          "level": 16,
+          "moveId": "neuron-prism"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/psychic-aye-aye-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/psychic-aye-aye-stage-1-back.png"
+      },
+      "notes": "Artwork-registered psychic-aye-aye design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-233-mindwink"
+    },
+    {
+      "speciesId": "cr-034-seerclaw",
+      "name": "Seerclaw",
+      "types": [
+        "Psychic"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 34,
+        "attack": 19,
+        "defense": 17,
+        "specialAttack": 18,
+        "specialDefense": 17,
+        "speed": 19
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "mind-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "thought-needle"
+        },
+        {
+          "level": 7,
+          "moveId": "calm-center"
+        },
+        {
+          "level": 10,
+          "moveId": "blurred-senses"
+        },
+        {
+          "level": 13,
+          "moveId": "psyche-push"
+        },
+        {
+          "level": 16,
+          "moveId": "neuron-prism"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/psychic-aye-aye-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/psychic-aye-aye-stage-2-back.png"
+      },
+      "notes": "Artwork-registered psychic-aye-aye design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-234-seerclaw"
+    },
+    {
+      "speciesId": "cr-035-duskhound",
+      "name": "Duskhound",
+      "types": [
+        "Shadow"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "shade-scratch"
+        },
+        {
+          "level": 4,
+          "moveId": "dusk-thread"
+        },
+        {
+          "level": 7,
+          "moveId": "quiet-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "blindfold-mist"
+        },
+        {
+          "level": 13,
+          "moveId": "umbral-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "gloam-dart"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/shadow-borzoi-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/shadow-borzoi-stage-1-back.png"
+      },
+      "notes": "Artwork-registered shadow-borzoi design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-235-duskhound"
+    },
+    {
+      "speciesId": "cr-036-noctirush",
+      "name": "Noctirush",
+      "types": [
+        "Shadow"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 31,
+        "attack": 18,
+        "defense": 15,
+        "specialAttack": 17,
+        "specialDefense": 15,
+        "speed": 22
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "shade-scratch"
+        },
+        {
+          "level": 4,
+          "moveId": "dusk-thread"
+        },
+        {
+          "level": 7,
+          "moveId": "quiet-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "blindfold-mist"
+        },
+        {
+          "level": 13,
+          "moveId": "umbral-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "gloam-dart"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/shadow-borzoi-stage-2.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/shadow-borzoi-stage-2-back.png"
+      },
+      "notes": "Artwork-registered shadow-borzoi design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-236-noctirush"
+    },
+    {
+      "speciesId": "cr-037-froststoat",
+      "name": "Froststoat",
+      "types": [
+        "Ice"
+      ],
+      "role": "swift",
+      "baseStats": {
+        "hp": 22,
+        "attack": 11,
+        "defense": 9,
+        "specialAttack": 10,
+        "specialDefense": 9,
+        "speed": 15
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "frost-nip"
+        },
+        {
+          "level": 4,
+          "moveId": "snowmelt-ray"
+        },
+        {
+          "level": 7,
+          "moveId": "cold-focus"
+        },
+        {
+          "level": 10,
+          "moveId": "hail-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "rime-claw"
+        },
+        {
+          "level": 16,
+          "moveId": "glacier-lance"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/gallery/ice-winter-stoat-stage-1.png",
+        "rearSpritePath": "assets/critters/battle-backs/roster/ice-winter-stoat-stage-1-back.png"
+      },
+      "notes": "Artwork-registered ice-winter-stoat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
+      "catalogOnly": true,
+      "legacySpeciesId": "cr-237-froststoat"
     },
     {
       "speciesId": "cr-038-brinefin",
@@ -2603,7 +2151,6 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-037-puddlepip",
       "evolvesTo": {
         "speciesId": "cr-039-coraloo",
         "minLevel": 28,
@@ -14076,1412 +13623,6 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "legacySpeciesId": "cr-198-drakoryn"
-    },
-    {
-      "speciesId": "cr-210-falquill",
-      "name": "Falquill",
-      "types": [
-        "Flying"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 22,
-        "attack": 12,
-        "defense": 9,
-        "specialAttack": 10,
-        "specialDefense": 9,
-        "speed": 15
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 · Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common",
-          "wildOnly": true
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "feather-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "gale-whisper"
-        },
-        {
-          "level": 7,
-          "moveId": "updraft-poise"
-        },
-        {
-          "level": 13,
-          "moveId": "wingline-cut"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-1-front.png",
-        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-1-back.png"
-      },
-      "notes": "Falcon line, stage 1 of 3. Evolution requirements are not assigned."
-    },
-    {
-      "speciesId": "cr-211-falrift",
-      "name": "Falrift",
-      "types": [
-        "Flying"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 31,
-        "attack": 19,
-        "defense": 14,
-        "specialAttack": 17,
-        "specialDefense": 15,
-        "speed": 22
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "feather-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "gale-whisper"
-        },
-        {
-          "level": 7,
-          "moveId": "updraft-poise"
-        },
-        {
-          "level": 13,
-          "moveId": "wingline-cut"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-2-front.png",
-        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-2-back.png"
-      },
-      "notes": "Falcon line, stage 2 of 3. Evolution requirements are not assigned."
-    },
-    {
-      "speciesId": "cr-212-falgrath",
-      "name": "Falgrath",
-      "types": [
-        "Flying"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 41,
-        "attack": 27,
-        "defense": 21,
-        "specialAttack": 23,
-        "specialDefense": 22,
-        "speed": 30
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "feather-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "gale-whisper"
-        },
-        {
-          "level": 7,
-          "moveId": "updraft-poise"
-        },
-        {
-          "level": 13,
-          "moveId": "wingline-cut"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/route-one-designs/route-1/falcon-stage-3-front.png",
-        "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-3-back.png"
-      },
-      "notes": "Falcon line, stage 3 of 3. Evolution requirements are not assigned."
-    },
-    {
-      "speciesId": "cr-213-toxidot",
-      "name": "Toxidot",
-      "types": [
-        "Venom"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 23,
-        "attack": 10,
-        "defense": 11,
-        "specialAttack": 12,
-        "specialDefense": 10,
-        "speed": 12
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 · Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common",
-          "wildOnly": true
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "toxin-pin"
-        },
-        {
-          "level": 4,
-          "moveId": "mire-spray"
-        },
-        {
-          "level": 7,
-          "moveId": "bitter-focus"
-        },
-        {
-          "level": 13,
-          "moveId": "fang-drip"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/route-one-designs/venom-moth/venom-larva-front.png",
-        "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-larva-back.png"
-      },
-      "notes": "Venom moth line, stage 1 of 2. Evolution requirements are not assigned."
-    },
-    {
-      "speciesId": "cr-214-mothoxin",
-      "name": "Mothoxin",
-      "types": [
-        "Venom"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 34,
-        "attack": 17,
-        "defense": 16,
-        "specialAttack": 23,
-        "specialDefense": 19,
-        "speed": 21
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "toxin-pin"
-        },
-        {
-          "level": 4,
-          "moveId": "mire-spray"
-        },
-        {
-          "level": 7,
-          "moveId": "bitter-focus"
-        },
-        {
-          "level": 13,
-          "moveId": "fang-drip"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/route-one-designs/venom-moth/venom-owl-moth-front.png",
-        "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-owl-moth-back.png"
-      },
-      "notes": "Venom moth line, stage 2 of 2. Evolution requirements are not assigned."
-    },
-    {
-      "speciesId": "cr-215-scruffin",
-      "name": "Scruffin",
-      "types": [
-        "Fighting"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 25,
-        "attack": 12,
-        "defense": 11,
-        "specialAttack": 8,
-        "specialDefense": 10,
-        "speed": 13
-      },
-      "habitats": [
-        {
-          "areaId": "route1",
-          "areaName": "Route 1 · Rice Fields",
-          "minLevel": 2,
-          "maxLevel": 5,
-          "rarity": "common",
-          "wildOnly": true
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "training-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "spirit-thrust"
-        },
-        {
-          "level": 7,
-          "moveId": "battle-breath"
-        },
-        {
-          "level": 13,
-          "moveId": "breaker-kick"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-front.png",
-        "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-back.png",
-        "genderVariants": {
-          "female": {
-            "spritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-front.png",
-            "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-red-merle-stage-1-back.png"
-          },
-          "male": {
-            "spritePath": "assets/critters/route-one-designs/roster/aussie-blue-merle-stage-1-front.png",
-            "rearSpritePath": "assets/critters/route-one-designs/roster/aussie-blue-merle-stage-1-back.png"
-          }
-        }
-      },
-      "notes": "Australian Shepherd pup; female red merle and male blue merle are cosmetic variants of the same species."
-    },
-    {
-      "speciesId": "cr-216-ruffguard",
-      "name": "Ruffguard",
-      "types": [
-        "Fighting"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 34,
-        "attack": 19,
-        "defense": 17,
-        "specialAttack": 18,
-        "specialDefense": 17,
-        "speed": 19
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "training-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "spirit-thrust"
-        },
-        {
-          "level": 7,
-          "moveId": "battle-breath"
-        },
-        {
-          "level": 10,
-          "moveId": "feint-stare"
-        },
-        {
-          "level": 13,
-          "moveId": "breaker-kick"
-        },
-        {
-          "level": 16,
-          "moveId": "force-palm"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/aussie-red-merle-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-2-back.png",
-        "genderVariants": {
-          "female": {
-            "spritePath": "assets/critters/gallery/aussie-red-merle-stage-2.png",
-            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-2-back.png"
-          },
-          "male": {
-            "spritePath": "assets/critters/gallery/aussie-blue-merle-stage-2.png",
-            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-blue-merle-stage-2-back.png"
-          }
-        }
-      },
-      "notes": "Artwork-registered aussie design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-217-barkwarden",
-      "name": "Barkwarden",
-      "types": [
-        "Fighting"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 43,
-        "attack": 26,
-        "defense": 23,
-        "specialAttack": 25,
-        "specialDefense": 23,
-        "speed": 26
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "training-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "spirit-thrust"
-        },
-        {
-          "level": 7,
-          "moveId": "battle-breath"
-        },
-        {
-          "level": 10,
-          "moveId": "feint-stare"
-        },
-        {
-          "level": 13,
-          "moveId": "breaker-kick"
-        },
-        {
-          "level": 16,
-          "moveId": "force-palm"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/aussie-red-merle-stage-3.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-3-back.png",
-        "genderVariants": {
-          "female": {
-            "spritePath": "assets/critters/gallery/aussie-red-merle-stage-3.png",
-            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-red-merle-stage-3-back.png"
-          },
-          "male": {
-            "spritePath": "assets/critters/gallery/aussie-blue-merle-stage-3.png",
-            "rearSpritePath": "assets/critters/battle-backs/roster/aussie-blue-merle-stage-3-back.png"
-          }
-        }
-      },
-      "notes": "Artwork-registered aussie design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-218-mossplate",
-      "name": "Mossplate",
-      "types": [
-        "Grass"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 28,
-        "attack": 10,
-        "defense": 15,
-        "specialAttack": 9,
-        "specialDefense": 13,
-        "speed": 8
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "leaf-nudge"
-        },
-        {
-          "level": 4,
-          "moveId": "pollen-stitch"
-        },
-        {
-          "level": 7,
-          "moveId": "green-vigor"
-        },
-        {
-          "level": 10,
-          "moveId": "frond-screen"
-        },
-        {
-          "level": 13,
-          "moveId": "briar-swipe"
-        },
-        {
-          "level": 16,
-          "moveId": "clover-gust"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/grass-glyptodont-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/grass-glyptodont-stage-1-back.png"
-      },
-      "notes": "Artwork-registered grass-glyptodont design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-219-bramblevault",
-      "name": "Bramblevault",
-      "types": [
-        "Grass"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 37,
-        "attack": 17,
-        "defense": 21,
-        "specialAttack": 16,
-        "specialDefense": 19,
-        "speed": 15
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "leaf-nudge"
-        },
-        {
-          "level": 4,
-          "moveId": "pollen-stitch"
-        },
-        {
-          "level": 7,
-          "moveId": "green-vigor"
-        },
-        {
-          "level": 10,
-          "moveId": "frond-screen"
-        },
-        {
-          "level": 13,
-          "moveId": "briar-swipe"
-        },
-        {
-          "level": 16,
-          "moveId": "clover-gust"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/grass-glyptodont-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/grass-glyptodont-stage-2-back.png"
-      },
-      "notes": "Artwork-registered grass-glyptodont design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-220-sparkhorn",
-      "name": "Sparkhorn",
-      "types": [
-        "Electric"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 22,
-        "attack": 11,
-        "defense": 9,
-        "specialAttack": 10,
-        "specialDefense": 9,
-        "speed": 15
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "spark-nudge"
-        },
-        {
-          "level": 4,
-          "moveId": "circuit-flicker"
-        },
-        {
-          "level": 7,
-          "moveId": "coil-charge"
-        },
-        {
-          "level": 10,
-          "moveId": "static-blur"
-        },
-        {
-          "level": 13,
-          "moveId": "arc-talon"
-        },
-        {
-          "level": 16,
-          "moveId": "voltstream"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/electric-pronghorn-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/electric-pronghorn-stage-1-back.png"
-      },
-      "notes": "Artwork-registered electric-pronghorn design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-221-thundelope",
-      "name": "Thundelope",
-      "types": [
-        "Electric"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 31,
-        "attack": 18,
-        "defense": 15,
-        "specialAttack": 17,
-        "specialDefense": 15,
-        "speed": 22
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "spark-nudge"
-        },
-        {
-          "level": 4,
-          "moveId": "circuit-flicker"
-        },
-        {
-          "level": 7,
-          "moveId": "coil-charge"
-        },
-        {
-          "level": 10,
-          "moveId": "static-blur"
-        },
-        {
-          "level": 13,
-          "moveId": "arc-talon"
-        },
-        {
-          "level": 16,
-          "moveId": "voltstream"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/electric-pronghorn-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/electric-pronghorn-stage-2-back.png"
-      },
-      "notes": "Artwork-registered electric-pronghorn design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-222-pebblusk",
-      "name": "Pebblusk",
-      "types": [
-        "Rock"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 28,
-        "attack": 10,
-        "defense": 15,
-        "specialAttack": 9,
-        "specialDefense": 13,
-        "speed": 8
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "pebble-knock"
-        },
-        {
-          "level": 4,
-          "moveId": "quartz-ray"
-        },
-        {
-          "level": 7,
-          "moveId": "stone-resolve"
-        },
-        {
-          "level": 10,
-          "moveId": "grit-cloud"
-        },
-        {
-          "level": 13,
-          "moveId": "crag-tackle"
-        },
-        {
-          "level": 16,
-          "moveId": "shardbeam"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/rock-mastodon-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/rock-mastodon-stage-1-back.png"
-      },
-      "notes": "Artwork-registered rock-mastodon design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-223-mastolith",
-      "name": "Mastolith",
-      "types": [
-        "Rock"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 37,
-        "attack": 17,
-        "defense": 21,
-        "specialAttack": 16,
-        "specialDefense": 19,
-        "speed": 15
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "pebble-knock"
-        },
-        {
-          "level": 4,
-          "moveId": "quartz-ray"
-        },
-        {
-          "level": 7,
-          "moveId": "stone-resolve"
-        },
-        {
-          "level": 10,
-          "moveId": "grit-cloud"
-        },
-        {
-          "level": 13,
-          "moveId": "crag-tackle"
-        },
-        {
-          "level": 16,
-          "moveId": "shardbeam"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/rock-mastodon-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/rock-mastodon-stage-2-back.png"
-      },
-      "notes": "Artwork-registered rock-mastodon design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-224-quilldash",
-      "name": "Quilldash",
-      "types": [
-        "Flying"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 22,
-        "attack": 11,
-        "defense": 9,
-        "specialAttack": 10,
-        "specialDefense": 9,
-        "speed": 15
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "feather-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "gale-whisper"
-        },
-        {
-          "level": 7,
-          "moveId": "updraft-poise"
-        },
-        {
-          "level": 10,
-          "moveId": "dustwing"
-        },
-        {
-          "level": 13,
-          "moveId": "wingline-cut"
-        },
-        {
-          "level": 16,
-          "moveId": "zephyr-needle"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/flying-microraptor-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/flying-microraptor-stage-1-back.png"
-      },
-      "notes": "Artwork-registered flying-microraptor design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-225-aerosaur",
-      "name": "Aerosaur",
-      "types": [
-        "Flying"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 31,
-        "attack": 18,
-        "defense": 15,
-        "specialAttack": 17,
-        "specialDefense": 15,
-        "speed": 22
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "feather-jab"
-        },
-        {
-          "level": 4,
-          "moveId": "gale-whisper"
-        },
-        {
-          "level": 7,
-          "moveId": "updraft-poise"
-        },
-        {
-          "level": 10,
-          "moveId": "dustwing"
-        },
-        {
-          "level": 13,
-          "moveId": "wingline-cut"
-        },
-        {
-          "level": 16,
-          "moveId": "zephyr-needle"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/flying-microraptor-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/flying-microraptor-stage-2-back.png"
-      },
-      "notes": "Artwork-registered flying-microraptor design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-226-emberpuff",
-      "name": "Emberpuff",
-      "types": [
-        "Fire"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 25,
-        "attack": 12,
-        "defense": 11,
-        "specialAttack": 11,
-        "specialDefense": 11,
-        "speed": 12
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "cinder-tap"
-        },
-        {
-          "level": 4,
-          "moveId": "embercoil"
-        },
-        {
-          "level": 7,
-          "moveId": "kindle-heart"
-        },
-        {
-          "level": 10,
-          "moveId": "ash-veil"
-        },
-        {
-          "level": 13,
-          "moveId": "furnace-claw"
-        },
-        {
-          "level": 16,
-          "moveId": "blazeline"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/fire-red-panda-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/fire-red-panda-stage-1-back.png"
-      },
-      "notes": "Artwork-registered fire-red-panda design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-227-sludgip",
-      "name": "Sludgip",
-      "types": [
-        "Water",
-        "Venom"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 25,
-        "attack": 12,
-        "defense": 11,
-        "specialAttack": 11,
-        "specialDefense": 11,
-        "speed": 12
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "ripple-jab"
-        },
-        {
-          "level": 1,
-          "moveId": "toxin-pin"
-        },
-        {
-          "level": 4,
-          "moveId": "brook-dart"
-        },
-        {
-          "level": 4,
-          "moveId": "mire-spray"
-        },
-        {
-          "level": 7,
-          "moveId": "tidal-calm"
-        },
-        {
-          "level": 7,
-          "moveId": "bitter-focus"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/water-venom-otter-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-1-back.png"
-      },
-      "notes": "Artwork-registered water-venom-otter design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-228-toxotter",
-      "name": "Toxotter",
-      "types": [
-        "Water",
-        "Venom"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 34,
-        "attack": 19,
-        "defense": 17,
-        "specialAttack": 18,
-        "specialDefense": 17,
-        "speed": 19
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "ripple-jab"
-        },
-        {
-          "level": 1,
-          "moveId": "toxin-pin"
-        },
-        {
-          "level": 4,
-          "moveId": "brook-dart"
-        },
-        {
-          "level": 4,
-          "moveId": "mire-spray"
-        },
-        {
-          "level": 7,
-          "moveId": "tidal-calm"
-        },
-        {
-          "level": 7,
-          "moveId": "bitter-focus"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/water-venom-otter-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-2-back.png"
-      },
-      "notes": "Artwork-registered water-venom-otter design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-229-venomwake",
-      "name": "Venomwake",
-      "types": [
-        "Water",
-        "Venom"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 43,
-        "attack": 26,
-        "defense": 23,
-        "specialAttack": 25,
-        "specialDefense": 23,
-        "speed": 26
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "ripple-jab"
-        },
-        {
-          "level": 1,
-          "moveId": "toxin-pin"
-        },
-        {
-          "level": 4,
-          "moveId": "brook-dart"
-        },
-        {
-          "level": 4,
-          "moveId": "mire-spray"
-        },
-        {
-          "level": 7,
-          "moveId": "tidal-calm"
-        },
-        {
-          "level": 7,
-          "moveId": "bitter-focus"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/water-venom-otter-stage-3.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/water-venom-otter-stage-3-back.png"
-      },
-      "notes": "Artwork-registered water-venom-otter design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-230-thornix",
-      "name": "Thornix",
-      "types": [
-        "Venom"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 28,
-        "attack": 10,
-        "defense": 15,
-        "specialAttack": 9,
-        "specialDefense": 13,
-        "speed": 8
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "toxin-pin"
-        },
-        {
-          "level": 4,
-          "moveId": "mire-spray"
-        },
-        {
-          "level": 7,
-          "moveId": "bitter-focus"
-        },
-        {
-          "level": 10,
-          "moveId": "noxious-screen"
-        },
-        {
-          "level": 13,
-          "moveId": "fang-drip"
-        },
-        {
-          "level": 16,
-          "moveId": "venom-hiss"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/venom-thorny-devil-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/venom-thorny-devil-stage-1-back.png"
-      },
-      "notes": "Artwork-registered venom-thorny-devil design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-231-wispurr",
-      "name": "Wispurr",
-      "types": [
-        "Ghost"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 22,
-        "attack": 11,
-        "defense": 9,
-        "specialAttack": 10,
-        "specialDefense": 9,
-        "speed": 15
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "specter-tap"
-        },
-        {
-          "level": 4,
-          "moveId": "wisp-murmur"
-        },
-        {
-          "level": 7,
-          "moveId": "spirit-focus"
-        },
-        {
-          "level": 10,
-          "moveId": "fading-curtain"
-        },
-        {
-          "level": 13,
-          "moveId": "phantom-clasp"
-        },
-        {
-          "level": 16,
-          "moveId": "ectoshard"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/ghost-cat-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/ghost-cat-stage-1-back.png"
-      },
-      "notes": "Artwork-registered ghost-cat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-232-phantompaw",
-      "name": "Phantompaw",
-      "types": [
-        "Ghost"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 31,
-        "attack": 18,
-        "defense": 15,
-        "specialAttack": 17,
-        "specialDefense": 15,
-        "speed": 22
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "specter-tap"
-        },
-        {
-          "level": 4,
-          "moveId": "wisp-murmur"
-        },
-        {
-          "level": 7,
-          "moveId": "spirit-focus"
-        },
-        {
-          "level": 10,
-          "moveId": "fading-curtain"
-        },
-        {
-          "level": 13,
-          "moveId": "phantom-clasp"
-        },
-        {
-          "level": 16,
-          "moveId": "ectoshard"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/ghost-cat-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/ghost-cat-stage-2-back.png"
-      },
-      "notes": "Artwork-registered ghost-cat design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-233-mindwink",
-      "name": "Mindwink",
-      "types": [
-        "Psychic"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 25,
-        "attack": 12,
-        "defense": 11,
-        "specialAttack": 11,
-        "specialDefense": 11,
-        "speed": 12
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "mind-tap"
-        },
-        {
-          "level": 4,
-          "moveId": "thought-needle"
-        },
-        {
-          "level": 7,
-          "moveId": "calm-center"
-        },
-        {
-          "level": 10,
-          "moveId": "blurred-senses"
-        },
-        {
-          "level": 13,
-          "moveId": "psyche-push"
-        },
-        {
-          "level": 16,
-          "moveId": "neuron-prism"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/psychic-aye-aye-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/psychic-aye-aye-stage-1-back.png"
-      },
-      "notes": "Artwork-registered psychic-aye-aye design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-234-seerclaw",
-      "name": "Seerclaw",
-      "types": [
-        "Psychic"
-      ],
-      "role": "balanced",
-      "baseStats": {
-        "hp": 34,
-        "attack": 19,
-        "defense": 17,
-        "specialAttack": 18,
-        "specialDefense": 17,
-        "speed": 19
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "mind-tap"
-        },
-        {
-          "level": 4,
-          "moveId": "thought-needle"
-        },
-        {
-          "level": 7,
-          "moveId": "calm-center"
-        },
-        {
-          "level": 10,
-          "moveId": "blurred-senses"
-        },
-        {
-          "level": 13,
-          "moveId": "psyche-push"
-        },
-        {
-          "level": 16,
-          "moveId": "neuron-prism"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/psychic-aye-aye-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/psychic-aye-aye-stage-2-back.png"
-      },
-      "notes": "Artwork-registered psychic-aye-aye design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-235-duskhound",
-      "name": "Duskhound",
-      "types": [
-        "Shadow"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 22,
-        "attack": 11,
-        "defense": 9,
-        "specialAttack": 10,
-        "specialDefense": 9,
-        "speed": 15
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "shade-scratch"
-        },
-        {
-          "level": 4,
-          "moveId": "dusk-thread"
-        },
-        {
-          "level": 7,
-          "moveId": "quiet-resolve"
-        },
-        {
-          "level": 10,
-          "moveId": "blindfold-mist"
-        },
-        {
-          "level": 13,
-          "moveId": "umbral-talon"
-        },
-        {
-          "level": 16,
-          "moveId": "gloam-dart"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/shadow-borzoi-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/shadow-borzoi-stage-1-back.png"
-      },
-      "notes": "Artwork-registered shadow-borzoi design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-236-noctirush",
-      "name": "Noctirush",
-      "types": [
-        "Shadow"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 31,
-        "attack": 18,
-        "defense": 15,
-        "specialAttack": 17,
-        "specialDefense": 15,
-        "speed": 22
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "shade-scratch"
-        },
-        {
-          "level": 4,
-          "moveId": "dusk-thread"
-        },
-        {
-          "level": 7,
-          "moveId": "quiet-resolve"
-        },
-        {
-          "level": 10,
-          "moveId": "blindfold-mist"
-        },
-        {
-          "level": 13,
-          "moveId": "umbral-talon"
-        },
-        {
-          "level": 16,
-          "moveId": "gloam-dart"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/shadow-borzoi-stage-2.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/shadow-borzoi-stage-2-back.png"
-      },
-      "notes": "Artwork-registered shadow-borzoi design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
-    },
-    {
-      "speciesId": "cr-237-froststoat",
-      "name": "Froststoat",
-      "types": [
-        "Ice"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 22,
-        "attack": 11,
-        "defense": 9,
-        "specialAttack": 10,
-        "specialDefense": 9,
-        "speed": 15
-      },
-      "habitats": [],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "frost-nip"
-        },
-        {
-          "level": 4,
-          "moveId": "snowmelt-ray"
-        },
-        {
-          "level": 7,
-          "moveId": "cold-focus"
-        },
-        {
-          "level": 10,
-          "moveId": "hail-screen"
-        },
-        {
-          "level": 13,
-          "moveId": "rime-claw"
-        },
-        {
-          "level": 16,
-          "moveId": "glacier-lance"
-        }
-      ],
-      "art": {
-        "status": "ready",
-        "spritePath": "assets/critters/gallery/ice-winter-stoat-stage-1.png",
-        "rearSpritePath": "assets/critters/battle-backs/roster/ice-winter-stoat-stage-1-back.png"
-      },
-      "notes": "Artwork-registered ice-winter-stoat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
-      "catalogOnly": true
     }
   ],
   "encounterBalanceVersion": 2

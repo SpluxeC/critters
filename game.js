@@ -363,7 +363,7 @@ function migrateSpeciesIds(){
  if(!s||!speciesRegistry.size)return;
  const alias=new Map();
  for(const sp of speciesRegistry.values())if(sp.legacySpeciesId&&sp.legacySpeciesId!==sp.speciesId)alias.set(sp.legacySpeciesId,sp.speciesId);
- const translate=id=>alias.get(id)||id;
+ const translate=id=>speciesRegistry.has(id)?id:(alias.get(id)||id);
  const moveRecord=p=>{
   if(!p||typeof p!=='object')return;
   if(p.speciesId)p.speciesId=translate(p.speciesId);
@@ -483,7 +483,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=87-paired-art',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=88-roster-replacement',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
