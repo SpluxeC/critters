@@ -576,3 +576,11 @@ test('v90 floating world touch direction has neutral deadzone and cardinal movem
  const sandbox=extract('function touchDirection(dx,dy){','function aimStick(e){',{WORLD_DRAG_DEADZONE:12});
  assert.equal(sandbox.touchDirection(3,4),null);assert.equal(sandbox.touchDirection(25,4),'right');assert.equal(sandbox.touchDirection(-25,4),'left');assert.equal(sandbox.touchDirection(4,-25),'up');assert.equal(sandbox.touchDirection(4,25),'down');
 });
+
+test('v92 routes field notices and Index confirmations through overworld narrator',()=>{
+ assert.match(game,/function indexNotice\(message\)/);
+ assert.match(game,/indexNotice\('Game saved successfully\.'\)/);
+ assert.match(game,/indexNotice\('Quest completed:/);
+ assert.match(game,/function routeEvolutionNotices\(/);
+ assert.doesNotMatch(game,/fieldBagResult\?'<div class="watchBagNotice"/);
+});

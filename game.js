@@ -226,9 +226,9 @@ function inspectInterior(o){
    save();
    return notifyWorld(['Inside the supply box is a Potion!','Potion ×1 added to your inventory.']);
   }
-  return say(['The travel supply box is empty. You already collected its Potion.']);
+  return notifyWorld(['The travel supply box is empty. You already collected its Potion.']);
  }
- return say(o.description);
+ return notifyWorld(o.description);
 }
 
 
@@ -280,11 +280,11 @@ function route1SiteAt(x,y){return s.area==='route1'?ROUTE1_SITES.find(o=>o.x===x
 function inspectRoute1Site(o){
  if(o.reward){
   s.discoveries=s.discoveries||{};
-  if(s.discoveries[o.id])return say(['The '+o.title.toLowerCase()+' is empty.']);
+  if(s.discoveries[o.id])return notifyWorld(['The '+o.title.toLowerCase()+' is empty.']);
   s.discoveries[o.id]=true;s.inventory[o.reward]=(s.inventory[o.reward]||0)+1;
   save();return notifyWorld([o.text[0],'You found '+o.reward+' ×1! It was added to your inventory.']);
  }
- return say(o.text);
+ return notifyWorld(o.text);
 }
 
 function solidAt(x,y){
@@ -567,7 +567,7 @@ function sideQuestGoal(q){return q.kind==='landmark'?1:q.required}
 function sideQuestRewardLabel(q){
  return [q.reward.credits?q.reward.credits+' money':'',q.reward.item?q.reward.item+' ×'+(q.reward.quantity||1):''].filter(Boolean).join(' + ');
 }
-function talkSideQuest(id){
+function talkSideQuest(id,refresh=false){
  const q=sideQuest(id);if(!q)return;
  const state=s.sideQuests?.[id],progress=Math.min(sideQuestGoal(q),sideQuestProgress(q));
  const done=!!state&&state.status==='complete',ready=!!state&&state.status==='active'&&progress>=sideQuestGoal(q);
@@ -575,23 +575,24 @@ function talkSideQuest(id){
   ready?'You did it! I have a reward for your work.':
   state?'Keep exploring. You have made '+progress+' / '+sideQuestGoal(q)+' progress.':
   'Would you like to help? This is optional, and your main journey will continue normally.';
+ if(!refresh)return say([q.giver+': '+message],()=>talkSideQuest(id,true));
  open(q.giver+' · Side Quest','<h3>'+escapeHtml(q.title)+'</h3><p>'+escapeHtml(q.description)+'</p>'
   +'<p><b>Progress:</b> '+progress+' / '+sideQuestGoal(q)+'</p>'
   +'<p><b>Reward:</b> '+escapeHtml(sideQuestRewardLabel(q))+'</p>'
-  +'<p>'+escapeHtml(message)+'</p><div class="options">'
+  +'<div class="options">'
   +(ready?'<button class="btn primary" id="questClaim">Claim reward</button>':'')
   +(!state?'<button class="btn primary" id="questAccept">Accept quest</button>':'')
   +'<button class="btn" id="questClose">Leave</button></div>');
  if($('questAccept'))$('questAccept').onclick=()=>{
   s.sideQuests[q.id]={status:'active',baseline:q.kind==='captures'?(s.questCaptureCounts?.[q.captureArea]||0):0};
-  save();talkSideQuest(q.id);
+  save();indexNotice('Quest accepted: '+q.title+'.');talkSideQuest(q.id,true);
  };
  if($('questClaim'))$('questClaim').onclick=()=>{
   const active=s.sideQuests[q.id];if(!active||active.status!=='active'||sideQuestProgress(q)<sideQuestGoal(q))return;
   if(q.reward.credits)s.money+=q.reward.credits;
   if(q.reward.item)s.inventory[q.reward.item]=(s.inventory[q.reward.item]||0)+(q.reward.quantity||1);
-  active.status='complete';save();
-  talkSideQuest(q.id);
+  active.status='complete';save();indexNotice('Quest completed: '+q.title+'. Reward: '+sideQuestRewardLabel(q)+'.');
+  talkSideQuest(q.id,true);
  };
  $('questClose').onclick=close;
 }
@@ -774,9 +775,11 @@ function clearWorldNarrator(){hideWorldNarrator();worldNarratorQueue.length=0;wo
 function suspendWorldNotice(){if(worldNarratorCurrent?.notice){worldNarratorQueue.unshift(worldNarratorCurrent);worldNarratorCurrent=null;hideWorldNarrator()}}
 function say(lines,callback){enqueueWorldNarration(lines,false,callback)}
 function notifyWorld(lines){enqueueWorldNarration(lines,true)}
+function indexNotice(message){notifyWorld('Critter Index: '+message)}
 function enqueueWorldNarration(lines,notice,callback){
  const list=(Array.isArray(lines)?lines:[lines]).filter(x=>typeof x==='string'&&x.trim());
  if(!list.length){if(callback)callback();return}
+ if(notice&&[worldNarratorCurrent,...worldNarratorQueue].some(n=>n?.notice&&n.lines.join('\n')===list.join('\n')))return;
  const entry={lines:list.slice(),notice,callback};
  if(!notice&&worldNarratorCurrent?.notice){suspendWorldNotice();worldNarratorQueue.unshift(entry)}else worldNarratorQueue.push(entry);
  pumpWorldNarrator();
@@ -1675,14 +1678,14 @@ function tryOutdoorExit(d,x,y){
   say(['Complete the laboratory tutorial before exploring the region.']);return true;
  }
  if(dest==='cave'){
-  if(!s.cut){say(['Thick vines block the mountain cave. The first badge unlocks the vegetation cutter.']);return true}
+  if(!s.cut){notifyWorld(['Thick vines block the mountain cave. The first badge unlocks the vegetation cutter.']);return true}
   region('cave',17,23,'You enter Mountain Cave.');return true;
  }
  if(s.area==='forest'&&dest==='route2'&&!s.cut){
-  say(['Overgrown bamboo blocks the woodland shortcut. The first badge will let you clear it.']);return true;
+  notifyWorld(['Overgrown bamboo blocks the woodland shortcut. The first badge will let you clear it.']);return true;
  }
  if(s.area==='route2'&&dest==='forest'&&!s.cut){
-  say(['The western bamboo path is tangled in vines. Come back after the first badge.']);return true;
+  notifyWorld(['The western bamboo path is tangled in vines. Come back after the first badge.']);return true;
  }
  const destinationSize=outdoorSize(dest);
  const targetX=d==='right'?0:d==='left'?destinationSize.w-1:x;
@@ -1857,7 +1860,7 @@ function interact(){
  if(p.kind==='shop')return shop();
  if(p.kind==='gymtrainer'||p.kind==='routetrainer')return s.defeated[p.id]?say(['Trainer: Good match! Want a rematch?'],()=>rematchMenu(p.id)):say(p.text,()=>startTrainer(p.id));
  if(p.kind==='leader')return s.badges?say(['Gym Leader: Your first badge is well earned.']):!s.defeated.g1||!s.defeated.g2||!s.defeated.g3||!s.puzzles.gate?say(['Gym Leader: Defeat all three trainers and open the garden mechanism first.']):startTrainer('leader');
- if(p.kind==='switch'){if(s.defeated.g1&&s.defeated.g2&&s.defeated.g3){s.puzzles.gate=true;build();save();return say(['You activate the garden mechanism. The roots withdraw!'])}return say(['The mechanism is tangled in roots. Defeat all three Gym trainers first.'])}
+ if(p.kind==='switch'){if(s.defeated.g1&&s.defeated.g2&&s.defeated.g3){s.puzzles.gate=true;build();save();return notifyWorld(['You activate the garden mechanism. The roots withdraw!'])}return say(['The mechanism is tangled in roots. Defeat all three Gym trainers first.'])}
  return say(p.text)}
  const door=villageDoorAt(x,y);
  if(door)return openVillageDoor(door);
@@ -2051,7 +2054,7 @@ function fastTravelToCenter(id){
 
 function indexSettings(){
  return '<div class="watchSectionTitle">Game settings</div>'
-  +(settingsSavedMessage?'<div class="watchBagNotice" role="status">Game saved successfully.</div>':'')
+   +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Audio controls</strong><p>Volume and sound controls will appear here when game audio is added.</p></div>'
@@ -2062,6 +2065,7 @@ let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSel
 
 function index(){
  if(screen!=='game'||battle||narratorBlocking())return;
+ routeEvolutionNotices();
  indexTab='clock';indexMainSection='clock';mapTravelSelection=null;settingsSavedMessage=false;playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
 }
 function indexSlotContent(i){
@@ -2134,7 +2138,7 @@ function indexParty(){
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
    +(battleIndexActive()?'':partyEvolutionControls(p,i))+'</div>';
  }).join('');
- return (battleIndexActive()?'':evolutionNotification())+'<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
+ return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
 }
 
@@ -2175,11 +2179,11 @@ function useFieldBagItem(name,target,moveId=null){
  }else if(EVOLUTION_STONES[name]){
   const results=tryEvolveChain(p,1,true);
   if(!results.length)return false;
-  fieldBagResult=results[0].from+' evolved into '+results[0].to+'!';
+  routeEvolutionNotices();
   fieldBagItem=null;fieldBagTarget=null;save();return true;
  }else return false;
  s.inventory[name]--;
- fieldBagResult=(p.name||p.type)+' used '+name+'.';
+ indexNotice('Used '+name+' on '+(p.name||p.type)+'.');
  fieldBagItem=null;fieldBagTarget=null;
  save();return true;
 }
@@ -2234,7 +2238,7 @@ function indexItems(){
     '<small>'+((name==='Potion'||name==='Revive'||name==='PP Potion'||EVOLUTION_STONES[name])?'No eligible Critter':'Not usable in the field')+'</small>')+'</div>';
  }).join(''):'<div class="watchEmpty">Your bag is empty.</div>';
  return '<div class="watchSectionTitle">Bag</div>'
-  +(fieldBagResult?'<div class="watchBagNotice" role="status">'+escapeHtml(fieldBagResult)+'</div>':'')
+   +''
   +(fieldBagItem?fieldBagUI():fieldList)
   +'<div class="watchSectionTitle">Available modules</div>'+(owned||'<div class="watchEmpty">No uninstalled modules owned.</div>')
   +'<div class="watchReadOnly">Use healing supplies, PP Potions, Revives, and eligible evolution stones from the bag. Capture Beam is available during wild battles; modules are installed at Critter Centers.</div>';
@@ -2516,11 +2520,11 @@ function renderIndex(){
   const target=Number(b.dataset.fieldTarget);
   if(!Number.isInteger(target)||!fieldBagTargets(fieldBagItem).some(x=>x.i===target))return;
   if(fieldBagItem==='PP Potion'){fieldBagTarget=target;renderIndex();return;}
-  if(useFieldBagItem(fieldBagItem,target))renderIndex();
+  if(useFieldBagItem(fieldBagItem,target))close();
  });
  document.querySelectorAll('[data-field-move]').forEach(b=>b.onclick=()=>{
   if(battleViewing||fieldBagItem!=='PP Potion'||!Number.isInteger(fieldBagTarget))return;
-  if(useFieldBagItem('PP Potion',fieldBagTarget,b.dataset.fieldMove))renderIndex();
+  if(useFieldBagItem('PP Potion',fieldBagTarget,b.dataset.fieldMove))close();
  });
  const fieldCancel=$('fieldItemCancel');if(fieldCancel)fieldCancel.onclick=()=>{
   fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';renderIndex();
@@ -2538,7 +2542,7 @@ function renderIndex(){
   if(battleViewing)return;
   const i=Number(b.dataset.evolveParty),p=s.party[i];if(!p||!evolutionReady(p,true))return;
   const result=tryEvolveChain(p,2,true);if(!result.length)return;
-  renderIndex();save();
+  routeEvolutionNotices();save();close();
  });
  document.querySelectorAll('[data-critter-id]').forEach(b=>b.onclick=()=>{
   if(!speciesRegistry.has(b.dataset.critterId))return;
@@ -2555,7 +2559,7 @@ function renderIndex(){
  if(searchBtn)searchBtn.onclick=doSearch;
  if(searchInput)searchInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();doSearch()}};
  if(resetBtn)resetBtn.onclick=()=>{critterBookSearch='';critterBookArea='all';critterBookType='All';critterBookDiscovery='all';critterBookPage=0;critterBookSelected=null;renderIndex()};
- document.querySelectorAll('[data-collection-claim]').forEach(b=>b.onclick=()=>{if(claimCollectionMilestone(Number(b.dataset.collectionClaim)))renderIndex()});
+ document.querySelectorAll('[data-collection-claim]').forEach(b=>b.onclick=()=>{if(claimCollectionMilestone(Number(b.dataset.collectionClaim))){indexNotice('Collection milestone reward received.');close()}});
  const back=$('critterBack');if(back)back.onclick=()=>{critterBookSelected=null;renderIndex()};
  const prev=$('critterPrev');if(prev)prev.onclick=()=>{critterBookPage=Math.max(0,critterBookPage-1);renderIndex()};
  const next=$('critterNext');if(next)next.onclick=()=>{critterBookPage++;renderIndex()};
@@ -2594,7 +2598,7 @@ function renderIndex(){
   const revive=$('watchBattleRevive');if(revive)revive.onclick=selectRevive;
  }else{
   const saveButton=$('settingsSaveGame');
-  if(saveButton)saveButton.onclick=()=>{save();settingsSavedMessage=true;renderIndex()};
+  if(saveButton)saveButton.onclick=()=>{save();indexNotice('Game saved successfully.');close()};
   const titleButton=$('settingsReturnTitle');
   if(titleButton)titleButton.onclick=()=>{save();close();show('title')};
  }
@@ -3529,6 +3533,11 @@ function tryEvolveChain(p,limit=2,usingStone=false){
  if(results.length){s.evolutionNews=Array.isArray(s.evolutionNews)?s.evolutionNews:[];s.evolutionNews.push(...results);s.evolutionNews=s.evolutionNews.slice(-20)}
  return results;
 }
+function routeEvolutionNotices(){
+ const records=Array.isArray(s?.evolutionNews)?s.evolutionNews:[];
+ if(!records.length)return;
+ s.evolutionNews=[];for(const e of records)indexNotice(e.from+' evolved into '+e.to+' at Lv '+e.level+'!');save();
+}
 function evolutionNotification(){
  const records=Array.isArray(s?.evolutionNews)?s.evolutionNews:[];
  s.evolutionNews=[];
@@ -3612,8 +3621,8 @@ function blackout(){
 }
 function center(){
  ensureMapDiscovery();if(REGION_MAP_PLACES.some(p=>p.id===s.area&&p.kind==='center'))s.discoveredCenters[s.area]=true;
- s.lastCenter=s.area;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)});save();
- open('Critter Center','<p>Your Critters were fully healed! The technician can also manage party storage and install modules.</p><div class="options"><button class="btn" id="manageParty">Manage Party / Home Storage</button><button class="btn" id="manageModules">Install Critter Index Modules</button><button class="btn" id="centerDone">Leave</button></div>');
+ s.lastCenter=s.area;s.party.forEach(p=>{p.hp=p.maxHp;p.status='';refillMovePP(p)});save();indexNotice('Your party has been fully healed.');
+ open('Critter Center','<p>Manage party storage or install modules.</p><div class="options"><button class="btn" id="manageParty">Manage Party / Home Storage</button><button class="btn" id="manageModules">Install Critter Index Modules</button><button class="btn" id="centerDone">Leave</button></div>');
  $('manageParty').onclick=manageParty;$('manageModules').onclick=manageModules;$('centerDone').onclick=close
 }
 // Center-only storage browser. Filters are ephemeral UI state, not save data.
@@ -3666,17 +3675,17 @@ function manageParty(){
  });
  document.querySelectorAll('[data-store]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.store);if(s.party.length<=1||i<0||i>=s.party.length)return;
-  s.storage.push(s.party.splice(i,1)[0]);save();manageParty()
+  const p=s.party.splice(i,1)[0];s.storage.push(p);save();indexNotice((p.name||p.type)+' sent to home storage.');manageParty()
  });
  document.querySelectorAll('[data-retrieve]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.retrieve);if(s.party.length>=PARTY_LIMIT||i<0||i>=s.storage.length)return;
-  s.party.push(s.storage.splice(i,1)[0]);save();manageParty()
+  const p=s.storage.splice(i,1)[0];s.party.push(p);save();indexNotice((p.name||p.type)+' added to your party.');manageParty()
  });
  document.querySelectorAll('[data-swap-storage]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.swapStorage),slot=centerSwapSlot;
   if(!Number.isInteger(i)||!Number.isInteger(slot)||!s.storage[i]||!s.party[slot])return;
   [s.party[slot],s.storage[i]]=[s.storage[i],s.party[slot]];
-  save();manageParty();
+  save();indexNotice((s.party[slot].name||s.party[slot].type)+' joined your party; '+(s.storage[i].name||s.storage[i].type)+' sent home.');manageParty();
  });
  $('partyBack').onclick=center
 }
@@ -3701,11 +3710,11 @@ function manageModules(){
  document.querySelectorAll('[data-install]').forEach(b=>b.onclick=()=>{
   const n=b.dataset.install;
   if(!names.includes(n)||s.installed.length>=4||s.modules.filter(m=>m===n).length<=s.installed.filter(m=>m===n).length)return;
-  s.installed.push(n);save();manageModules();
+  s.installed.push(n);save();indexNotice(n+' installed.');manageModules();
  });
  document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.remove);if(!Number.isInteger(i)||i<0||i>=s.installed.length)return;
-  s.installed.splice(i,1);save();manageModules()
+  const removed=s.installed.splice(i,1)[0];save();indexNotice(removed+' removed.');manageModules()
  });
  $('modulesBack').onclick=center
 }
@@ -3728,7 +3737,7 @@ function shop(){
   s.money-=entry[1];
   if(modules.some(g=>g[0]===name))s.modules.push(name);
   else s.inventory[name]=(s.inventory[name]||0)+1;
-  save();shop();
+  save();indexNotice('Purchased '+name+' for '+entry[1]+' money.');shop();
  });
 }
 function preview(id,g){const im=sprites[g],c=$(id),p=c.getContext('2d');p.imageSmoothingEnabled=false;function draw(){if(!im.naturalWidth)return;const m=spriteMetrics(g)?.[0]?.[0];if(!m)return;p.clearRect(0,0,c.width,c.height);const k=Math.min(c.width/(m.sw+10),c.height/(m.sh+8));p.drawImage(im,m.sx,m.sy,m.sw,m.sh,(c.width-m.sw*k)/2,c.height-m.sh*k-4,m.sw*k,m.sh*k)}im.addEventListener('load',draw);draw()}
