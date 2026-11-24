@@ -19,14 +19,14 @@ function treeVariant(x,y){
  return ((x*17+y*31+(x*y)%11)%3+3)%3;
 }
 function drawCinematicTrees(ox,oy,w,h,now){
- if(!treeArtReady())return;
- for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+ for(let y=Math.max(0,Math.floor(oy/S)-1);y<Math.min(H,Math.ceil((oy+h)/S)+4);y++)for(let x=Math.max(0,Math.floor(ox/S)-2);x<Math.min(W,Math.ceil((ox+w)/S)+2);x++){
   if(tiles[y]?.[x]!==T.tree)continue;
-  const type=treeVariant(x,y),img=treeArt[type];
+  const type=treeVariant(x,y),custom=uploadedArt(naturalTreeName(s.area,naturalSeed(x,y))),img=custom||treeArt[type];
+  if(!img?.complete||!img.naturalWidth)continue;
   const rootX=x*S+S*.5-ox,rootY=(y+1)*S-oy;
   const dense=s.area==='forest'||s.area==='route2';
   const width=dense?(type===1?48:55):(type===1?63:74);
-  const height=width*(type===1?1.34:type===2?1.07:1.13);
+  const height=custom?Math.min(width*1.8,width*img.naturalHeight/img.naturalWidth):width*(type===1?1.34:type===2?1.07:1.13);
   if(rootX+width/2<0||rootX-width/2>w||rootY-height>h||rootY<0)continue;
   // Shadow sits under the fixed solid tile; only the art moves in the breeze.
   ctx.fillStyle='rgba(20,54,32,.27)';
@@ -1024,6 +1024,58 @@ function drawConnectedTerrain(t,x,y,a,b){
  }
  return false;
 }
+// Stable, area-aware natural artwork; never modifies tile or encounter data.
+function naturalSeed(x,y){return ((Math.imul(x+1,73856093)^Math.imul(y+1,19349663))>>>0)}
+function naturalTreeName(area,seed){
+ if(area==='garden')return seed%3===0?'tree-cherry-blossom':'tree-green';
+ if(area==='route3')return seed%3===0?'tree-autumn':'tree-pine';
+ if(area==='forest'||area==='route2')return seed%3===0?'tree-green':'tree-pine';
+ return seed%7===0?'tree-cherry-blossom':seed%5===0?'tree-autumn':'tree-green';
+}
+function naturalTileName(t,a,b){
+ const n=naturalSeed(a,b);
+ if(t===T.tall)return ['tall-grass-01','tall-grass-02','tall-grass-03'][n%3];
+ if(t===T.rice)return ['paddy-01','paddy-02','paddy-03'][n%3];
+ if(t===T.flower)return ['flowers-pink','flowers-white','flowers-yellow','flowers-mixed'][n%4];
+ if(t===T.rock)return ['rock-small','rock-moss','rocks-cluster'][n%3];
+ if(t===T.hedge)return 'hedge-horizontal';
+ return null;
+}
+function naturalTileReady(t,a,b){const name=naturalTileName(t,a,b);return !!(name&&uploadedArt(name))}
+function drawNaturalTile(t,x,y,a,b){
+ const name=naturalTileName(t,a,b);if(!name||!uploadedArt(name))return false;
+ if(t!==T.rice)drawTerrainArt('grass-plain',x,y);
+ if(t===T.rice)return drawUploadedArt(name,x,y,S,S);
+ return drawUploadedFit(name,x,y,S,S);
+}
+function naturalDecoration(area,seed,t,nearTree){
+ if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
+ if(t!==T.grass)return null;
+ if(nearTree&&(area==='forest'||area==='route2')){
+  if(seed%59===0)return 'fallen-log';
+  if(seed%47===0)return 'tree-stump';
+  if(seed%19===0)return seed%2?'mushrooms-brown':'mushrooms-red';
+ }
+ if((area==='garden'||area==='village')&&seed%41===0)return seed%2?'shrub-white-flowers':'shrub-red-flowers';
+ if(seed%17===0)return seed%2?'grass-tuft-small':'grass-tuft-sparse';
+ return null;
+}
+function drawNaturalDetails(ox,oy,w,h){
+ if(!OUTDOOR_GRID[s.area]||s.area==='homestead')return;
+ const x0=Math.max(1,Math.floor(ox/S)),x1=Math.min(W-1,Math.ceil((ox+w)/S));
+ const y0=Math.max(1,Math.floor(oy/S)),y1=Math.min(H-1,Math.ceil((oy+h)/S));
+ for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water)continue;
+  // Avoid actor positions, doors, roads and named sites; small ground details are walkable.
+  if(npcs.some(p=>p.x===x&&p.y===y))continue;
+  if(s.area==='village'&&villageObstacles.has(key(x,y)))continue;
+  if(s.area==='route1'&&route1Blocked.has(key(x,y)))continue;
+  const neighbors=[tiles[y-1]?.[x],tiles[y+1]?.[x],tiles[y]?.[x-1],tiles[y]?.[x+1]];
+  if(neighbors.some(v=>v===T.door||v===T.path||v===T.stone))continue;
+  const name=naturalDecoration(s.area,naturalSeed(x,y),t,neighbors.includes(T.tree));
+  if(name)drawUploadedFit(name,x*S-ox+4,y*S-oy+7,S-8,S-10);
+ }
+}
 function drawTile(t,x,y,a,b){
  // All natural terrain shares a single continuous grass surface. Tile cells now
  // describe objects/foliage rather than independent rectangular patches of color.
@@ -1036,8 +1088,7 @@ function drawTile(t,x,y,a,b){
   ctx.imageSmoothingEnabled=false;
   if(drawConnectedTerrain(t,x,y,a,b))return;
   if(t===T.grass&&drawTerrainArt('grass-plain',x,y))return;
-  if(t===T.rock&&drawUploadedArt('rock-small',x,y,S,S))return;
-  if(t===T.flower&&drawUploadedArt('flowers-pink',x,y,S,S))return;
+  if(drawNaturalTile(t,x,y,a,b))return;
  }
  if(natural){
    // Tiny blades and irregular clumps repeat across world space with no grid outline.
@@ -1260,6 +1311,7 @@ function drawRoute1Details(ox,oy,viewW,viewH){
  for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
   const type=tiles[y][x],bx=px(x),by=py(y);
   if(type===T.rice){
+   if(naturalTileReady(type,x,y))continue;
    ctx.fillStyle='#7e9e56a8';ctx.fillRect(bx,by+S-4,S,4);
    ctx.fillStyle='#c1c782a8';ctx.fillRect(bx+2,by+8,Math.max(5,S-5),2);
    for(let i=0;i<4;i++){
@@ -1270,12 +1322,14 @@ function drawRoute1Details(ox,oy,viewW,viewH){
     ctx.beginPath();ctx.moveTo(sx-4,sy+1);ctx.lineTo(sx,sy+5);ctx.stroke();
    }
   }else if(type===T.tall){
+   if(naturalTileReady(type,x,y))continue;
    ctx.fillStyle='#416d4290';
    for(let i=0;i<3;i++){
     const sx=bx+4+i*10+(y%3),sy=by+22-(i%2)*4;
     ctx.fillRect(sx,sy-9,2,10);ctx.fillRect(sx+2,sy-12,2,10);
    }
   }else if(type===T.water){
+   if(uploadedArt('water-01'))continue;
    ctx.fillStyle='#6aafa8';ctx.fillRect(bx,by,S+1,S+1);
    ctx.fillStyle='#b9d7bd99';ctx.fillRect(bx+((x*7)%12),by+10,12,2);
    ctx.fillStyle='#436e6b';ctx.fillRect(bx,by+S-4,S,3);
@@ -1573,12 +1627,13 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
    ctx.strokeStyle='rgba(213,239,206,.32)';ctx.lineWidth=1;
    const ripple=(now/400+x*11+y*7)%23;
    ctx.beginPath();ctx.moveTo(sx+2+ripple*.3,sy+29);ctx.lineTo(sx+8+ripple*.3,sy+29);ctx.stroke();
-   drawRiceClump(sx,sy,x,y,now);
+   if(!naturalTileReady(T.rice,x,y))drawRiceClump(sx,sy,x,y,now);
   }else if(t===T.water){
    const ripple=(now/235+x*11+y*17)%25;
    ctx.strokeStyle='rgba(234,255,237,.45)';ctx.lineWidth=1.2;
    ctx.beginPath();ctx.moveTo(sx+3+ripple,sy+9+(x+y)%9);ctx.lineTo(sx+9+ripple,sy+9+(x+y)%9);ctx.stroke();
   }else if(t===T.tall){
+   if(naturalTileReady(T.tall,x,y))continue;
    for(let k=0;k<4;k++){
     const rootX=sx+5+k*7,rootY=sy+26-k%2*3;
     ctx.strokeStyle=k%2?'#9ac76b':'#66994f';ctx.lineWidth=1.4;
@@ -2066,6 +2121,7 @@ function drawOutdoorWorld(){
   if(area==='village')drawVillageDetails(localOX,localOY,vw,vh);
   if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
   if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY)}
+  drawNaturalDetails(localOX,localOY,vw,vh);
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawExplorationSites(localOX,localOY);
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
@@ -2708,7 +2764,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.04</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.05</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'

@@ -8,3 +8,6 @@ Syntax and NPC routing checks passed; browser rendering and deployment not verif
 
 ## v1.04 — Connected terrain
 Stable grass variation, neighbor masks for dirt and stone corridors, full tile broad road fallback, single-edge natural riverbanks, water variations, and enclosed cave rock texture. All 16 masks and both path families verified against repository paths; boundary exit mask and JS syntax passed. No map/collision/save changes. Multi-edge shoreline corners, beach sand, elevated cliffs outside cave and visual seam/mobile validation remain pending; no new geography introduced. Rotations inferred from local artwork preview.
+
+## v1.05 — Natural environments
+Region-specific tree artwork, stable grass/rice/flower/rock variants, hedge tile, sparse ground details, pond lilies. Viewport-bounded tree and decoration passes, original assets and procedural fallback retained. Route 1 procedural stalks and water fills suppressed where replacement art is ready; water ripples and tree sway preserved. Decoration skips road-adjacent cells and NPCs, village/route1 collision sets, and homestead. No collision, encounter or save changes. Syntax and deterministic selection/asset existence tests passed. Visual sizing, transparent crop edges, layering and mobile performance remain pending. No new blocking objects introduced.
