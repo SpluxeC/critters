@@ -2200,634 +2200,492 @@
     },
     {
       "speciesId": "cr-038-brinefin",
-      "name": "Brinefin",
+      "name": "Bloomtail",
       "types": [
-        "Water",
+        "Grass",
         "Electric"
       ],
-      "role": "support",
+      "role": "balanced",
       "baseStats": {
-        "hp": 28,
-        "attack": 16,
-        "defense": 10,
-        "specialAttack": 19,
-        "specialDefense": 13,
-        "speed": 9
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
       },
-      "habitats": [
-        {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 12,
-          "maxLevel": 14,
-          "rarity": "uncommon"
-        }
-      ],
+      "habitats": [],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "quickstep"
+          "moveId": "leaf-nudge"
         },
         {
           "level": 4,
-          "moveId": "breaker-fang"
+          "moveId": "pollen-stitch"
         },
         {
-          "level": 8,
-          "moveId": "tidewell"
+          "level": 7,
+          "moveId": "green-vigor"
+        },
+        {
+          "level": 10,
+          "moveId": "frond-screen"
         },
         {
           "level": 13,
-          "moveId": "tidal-calm"
+          "moveId": "spark-nudge"
         },
         {
-          "level": 20,
-          "moveId": "skywire-flash"
-        },
-        {
-          "level": 27,
-          "moveId": "static-blur"
-        },
-        {
-          "level": 36,
-          "moveId": "drench-mark"
-        },
-        {
-          "level": 45,
-          "moveId": "moonwell-deluge"
+          "level": 16,
+          "moveId": "circuit-flicker"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/pending-battle/bloomtail-front.png",
+        "rearSpritePath": "assets/critters/pending-battle/bloomtail-back.png"
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesTo": {
-        "speciesId": "cr-039-coraloo",
-        "minLevel": 28,
-        "condition": {
-          "kind": "badge",
-          "minimum": 1
-        }
-      },
+      "notes": "Artwork-registered replacement in slot 38. Draft stats and learnset; habitat and evolution assignment pending regional design.",
       "legacySpeciesId": "cr-019-brinefin",
       "genderRatio": {
         "malePercent": 50
-      }
+      },
+      "catalogOnly": true
     },
     {
       "speciesId": "cr-039-coraloo",
-      "name": "Coraloo",
+      "name": "Foamlark",
       "types": [
-        "Water"
-      ],
-      "role": "swift",
-      "baseStats": {
-        "hp": 17,
-        "attack": 10,
-        "defense": 8,
-        "specialAttack": 11,
-        "specialDefense": 9,
-        "speed": 12
-      },
-      "habitats": [
-        {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 28,
-          "maxLevel": 32,
-          "rarity": "rare"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "measured-blow"
-        },
-        {
-          "level": 4,
-          "moveId": "abyss-break"
-        },
-        {
-          "level": 8,
-          "moveId": "moonwell-deluge"
-        },
-        {
-          "level": 13,
-          "moveId": "mist-curtain"
-        },
-        {
-          "level": 20,
-          "moveId": "current-lash"
-        },
-        {
-          "level": 27,
-          "moveId": "foam-burst"
-        },
-        {
-          "level": 36,
-          "moveId": "reef-shell"
-        },
-        {
-          "level": 45,
-          "moveId": "abyss-break"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-038-brinefin",
-      "legacySpeciesId": "cr-020-coraloo",
-      "genderRatio": {
-        "malePercent": 50
-      }
-    },
-    {
-      "speciesId": "cr-040-driftkip",
-      "name": "Driftkip",
-      "types": [
-        "Water"
+        "Water",
+        "Psychic"
       ],
       "role": "balanced",
       "baseStats": {
-        "hp": 18,
-        "attack": 17,
-        "defense": 19,
-        "specialAttack": 16,
-        "specialDefense": 18,
-        "speed": 15
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
       },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
+      "habitats": [],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "opening-flick"
-        },
-        {
-          "level": 4,
           "moveId": "ripple-jab"
         },
         {
-          "level": 8,
+          "level": 4,
           "moveId": "brook-dart"
         },
         {
-          "level": 13,
-          "moveId": "drench-mark"
+          "level": 7,
+          "moveId": "tidal-calm"
         },
         {
-          "level": 20,
-          "moveId": "undertow-grip"
-        },
-        {
-          "level": 27,
-          "moveId": "rainneedle"
-        },
-        {
-          "level": 36,
-          "moveId": "floodplain"
-        },
-        {
-          "level": 45,
-          "moveId": "moonwell-deluge"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesTo": {
-        "speciesId": "cr-041-glintgill",
-        "minLevel": 18,
-        "stone": "Water Stone"
-      },
-      "legacySpeciesId": "cr-021-driftkip",
-      "genderRatio": {
-        "malePercent": 50
-      }
-    },
-    {
-      "speciesId": "cr-041-glintgill",
-      "name": "Glintgill",
-      "types": [
-        "Water"
-      ],
-      "role": "attacker",
-      "baseStats": {
-        "hp": 19,
-        "attack": 11,
-        "defense": 17,
-        "specialAttack": 8,
-        "specialDefense": 14,
-        "speed": 18
-      },
-      "habitats": [
-        {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 18,
-          "maxLevel": 20,
-          "rarity": "uncommon"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "current-lash"
-        },
-        {
-          "level": 8,
-          "moveId": "foam-burst"
+          "level": 10,
+          "moveId": "mist-curtain"
         },
         {
           "level": 13,
-          "moveId": "reef-shell"
+          "moveId": "mind-tap"
         },
         {
-          "level": 20,
-          "moveId": "breaker-fang"
-        },
-        {
-          "level": 27,
-          "moveId": "tidewell"
-        },
-        {
-          "level": 36,
-          "moveId": "riverstep"
-        },
-        {
-          "level": 45,
-          "moveId": "abyss-break"
+          "level": 16,
+          "moveId": "thought-needle"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/pending-battle/foamlark-front.png",
+        "rearSpritePath": "assets/critters/pending-battle/foamlark-back.png"
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "evolvesFrom": "cr-040-driftkip",
-      "legacySpeciesId": "cr-022-glintgill",
+      "notes": "Artwork-registered replacement in slot 39. Draft stats and learnset; habitat and evolution assignment pending regional design.",
+      "legacySpeciesId": "cr-020-coraloo",
       "genderRatio": {
         "malePercent": 50
-      }
+      },
+      "catalogOnly": true
     },
     {
-      "speciesId": "cr-042-wavetail",
-      "name": "Wavetail",
+      "speciesId": "cr-040-driftkip",
+      "name": "Granipup",
       "types": [
-        "Water"
-      ],
-      "role": "defender",
-      "baseStats": {
-        "hp": 25,
-        "attack": 14,
-        "defense": 18,
-        "specialAttack": 12,
-        "specialDefense": 16,
-        "speed": 10
-      },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "measured-blow"
-        },
-        {
-          "level": 4,
-          "moveId": "undertow-grip"
-        },
-        {
-          "level": 8,
-          "moveId": "rainneedle"
-        },
-        {
-          "level": 13,
-          "moveId": "reef-shell"
-        },
-        {
-          "level": 20,
-          "moveId": "abyss-break"
-        },
-        {
-          "level": 27,
-          "moveId": "moonwell-deluge"
-        },
-        {
-          "level": 36,
-          "moveId": "riverstep"
-        },
-        {
-          "level": 45,
-          "moveId": "abyss-break"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-028-wavetail",
-      "genderRatio": {
-        "malePercent": 50
-      }
-    },
-    {
-      "speciesId": "cr-043-icicleaf",
-      "name": "Icicleaf",
-      "types": [
-        "Ice"
-      ],
-      "role": "support",
-      "baseStats": {
-        "hp": 19,
-        "attack": 8,
-        "defense": 16,
-        "specialAttack": 17,
-        "specialDefense": 12,
-        "speed": 16
-      },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
-      "levelUp": [
-        {
-          "level": 1,
-          "moveId": "brace-up"
-        },
-        {
-          "level": 4,
-          "moveId": "icicle-rend"
-        },
-        {
-          "level": 8,
-          "moveId": "frozen-arc"
-        },
-        {
-          "level": 13,
-          "moveId": "permafrost-skin"
-        },
-        {
-          "level": 20,
-          "moveId": "frost-nip"
-        },
-        {
-          "level": 27,
-          "moveId": "snowmelt-ray"
-        },
-        {
-          "level": 36,
-          "moveId": "winter-stillness"
-        },
-        {
-          "level": 45,
-          "moveId": "avalanche-rush"
-        }
-      ],
-      "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
-      },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-094-icicleaf",
-      "genderRatio": {
-        "malePercent": 50
-      }
-    },
-    {
-      "speciesId": "cr-044-kiteclaw",
-      "name": "Kiteclaw",
-      "types": [
-        "Flying",
-        "Ice"
+        "Rock",
+        "Steel"
       ],
       "role": "balanced",
       "baseStats": {
-        "hp": 24,
-        "attack": 10,
-        "defense": 8,
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
         "specialAttack": 11,
-        "specialDefense": 9,
+        "specialDefense": 11,
         "speed": 12
       },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
+      "habitats": [],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "quickstep"
+          "moveId": "pebble-knock"
         },
         {
           "level": 4,
-          "moveId": "feather-jab"
+          "moveId": "quartz-ray"
         },
         {
-          "level": 8,
-          "moveId": "gale-whisper"
+          "level": 7,
+          "moveId": "stone-resolve"
+        },
+        {
+          "level": 10,
+          "moveId": "grit-cloud"
         },
         {
           "level": 13,
-          "moveId": "airlock-gust"
+          "moveId": "tin-tap"
         },
         {
-          "level": 20,
-          "moveId": "snowmelt-ray"
-        },
-        {
-          "level": 27,
-          "moveId": "permafrost-skin"
-        },
-        {
-          "level": 36,
-          "moveId": "crosswind"
-        },
-        {
-          "level": 45,
-          "moveId": "horizon-break"
+          "level": 16,
+          "moveId": "rivet-jab"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/pending-battle/granipup-front.png",
+        "rearSpritePath": "assets/critters/pending-battle/granipup-back.png"
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Artwork-registered replacement in slot 40. Draft stats and learnset; habitat and evolution assignment pending regional design.",
+      "legacySpeciesId": "cr-021-driftkip",
+      "genderRatio": {
+        "malePercent": 50
+      },
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-041-glintgill",
+      "name": "Luminix",
+      "types": [
+        "Electric"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "spark-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "circuit-flicker"
+        },
+        {
+          "level": 7,
+          "moveId": "coil-charge"
+        },
+        {
+          "level": 10,
+          "moveId": "static-blur"
+        },
+        {
+          "level": 13,
+          "moveId": "arc-talon"
+        },
+        {
+          "level": 16,
+          "moveId": "voltstream"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/pending-battle/luminix-front.png",
+        "rearSpritePath": "assets/critters/pending-battle/luminix-back.png"
+      },
+      "notes": "Artwork-registered replacement in slot 41. Draft stats and learnset; habitat and evolution assignment pending regional design.",
+      "legacySpeciesId": "cr-022-glintgill",
+      "genderRatio": {
+        "malePercent": 50
+      },
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-042-wavetail",
+      "name": "Reeflet",
+      "types": [
+        "Grass"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "leaf-nudge"
+        },
+        {
+          "level": 4,
+          "moveId": "pollen-stitch"
+        },
+        {
+          "level": 7,
+          "moveId": "green-vigor"
+        },
+        {
+          "level": 10,
+          "moveId": "frond-screen"
+        },
+        {
+          "level": 13,
+          "moveId": "briar-swipe"
+        },
+        {
+          "level": 16,
+          "moveId": "clover-gust"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/pending-battle/reeflet-front.png",
+        "rearSpritePath": "assets/critters/pending-battle/reeflet-back.png"
+      },
+      "notes": "Artwork-registered replacement in slot 42. Draft stats and learnset; habitat and evolution assignment pending regional design.",
+      "legacySpeciesId": "cr-028-wavetail",
+      "genderRatio": {
+        "malePercent": 50
+      },
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-043-icicleaf",
+      "name": "Fire Bat (Stage 1)",
+      "types": [
+        "Fire"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "cinder-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "embercoil"
+        },
+        {
+          "level": 7,
+          "moveId": "kindle-heart"
+        },
+        {
+          "level": 10,
+          "moveId": "ash-veil"
+        },
+        {
+          "level": 13,
+          "moveId": "furnace-claw"
+        },
+        {
+          "level": 16,
+          "moveId": "blazeline"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/pending-battle/fire-bat-stage-1-front.png",
+        "rearSpritePath": "assets/critters/pending-battle/fire-bat-stage-1-back.png"
+      },
+      "notes": "Artwork-registered replacement in slot 43. Draft stats and learnset; habitat and evolution assignment pending regional design. Display label temporary; pure Fire, later stage not registered.",
+      "legacySpeciesId": "cr-094-icicleaf",
+      "genderRatio": {
+        "malePercent": 50
+      },
+      "catalogOnly": true
+    },
+    {
+      "speciesId": "cr-044-kiteclaw",
+      "name": "Jewel Beetle (Stage 1)",
+      "types": [
+        "Steel"
+      ],
+      "role": "balanced",
+      "baseStats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 11,
+        "specialAttack": 11,
+        "specialDefense": 11,
+        "speed": 12
+      },
+      "habitats": [],
+      "levelUp": [
+        {
+          "level": 1,
+          "moveId": "tin-tap"
+        },
+        {
+          "level": 4,
+          "moveId": "rivet-jab"
+        },
+        {
+          "level": 7,
+          "moveId": "steel-iron-guard"
+        },
+        {
+          "level": 10,
+          "moveId": "chrome-beam"
+        },
+        {
+          "level": 13,
+          "moveId": "metal-clang"
+        },
+        {
+          "level": 16,
+          "moveId": "gear-grind"
+        }
+      ],
+      "art": {
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/beetle-stage-1-front.png",
+        "rearSpritePath": "assets/critters/battle-backs/route-1/beetle-stage-1-back.png"
+      },
+      "notes": "Artwork-registered replacement in slot 44. Draft stats and learnset; habitat and evolution assignment pending regional design. Steel typing provisional pending creator confirmation.",
       "legacySpeciesId": "cr-111-kiteclaw",
       "genderRatio": {
         "malePercent": 50
-      }
+      },
+      "catalogOnly": true
     },
     {
       "speciesId": "cr-045-soarwhisk",
-      "name": "Soarwhisk",
+      "name": "Jewel Beetle (Stage 2)",
       "types": [
-        "Flying",
-        "Normal"
+        "Steel"
       ],
-      "role": "support",
+      "role": "balanced",
       "baseStats": {
-        "hp": 27,
-        "attack": 18,
-        "defense": 15,
-        "specialAttack": 13,
-        "specialDefense": 10,
-        "speed": 8
+        "hp": 34,
+        "attack": 19,
+        "defense": 17,
+        "specialAttack": 18,
+        "specialDefense": 17,
+        "speed": 19
       },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
+      "habitats": [],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "brace-up"
+          "moveId": "tin-tap"
         },
         {
           "level": 4,
-          "moveId": "quick-nudge"
+          "moveId": "rivet-jab"
         },
         {
-          "level": 8,
-          "moveId": "cyclone-sweep"
+          "level": 7,
+          "moveId": "steel-iron-guard"
+        },
+        {
+          "level": 10,
+          "moveId": "chrome-beam"
         },
         {
           "level": 13,
-          "moveId": "calm-posture"
+          "moveId": "metal-clang"
         },
         {
-          "level": 20,
-          "moveId": "feather-jab"
-        },
-        {
-          "level": 27,
-          "moveId": "wide-swipe"
-        },
-        {
-          "level": 36,
-          "moveId": "dustwing"
-        },
-        {
-          "level": 45,
-          "moveId": "stormtalon"
+          "level": 16,
+          "moveId": "gear-grind"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/beetle-stage-2-front.png",
+        "rearSpritePath": "assets/critters/battle-backs/route-1/beetle-stage-2-back.png"
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
+      "notes": "Artwork-registered replacement in slot 45. Draft stats and learnset; habitat and evolution assignment pending regional design. Steel typing provisional pending creator confirmation.",
       "legacySpeciesId": "cr-114-soarwhisk",
       "genderRatio": {
         "malePercent": 50
-      }
+      },
+      "catalogOnly": true
     },
     {
       "speciesId": "cr-046-flitwing",
-      "name": "Flitwing",
+      "name": "Jewel Beetle (Stage 3)",
       "types": [
-        "Flying",
-        "Venom"
+        "Steel"
       ],
-      "role": "swift",
+      "role": "balanced",
       "baseStats": {
-        "hp": 28,
-        "attack": 12,
-        "defense": 13,
-        "specialAttack": 18,
-        "specialDefense": 19,
-        "speed": 11
+        "hp": 43,
+        "attack": 26,
+        "defense": 23,
+        "specialAttack": 25,
+        "specialDefense": 23,
+        "speed": 26
       },
-      "habitats": [
-        {
-          "areaId": "route2",
-          "areaName": "Route 2 — Bamboo Forest",
-          "minLevel": 5,
-          "maxLevel": 10,
-          "rarity": "common"
-        }
-      ],
+      "habitats": [],
       "levelUp": [
         {
           "level": 1,
-          "moveId": "quickstep"
+          "moveId": "tin-tap"
         },
         {
           "level": 4,
-          "moveId": "stormtalon"
+          "moveId": "rivet-jab"
         },
         {
-          "level": 8,
-          "moveId": "horizon-break"
+          "level": 7,
+          "moveId": "steel-iron-guard"
+        },
+        {
+          "level": 10,
+          "moveId": "chrome-beam"
         },
         {
           "level": 13,
-          "moveId": "updraft-poise"
+          "moveId": "metal-clang"
         },
         {
-          "level": 20,
-          "moveId": "plague-bloom"
-        },
-        {
-          "level": 27,
-          "moveId": "noxious-screen"
-        },
-        {
-          "level": 36,
-          "moveId": "airlock-gust"
-        },
-        {
-          "level": 45,
-          "moveId": "horizon-break"
+          "level": 16,
+          "moveId": "gear-grind"
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-one-designs/route-1/beetle-stage-3-front.png",
+        "rearSpritePath": "assets/critters/battle-backs/route-1/beetle-stage-3-back.png"
       },
-      "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
+      "notes": "Artwork-registered replacement in slot 46. Draft stats and learnset; habitat and evolution assignment pending regional design. Steel typing provisional pending creator confirmation.",
       "legacySpeciesId": "cr-115-flitwing",
       "genderRatio": {
         "malePercent": 50
-      }
+      },
+      "catalogOnly": true
     },
     {
       "speciesId": "cr-047-skyfin",
