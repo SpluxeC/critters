@@ -26,14 +26,14 @@ function drawCinematicTrees(ox,oy,w,h,now){
   const rootX=x*S+S*.5-ox,rootY=(y+1)*S-oy;
   const dense=s.area==='forest'||s.area==='route2';
   const width=dense?(type===1?48:55):(type===1?63:74);
-  const height=custom?Math.min(width*1.8,width*img.naturalHeight/img.naturalWidth):width*(type===1?1.34:type===2?1.07:1.13);
+  const art=custom?cleanSceneryArt(img,naturalTreeName(s.area,naturalSeed(x,y))):img;
+  const height=custom?Math.min(width*1.8,width*artHeight(art)/artWidth(art)):width*(type===1?1.34:type===2?1.07:1.13);
   if(rootX+width/2<0||rootX-width/2>w||rootY-height>h||rootY<0)continue;
   // Shadow sits under the fixed solid tile; only the art moves in the breeze.
   ctx.fillStyle='rgba(20,54,32,.27)';
   ctx.beginPath();ctx.ellipse(rootX,rootY-5,width*.28,6,0,0,Math.PI*2);ctx.fill();
   const bend=Math.sin(now*.00086-x*.43-y*.22)*.012*weatherWind();
-  ctx.save();ctx.translate(rootX,rootY-4);ctx.rotate(bend);
-  ctx.drawImage(img,-width/2,-height,width,height);ctx.restore();
+  sceneryLayer(s.area+':tree:'+x+','+y,rootX-width/2,rootY-4-height,width,height,rootY,()=>{ctx.save();ctx.translate(rootX,rootY-4);ctx.rotate(bend);ctx.drawImage(art,-width/2,-height,width,height);ctx.restore()});
  }
 }
 // Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
@@ -66,19 +66,67 @@ function pickNpcSprite(x,y,kind='',id=''){
  return arr[Math.abs((x*17+y*29+area.length*13))%arr.length];
 }
 // Uploaded artwork is loaded lazily and always retains a procedural fallback.
-const uploadedArtCache=new Map();
+const uploadedArtCache=new Map(),cleanArtCache=new WeakMap();
+// Only scenery objects are cleaned; terrain textures, NPC sheets and Critter art
+// are not chroma-keyed. Remove contiguous border matte, never interior green pixels.
+function cleanSceneryArt(im,name){
+ if(!/^(tree-|house-|shop-|lab-blue|barn-|rock-|rocks-|lantern-|crate|barrel|fallen-log|tree-stump|grass-tuft|tall-grass|flowers-|rubble-|ruin-column)/.test(name))return im;
+ if(cleanArtCache.has(im))return cleanArtCache.get(im);
+ let result=im;
+ try{
+  const w=im.naturalWidth,h=im.naturalHeight;if(w*h>1500000)return im;
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  const cx=c.getContext('2d',{willReadFrequently:true});cx.drawImage(im,0,0);
+  const img=cx.getImageData(0,0,w,h),d=img.data;
+  const corners=[0,w-1,(h-1)*w,w*h-1].map(i=>Array.from(d.slice(i*4,i*4+4)));
+  const green=p=>p[3]>230&&p[1]>p[0]*1.07&&p[1]>p[2]*1.14;
+  const matte=corners.find(p=>green(p)&&corners.filter(q=>q[3]>230&&Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])<24).length>=3);
+  if(matte){
+   const seen=new Uint8Array(w*h),queue=new Int32Array(w*h);let head=0,tail=0;
+   const push=i=>{if(i<0||i>=w*h||seen[i])return;seen[i]=1;const k=i*4;if(d[k+3]===0||Math.hypot(d[k]-matte[0],d[k+1]-matte[1],d[k+2]-matte[2])<29){queue[tail++]=i;d[k+3]=0}};
+   for(let x=0;x<w;x++){push(x);push((h-1)*w+x)}for(let y=0;y<h;y++){push(y*w);push(y*w+w-1)}
+   while(head<tail){const i=queue[head++];if(i%w)push(i-1);if(i%w<w-1)push(i+1);push(i-w);push(i+w)}
+   cx.putImageData(img,0,0);
+  }
+  let l=w,t=h,rr=-1,b=-1;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>20){l=Math.min(l,x);rr=Math.max(rr,x);t=Math.min(t,y);b=Math.max(b,y)}
+  if(rr>=l&&b>=t&&(matte||l||t||rr<w-1||b<h-1)){
+   const out=document.createElement('canvas');out.width=rr-l+1;out.height=b-t+1;out.getContext('2d').drawImage(c,l,t,out.width,out.height,0,0,out.width,out.height);result=out;
+  }
+ }catch(err){console.warn('Scenery cleanup skipped',name,err)}
+ cleanArtCache.set(im,result);return result;
+}
+const artWidth=im=>im.naturalWidth||im.width,artHeight=im=>im.naturalHeight||im.height;
+let sceneryForeground=null,sceneryPlayer=null;
+const sceneryOpacity=new Map();
+function startSceneryLayer(x,y){sceneryForeground=[];sceneryPlayer={x,y,now:performance.now()}}
+function sceneryLayer(id,x,y,w,h,base,draw){
+ if(!sceneryForeground||!sceneryPlayer){draw();return}
+ const p=sceneryPlayer,overlap=p.x+9>x&&p.x-9<x+w&&p.y>y&&p.y-36<y+h&&p.y<=base;
+ const old=sceneryOpacity.get(id)||{alpha:1,at:p.now};
+ const dt=Math.min(100,Math.max(0,p.now-old.at)),target=overlap?.38:1;
+ const alpha=target+(old.alpha-target)*Math.exp(-dt/150);
+ sceneryOpacity.set(id,{alpha,at:p.now});
+ if(overlap||alpha<.98&&p.y<=base)sceneryForeground.push({base,alpha,draw});else draw();
+}
+function finishSceneryLayer(){
+ const list=sceneryForeground||[];sceneryForeground=null;sceneryPlayer=null;
+ for(const o of list.sort((a,b)=>a.base-b.base)){ctx.save();ctx.globalAlpha=o.alpha;o.draw();ctx.restore()}
+ const now=performance.now();for(const [id,o] of sceneryOpacity)if(now-o.at>2000)sceneryOpacity.delete(id);
+}
+
 function uploadedArt(name){
  if(!uploadedArtCache.has(name)){const im=new Image();im.src='assets/'+name+'.png';uploadedArtCache.set(name,im)}
  const im=uploadedArtCache.get(name);return im.complete&&im.naturalWidth>0&&im.naturalHeight>0?im:null;
 }
 function drawUploadedArt(name,x,y,w,h){
  const im=uploadedArt(name);if(!im)return false;
- ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,w,h);ctx.restore();return true;
+ ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(cleanSceneryArt(im,name),x,y,w,h);ctx.restore();return true;
 }
 function drawUploadedFit(name,x,y,w,h){
  const im=uploadedArt(name);if(!im)return false;
- const k=Math.min(w/im.naturalWidth,h/im.naturalHeight),iw=im.naturalWidth*k,ih=im.naturalHeight*k;
- return drawUploadedArt(name,x+(w-iw)/2,y+h-ih,iw,ih);
+ const art=cleanSceneryArt(im,name),k=Math.min(w/artWidth(art),h/artHeight(art)),iw=artWidth(art)*k,ih=artHeight(art)*k;
+ ctx.drawImage(art,x+(w-iw)/2,y+h-ih,iw,ih);return true;
 }
 // Dedicated 4x4 sheets share the existing researcher direction convention.
 const NPC_DEDICATED_ROWS=Object.freeze({down:0,up:1,left:2,right:3});
@@ -249,7 +297,7 @@ function buildVillageColliders(){
  }
  for(const [a,y,b] of VILLAGE_FENCES)for(let x=a;x<b;x++)villageCollider(x,y);
  for(const [x,y] of VILLAGE_LANTERNS)villageCollider(x,y);
- for(const [x,y] of VILLAGE_STONES)villageCollider(x,y);
+ for(const [x,y] of VILLAGE_STONES)if(tiles[y]?.[x]!==T.path)villageCollider(x,y);
 }
 
 // Phase 1: curated indoor scenes. Objects share one definition for rendering,
@@ -555,6 +603,8 @@ function inspectRoute1Site(o){
 
 function solidAt(x,y){
  if(x<0||y<0||x>=W||y>=H)return true;
+ if(s.area==='village'&&VILLAGE_HOUSES.some(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2))return true;
+ if((TOWN_EXTERIORS[s.area]||[]).some(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2))return true;
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
  if(isInterior(s.area)&&interiorBlocked.has(key(x,y)))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
@@ -1603,7 +1653,8 @@ function drawTile(t,x,y,a,b){
  // All natural terrain shares a single continuous grass surface. Tile cells now
  // describe objects/foliage rather than independent rectangular patches of color.
  const natural=t===T.grass||t===T.tall||t===T.rice||t===T.flower||(t===T.tree&&treeArtReady());
- if(!natural){ctx.fillStyle=palette[t]||palette[0];ctx.fillRect(x,y,S+0.5,S+0.5)}
+ if(OUTDOOR_GRID[s.area]&&(t===T.tree||t===T.rock||t===T.hedge))seamlessGround(T.grass,x,y,a,b);
+ if(!natural&&!(OUTDOOR_GRID[s.area]&&(t===T.tree||t===T.rock||t===T.hedge))){ctx.fillStyle=palette[t]||palette[0];ctx.fillRect(x,y,S+0.5,S+0.5)}
  const hash=(v)=>{const z=Math.sin(v*127.1+83.7)*43758.5453;return z-Math.floor(z)};
  const variation=hash(a*3.71+b*1.91);
  // Only selected terrain tiles are enabled. Existing collision and encounter IDs are unchanged.
@@ -1722,14 +1773,12 @@ function drawBuildingExterior(name,h,ox,oy,clear=false){
   // Replace the old roof/wall raster only after the new image is ready.
   for(let y=h.y;y<h.y+h.h+2;y++)for(let x=h.x;x<h.x+h.w;x++){
    ctx.fillStyle=palette[T.grass]||'#5f8e5f';ctx.fillRect(x*S-ox,y*S-oy,S,S);
-   drawTerrainArt('grass-plain',x*S-ox,y*S-oy);
+   seamlessGround(T.grass,x*S-ox,y*S-oy,x,y);
   }
  }
  const x=b.x*S-ox,y=b.y*S-oy,w=b.w*S,height=b.h*S;
- ctx.save();ctx.imageSmoothingEnabled=false;
- ctx.beginPath();ctx.rect(h.x*S-ox,h.y*S-oy,h.w*S,(h.h+2)*S);ctx.clip();
- ctx.drawImage(im,x,y,w,height);
- ctx.restore();return true;
+ const art=cleanSceneryArt(im,name);
+ sceneryLayer(s.area+':building:'+h.x+','+h.y,x,y,w,height,y+height,()=>{ctx.save();ctx.imageSmoothingEnabled=false;ctx.beginPath();ctx.rect(h.x*S-ox,h.y*S-oy,h.w*S,(h.h+2)*S);ctx.clip();ctx.drawImage(art,x,y,w,height);ctx.restore()});return true;
 }
 function drawExteriorSign(h,ox,oy){
  const x=(h.x+h.w/2)*S-ox,y=(h.y+h.h+.1)*S-oy;
@@ -1843,7 +1892,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   if(drawBuildingExterior(VILLAGE_EXTERIOR_ART[h.kind],h,ox,oy)){
    // Existing door animation and entrance cue below are retained.
   }else if(img.complete&&img.naturalWidth>0){
-   ctx.imageSmoothingEnabled=false;ctx.drawImage(img,px,py,w,height);
+   sceneryLayer(s.area+':building:'+h.x+','+h.y,px,py,w,height,py+height,()=>{ctx.imageSmoothingEnabled=false;ctx.drawImage(img,px,py,w,height)});
   }else{
    // Graceful fallback if an image has not yet loaded.
    ctx.fillStyle='#64585c';ctx.fillRect(px,py,w,h.h*S);
@@ -1878,6 +1927,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   }
  }
  for(const [x,y] of VILLAGE_STONES){
+  if(tiles[y]?.[x]===T.path)continue;
   if(drawUploadedFit('rock-moss',x*S-ox,y*S-oy,S,S))continue;
   const [px,py]=pos(x+.5,y+.55);
   ctx.fillStyle='#29433880';ctx.beginPath();ctx.ellipse(px,py+9,14,6,0,0,Math.PI*2);ctx.fill();
@@ -2898,6 +2948,7 @@ function drawOutdoorWorld(){
  const ox=camera.x,oy=camera.y;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#5f8e5f';ctx.fillRect(0,0,C.width,C.height);
  ctx.setTransform(zoom,0,0,zoom,0,0);
+ startSceneryLayer(worldX+16-ox,worldY+32-oy);
  const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null};
  // Nearby chunks are rendered within the same continuous world coordinate system.
  try{for(const [area,grid] of Object.entries(OUTDOOR_GRID)){
@@ -2939,6 +2990,7 @@ function drawOutdoorWorld(){
  const moving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const step=playerGaitFrame();
  sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25);
+ finishSceneryLayer();
  drawAtmosphereOverlay(ox-position.x*S,oy-position.y*S,vw,vh);
  drawWeather(vw,vh);
  drawAtmosphereHUD();
@@ -3611,7 +3663,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.25</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.26</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
