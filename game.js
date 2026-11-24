@@ -2503,8 +2503,8 @@ function draw(){
  if(OUTDOOR_GRID[s.area])return drawOutdoorWorld();
  const zoom=Math.max(0.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const viewportWidth=C.width/zoom,viewportHeight=C.height/zoom;
- const ox=W*S<=viewportWidth?(W*S-viewportWidth)/2:Math.max(0,Math.min(W*S-viewportWidth,visual.x*S-viewportWidth/2));
- const oy=H*S<=viewportHeight?(H*S-viewportHeight)/2:Math.max(0,Math.min(H*S-viewportHeight,visual.y*S-viewportHeight/2));
+ const ox=visual.x*S+S/2-viewportWidth/2;
+ const oy=visual.y*S+S/2-viewportHeight/2;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#6b9e60';ctx.fillRect(0,0,C.width,C.height);ctx.setTransform(zoom,0,0,zoom,0,0);
  // Painted world-space foliage patches extend across tile boundaries.
  for(let y=Math.max(0,Math.floor(oy/96)-1);y<Math.min(Math.ceil(H*S/96)+1,Math.ceil((oy+viewportHeight)/96)+1);y++)for(let x=Math.max(0,Math.floor(ox/96)-1);x<Math.min(Math.ceil(W*S/96)+1,Math.ceil((ox+viewportWidth)/96)+1);x++){
@@ -2892,9 +2892,8 @@ function drawOutdoorWorld(){
  const position=outdoorOrigin(s.area),worldX=(position.x+visual.x)*S,worldY=(position.y+visual.y)*S;
  const bounds=outdoorWorldBounds();
  const minX=0,maxX=bounds.width*S,minY=0,maxY=bounds.height*S;
- const targetX=Math.max(minX,Math.min(Math.max(minX,maxX-vw),worldX-vw/2));
- const narratorInset=($('dialog')?.offsetHeight||0)/zoom;
- const targetY=Math.max(minY,Math.min(Math.max(minY,maxY-vh),worldY-(vh-narratorInset)/2));
+ const targetX=worldX+S/2-vw/2;
+ const targetY=worldY+S/2-vh/2;
  const camera=followOutdoorCamera(targetX,targetY);
  const ox=camera.x,oy=camera.y;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#5f8e5f';ctx.fillRect(0,0,C.width,C.height);
@@ -3612,7 +3611,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.23</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.24</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
