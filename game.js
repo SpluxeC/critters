@@ -677,8 +677,50 @@ function critter(type,level=5){
  const p={type:primary,types:spec?.types||[primary],speciesId:spec?.speciesId||(starterType?type:null),name:spec?.name||(starterType?starterType+' Starter':primary),baseStats:spec?.baseStats||null,level,hp,maxHp:hp,xp:0,status:'',moves:[],movePP:{}};
  return normalizeMoves(refreshSpeciesMetadata(p));
 }
+// Capture energy is a permanent Index subsystem, separate from battle PP and modules.
+const BEAM_BATTERIES=Object.freeze([{name:'Standard Battery',capacity:10,price:0},{name:'Extended Battery',capacity:20,price:500},{name:'High-Capacity Battery',capacity:35,price:1500},{name:'Ultra Battery',capacity:50,price:3500}]);
+const BEAM_RECHARGE_PRICE=30;
+function normalizeBeamBattery(state){
+ const old=state.beamBattery;
+ const tier=Number.isInteger(old?.tier)?Math.max(0,Math.min(BEAM_BATTERIES.length-1,old.tier)):0;
+ const capacity=BEAM_BATTERIES[tier].capacity;
+ const charge=Number.isFinite(old?.charge)?Math.max(0,Math.min(capacity,Math.floor(old.charge))):capacity;
+ state.beamBattery={tier,charge};return state.beamBattery;
+}
+function beamStatus(state=s){
+ const b=normalizeBeamBattery(state),spec=BEAM_BATTERIES[b.tier];
+ return {...b,capacity:spec.capacity,name:spec.name};
+}
+function consumeBeamCharge(state){
+ const b=normalizeBeamBattery(state);if(b.charge<=0)return false;b.charge--;return true;
+}
+function rechargeBeam(state){
+ const b=normalizeBeamBattery(state),cap=BEAM_BATTERIES[b.tier].capacity;
+ if(b.charge>=cap||!Number.isFinite(state.money)||state.money<BEAM_RECHARGE_PRICE)return false;
+ state.money-=BEAM_RECHARGE_PRICE;b.charge=cap;return true;
+}
+function upgradeBeam(state,tier){
+ const b=normalizeBeamBattery(state),next=BEAM_BATTERIES[tier];
+ if(!Number.isInteger(tier)||tier!==b.tier+1||!next||!Number.isFinite(state.money)||state.money<next.price)return false;
+ state.money-=next.price;b.tier=tier;b.charge=next.capacity;return true;
+}
+function beamChargeLabel(){const b=beamStatus();return b.charge+'/'+b.capacity+' charges'}
+function beamMeterHTML(){
+ const b=beamStatus();return '<div class="watchSelectionStats">Capture Beam · '+b.charge+' / '+b.capacity+' charges</div><div class="watchMeter" role="meter" aria-label="Capture Beam charge" aria-valuemin="0" aria-valuemax="'+b.capacity+'" aria-valuenow="'+b.charge+'"><div style="width:'+(100*b.charge/b.capacity)+'%"></div></div>';
+}
+function canFireBeam(){return !!(battle?.kind==='wild'&&battle.enemies[0]?.hp>0&&beamStatus().charge>0)}
+function beamBattleButton(id){
+ if(battle.kind!=='wild')return '';
+ return '<button type="button" class="btn" id="'+id+'" '+(canFireBeam()?'':'disabled')+'>Capture Beam · '+Math.round(captureChance(battle.enemies[0])*100)+'% · '+beamChargeLabel()+'</button>'+(beamStatus().charge===0?'<small>Battery empty. Recharge at a Critter Shop.</small>':'');
+}
+function beamShopHTML(){
+ const b=beamStatus(),next=BEAM_BATTERIES[b.tier+1];
+ return '<h3>Capture Beam battery</h3><p>'+b.name+' · '+beamChargeLabel()+'</p>'+beamMeterHTML()+'<div class="options"><button class="btn" id="beamRecharge" '+(b.charge===b.capacity||s.money<BEAM_RECHARGE_PRICE?'disabled':'')+'>Recharge fully — '+BEAM_RECHARGE_PRICE+' ◇</button>'
+ +(next?'<button class="btn" id="beamUpgrade" '+(s.money<next.price?'disabled':'')+'>Upgrade to '+next.name+' · '+next.capacity+' charges — '+next.price+' ◇</button>':'<p>Maximum battery capacity installed.</p>')+'</div><p class="muted">Every fired capture beam consumes one charge. Upgrades include a full charge.</p>';
+}
 function migrate(){
  if(!s)return;
+ normalizeBeamBattery(s);
  s.movementMode=s.movementMode==='walk'?'walk':'run';
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
@@ -3038,7 +3080,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.10</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.11</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -3089,7 +3131,7 @@ function indexClock(){
   detail='<div class="watchSelectionHeading">Module socket '+(i+1)+'</div><p>'+(mod?escapeHtml(mod):'No module installed')+'</p>'
    +'<small>Module changes are available only at a Critter Center.</small>';
  }
- return '<div class="watchClockLayout">'+clock+'<div class="watchSelection">'
+ return beamMeterHTML()+'<div class="watchClockLayout">'+clock+'<div class="watchSelection">'
   +'<span class="watchEyebrow">'+(i+1)+' O’CLOCK '+(i<8?'· PARTY':'· MODULE')+'</span>'+detail
   +(battleIndexActive()&&i<8&&p&&!isEgg(p)
      ?'<div class="watchSelectionStats">'+escapeHtml(p.name||p.type)+' · '+escapeHtml(defendTypes(p).join('/'))+'</div>'
@@ -3213,7 +3255,7 @@ function indexItems(){
    +'<button type="button" class="btn" id="watchBattlePotion" '+(!itemQty('Potion')||ppCritter?.hp>=ppCritter?.maxHp?'disabled':'')+'>Potion · Heal 20 HP ('+itemQty('Potion')+')</button>'
    +'<button type="button" class="btn" id="watchBattleRevive" '+(!itemQty('Revive')||!s.party.some(p=>p.hp===0)?'disabled':'')+'>Revive · Restore fainted Critter ('+itemQty('Revive')+')</button>'
    +'<button type="button" class="btn" id="watchBattlePP" '+(!itemQty('PP Potion')||!(ppCritter?.moves||[]).some(id=>(ppCritter.movePP?.[id]??getMove(ppCritter,id).pp)<getMove(ppCritter,id).pp)?'disabled':'')+'>PP Potion · Restore 10 PP ('+itemQty('PP Potion')+')</button>'
-   +(battle.kind==='wild'?'<button type="button" class="btn" id="watchBattleBeam">Capture Beam · '+Math.round(captureChance(battle.enemies[0])*100)+'%</button>':'')
+   +beamBattleButton('watchBattleBeam')
    +'</div>'
    +(battle.ppPicker?'<div class="watchSectionTitle">Choose a move to restore PP</div><div class="watchPartyGrid">'+ppMoves+'</div><button type="button" class="btn watchMinor" id="watchPPCancel">Back to bag</button>':'')
    :'';
@@ -3451,7 +3493,7 @@ function indexTools(){
  const cutter=!!s.cut,level=s.badges>=5?'Rare':s.badges>=2?'Advanced':'Basic';
  let modules=Array.from({length:4},(_,i)=>'<div class="watchModuleRow"><span>'+(i+9)+' O’CLOCK</span><strong>'+escapeHtml(s.installed[i]||'Empty module socket')+'</strong></div>').join('');
  return '<div class="watchSectionTitle">Critter Index maintenance</div>'
-  +'<div class="watchToolCard"><strong>✧ Capture Beam</strong><span>ONLINE</span><p>Capture wild Critters during 1v1 encounters. Lower target HP to improve capture chances.</p></div>'
+  +'<div class="watchToolCard"><strong>✧ Capture Beam</strong><span>'+(beamStatus().charge?'ONLINE':'EMPTY')+'</span><p>'+beamStatus().name+' · '+beamChargeLabel()+'. Recharge and upgrade at Critter Shops.</p>'+beamMeterHTML()+'</div>'
   +'<div class="watchToolCard"><strong>⚙ Vegetation Cutter</strong><span>'+(cutter?'UNLOCKED':'LOCKED')+'</span><p>'+(cutter?'First-badge cutting function is active.':'Earn the first Grass Gym badge to unlock vegetation cutting.')+'</p></div>'
   +'<div class="watchToolCard"><strong>◇ Module Access</strong><span>'+level.toUpperCase()+'</span><p>Basic at 0 badges · Advanced at 2 · Rare at 5.</p></div>'
   +'<div class="watchSectionTitle">Module sockets</div>'+modules
@@ -3961,7 +4003,7 @@ function renderBattle(message){
   }else if(mode==='index'){
    actions='<div class="classicMenu classicIndexMenu"><button class="btn" id="indexSwitch">↔ Switch Critter</button>'
      +'<button class="btn" id="indexItem">▣ Use Item</button>'
-     +(battle.kind==='wild'?'<button class="btn" id="indexCapture">⌚ Capture Beam · '+Math.round(captureChance(battle.enemies[0])*100)+'%</button>':'')
+     +beamBattleButton('indexCapture')
      +'<button class="btn" id="battleBack">Back</button></div>';
   }else if(mode==='items'){
    actions='<div class="classicMenu classicItemsMenu">'
@@ -4009,6 +4051,7 @@ function queueBattleAction(action){
  if(!battle||battle.phase!=='choose')return;
  const actor=battle.allySlots[battle.acting];
  if(actor==null||!s.party[actor]||s.party[actor].hp<=0)return;
+ if(action.kind==='capture'&&!canFireBeam())return;
  if(action.kind==='move'){
   const pp=s.party[actor].movePP||{};
   const hasMoves=(s.party[actor].moves||[]).some(id=>(pp[id]||0)>0);
@@ -4291,6 +4334,8 @@ function performPlayerAction(action,log){
   case 'capture':if(battle.kind==='wild'){
     const foe=battle.enemies[0];
     if(!foe||foe.hp<=0){log.push('Capture target is unavailable.');return}
+    if(!consumeBeamCharge(s)){log.push('Capture Beam battery empty. Recharge at a Critter Shop.');return}
+    save(); // Persist a fired beam even if the page closes before battle narration ends.
     const chance=captureChance(foe);
     if(Math.random()<chance){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
@@ -4299,7 +4344,7 @@ function performPlayerAction(action,log){
      s.questCaptureCounts[s.area]=(s.questCaptureCounts[s.area]||0)+1;
      s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,gender:foe.gender,area:s.area,storage:destination});s.captureLog=s.captureLog.slice(-80);
      endBattle(true,'Capture successful! '+(foe.name||foe.type)+(destination==='Party'?' joined your party ('+s.party.length+'/'+PARTY_LIMIT+').':' was automatically sent to home storage ('+s.storage.length+' stored).'),false);
-    }else log.push('The capture beam missed! Lower the target’s HP for better odds.');
+    }else log.push('The capture beam missed! '+beamChargeLabel()+' remaining.');
    }return;
   case 'run':if(battle.kind==='wild'){
    const escaped=Math.random()<0.82;
@@ -4721,9 +4766,11 @@ function shop(){
   +items.map(([name,price])=>'<button class="btn" data-buy="'+escapeHtml(name)+'" '+(s.money<price?'disabled':'')+'>'
    +escapeHtml(name)+' — '+price+' ◇'+(EVOLUTION_STONES[name]?' · Owned '+(s.inventory[name]||0):'')+'</button>').join('')+'</div>';
  open('Critter Shop','<p>Money: '+s.money+' ◇</p>'
-  +section('Healing items',supplies)+section('Index modules',modules)
+  +beamShopHTML()+section('Healing items',supplies)+section('Index modules',modules)
   +section('Evolution stones',stones)
   +'<p class="muted">Evolution stones are used from the Critter Index Party screen after the required level is reached. Each successful stone evolution consumes one stone. Modules are installed at a Critter Center.</p>');
+ const recharge=$('beamRecharge');if(recharge)recharge.onclick=()=>{if(rechargeBeam(s)){save();indexNotice('Capture Beam fully recharged.');shop()}};
+ const upgrade=$('beamUpgrade');if(upgrade)upgrade.onclick=()=>{if(upgradeBeam(s,beamStatus().tier+1)){save();indexNotice('Installed '+beamStatus().name+' — fully charged.');shop()}};
  document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{
   const name=b.dataset.buy,entry=goods.find(g=>g[0]===name);
   if(!entry||s.money<entry[1])return;
@@ -4738,7 +4785,7 @@ preview('malePreview','male');preview('femalePreview','female');
 $('new').onclick=()=>show('selection');
 $('continue').onclick=()=>{backUpLegacySaveBeforeMigration();s=read();if(!s)return;migrate();build();show('game')};
 $('begin').onclick=()=>{const name=$('playerName').value.trim().replace(/\s+/g,' ');if(!name){$('error').textContent='Please enter a name.';return}
- s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4,movementMode:'run'};
+ s={name,gender:document.querySelector('.character.selected').dataset.gender,area:'village',x:17,y:16,face:'down',steps:0,starter:null,party:[],storage:[],inventory:{Potion:4,Revive:1},modules:[],installed:[],badges:0,defeated:{},puzzles:{},money:250,version:4,movementMode:'run',beamBattery:{tier:0,charge:BEAM_BATTERIES[0].capacity}};
  save();build();show('game');say(['Welcome, '+name+'!','Touch and slide anywhere in the world to move. Double tap the world to switch Run / Walk. Interact lights up when facing something usable.','Visit the northeast laboratory to receive your starter and Critter Index.'])};
 document.querySelectorAll('.character').forEach(b=>b.onclick=()=>{document.querySelectorAll('.character').forEach(c=>c.classList.remove('selected'));b.classList.add('selected')});
 $('index2').onclick=index;$('talk').onclick=interact;$('dialog').onclick=advance;$('close').onclick=close;
