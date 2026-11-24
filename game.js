@@ -400,15 +400,28 @@ const EXPLORATION_OBJECTS=[
  {id:'ruins-cache',area:'ruins',x:17,y:5,kind:'chest',title:'Sealed Ruins Chest',text:'The old chamber contains a preserved supply cache.',reward:'Revive',quantity:2,credits:120},
  {id:'cavern-cache',area:'cavern',x:24,y:8,kind:'chest',title:'Crystal Chamber Cache',text:'An abandoned explorer left emergency supplies.',reward:'PP Potion',quantity:2,credits:90}
 ];
+// Quest objects are separate from inventory and cannot be collected before acceptance.
+EXPLORATION_OBJECTS.push(
+ {id:'quest-lost-critter',area:'route1',x:12,y:6,kind:'quest',title:'Lost Critter',quest:'lost-companion',text:'The frightened Critter recognizes the caretaker’s call and follows you safely.'},
+ {id:'quest-delivery',area:'town',x:22,y:13,kind:'quest',title:'Supply Delivery Desk',quest:'farm-delivery',text:'The delivery desk accepts the sealed farm supplies.'},
+ {id:'quest-repair',area:'route2',x:12,y:10,kind:'quest',title:'Damaged Trail Marker',quest:'trail-repair',text:'You straighten the marker and secure it with the provided repair kit.'}
+);
 const PUZZLE_RUNES=['sun','water','stone'];
 function secretEntranceAt(area,x,y){
  return Object.entries(SECRET_AREAS).find(([id,d])=>d.parent===area&&d.entrance[0]===x&&d.entrance[1]===y);
 }
 function explorationObjectAt(area,x,y){return EXPLORATION_OBJECTS.find(o=>o.area===area&&o.x===x&&o.y===y)}
 function explorationBlocked(area,x,y){
- return !!explorationObjectAt(area,x,y)||!!secretEntranceAt(area,x,y)||(area==='ruins'&&y===11&&x>=15&&x<=19&&!s?.puzzles?.ruinsOpened);
+ const o=explorationObjectAt(area,x,y);
+ return !!(o&&(o.id!=='quest-lost-critter'||s.sideQuests?.[o.quest]?.status==='active'&&!s.sideQuests[o.quest].objectDone))||!!secretEntranceAt(area,x,y)||(area==='ruins'&&y===11&&x>=15&&x<=19&&!s?.puzzles?.ruinsOpened);
 }
 function inspectExplorationObject(o){
+ if(o.kind==='quest'){
+  const state=s.sideQuests?.[o.quest];
+  if(!state||state.status!=='active')return notifyWorld(state?.status==='complete'?'Your work here is finished.':'Someone nearby may know more about this.');
+  if(state.objectDone)return notifyWorld('This objective is already complete. Return to the quest giver.');
+  state.objectDone=true;save();return notifyWorld([o.text,'Objective complete. Return to '+sideQuest(o.quest).giver+'.']);
+ }
  if(o.kind==='sign')return notifyWorld(o.text);
  if(o.kind==='rune'){
   if(s.puzzles.ruinsOpened)return notifyWorld('The rune glows steadily. The chamber is already open.');
@@ -454,6 +467,12 @@ function drawExtraExploration(ox,oy){
  }
  for(const o of EXPLORATION_OBJECTS)if(o.area===s.area){
   const x=o.x*S-ox,y=o.y*S-oy;
+  if(o.kind==='quest'&&o.id==='quest-lost-critter'){
+   if(s.sideQuests?.[o.quest]?.status!=='active'||s.sideQuests[o.quest].objectDone)continue;
+   ctx.fillStyle='#563b36';ctx.beginPath();ctx.ellipse(x+16,y+22,11,5,0,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#d8b77b';ctx.beginPath();ctx.ellipse(x+16,y+16,9,10,0,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#4b3835';ctx.fillRect(x+11,y+13,2,3);ctx.fillRect(x+19,y+13,2,3);continue;
+  }
   if(o.kind==='rune'){
    const lit=s.puzzles?.ruinsOpened||s.puzzles?.ruinsSequence?.includes(o.rune);
    ctx.fillStyle=lit?'#c8ba70':'#53605a';ctx.fillRect(x+6,y+6,20,22);
@@ -1096,20 +1115,40 @@ const SIDE_QUESTS=[
   reward:{item:'Ghost Stone',quantity:1}},
  {id:'garden-memorial',title:'Garden Memories',giver:'Garden Caretaker',area:'garden',
   description:'Find the Garden Memorial and learn its story.',kind:'landmark',landmark:'exp-garden',
-  reward:{item:'Water Stone',quantity:1}}
+  reward:{item:'Water Stone',quantity:1}},
+ {id:'lost-companion',hub:'farmer-fieldwork',title:'A Missing Companion',giver:'Rice Farmer',area:'route1',kind:'object',description:'Find the missing companion near the northern lookout. Bring it safely back; do not use the capture beam.',reward:{credits:100,item:'Potion',quantity:2}},
+ {id:'farm-delivery',hub:'farmer-fieldwork',requires:'lost-companion',title:'From Farm to Town',giver:'Rice Farmer',area:'route1',kind:'object',description:'Deliver the sealed farm supplies to the desk next to the Small Town Critter Center, then report back.',reward:{credits:140,item:'PP Potion'}},
+ {id:'trail-repair',hub:'bamboo-survey',title:'A Safer Trail',giver:'Town Naturalist',area:'town',kind:'object',description:'Repair the damaged trail marker on the northern bamboo path, then return.',reward:{credits:100,item:'Potion',quantity:2}},
+ {id:'grotto-research',hub:'bamboo-survey',requires:'trail-repair',title:'Grotto Field Study',giver:'Town Naturalist',area:'town',kind:'landmark',landmark:'secret-grotto',description:'Discover the Bamboo Grotto and report its location.',reward:{credits:150,item:'Revive'}},
+ {id:'ruins-research',hub:'forest-shrine',requires:'forest-shrine',title:'Reading the Ruins',giver:'Forest Guide',area:'forest',kind:'puzzle',description:'Find the Forgotten Ruins and solve its rune puzzle.',reward:{credits:180,item:'PP Potion',quantity:2}},
+ {id:'garden-challenge',hub:'garden-memorial',title:'A Friendly Challenge',giver:'Garden Caretaker',area:'garden',kind:'trainer',description:'Win an optional friendly battle with the caretaker. Speak again to collect your reward.',reward:{credits:160,item:'Revive'}},
+ {id:'cavern-research',hub:'garden-memorial',requires:'garden-challenge',title:'Beyond the Crystal Alcove',giver:'Garden Caretaker',area:'garden',kind:'landmark',landmark:'secret-cavern',description:'After earning your first badge, discover Crystal Cavern and report back.',reward:{credits:200,item:'PP Potion',quantity:2}}
 ];
 function sideQuest(id){return SIDE_QUESTS.find(q=>q.id===id)||null}
 function sideQuestProgress(q){
  const saved=s.sideQuests?.[q.id];if(!saved)return 0;
  if(q.kind==='landmark')return s.discoveries?.[q.landmark]?1:0;
+ if(q.kind==='object')return saved.objectDone?1:0;
+ if(q.kind==='puzzle')return s.puzzles?.ruinsOpened?1:0;
+ if(q.kind==='trainer')return saved.won?1:0;
  return Math.max(0,(s.questCaptureCounts?.[q.captureArea]||0)-(saved.baseline||0));
 }
-function sideQuestGoal(q){return q.kind==='landmark'?1:q.required}
+function sideQuestGoal(q){return q.kind==='captures'?q.required:1}
 function sideQuestRewardLabel(q){
  return [q.reward.credits?q.reward.credits+' money':'',q.reward.item?q.reward.item+' ×'+(q.reward.quantity||1):''].filter(Boolean).join(' + ');
 }
+function questUnlocked(q){return !q.requires||s.sideQuests?.[q.requires]?.status==='complete'}
+function questHub(id){
+ const quests=SIDE_QUESTS.filter(q=>q.id===id||q.hub===id);
+ if(quests.length===1)return talkSideQuest(id);
+ open(quests[0].giver+' · Side Quests','<p>Choose an optional assignment.</p><div class="options">'+quests.map(q=>{
+  const state=s.sideQuests?.[q.id],status=state?.status==='complete'?'Completed':!questUnlocked(q)?'Locked':state?'In progress':'Available';
+  return '<button class="btn" data-quest-select="'+escapeHtml(q.id)+'" '+(!questUnlocked(q)?'disabled':'')+'>'+escapeHtml(q.title)+' · '+status+'</button>';
+ }).join('')+'</div>');
+ document.querySelectorAll('[data-quest-select]').forEach(b=>b.onclick=()=>talkSideQuest(b.dataset.questSelect,true));
+}
 function talkSideQuest(id,refresh=false){
- const q=sideQuest(id);if(!q)return;
+ const q=sideQuest(id);if(!q||!questUnlocked(q))return;
  const state=s.sideQuests?.[id],progress=Math.min(sideQuestGoal(q),sideQuestProgress(q));
  const done=!!state&&state.status==='complete',ready=!!state&&state.status==='active'&&progress>=sideQuestGoal(q);
  const message=done?'Thank you again! Your help made a difference.':
@@ -1123,6 +1162,7 @@ function talkSideQuest(id,refresh=false){
   +'<div class="options">'
   +(ready?'<button class="btn primary" id="questClaim">Claim reward</button>':'')
   +(!state?'<button class="btn primary" id="questAccept">Accept quest</button>':'')
+  +(state?.status==='active'&&q.kind==='trainer'&&!ready?'<button class="btn primary" id="questBattle">Start friendly battle</button>':'')
   +'<button class="btn" id="questClose">Leave</button></div>');
  if($('questAccept'))$('questAccept').onclick=()=>{
   s.sideQuests[q.id]={status:'active',baseline:q.kind==='captures'?(s.questCaptureCounts?.[q.captureArea]||0):0};
@@ -1135,13 +1175,14 @@ function talkSideQuest(id,refresh=false){
   active.status='complete';save();indexNotice('Quest completed: '+q.title+'. Reward: '+sideQuestRewardLabel(q)+'.');
   talkSideQuest(q.id,true);
  };
- $('questClose').onclick=close;
+ const challenge=$('questBattle');if(challenge)challenge.onclick=()=>{close();startTrainer('quest-garden')};
+ $('questClose').onclick=()=>questHub(q.hub||q.id);
 }
 function sideQuestIndex(){
  return '<div class="watchSectionTitle">Side quests <small>'+SIDE_QUESTS.filter(q=>s.sideQuests?.[q.id]?.status==='complete').length+'/'+SIDE_QUESTS.length+' complete</small></div>'
   +SIDE_QUESTS.map(q=>{
    const state=s.sideQuests?.[q.id],progress=Math.min(sideQuestGoal(q),sideQuestProgress(q));
-   const status=state?.status==='complete'?'Completed':!state?'Not accepted':progress>=sideQuestGoal(q)?'Return to '+q.giver:progress+' / '+sideQuestGoal(q);
+   const status=state?.status==='complete'?'Completed':!questUnlocked(q)?'Locked':!state?'Not accepted':progress>=sideQuestGoal(q)?'Return to '+q.giver:progress+' / '+sideQuestGoal(q);
    return '<div class="watchRow"><span><b>'+escapeHtml(q.title)+'</b><small> · '+escapeHtml(q.giver)+' · '+escapeHtml(q.description)+'</small></span><span>'+escapeHtml(status)+'</span></div>';
   }).join('')
   +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
@@ -2968,7 +3009,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return talkSideQuest(p.id);
+ if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -3492,7 +3533,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.17</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.18</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -4184,6 +4225,7 @@ function startTrainer(id){
  let enemies,name,award,kind='trainer';
  if(id==='tutorial'){enemies=[starter(s.rival)];name='Childhood Rival';award=0;kind='tutorial'}
  else if(id==='rival'){enemies=[critter(starterSpeciesId(s.rival),12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
+ else if(id==='quest-garden'){if(s.sideQuests?.['garden-challenge']?.status!=='active'||s.sideQuests['garden-challenge'].won)return;enemies=[make('Grass',10),make('Water',11)];name='Garden Caretaker';award=0}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
  else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
  else {const n=Number(id.slice(1));enemies=[make('Grass',8+n),make(n===2?'Venom':'Grass',9+n)];name='Garden Trainer '+n;award=35+n*10}
@@ -4771,7 +4813,8 @@ function performPlayerAction(action,log){
      const caught={...foe,hp:Math.max(1,foe.hp),xp:0};
      const destination=addCapturedCritter(caught);
      s.questCaptureCounts=s.questCaptureCounts||{};
-     s.questCaptureCounts[s.area]=(s.questCaptureCounts[s.area]||0)+1;
+     const questArea=SECRET_AREAS[s.area]?.parent||s.area;
+     s.questCaptureCounts[questArea]=(s.questCaptureCounts[questArea]||0)+1;
      s.captureCount++;noteCritterCaptured(caught);if(s.area==='route1')noteOpeningEvent('firstCapture');s.captureLog=s.captureLog||[];s.captureLog.push({speciesId:foe.speciesId||null,name:foe.name||foe.type,type:foe.type,level:foe.level,gender:foe.gender,area:s.area,storage:destination});s.captureLog=s.captureLog.slice(-80);
      endBattle(true,'Capture successful! '+(foe.name||foe.type)+(destination==='Party'?' joined your party ('+s.party.length+'/'+PARTY_LIMIT+').':' was automatically sent to home storage ('+s.storage.length+' stored).'),false);
     }else log.push('The capture beam missed! '+beamChargeLabel()+' remaining.');
@@ -5069,7 +5112,7 @@ function awardExperience(p,xp){
 function endBattle(won,message,defeated){
  const b=battle;clearCombatNarrator();battle=null;$('close').hidden=false;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)})}
- else if(defeated&&won){s.money+=b.award||0;if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
+ else if(defeated&&won){s.money+=b.award||0;if(b.id==='quest-garden'&&s.sideQuests?.['garden-challenge']?.status==='active')s.sideQuests['garden-challenge'].won=true;else if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
  }
  else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});s.area='town';s.x=17;s.y=15;build()}
