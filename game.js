@@ -1265,6 +1265,14 @@ function drawRoute1Details(ox,oy,viewW,viewH){
  ctx.fillStyle='#efce8910';ctx.fillRect(0,0,viewW,viewH);
 }
 
+function drawInteriorDecor(ox,oy){
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
+ const rug=activeCosmetic('rug');if(rug){box(12,16,9,4,rug.color);box(12.15,16.15,8.7,.12,'#ead9b4');box(12.15,19.7,8.7,.12,'#ead9b4');for(let x=13;x<21;x+=1.5)box(x,17.8,.5,.5,'#ead9b4')}
+ if(activeCosmetic('plants'))for(const x of [2,31]){box(x,3.8,.7,.6,'#a67652');box(x-.15,3.15,1,.8,cosmeticColor('plants','#629461'))}
+ if(activeCosmetic('fireplace')){box(1,1,2.5,2,'#8c8980');box(1.45,1.7,1.6,1,'#372f2b');box(1.8,2,.9,.55,'#e9a34f')}
+ if(activeCosmetic('kitchen')){box(30,5,2,3,'#b88d61');box(30.2,5.3,1.6,.7,'#c6cbc5');box(30.4,6.4,1,.6,'#738a88')}
+ if(activeCosmetic('trophy')){box(14,2.5,5,.5,'#70523b');for(let i=0;i<Math.min(8,s.badges||0);i++){box(14.3+i*.55,1.9,.3,.45,'#ddbb66');box(14.2+i*.55,2.35,.5,.12,'#c7a45a')}}
+}
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(!isInterior(s.area))return;
  const wx=(x)=>x*S-ox,wy=(y)=>y*S-oy;
@@ -1272,7 +1280,8 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  const pixel=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x)+w*.0,wy(y),w,h)};
  const line=(x1,y1,x2,y2,color,width=2)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(wx(x1),wy(y1));ctx.lineTo(wx(x2),wy(y2));ctx.stroke()};
  // Continuous plank flooring rather than visually isolated square wood tiles.
- box(0,0,W,H,'#8e7258');
+ const estate=s.area==='homesteadHome';const style=(slot,fallback)=>estate?cosmeticColor(slot,fallback):fallback;
+ box(0,0,W,H,style('floor','#8e7258'));
  for(let y=0;y<H;y+=1.22)line(0,y,W,y,'#6c523f',2);
  for(let x=0;x<W;x+=6)line(x,0,x,H,'#ae9170',1.5);
  for(let y=0;y<H;y+=2.44)for(let x=((y*7)%2)*3;x<W;x+=6)line(x,y,x,y+1.22,'#74563f',1.5);
@@ -1285,7 +1294,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
   line(x+.12,y+h-.2,x+w-.12,y+h-.2,'#687d69',4);
  }
  // Window-wall, waist-high joinery, wooden uprights and overhead beams.
- box(0,0,W,2.4,'#463b37');
+ box(0,0,W,2.4,style('wall','#463b37'));
  box(0,2.4,W,1.0,'#b7a186');
  box(0,3.25,W,.25,'#44382e');
  box(0,24.8,W,1.2,'#57493c');
@@ -1303,9 +1312,10 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
   const cx=wx(x),cy=wy(3.6);
   ctx.fillStyle='#ffe4a31e';ctx.beginPath();ctx.ellipse(cx,cy,30,18,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#3f392f';ctx.fillRect(cx-7,cy-9,14,3);
-  ctx.fillStyle='#f2dab0';ctx.fillRect(cx-6,cy-6,12,12);
+  ctx.fillStyle=style('lights','#f2dab0');ctx.fillRect(cx-6,cy-6,12,12);
   ctx.fillStyle='#5e4b3a';ctx.fillRect(cx-7,cy+5,14,3);
  }
+ if(estate)drawInteriorDecor(ox,oy);
  // Two side wall columns framing the entrance.
  box(15.7,23.95,.3,1,'#644b3a');box(18.98,23.95,.3,1,'#644b3a');
  box(16.92,25,.16,.9,'#2a2e33');box(17.6,25,.15,.9,'#2a2e33');
@@ -1318,7 +1328,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
    box(x+.05,y+.2,w-.1,h-.25,'#604639');
    box(x+.25,y+.12,w-.5,h-.5,'#e6ded0');
    box(x+.4,y+.2,w-.8,1.05,'#f7efde');
-   box(x+.4,y+1.4,w-.8,h-1.9,'#a4b0a6');
+   box(x+.4,y+1.4,w-.8,h-1.9,style('bed','#a4b0a6'));
    line(x+.5,y+1.4,x+w-.5,y+1.4,'#d9dfd0',4);
    box(x+.6,y+h-.4,w-1.2,.25,'#55433a');
   }else if(kind==='bookshelf'){
@@ -1363,7 +1373,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
    box(x+w/2-.14,y+h/2-.14,.28,.38,'#e6c887');
   }else if(kind==='table'){
    box(x+.15,y+.35,w-.3,h-.4,'#5a4031');
-   box(x+.12,y+.1,w-.24,h-.65,'#ae825d');
+   box(x+.12,y+.1,w-.24,h-.65,style('table','#ae825d'));
    box(x+.5,y+.35,.8,.55,'#e3e0ce');
    box(x+1.65,y+.35,.7,.55,'#eee3c9');
    box(x+2.4,y+.48,.3,.45,'#4b8071');
@@ -1892,11 +1902,29 @@ function greetPasture(i){
  }
  return notifyWorld(parents.map(p=>p.name||p.type).join(' and ')+' happily greet you from the pasture.');
 }
+function drawEstateExterior(ox,oy){
+ if(!s.homestead?.owned)return;
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
+ function styledHouse(x,y,w,h,roof,wall){
+  box(x,y,w,Math.max(1,h-1),roof);box(x,y+h-1,w,1,wall);
+  for(let yy=y+.2;yy<y+h-1;yy+=.45)box(x,yy,w,.055,'#00000025');
+ }
+ if(activeCosmetic('roof')||activeCosmetic('house'))styledHouse(6,5,6,3,cosmeticColor('roof','#8d614e'),cosmeticColor('house','#cfb48c'));
+ if(activeCosmetic('porch')){box(7.3,8.2,3.4,.6,'#b08b60');for(let i=0;i<5;i++)box(7.4+i*.65,8.3,.06,.45,'#805b37')}
+ if(activeCosmetic('path')){const c=cosmeticColor('path','#c5b38e');for(let x=15;x<W-1;x++)for(let y=12;y<=14;y++){box(x,y,1,1,c);box(x,y+.05,1,.055,'#00000022')}}
+ const garden=activeCosmetic('garden');if(garden)for(let i=0;i<10;i++){box(4.4+(i%5)*.7,11.5+Math.floor(i/5)*.65,.22,.28,'#487344');box(4.3+(i%5)*.7,11.35+Math.floor(i/5)*.65,.4,.25,garden.color)}
+ const water=activeCosmetic('water');if(water){box(3.5,13,3,2,'#b2ac91');box(3.7,13.2,2.6,1.6,water.color);if(water.stage===3){box(4.75,13.4,.5,1,'#ddd6c5');box(4.4,13.4,1.2,.18,'#d2edee')}}
+ if(activeCosmetic('lantern'))for(const x of [18,23,28,33]){box(x,11,.12,.8,'#6e5139');box(x-.15,10.7,.42,.4,'#f6c36d')}
+ if(activeCosmetic('landscape'))for(const x of [4,6,8,10,12])box(x,2.4,.75,.65,'#759e6b');
+ if(farmStage()>=2&&activeCosmetic('barn'))styledHouse(24,5,8,5,cosmeticColor('barn','#a45246'),'#d0b392');
+ if(activeCosmetic('windmill')){box(32,29,1.2,3,'#cbbba0');const cx=32.6*S-ox,cy=28.8*S-oy;ctx.save();ctx.translate(cx,cy);ctx.rotate(performance.now()/2400);ctx.fillStyle='#e0d4b8';for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.fillRect(-3,-30,6,30)}ctx.restore()}
+ if(activeCosmetic('field'))for(let i=0;i<20;i++)box(2+(i%5)*.65,30+Math.floor(i/5)*.6,.27,.32,'#d2a45c');
+}
 function drawFarmGrounds(ox,oy){
  const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
  for(const [x,y,w,h] of FARM_PASTURES.slice(0,farmCapacity().pairs)){
-  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(xx===x||xx===x+w-1||yy===y||yy===y+h-1){box(xx,yy+.32,1,.14,'#805b37');box(xx,yy+.66,1,.12,'#a98150');box(xx+.08,yy+.12,.16,.78,'#c49a64')}
-  box(x+1.3,y+1.3,1.1,.42,'#85653f');box(x+1.4,y+1.4,.88,.22,'#7c9b9d');box(x+w-2.4,y+1.3,.8,.55,'#c9ae56');
+  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(xx===x||xx===x+w-1||yy===y||yy===y+h-1){box(xx,yy+.32,1,.14,cosmeticColor('fence','#805b37'));box(xx,yy+.66,1,.12,cosmeticColor('fence','#a98150'));box(xx+.08,yy+.12,.16,.78,cosmeticColor('fence','#c49a64'))}
+  box(x+1.3,y+1.3,1.1,.42,cosmeticColor('trough','#85653f'));box(x+1.4,y+1.4,.88,.22,'#7c9b9d');box(x+w-2.4,y+1.3,.8,.55,cosmeticColor('hay','#c9ae56'));if(activeCosmetic('hay'))box(x+w-2.6,y+1.1,1.2,.2,'#805b37');if(activeCosmetic('nest')){box(x+w-2.3,y+h-2.2,1.1,.65,'#947150');box(x+w-2.45,y+h-2.4,1.4,.2,'#674b37')}
  }
 }
 function drawHomesteadConstruction(ox,oy){
@@ -1937,7 +1965,7 @@ function drawOutdoorWorld(){
   for(let y=y1;y<y2;y++)for(let x=x1;x<x2;x++)drawTile(tiles[y][x],x*S-localOX,y*S-localOY,x,y);
   if(area==='village')drawVillageDetails(localOX,localOY,vw,vh);
   if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
-  if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY)}
+  if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY)}
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawExplorationSites(localOX,localOY);
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
@@ -2228,7 +2256,7 @@ function migrateHomestead(){
  const old=s.homestead&&typeof s.homestead==='object'?s.homestead:{};
  s.homestead={...old,offered:!!old.offered||!!old.owned,owned:!!old.owned,stage:old.owned?Math.max(1,Math.min(4,Math.floor(Number(old.stage)||1))):0};
  if(s.area==='homesteadHome'&&!s.homestead.owned){s.area='homestead';s.x=17;s.y=13}
- const home=farmSlots();
+ const home=farmSlots();cosmeticState();
  for(const pair of home.pairs){if(pair?.egg){normalizeEggGenetics(pair.egg);normalizeEggGender(pair.egg);normalizeEggMove(pair.egg)}for(const p of pair?.parents||[])if(p){normalizeGenetics(p);normalizeCritterGender(p)}}
  for(const e of home.incubators)if(e){normalizeEggGenetics(e);normalizeEggGender(e);normalizeEggMove(e)}
  for(const p of s.party||[])if(isEgg(p)){normalizeEggGenetics(p.egg);normalizeEggGender(p.egg);normalizeEggMove(p.egg)}
@@ -2253,15 +2281,65 @@ function talkPropertyAgent(){
   $('buyEstate').onclick=()=>{if(!purchaseHomestead())return;close();indexNotice('Personal Home purchased. Fast Travel unlocked!')};
  });
 }
+const HOMESTEAD_COSMETICS=[{"id":"style-1","slot":"floor","group":"Interior","name":"Cedar flooring","stage":1,"price":800,"color":"#a67e57"},{"id":"style-2","slot":"floor","group":"Interior","name":"Dark oak flooring","stage":1,"price":1200,"color":"#62493d"},{"id":"style-3","slot":"wall","group":"Interior","name":"Sage wallpaper","stage":1,"price":650,"color":"#83977e"},{"id":"style-4","slot":"wall","group":"Interior","name":"Cream wallpaper","stage":1,"price":900,"color":"#d5c29e"},{"id":"style-5","slot":"bed","group":"Interior","name":"Blue bedding","stage":1,"price":500,"color":"#638cb0"},{"id":"style-6","slot":"bed","group":"Interior","name":"Crimson bedding","stage":1,"price":850,"color":"#a65e61"},{"id":"style-7","slot":"table","group":"Interior","name":"Walnut furniture","stage":1,"price":1000,"color":"#745343"},{"id":"style-8","slot":"table","group":"Interior","name":"Ivory furniture","stage":1,"price":1500,"color":"#d2c2a2"},{"id":"style-9","slot":"rug","group":"Interior","name":"Woven blue rug","stage":1,"price":750,"color":"#647c9d"},{"id":"style-10","slot":"rug","group":"Interior","name":"Floral rug","stage":1,"price":1250,"color":"#a65e79"},{"id":"style-11","slot":"lights","group":"Interior","name":"Amber lamps","stage":1,"price":650,"color":"#ffc47d"},{"id":"style-12","slot":"lights","group":"Interior","name":"Jade lanterns","stage":1,"price":1000,"color":"#a5dec4"},{"id":"style-13","slot":"plants","group":"Interior","name":"Potted greenery","stage":1,"price":500,"color":"#5d925a"},{"id":"style-14","slot":"fireplace","group":"Interior","name":"Stone fireplace","stage":2,"price":2000,"color":"#8b8c87"},{"id":"style-15","slot":"kitchen","group":"Interior","name":"Kitchen display","stage":2,"price":1800,"color":"#b88d61"},{"id":"style-16","slot":"trophy","group":"Interior","name":"Trophy display","stage":3,"price":2500,"color":"#ddbb66"},{"id":"style-17","slot":"roof","group":"Exterior","name":"Terracotta roof","stage":1,"price":900,"color":"#ae6147"},{"id":"style-18","slot":"roof","group":"Exterior","name":"Slate roof","stage":1,"price":1300,"color":"#536579"},{"id":"style-19","slot":"house","group":"Exterior","name":"Cream siding","stage":1,"price":800,"color":"#e5d1a5"},{"id":"style-20","slot":"house","group":"Exterior","name":"Sage siding","stage":1,"price":1200,"color":"#8caa84"},{"id":"style-21","slot":"porch","group":"Exterior","name":"Timber porch","stage":1,"price":1500,"color":"#b08b60"},{"id":"style-22","slot":"path","group":"Exterior","name":"Flagstone paths","stage":1,"price":1000,"color":"#a9a49a"},{"id":"style-23","slot":"path","group":"Exterior","name":"Brick paths","stage":1,"price":1400,"color":"#aa795e"},{"id":"style-24","slot":"garden","group":"Exterior","name":"Flower garden","stage":1,"price":800,"color":"#d489aa"},{"id":"style-25","slot":"garden","group":"Exterior","name":"Sunflower garden","stage":1,"price":1200,"color":"#e2b83d"},{"id":"style-26","slot":"water","group":"Exterior","name":"Garden pond","stage":2,"price":2200,"color":"#578b9c"},{"id":"style-27","slot":"water","group":"Exterior","name":"Stone fountain","stage":3,"price":3500,"color":"#a0bfc9"},{"id":"style-28","slot":"lantern","group":"Exterior","name":"Path lanterns","stage":1,"price":1000,"color":"#f6c36d"},{"id":"style-29","slot":"landscape","group":"Exterior","name":"Ornamental shrubs","stage":2,"price":1500,"color":"#759e6b"},{"id":"style-30","slot":"barn","group":"Farm","name":"Red barn","stage":2,"price":1500,"color":"#a45246"},{"id":"style-31","slot":"barn","group":"Farm","name":"Blue barn","stage":3,"price":2000,"color":"#536d8c"},{"id":"style-32","slot":"fence","group":"Farm","name":"White fences","stage":2,"price":1000,"color":"#e7e1cf"},{"id":"style-33","slot":"fence","group":"Farm","name":"Dark timber fences","stage":2,"price":1200,"color":"#62483c"},{"id":"style-34","slot":"hay","group":"Farm","name":"Covered hay rack","stage":2,"price":750,"color":"#d3ad60"},{"id":"style-35","slot":"trough","group":"Farm","name":"Stone troughs","stage":2,"price":1000,"color":"#929c9b"},{"id":"style-36","slot":"nest","group":"Farm","name":"Nesting shelters","stage":3,"price":2200,"color":"#947150"},{"id":"style-37","slot":"windmill","group":"Farm","name":"Decorative windmill","stage":4,"price":5000,"color":"#cbbba0"},{"id":"style-38","slot":"field","group":"Farm","name":"Decorative flower field","stage":4,"price":3000,"color":"#d2a45c"}];
+function cosmeticState(){
+ const home=s.homestead;
+ if(!home.cosmetics||typeof home.cosmetics!=='object'||Array.isArray(home.cosmetics))home.cosmetics={};
+ const c=home.cosmetics;
+ if(!Array.isArray(c.owned))c.owned=[];
+ if(!c.active||typeof c.active!=='object'||Array.isArray(c.active))c.active={};
+ return c;
+}
+function cosmeticItem(id){return HOMESTEAD_COSMETICS.find(v=>v.id===id)}
+function activeCosmetic(slot){
+ const c=s?.homestead?.cosmetics;if(!s?.homestead?.owned||!c)return null;
+ const item=cosmeticItem(c.active?.[slot]);
+ return item&&item.slot===slot&&item.stage<=farmStage()&&c.owned?.includes(item.id)?item:null;
+}
+function cosmeticColor(slot,fallback){return activeCosmetic(slot)?.color||fallback}
+function canDecorate(){return s?.area==='homesteadHome'&&!!s.homestead?.owned}
+function applyCosmetic(id){
+ if(!canDecorate())return false;
+ const item=cosmeticItem(id),c=cosmeticState();
+ if(!item||item.stage>farmStage())return false;
+ if(!c.owned.includes(id)){
+  if(s.money<item.price)return false;
+  s.money-=item.price;c.owned.push(id);
+ }
+ c.active[item.slot]=id;save();return true;
+}
+function resetCosmetic(slot){
+ if(!canDecorate()||!HOMESTEAD_COSMETICS.some(i=>i.slot===slot))return false;
+ delete cosmeticState().active[slot];save();return true;
+}
+function homeDecorations(group='Interior'){
+ if(!canDecorate()||!['Interior','Exterior','Farm'].includes(group))return;
+ const c=cosmeticState(),items=HOMESTEAD_COSMETICS.filter(i=>i.group===group);
+ const rows=items.map(i=>{
+  const owned=c.owned.includes(i.id),selected=c.active[i.slot]===i.id,locked=i.stage>farmStage();
+  return '<div class="centerPartyRow decorRow"><span class="decorSwatch" style="background:'+i.color+'"></span><b>'+i.name+'</b><small>'+ (locked?'Requires '+FARM_STAGES[i.stage].name:selected?'Selected':owned?'Owned · free to switch':i.price.toLocaleString()+' money')+'</small><button class="btn" data-decor="'+i.id+'" '+(locked||selected||(!owned&&s.money<i.price)?'disabled':'')+'>'+(selected?'Equipped':owned?'Apply':'Purchase')+'</button>'+(selected?'<button class="btn" data-decor-reset="'+i.slot+'">Default</button>':'')+'</div>';
+ }).join('');
+ open('Property Customization','<p>Money: '+s.money.toLocaleString()+' · '+c.owned.length+' / '+HOMESTEAD_COSMETICS.length+' unlocked</p><div class="options">'+['Interior','Exterior','Farm'].map(v=>'<button class="btn '+(v===group?'primary':'')+'" data-decor-group="'+v+'">'+v+'</button>').join('')+'</div>'+rows+'<button class="btn" id="estateBack">Back</button>');
+ $('estateBack').onclick=homesteadTerminal;
+ document.querySelectorAll('[data-decor-group]').forEach(el=>el.onclick=()=>homeDecorations(el.dataset.decorGroup));
+ document.querySelectorAll('[data-decor-reset]').forEach(el=>el.onclick=()=>{if(resetCosmetic(el.dataset.decorReset))homeDecorations(group)});
+ document.querySelectorAll('[data-decor]').forEach(el=>el.onclick=()=>{
+  const i=cosmeticItem(el.dataset.decor);if(!i||i.stage>farmStage())return;
+  if(c.owned.includes(i.id)){if(applyCosmetic(i.id))homeDecorations(group);return}
+  open('Confirm Decoration','<h3>'+i.name+'</h3><p>Permanent cosmetic unlock: '+i.price.toLocaleString()+' money. Switching owned styles is free.</p><button class="btn primary" id="decorConfirm">Purchase and Apply</button><button class="btn" id="estateBack">Cancel</button>');
+  $('estateBack').onclick=()=>homeDecorations(group);
+  $('decorConfirm').onclick=()=>{if(applyCosmetic(i.id)){indexNotice(i.name+' unlocked and applied.');homeDecorations(group)}};
+ });
+}
 function homesteadTerminal(){
  if(!s.homestead?.owned||s.area!=='homesteadHome')return;
  const current=farmStage(),cap=farmCapacity(),next=FARM_STAGES[current+1];farmSlots();
  const rows=FARM_STAGES.slice(1).map((p,i)=>'<div class="centerPartyRow"><b>'+p.name+'</b> · '+p.pairs+' pairs / '+p.incubators+' incubators · '+(i+1<=current?'Owned':p.price.toLocaleString()+' money')+'</div>').join('');
- open('Home Terminal','<h3>'+cap.name+'</h3><p>Money: '+s.money.toLocaleString()+'</p>'+rows+'<div class="options">'+(next?'<button class="btn primary" id="estateExpand">Upgrade to '+next.name+'</button>':'<p>All expansions purchased.</p>')+(cap.pairs?'<button class="btn" id="estatePairs">Breeding Pairs</button><button class="btn" id="estateIncubators">Incubators</button>':'')+'<button class="btn" id="estateStorage">Home Storage</button><button class="btn" id="estateClose">Close</button></div>');
+ open('Home Terminal','<h3>'+cap.name+'</h3><p>Money: '+s.money.toLocaleString()+'</p>'+rows+'<div class="options">'+(next?'<button class="btn primary" id="estateExpand">Upgrade to '+next.name+'</button>':'<p>All expansions purchased.</p>')+(cap.pairs?'<button class="btn" id="estatePairs">Breeding Pairs</button><button class="btn" id="estateIncubators">Incubators</button>':'')+'<button class="btn" id="estateDecor">Customize Property</button><button class="btn" id="estateStorage">Home Storage</button><button class="btn" id="estateClose">Close</button></div>');
  if($('estateExpand'))$('estateExpand').onclick=()=>confirmFarmUpgrade(current+1);
  if($('estatePairs'))$('estatePairs').onclick=()=>farmManagement('pairs');
  if($('estateIncubators'))$('estateIncubators').onclick=()=>farmManagement('incubators');
- $('estateStorage').onclick=homesteadStorage;$('estateClose').onclick=close;
+ $('estateDecor').onclick=()=>homeDecorations();$('estateStorage').onclick=homesteadStorage;$('estateClose').onclick=close;
 }
 function confirmFarmUpgrade(next){
  if(!s.homestead?.owned||s.area!=='homesteadHome'||next!==farmStage()+1||!FARM_STAGES[next])return;
