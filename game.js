@@ -3611,7 +3611,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.24</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.25</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -4643,7 +4643,7 @@ function renderBattle(message){
  };
  if($('menuUse'))$('menuUse').onclick=()=>openBattleIndex('items');
  if($('menuCritters'))$('menuCritters').onclick=()=>openBattleIndex('clock');
- if($('menuEscape'))$('menuEscape').onclick=()=>{if(battle.kind==='wild')queueBattleAction({kind:'run'})};
+ if($('menuEscape'))$('menuEscape').onclick=attemptWildEscape;
  if($('battleBack'))$('battleBack').onclick=()=>menuTo(mode==='items'?'index':'root');
  document.querySelectorAll('[data-use-move]').forEach(el=>el.onclick=()=>{
   const moveId=el.dataset.useMove,target=Number(el.dataset.moveTarget);
@@ -4657,7 +4657,26 @@ function renderBattle(message){
  if($('revive'))$('revive').onclick=()=>{if(itemQty('Revive')&&s.party.some(q=>q.hp===0))selectRevive()};
 }
 
+// Escape is a synchronous world transition, not a narrated combat action.
+function finishWildEscape(){
+ if(!battle||battle.kind!=='wild')return false;
+ battle=null;modal=false;
+ clearCombatNarrator();clearWorldNarrator();
+ clearTimeout(worldFadeTimer);worldFadeTimer=null;worldTransitionBusy=false;doorTransition=null;
+ $('worldFade')?.classList.remove('active');
+ $('shade').classList.remove('show');
+ $('modalBody').innerHTML='';$('close').hidden=false;
+ releaseMovement();atmospherePreviousFrame=0;canvasSizeDirty=true;
+ save();notifyWorld('You escaped safely.');
+ return true;
+}
+function attemptWildEscape(){
+ if(!battle||battle.kind!=='wild'||battle.phase!=='choose')return false;
+ if(Math.random()<.82)return finishWildEscape();
+ queueBattleAction({kind:'failedEscape'});return false;
+}
 function queueBattleAction(action){
+ if(action.kind==='run')return attemptWildEscape();
  if(!battle||battle.phase!=='choose')return;
  const actor=battle.allySlots[battle.acting];
  if(actor==null||!s.party[actor]||s.party[actor].hp<=0)return;
@@ -4958,11 +4977,7 @@ function performPlayerAction(action,log){
      endBattle(true,'Capture successful! '+(foe.name||foe.type)+(destination==='Party'?' joined your party ('+s.party.length+'/'+PARTY_LIMIT+').':' was automatically sent to home storage ('+s.storage.length+' stored).'),false);
     }else log.push('The capture beam missed! '+beamChargeLabel()+' remaining.');
    }return;
-  case 'run':if(battle.kind==='wild'){
-   const escaped=Math.random()<0.82;
-    battle.escapeOutcome=escaped?'success':'failure';
-    log.push(escaped?'You escaped safely.':'You failed to escape!');
-  }return;
+  case 'failedEscape':if(battle.kind==='wild')log.push('You failed to escape!');return;
  }
 }
 function refillEnemyTeam(){
@@ -5086,23 +5101,8 @@ async function resolveTeamTurn(){
   performPlayerAction(action,log);
   if(battle!==currentBattle)return; // capture ended battle
    const fx=battle.lastVfx;
-   // Successful escape uses a bounded, independent transition instead of
-   // waiting for the battle narrator's completion callback indefinitely.
-   if(battle.escapeOutcome==='success'){
-    await Promise.race([narrateCombatEvents(log.slice(before),fx),new Promise(resolve=>setTimeout(resolve,2200))]);
-   }else await narrateCombatEvents(log.slice(before),fx);
+   await narrateCombatEvents(log.slice(before),fx);
    if(battle!==currentBattle)return;
-   if(battle.escapeOutcome==='failure')battle.escapeOutcome=null;
-   if(battle.escapeOutcome==='success'){
-    // Escape must not depend on an outstanding fade timer or animation.
-    if(battle===currentBattle){
-     clearCombatNarrator();battle=null;
-     clearTimeout(worldFadeTimer);worldFadeTimer=null;worldTransitionBusy=false;
-     document.getElementById('worldFade')?.classList.remove('active');
-     close();releaseMovement();atmospherePreviousFrame=0;canvasSizeDirty=true;save();draw();
-    }
-    return;
-   }
  }
  if(battle!==currentBattle)return;
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
