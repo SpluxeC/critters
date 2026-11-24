@@ -4118,13 +4118,14 @@ function researcherStoryDialogue(){
  if(s.badges>=1&&!storyFlag('researchDebrief'))return storyScene('researchDebrief',[
   'Researcher: Congratulations on earning your first badge.',
   'There are eight regional Gyms. Every challenge will help you grow alongside your Critters.',
-  'Our archives contain accounts of three legendary Critters. Their full story remains a subject of research.'
+  'Our archives contain accounts of three legendary Critters. Their full story remains a subject of research.',
+  'Researcher: If you hear the name Team Eclipse during your travels, remember it.'
  ]);
  return say(['Researcher: Your Critter Index is functioning well. Good luck!']);
 }
 function rivalGardenScene(){
  if(s.rivalPassed)return;
- s.rivalPassed=true;markStory('gardenRival');
+ s.rivalPassed=true;normalizeStoryState();save();
  say(['Your childhood rival greets you outside the Grass Gym.','Rival: We have both come a long way since the laboratory.','Rival: Let us see how much we have improved!'],()=>startTrainer('rival'));
 }
 function storyGrassBadgeScene(){
@@ -4276,7 +4277,6 @@ function startTrainer(id){
  const area=id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden';
  const used=new Set();
  const make=(t,l)=>trainerSpecies(t,l,area,id,used.size,used);
- const starter=t=>critter(starterSpeciesId(t),5);
  let enemies,name,award,kind='trainer';
  if(id==='tutorial'){enemies=[rivalPartnerAtLevel(5)];name='Childhood Rival';award=0;kind='tutorial'}
  else if(id==='rival'){enemies=[rivalPartnerAtLevel(12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
