@@ -31,7 +31,7 @@ function drawCinematicTrees(ox,oy,w,h,now){
   // Shadow sits under the fixed solid tile; only the art moves in the breeze.
   ctx.fillStyle='rgba(20,54,32,.27)';
   ctx.beginPath();ctx.ellipse(rootX,rootY-5,width*.28,6,0,0,Math.PI*2);ctx.fill();
-  const bend=Math.sin(now*.00086-x*.43-y*.22)*.012;
+  const bend=Math.sin(now*.00086-x*.43-y*.22)*.012*weatherWind();
   ctx.save();ctx.translate(rootX,rootY-4);ctx.rotate(bend);
   ctx.drawImage(img,-width/2,-height,width,height);ctx.restore();
  }
@@ -1404,7 +1404,10 @@ function naturalTileReady(t,a,b){const name=naturalTileName(t,a,b);return !!(nam
 function drawNaturalTile(t,x,y,a,b){
  const name=naturalTileName(t,a,b);if(!name||!uploadedArt(name))return false;
  if(t!==T.rice)drawTerrainArt('grass-plain',x,y);
- if(t===T.rice)return drawUploadedArt(name,x,y,S,S);
+ if(t===T.rice||t===T.tall){
+  ctx.save();ctx.translate(x+S/2,y+S);ctx.rotate(windAt(a,b,performance.now())*.018);
+  const result=t===T.rice?drawUploadedArt(name,-S/2,-S,S,S):drawUploadedFit(name,-S/2,-S,S,S);ctx.restore();return result;
+ }
  return drawUploadedFit(name,x,y,S,S);
 }
 function naturalDecoration(area,seed,t,nearTree){
@@ -2072,6 +2075,79 @@ function tickAtmosphere(now=performance.now()){
  else s.worldMinutes=m;
 }
 function worldHour(){return ((s?.worldMinutes??480)%1440)/60}
+// Weather is deterministic from saved world time, independent of encounter RNG.
+const WEATHER_PROFILES={
+ village:[65,22,5,8,0],town:[65,23,5,7,0],garden:[60,25,5,10,0],
+ route1:[60,26,5,9,0],route2:[48,26,8,18,0],forest:[40,27,8,25,0],
+ route3:[43,13,8,13,23],homestead:[65,22,5,8,0]
+};
+const WEATHER_NAMES=['clear','rain','storm','fog','snow'];
+const WEATHER_LABELS={clear:'Clear',rain:'Rain',storm:'Thunderstorm',fog:'Fog',snow:'Snow',sheltered:'Sheltered'};
+function regionalWeather(area=s?.area,day=s?.worldDay||1,minutes=s?.worldMinutes??480){
+ const profile=WEATHER_PROFILES[area];if(!profile)return 'sheltered';
+ const zone=['village','town','route1','homestead'].includes(area)?'valley':area;
+ let hash=2166136261;for(const ch of zone+':'+day+':'+Math.floor(minutes/180)){hash=Math.imul(hash^ch.charCodeAt(0),16777619)}
+ let roll=(hash>>>0)%100;
+ for(let i=0;i<profile.length;i++){roll-=profile[i];if(roll<0)return WEATHER_NAMES[i]}
+ return 'clear';
+}
+function weatherWind(){const weather=regionalWeather();return weather==='storm'?2.8:weather==='rain'?1.7:weather==='snow'?1.2:1}
+function drawWeather(w,h,now=performance.now()){
+ const weather=regionalWeather();if(weather==='clear'||weather==='sheltered')return;
+ ctx.save();
+ if(weather==='fog'){
+  ctx.fillStyle='rgba(194,214,215,.14)';ctx.fillRect(0,0,w,h);
+  for(let i=0;i<4;i++){const x=((now*.018+i*w*.39)%(w+300))-150;
+   const g=ctx.createRadialGradient(x,h*(.25+i*.18),8,x,h*(.25+i*.18),Math.max(90,w*.34));
+   g.addColorStop(0,'rgba(220,232,230,.24)');g.addColorStop(1,'rgba(220,232,230,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h)}
+ }else{
+  const snow=weather==='snow',storm=weather==='storm';
+  ctx.fillStyle=snow?'rgba(200,220,238,.13)':'rgba(35,57,83,.12)';ctx.fillRect(0,0,w,h);
+  const count=Math.min(150,Math.max(28,Math.floor(w*h/(snow?4200:storm?2300:3400))));
+  ctx.strokeStyle=storm?'rgba(185,212,239,.55)':'rgba(180,214,240,.4)';ctx.lineWidth=1;ctx.beginPath();
+  for(let i=0;i<count;i++){
+   const speed=snow?.035:storm?.65:.42;
+   const y=(i*97.13+now*speed)%(h+36)-18;
+   const x=((i*173.71+now*(snow?.018:storm?.16:.085)+Math.sin(i+now*.001)*8)%(w+30))-15;
+   if(snow){ctx.fillStyle='rgba(245,250,255,.8)';ctx.fillRect(x,y,i%3+1,i%3+1)}
+   else{ctx.moveTo(x,y);ctx.lineTo(x-(storm?7:4),y-(storm?20:13))}
+  }
+  ctx.stroke();
+  // Restrained single lightning pulse, rather than rapid strobing.
+  if(storm){const pulse=now%17000;if(pulse<180){ctx.fillStyle='rgba(215,230,255,'+(.13*(1-pulse/180))+')';ctx.fillRect(0,0,w,h)}}
+ }
+ ctx.restore();
+}
+// Optional synthesized ambience, unlocked by a player gesture on mobile.
+let ambientAudio=null,ambientGain=null,ambientFilter=null,ambientLast=0,ambientVolume=.35;
+try{const saved=localStorage.getItem('critters-ambient-volume');if(saved!==null&&Number.isFinite(Number(saved)))ambientVolume=Math.max(0,Math.min(1,Number(saved)))}catch{}
+function unlockAmbient(){
+ if(!ambientVolume)return;
+ try{
+  if(!ambientAudio){
+   const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;
+   ambientAudio=new Audio();
+   const buffer=ambientAudio.createBuffer(1,ambientAudio.sampleRate*3,ambientAudio.sampleRate),samples=buffer.getChannelData(0);
+   for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+   const source=ambientAudio.createBufferSource();source.buffer=buffer;source.loop=true;
+   ambientFilter=ambientAudio.createBiquadFilter();ambientFilter.type='lowpass';
+   ambientGain=ambientAudio.createGain();ambientGain.gain.value=0;
+   source.connect(ambientFilter);ambientFilter.connect(ambientGain);ambientGain.connect(ambientAudio.destination);source.start();
+  }
+  if(ambientAudio.state==='suspended')ambientAudio.resume().catch(()=>{});
+ }catch{}
+}
+function tickAmbient(now=performance.now()){
+ if(!ambientAudio||!ambientGain||!ambientFilter||now-ambientLast<250)return;ambientLast=now;
+ const weather=regionalWeather(),active=screen==='game'&&!modal&&!battle&&!document.hidden&&weather!=='sheltered';
+ const gain={clear:.025,rain:.10,storm:.15,fog:.018,snow:.012}[weather]||0;
+ const freq={clear:350,rain:2400,storm:1100,fog:240,snow:500}[weather]||300;
+ ambientGain.gain.setTargetAtTime(active?gain*ambientVolume:0,ambientAudio.currentTime,.2);
+ ambientFilter.frequency.setTargetAtTime(freq,ambientAudio.currentTime,.4);
+}
+window.addEventListener('pointerdown',unlockAmbient,{passive:true});
+window.addEventListener('keydown',unlockAmbient);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&ambientGain)ambientGain.gain.setTargetAtTime(0,ambientAudio.currentTime,.05)});
 function worldPhase(){
  const h=worldHour();
  return h<5?'Night':h<7?'Dawn':h<17?'Day':h<19?'Dusk':'Night';
@@ -2099,7 +2175,7 @@ function atmosphericLight(x,y,radius,warmth=1){
 // Decorative wind field shared by rice, grass and trees; all map hitboxes stay fixed.
 function windAt(x,y,now){
  const t=now*.001;
- return .72*Math.sin(t*1.55-x*.33-y*.12)+.40*Math.sin(t*.83-x*.14+y*.22);
+ return (.72*Math.sin(t*1.55-x*.33-y*.12)+.40*Math.sin(t*.83-x*.14+y*.22))*weatherWind();
 }
 function drawRiceClump(sx,sy,x,y,now){
  const gust=windAt(x,y,now);
@@ -2224,7 +2300,7 @@ function drawAtmosphereOverlay(ox,oy,w,h){
 function drawAtmosphereHUD(){
  const h=worldHour(),hours=Math.floor(h),minutes=Math.floor((h-hours)*60);
  const clock=String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0');
- const timeLabel='Day '+(s.worldDay||1)+' · '+clock+' · '+worldPhase();
+ const timeLabel='Day '+(s.worldDay||1)+' · '+clock+' · '+WEATHER_LABELS[regionalWeather()];
  const location=(s.area==='homestead'&&s.homestead?.owned?'Personal Home':REGION_MAP_PLACES.find(p=>p.id===s.area)?.name)
   ||REGION_MAP_INTERIORS.find(p=>p.id===s.area)?.name
   ||'The Valley';
@@ -2293,6 +2369,7 @@ function draw(){
  const walkFrame=playerGaitFrame();
  sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
  drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
+ drawWeather(viewportWidth,viewportHeight);
  drawAtmosphereHUD()
 }
 
@@ -2696,6 +2773,7 @@ function drawOutdoorWorld(){
  const step=playerGaitFrame();
  sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25);
  drawAtmosphereOverlay(ox-position.x*S,oy-position.y*S,vw,vh);
+ drawWeather(vw,vh);
  drawAtmosphereHUD();
 }
 
@@ -3317,11 +3395,11 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.13</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.16</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
-  +'<div class="watchToolCard watchSettingsCard"><strong>Audio controls</strong><p>Volume and sound controls will appear here when game audio is added.</p></div>'
+  +'<div class="watchToolCard watchSettingsCard"><strong>Environmental audio</strong><p>Ambient wind and weather sound.</p><label>Volume <input id="ambientVolume" type="range" min="0" max="100" value="'+Math.round(ambientVolume*100)+'"></label></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Main menu</strong><p>Save your progress and return to the title screen.</p><button type="button" class="btn" id="settingsReturnTitle">Save & Return to Title</button></div>';
 }
 let moveBookType='Water';
@@ -3690,7 +3768,7 @@ function indexCritters(){
  let body='';
  if(selection){
   const locations=(selection.habitats||[]).map(h=>'<li>'+escapeHtml(h.areaName||CRITTER_AREA_LABELS[h.areaId]||h.areaId)
-   +' · Lv '+h.minLevel+'–'+h.maxLevel+' · '+escapeHtml(h.rarity||'common')+'</li>').join('');
+   +' · Lv '+h.minLevel+'–'+h.maxLevel+' · '+escapeHtml(h.rarity||'common')+encounterConditionsLabel(selection.encounterConditions)+encounterConditionsLabel(h.encounterConditions)+'</li>').join('');
   const moveRows=registeredLearnset(selection).map(e=>{
    const move=validMove(e.moveId);
    return '<div class="speciesMoveLine"><span>Lv '+e.level+'</span><strong>'+escapeHtml(move?.name||e.moveId)+'</strong><small>'+escapeHtml(move?.type||'Unknown')+'</small></div>';
@@ -3865,6 +3943,7 @@ function renderIndex(){
   };
   const revive=$('watchBattleRevive');if(revive)revive.onclick=selectRevive;
  }else{
+  const volume=$('ambientVolume');if(volume)volume.oninput=()=>{ambientVolume=Number(volume.value)/100;try{localStorage.setItem('critters-ambient-volume',String(ambientVolume))}catch{}unlockAmbient()};
   const saveButton=$('settingsSaveGame');
   if(saveButton)saveButton.onclick=()=>{save();indexNotice('Game saved successfully.');close()};
   const titleButton=$('settingsReturnTitle');
@@ -3923,8 +4002,25 @@ function effectiveWildHabitat(sp,area){
 // Every resident species within an area's current habitat/level limits is
 // eligible from the first encounter. Rarity and location determine its chance,
 // never the number of prior encounters or battles.
+// Authored opt-in only. Absent conditions mean unrestricted.
+function encounterConditionsLabel(c){
+ if(!c)return '';
+ const parts=[];if(Array.isArray(c.times)&&c.times.length)parts.push('Time: '+c.times.join(', '));
+ if(Array.isArray(c.weather)&&c.weather.length)parts.push('Weather: '+c.weather.join(', '));
+ return parts.length?' · '+escapeHtml(parts.join(' / ')):'';
+}
+function encounterConditionsAllow(conditions,area,hour=worldHour(),weather=regionalWeather(area)){
+ if(!conditions||typeof conditions!=='object')return true;
+ const times=conditions.times,weathers=conditions.weather;
+ const phase=hour<5||hour>=20?'night':hour<7?'dawn':hour<17?'day':'dusk';
+ return (!Array.isArray(times)||!times.length||times.includes(phase))&&
+  (!Array.isArray(weathers)||!weathers.length||weathers.includes(weather));
+}
 function encounterSpeciesFor(area){
- return [...speciesRegistry.values()].filter(sp=>effectiveWildHabitat(sp,area));
+ return [...speciesRegistry.values()].filter(sp=>{
+  const h=effectiveWildHabitat(sp,area);
+  return h&&encounterConditionsAllow(sp.encounterConditions,area)&&encounterConditionsAllow(h.encounterConditions,area);
+ });
 }
 function wildHabitat(sp,area){return effectiveWildHabitat(sp,area)}
 function encounterWeight(sp,area){
@@ -3937,9 +4033,6 @@ function encounterWeight(sp,area){
  const known=discoveryStatus(sp.speciesId);
  if(known==='unseen')weight*=config.novelty;
  else if(known==='captured')weight*=.9;
- const hour=worldHour(),night=hour>=20||hour<5;
- if(night&&sp.types.some(t=>t==='Ghost'||t==='Shadow'))weight*=1.35;
- else if(!night&&sp.types.some(t=>t==='Grass'||t==='Flying'))weight*=1.12;
  return Math.max(0,weight);
 }
 function chooseWildSpecies(area,roll=Math.random()){
@@ -3962,6 +4055,7 @@ function startWild(){
   const foe=critter(choice.speciesId,level);
   return startBattle({kind:'wild',enemies:[foe],name:'Wild Critter',award:0},'A wild '+choice.name+' appeared!');
  }
+ if(speciesRegistry.size)return; // Never bypass authored conditions with a placeholder.
  // If the registry is unavailable (for example while offline), preserve the
  // original placeholder encounter behavior rather than silently removing battles.
  const types=areaTypes(),type=types[Math.floor(Math.random()*types.length)];
@@ -5099,7 +5193,7 @@ document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){tickAmbient();if(screen==='game'){finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
