@@ -1346,6 +1346,11 @@ button,.btn,[role="button"],a,#world,.joystick{
 #shade button{touch-action:manipulation}
 button:focus-visible{outline:2px solid #f6db91;outline-offset:2px}
 @media(max-width:600px){#shade .watchInnerTabs{flex-wrap:wrap}#shade .watchInnerTab{min-height:36px}#shade .watchToolCard button{min-height:40px}}
+
+/* v1.23 — narrator overlays the full-height world canvas */
+#game .frame{inset:0!important;height:100%!important}
+#game #world{inset:0!important;height:100%!important;width:100%!important}
+#game .dialog{background:linear-gradient(100deg,rgba(37,61,85,.91),rgba(47,87,90,.90))!important;box-shadow:0 -3px 12px #0004}
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1367,4 +1372,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=1.22-polish" defer></script></body></html>
+<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=1.23-seamless-world" defer></script></body></html>
