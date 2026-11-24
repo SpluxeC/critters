@@ -381,6 +381,91 @@ const EXPLORATION_SITES=[
  {id:'exp-cave',area:'cave',x:17,y:19,title:'Crystal Alcove',text:'Shimmering crystals hide emergency supplies.',reward:'Revive',quantity:1},
  {id:'exp-garden',area:'garden',x:16,y:13,title:'Garden Memorial',text:'A stone honors travelers who protect Critters.',credits:100}
 ];
+// Optional pocket areas use existing regional encounter catalogs; no new
+// species assignments, time restrictions, or main-story prerequisites.
+const SECRET_AREAS={
+ grotto:{name:'Bamboo Grotto',parent:'route2',entrance:[11,5],returnAt:[11,6],spawn:[17,22],badge:0},
+ ruins:{name:'Forgotten Ruins',parent:'forest',entrance:[17,6],returnAt:[17,7],spawn:[17,22],badge:0},
+ cavern:{name:'Crystal Cavern',parent:'cave',entrance:[17,5],returnAt:[17,6],spawn:[17,22],badge:1}
+};
+const EXPLORATION_OBJECTS=[
+ {id:'r2-stump-cache',area:'route2',x:12,y:8,kind:'cache',title:'Hollow Bamboo Stump',text:'A small packet is tucked inside the hollow stem.',reward:'Potion',quantity:2},
+ {id:'r3-rock-cache',area:'route3',x:22,y:7,kind:'cache',title:'Loose Mountain Stone',text:'Something glints beneath the loose stone.',credits:75},
+ {id:'garden-cache',area:'garden',x:16,y:18,kind:'cache',title:'Pondside Offering Box',text:'A forgotten supply packet rests beside the pond.',reward:'PP Potion'},
+ {id:'grotto-cache',area:'grotto',x:11,y:8,kind:'chest',title:'Grotto Supply Chest',text:'A waterproof chest holds supplies.',reward:'Revive'},
+ {id:'ruins-inscription',area:'ruins',x:17,y:18,kind:'sign',title:'Worn Inscription',text:'The inscription reads: First the rising sun, then the flowing water, then the enduring stone.'},
+ {id:'ruins-sun',area:'ruins',x:9,y:15,kind:'rune',rune:'sun',title:'Sun Rune'},
+ {id:'ruins-water',area:'ruins',x:17,y:15,kind:'rune',rune:'water',title:'Water Rune'},
+ {id:'ruins-stone',area:'ruins',x:25,y:15,kind:'rune',rune:'stone',title:'Stone Rune'},
+ {id:'ruins-cache',area:'ruins',x:17,y:5,kind:'chest',title:'Sealed Ruins Chest',text:'The old chamber contains a preserved supply cache.',reward:'Revive',quantity:2,credits:120},
+ {id:'cavern-cache',area:'cavern',x:24,y:8,kind:'chest',title:'Crystal Chamber Cache',text:'An abandoned explorer left emergency supplies.',reward:'PP Potion',quantity:2,credits:90}
+];
+const PUZZLE_RUNES=['sun','water','stone'];
+function secretEntranceAt(area,x,y){
+ return Object.entries(SECRET_AREAS).find(([id,d])=>d.parent===area&&d.entrance[0]===x&&d.entrance[1]===y);
+}
+function explorationObjectAt(area,x,y){return EXPLORATION_OBJECTS.find(o=>o.area===area&&o.x===x&&o.y===y)}
+function explorationBlocked(area,x,y){
+ return !!explorationObjectAt(area,x,y)||!!secretEntranceAt(area,x,y)||(area==='ruins'&&y===11&&x>=15&&x<=19&&!s?.puzzles?.ruinsOpened);
+}
+function inspectExplorationObject(o){
+ if(o.kind==='sign')return notifyWorld(o.text);
+ if(o.kind==='rune'){
+  if(s.puzzles.ruinsOpened)return notifyWorld('The rune glows steadily. The chamber is already open.');
+  let seq=Array.isArray(s.puzzles.ruinsSequence)?s.puzzles.ruinsSequence:[];
+  if(o.rune!==PUZZLE_RUNES[seq.length]){s.puzzles.ruinsSequence=[];save();return notifyWorld('The runes dim. The sequence has reset.')}
+  seq=[...seq,o.rune];s.puzzles.ruinsSequence=seq;
+  if(seq.length===PUZZLE_RUNES.length){s.puzzles.ruinsOpened=true;s.puzzles.ruinsSequence=[];save();return notifyWorld('The final rune glows. The stone barrier opens!')}
+  save();return notifyWorld('The '+o.rune+' rune lights up.');
+ }
+ if(s.discoveries[o.id])return notifyWorld('You already collected this cache.');
+ return discoverExplorationSite(o);
+}
+function enterSecret(id,d){
+ if(!s.introComplete||s.badges<d.badge)return notifyWorld('The passage is not accessible yet.');
+ s.discoveries['secret-'+id]=true;save();return region(id,...d.spawn,'You discovered '+d.name+'!',true);
+}
+function exitSecret(){
+ const d=SECRET_AREAS[s.area];if(d)return region(d.parent,...d.returnAt,'',true);
+}
+function buildSecretArea(area){
+ borders(T.rock);rect(1,1,W-2,H-2,T.rock);
+ const ground=area==='grotto'?T.grass:T.stone;
+ rect(4,3,26,20,ground);rect(15,22,4,3,T.path);put(17,25,T.door);
+ if(area==='grotto'){rect(7,5,8,4,T.tall);rect(21,10,6,7,T.tall);rect(5,12,6,4,T.water);rect(15,5,4,17,T.path)}
+ if(area==='ruins'){
+  rect(4,11,26,1,T.rock);rect(15,11,5,1,T.path);
+  rect(15,12,5,10,T.path);rect(15,3,5,8,T.path);
+ }
+ if(area==='cavern'){rect(7,8,5,7,T.water);rect(21,14,5,4,T.rock);rect(15,4,5,18,T.path)}
+}
+function prepareExplorationGeometry(){
+ for(const d of Object.values(SECRET_AREAS))if(d.parent===s.area){
+  put(...d.entrance,T.path);put(...d.returnAt,T.path);
+ }
+ for(const o of EXPLORATION_OBJECTS)if(o.area===s.area)put(o.x,o.y,T.path);
+}
+function drawExtraExploration(ox,oy){
+ for(const [id,d] of Object.entries(SECRET_AREAS))if(d.parent===s.area){
+  const x=d.entrance[0]*S-ox,y=d.entrance[1]*S-oy;
+  ctx.fillStyle='#344a39';ctx.fillRect(x+3,y+4,26,26);ctx.fillStyle='#142822';ctx.fillRect(x+8,y+10,16,20);
+  ctx.fillStyle='#82937a';ctx.fillRect(x+4,y+4,24,5);
+  if(s.discoveries?.['secret-'+id]){ctx.fillStyle='#e6cc80';ctx.fillRect(x+12,y+3,8,2)}
+ }
+ for(const o of EXPLORATION_OBJECTS)if(o.area===s.area){
+  const x=o.x*S-ox,y=o.y*S-oy;
+  if(o.kind==='rune'){
+   const lit=s.puzzles?.ruinsOpened||s.puzzles?.ruinsSequence?.includes(o.rune);
+   ctx.fillStyle=lit?'#c8ba70':'#53605a';ctx.fillRect(x+6,y+6,20,22);
+   ctx.fillStyle=lit?'#fff3a6':'#b5c3ae';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText({sun:'☀',water:'≈',stone:'◇'}[o.rune],x+16,y+22);ctx.textAlign='left';
+  }else{
+   const art=o.kind==='sign'?'ruin-inscription':o.kind==='chest'?'crate':o.id==='r2-stump-cache'?'tree-stump':'rubble-02';
+   if(!drawUploadedFit(art,x+2,y+2,S-4,S-4)){ctx.fillStyle='#75634e';ctx.fillRect(x+7,y+10,18,17);ctx.fillStyle='#b39a70';ctx.fillRect(x+7,y+10,18,4)}
+   if(o.kind==='chest'&&!s.discoveries?.[o.id]){ctx.fillStyle='#e7cb78';ctx.fillRect(x+14,y+15,4,4)}
+  }
+ }
+ if(s.area==='ruins'&&!s.puzzles?.ruinsOpened)for(let x=15;x<=19;x++){ctx.fillStyle='#6b756b';ctx.fillRect(x*S-ox,11*S-oy,S,S);ctx.strokeStyle='#3c4a42';ctx.strokeRect(x*S-ox+1,11*S-oy+1,S-2,S-2)}
+}
 function explorationSiteAt(area,x,y){return EXPLORATION_SITES.find(o=>o.area===area&&o.x===x&&o.y===y)}
 function discoverExplorationSite(o){
  if(!o||s.discoveries?.[o.id])return false;
@@ -422,6 +507,7 @@ function drawBridgeDeck(x,y,w,ox,oy){
  return true;
 }
 function drawExplorationSites(ox,oy){
+ drawExtraExploration(ox,oy);
  for(const o of EXPLORATION_SITES){
   if(o.area!==s.area)continue;
   const x=o.x*S+16-ox,y=o.y*S+16-oy;
@@ -451,6 +537,7 @@ function solidAt(x,y){
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
  if(isInterior(s.area)&&interiorBlocked.has(key(x,y)))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
+ if(explorationBlocked(s.area,x,y))return true;
  return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
 }
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
@@ -765,7 +852,7 @@ function migrate(){
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
- s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome'].includes(s.area))s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern'].includes(s.area))s.area='village';
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
@@ -1063,6 +1150,7 @@ function build(preview=false){
  if(!preview){cancelTrainerApproach();npcResidenceDoor=null;migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
+ case 'grotto':case 'ruins':case 'cavern':buildSecretArea(s.area);break;
  case 'homestead':{
  const stage=homesteadConstructionStage(),owned=!!s.homestead?.owned;
  borders();rect(15,12,W-16,3,T.path);rect(15,10,3,4,T.path);
@@ -1232,6 +1320,7 @@ function build(preview=false){
  }
  decorateExpandedOutdoor();
  prepareOutdoorPortals();
+ prepareExplorationGeometry();
  // Reconstruct overnight occupancy from saved time, including preview chunks.
  if(npcNight())for(const p of npcs){if(npcResidence(s.area,p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
  if(!preview){
@@ -2063,7 +2152,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
 // Phase 5: Cosmetic local-world day/night clock. One real second advances one
 // in-game minute; time is saved on existing save events. No battle/calendar effects.
 let atmospherePreviousFrame=0;
-const atmosphericIndoor=()=>['home','neighbor','lab','gym','homesteadHome'].includes(s.area);
+const atmosphericIndoor=()=>['home','neighbor','lab','gym','homesteadHome','cave','grotto','ruins','cavern'].includes(s.area);
 function tickAtmosphere(now=performance.now()){
  if(!s)return;
  if(!atmospherePreviousFrame){atmospherePreviousFrame=now;return}
@@ -2301,7 +2390,7 @@ function drawAtmosphereHUD(){
  const h=worldHour(),hours=Math.floor(h),minutes=Math.floor((h-hours)*60);
  const clock=String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0');
  const timeLabel='Day '+(s.worldDay||1)+' · '+clock+' · '+WEATHER_LABELS[regionalWeather()];
- const location=(s.area==='homestead'&&s.homestead?.owned?'Personal Home':REGION_MAP_PLACES.find(p=>p.id===s.area)?.name)
+ const location=SECRET_AREAS[s.area]?.name||(s.area==='homestead'&&s.homestead?.owned?'Personal Home':REGION_MAP_PLACES.find(p=>p.id===s.area)?.name)
   ||REGION_MAP_INTERIORS.find(p=>p.id===s.area)?.name
   ||'The Valley';
  const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
@@ -2815,6 +2904,7 @@ function move(d){
  if(s.area==='homesteadHome'&&x===17&&y===25){recordWalkingStep();return region('homestead',9,10)}
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
  if(s.area==='gym'&&d==='down'&&x===17&&y>=25){recordWalkingStep();return region('garden',24,12)}
+ if(SECRET_AREAS[s.area]&&x===17&&y===25)return exitSecret();
  if(s.area==='cave'&&d==='down'&&y>=H-2&&x>=15&&x<=18){recordWalkingStep();return region('route3',20,2)}
  if(x<0||y<0||x>=W||y>=H)return;
  const door=villageDoorAt(x,y);
@@ -2832,7 +2922,7 @@ function move(d){
  
  const exploration=explorationSiteAt(s.area,s.x,s.y);
  if(exploration&&discoverExplorationSite(exploration))return;
- if((['route1','route2','route3','forest','cave'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
+ if((['route1','route2','route3','forest','cave','grotto','cavern'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
  const first=s.area==='route1'&&!s.earlyJourney?.firstEncounter;
  if(first){s.earlyJourney=s.earlyJourney||{};s.earlyJourney.fieldSteps=(s.earlyJourney.fieldSteps||0)+1}
  // Roll independently on each eligible wild tile. Retain the first Route 1
@@ -2856,7 +2946,8 @@ function canInteractAhead(){
  if(villageDoorAt(x,y))return true;
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25)return true;
  if(isInterior(s.area)&&interiorObjects.some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return true;
- if(route1SiteAt(x,y))return true;
+ if(route1SiteAt(x,y)||explorationObjectAt(s.area,x,y)||secretEntranceAt(s.area,x,y))return true;
+ if(SECRET_AREAS[s.area]&&x===17&&y===25)return true;
  if(s.area==='garden'&&x===24&&y===10)return true;
  if(s.area==='gym'&&x===17&&y===25)return true;
  return false;
@@ -2895,6 +2986,9 @@ function interact(){
  }
  const object=interiorObjects.find(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h);
  if(object&&isInterior(s.area))return inspectInterior(object);
+ const secret=secretEntranceAt(s.area,x,y);if(secret)return enterSecret(...secret);
+ if(SECRET_AREAS[s.area]&&x===17&&y===25)return exitSecret();
+ const extra=explorationObjectAt(s.area,x,y);if(extra)return inspectExplorationObject(extra);
  const routeSite=route1SiteAt(x,y);
  if(routeSite)return inspectRoute1Site(routeSite);
  if(s.area==='garden'&&x===24&&y===10)return enterGym();
@@ -3395,7 +3489,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.16</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.17</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -3691,6 +3785,7 @@ function collectionMilestonesUI(){
   }).join('')+'</div>';
 }
 
+function allExplorationFinds(){return [...EXPLORATION_SITES,...ROUTE1_SITES.filter(o=>o.reward),...EXPLORATION_OBJECTS.filter(o=>o.reward||o.credits),...Object.entries(SECRET_AREAS).map(([id,d])=>({id:'secret-'+id,title:d.name}))]}
 function indexRecords(){
  const log=(s.captureLog||[]).slice(-12).reverse();
  const history=log.length?log.map(q=>'<div class="watchRow"><span>'+(symbols[q.type]||'◇')+' '+escapeHtml(q.name||q.type)+' <small>Lv '+Number(q.level||1)+'</small></span><span class="watchRecordLocation">'+escapeHtml(q.area||'Unknown')+' · '+escapeHtml(q.storage||'Party')+'</span></div>').join('')
@@ -3699,10 +3794,10 @@ function indexRecords(){
   +'<div><strong>'+s.captureCount+'</strong><span>Total captures</span></div>'
   +'<div><strong>'+s.storage.length+'</strong><span>Home storage</span></div>'
   +'<div><strong>'+s.badges+'</strong><span>Badges</span></div>'
-   +'<div><strong>'+EXPLORATION_SITES.filter(o=>s.discoveries?.[o.id]).length+'/'+EXPLORATION_SITES.length+'</strong><span>Exploration finds</span></div>'
+   +'<div><strong>'+allExplorationFinds().filter(o=>s.discoveries?.[o.id]).length+'/'+allExplorationFinds().length+'</strong><span>Exploration finds</span></div>'
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchSectionTitle">Landmark discoveries</div>'
-   +EXPLORATION_SITES.map(o=>'<div class="watchRow"><span>'+escapeHtml(o.title)+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
+   +allExplorationFinds().map(o=>'<div class="watchRow"><span>'+escapeHtml(s.discoveries?.[o.id]?o.title:'Undiscovered location')+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
    +sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
@@ -4042,14 +4137,15 @@ function chooseWildSpecies(area,roll=Math.random()){
  for(let i=0;i<pool.length;i++){target-=weights[i];if(target<0)return pool[i]}
  return pool[pool.length-1]||null;
 }
-function wildEncounterChance(area){return WILD_AREA_BALANCE[area]?.stepRate||0}
+function wildEncounterChance(area){return WILD_AREA_BALANCE[SECRET_AREAS[area]?.parent||area]?.stepRate||0}
 function areaTypes(){return {route1:['Grass','Water','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Shadow'],route3:['Rock','Electric','Fighting'],cave:['Rock','Ghost','Ice'],garden:['Grass','Water','Psychic']}[s.area]||['Grass']}
 function startWild(){
  if(firstAlive()<0)return blackout();
  s.wildStepsSinceEncounter=0;
- const choice=chooseWildSpecies(s.area);
+ const encounterArea=SECRET_AREAS[s.area]?.parent||s.area;
+ const choice=chooseWildSpecies(encounterArea);
  if(choice){
-  const h=wildHabitat(choice,s.area);
+  const h=wildHabitat(choice,encounterArea);
   const min=Math.max(1,Math.floor(h.minLevel)),max=Math.max(min,Math.floor(h.maxLevel));
   const level=min+Math.floor(Math.random()*(max-min+1));
   const foe=critter(choice.speciesId,level);
