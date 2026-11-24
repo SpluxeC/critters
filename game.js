@@ -353,7 +353,7 @@ function backUpLegacySaveBeforeMigration(){
  }catch(err){console.warn('Could not back up pre-migration save',err)}
 }
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){clearWorldNarrator();releaseMovement();document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
+function show(page){clearWorldNarrator();releaseMovement();if(page==='title'){outdoorChunks.clear();pastureActors.clear();}document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
@@ -380,6 +380,8 @@ function migrateSpeciesIds(){
  for(const p of [...(s.party||[]),...(s.storage||[])])
   if(!p.speciesId&&p.starterOrigin===true&&s.starter&&p.type===s.starter)
    p.speciesId=starterSpeciesId(s.starter);
+ for(const pair of s.homestead?.pairs||[]){if(!pair)continue;pair.speciesId=translate(pair.speciesId);if(pair.egg)moveRecord(pair.egg)}
+ for(const e of [...(s.homestead?.incubators||[]),...(s.party||[]).filter(isEgg).map(p=>p.egg)]){if(!e)continue;moveRecord(e);for(const p of e.parents||[])moveRecord(p)}
  for(const p of s.captureLog||[])moveRecord(p);
  if(s.collection&&typeof s.collection==='object'){
   for(const field of ['seen','caught']){
@@ -474,6 +476,7 @@ function legalLearnedMoves(p){
 }
 function normalizeMoves(p){
  if(!p||isEgg(p))return p;
+ if(!moveDataReady&&Array.isArray(p.moves)&&p.moves.length)return p;
  const current=Array.isArray(p.moves)?p.moves:[];
  const legacy=new Set(['Strike','Guard','Focus',p.type+' Pulse','Pulse']);
  const mapped=current.map(v=>typeof v==='string'?(validMove(v)?v:moveSlug(v)):null)
@@ -509,7 +512,7 @@ function getMove(p,id){
  if(move)return move;
  return moveFallbacks[0];
 }
-function refillMovePP(p){normalizeMoves(p);for(const id of p.moves)p.movePP[id]=getMove(p,id).pp}
+function refillMovePP(p){if(!p||isEgg(p))return;normalizeMoves(p);for(const id of p.moves)p.movePP[id]=getMove(p,id).pp}
 async function loadCritterMoveData(){
  try{
   const res=await fetch('data/moves.json?v=64-level-cap',{cache:'no-store'});
@@ -596,7 +599,7 @@ function migrate(){
  if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
  if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
- s.x=Math.max(1,Math.min(W-2,s.x));s.y=Math.max(1,Math.min(H-2,s.y));
+ const size=outdoorSize(s.area);s.x=Math.max(0,Math.min(size.w-1,Math.floor(s.x)));s.y=Math.max(0,Math.min(size.h-1,Math.floor(s.y)));
 }
 function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
 function rect(x,y,w,h,t){for(let a=x;a<x+w;a++)for(let b=y;b<y+h;b++)put(a,b,t)}
@@ -686,7 +689,7 @@ function build(preview=false){
  if(stage===1)rect(6,5,6,2,T.stone);
  if(stage===2){rect(6,5,6,3,T.wall);rect(6,8,6,2,T.stone)}
  if(stage>=3)houses([[6,5,6,3]]);
- if(owned){put(9,10,T.path);rect(9,11,2,3,T.path);rect(9,9,1,1,T.door);rect(9,14,7,1,T.path);buildFarmGrounds()}
+ if(owned){put(9,10,T.path);rect(9,11,2,3,T.path);put(9,9,T.door);rect(9,14,7,1,T.path);buildFarmGrounds()}else if(stage>=3)put(9,9,T.wall);
  if(stage<4){
   npc(13,11,['We are working on the new building. Please keep clear of the site.'],'construction-worker','builder1');
   npc(18,10,['There is still work to do.'],'construction-worker','builder2');
@@ -1398,7 +1401,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
 // Phase 5: Cosmetic local-world day/night clock. One real second advances one
 // in-game minute; time is saved on existing save events. No battle/calendar effects.
 let atmospherePreviousFrame=0;
-const atmosphericIndoor=()=>['home','neighbor','lab','gym'].includes(s.area);
+const atmosphericIndoor=()=>['home','neighbor','lab','gym','homesteadHome'].includes(s.area);
 function tickAtmosphere(now=performance.now()){
  if(!s)return;
  if(!atmospherePreviousFrame){atmospherePreviousFrame=now;return}
@@ -1773,7 +1776,7 @@ function tryOutdoorExit(d,x,y){
  }
  if(dest==='cave'){
   if(!s.cut){notifyWorld(['Thick vines block the mountain cave. The first badge unlocks the vegetation cutter.']);return true}
-  region('cave',17,23,'You enter Mountain Cave.');return true;
+  recordWalkingStep();region('cave',17,23,'You enter Mountain Cave.');return true;
  }
  if(s.area==='forest'&&dest==='route2'&&!s.cut){
   notifyWorld(['Overgrown bamboo blocks the woodland shortcut. The first badge will let you clear it.']);return true;
@@ -2024,14 +2027,14 @@ function move(d){
  if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
- if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned)return region('homesteadHome',17,23);
- if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
+ if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned){recordWalkingStep();return region('homesteadHome',17,23)}
+ if(s.area==='homesteadHome'&&x===17&&y===25){recordWalkingStep();return region('homestead',9,10)}
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
- if(s.area==='gym'&&d==='down'&&x===17&&y>=25)return region('garden',24,12);
- if(s.area==='cave'&&d==='down'&&y>=H-2&&x>=15&&x<=18)return region('route3',20,2);
+ if(s.area==='gym'&&d==='down'&&x===17&&y>=25){recordWalkingStep();return region('garden',24,12)}
+ if(s.area==='cave'&&d==='down'&&y>=H-2&&x>=15&&x<=18){recordWalkingStep();return region('route3',20,2)}
  if(x<0||y<0||x>=W||y>=H)return;
  const door=villageDoorAt(x,y);
- if(door){openVillageDoor(door);return}
+ if(door){recordWalkingStep();openVillageDoor(door);return}
  if(npcs.some(p=>p.x===x&&p.y===y)||solidAt(x,y))return;
  const t=tiles[y][x];
  beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;recordWalkingStep();
@@ -2409,7 +2412,7 @@ function open(title,body){
  if(panel){panel.dataset.screenMode=watch?'watch':'other';panel.scrollTop=preserve?previous:0}
 }
 function close(){if(battle)return;modal=false;$('shade').classList.remove('show');$('close').hidden=false;releaseMovement();pumpWorldNarrator()}
-function firstAlive(){return s.party.findIndex(p=>p.hp>0)}
+function firstAlive(){return s.party.findIndex(p=>!isEgg(p)&&p.hp>0)}
 function lead(){return s.party[firstAlive()]}
 // Phase 1 battle-stat engine: every Critter has an independent six-stat profile.
 // Archived/placeholder Critters get stable neutral defaults, without altering their
@@ -2608,7 +2611,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.02</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -3301,11 +3304,12 @@ function battleEnvironment(){
 }
 function startBattle(data,msg){
  if(worldTransitionBusy)return;
+ if(firstAlive()<0){if(s.party.some(p=>!isEgg(p)))return blackout();return notifyWorld('You need a battle-capable Critter in your party.');}
  fadeWorldChange(()=>beginBattleAfterFade(data,msg));
 }
 function beginBattleAfterFade(data,msg){
- const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>p.hp>0).length>=2&&data.enemies.length>=2;
- const allySlots=s.party.map((p,i)=>p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
+ const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>!isEgg(p)&&p.hp>0).length>=2&&data.enemies.length>=2;
+ const allySlots=s.party.map((p,i)=>!isEgg(p)&&p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
  data.enemies.forEach(p=>{normalizeMoves(refreshSpeciesMetadata(p));noteCritterSeen(p)});
  if(data.kind==='wild'&&s.area==='route1')noteOpeningEvent('firstEncounter');
  save();
@@ -4166,7 +4170,7 @@ function endBattle(won,message,defeated){
  else if(defeated&&won){s.money+=b.award||0;if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
  }
- else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);s.area='town';s.x=17;s.y=15;build()}
+ else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});s.area='town';s.x=17;s.y=15;build()}
  const evolveMessages=evolutionNotification();
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
   ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">⌚</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
@@ -4175,7 +4179,7 @@ function endBattle(won,message,defeated){
 }
 function blackout(){
  const wasTutorial=battle?.kind==='tutorial';clearCombatNarrator();battle=null;$('close').hidden=false;
- if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>p.hp=p.maxHp);
+ if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});
  if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>{if(!isEgg(p))refillMovePP(p)})}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
@@ -4190,11 +4194,13 @@ let centerStorageSearch='',centerStorageSort='recent',centerStoragePage=0,center
 const CENTER_STORAGE_PAGE_SIZE=16;
 function manageParty(){
  const partyCount=s.party.length;
+ const regularCount=s.party.filter(p=>!isEgg(p)).length;
+ if(isEgg(s.party[centerSwapSlot]))centerSwapSlot=Math.max(0,s.party.findIndex(p=>!isEgg(p)));
  centerSwapSlot=Math.max(0,Math.min(centerSwapSlot,partyCount-1));
  const list=s.party.map((p,i)=>isEgg(p)?'<div class="centerPartyRow">Slot '+(i+1)+' · Egg (transfer at home terminal)</div>':'<div class="centerPartyRow"><b>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+'</b> <small>'+escapeHtml(defendTypes(p).join('/'))+' · HP '+p.hp+'/'+p.maxHp+'</small> '
   +'<button class="btn" data-party-up="'+i+'" '+(!i?'disabled':'')+'>↑</button> '
   +'<button class="btn" data-party-down="'+i+'" '+(i===partyCount-1?'disabled':'')+'>↓</button> '
-  +'<button class="btn" data-store="'+i+'" '+(partyCount<=1?'disabled':'')+'>Send Home</button></div>').join('');
+  +'<button class="btn" data-store="'+i+'" '+(regularCount<=1?'disabled':'')+'>Send Home</button></div>').join('');
  const term=centerStorageSearch.trim().toLowerCase();
  const matching=s.storage.map((p,i)=>({p,i})).filter(({p})=>!term||
   (p.name||p.type||'').toLowerCase().includes(term)||defendTypes(p).some(t=>t.toLowerCase().includes(term))||
@@ -4208,7 +4214,7 @@ function manageParty(){
   +'<button class="btn" data-retrieve="'+i+'" '+(partyCount>=PARTY_LIMIT?'disabled':'')+'>Add to Party</button> '
   +'<button class="btn" data-swap-storage="'+i+'" '+(!partyCount?'disabled':'')+'>Swap</button></div>').join('')
   ||'<p class="muted">No stored Critters match your search.</p>';
- const partySlots=s.party.map((p,i)=>'<option value="'+i+'" '+(i===centerSwapSlot?'selected':'')+'>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+'</option>').join('');
+ const partySlots=s.party.map((p,i)=>isEgg(p)?'':'<option value="'+i+'" '+(i===centerSwapSlot?'selected':'')+'>Slot '+(i+1)+': '+escapeHtml(p.name||p.type)+'</option>').join('');
  open('Critter Center · Party Maintenance','<p>Active party ('+partyCount+'/'+PARTY_LIMIT+') · Home storage ('+s.storage.length+')</p>'
   +'<p class="muted">Reorder with ↑/↓. Send and retrieve Critters here, or swap directly even when all eight slots are full. The watch remains read-only outside Centers.</p>'
   +'<div class="options">'+list+'</div><h3>Home Storage</h3>'
@@ -4238,12 +4244,12 @@ function manageParty(){
   const p=s.party.splice(i,1)[0];s.storage.push(p);save();indexNotice((p.name||p.type)+' sent to home storage.');manageParty()
  });
  document.querySelectorAll('[data-retrieve]').forEach(b=>b.onclick=()=>{
-  const i=Number(b.dataset.retrieve);if(s.party.length>=PARTY_LIMIT||i<0||i>=s.storage.length)return;
+  const i=Number(b.dataset.retrieve);if(s.party.length>=PARTY_LIMIT||i<0||i>=s.storage.length||isEgg(s.storage[i]))return;
   const p=s.storage.splice(i,1)[0];s.party.push(p);save();indexNotice((p.name||p.type)+' added to your party.');manageParty()
  });
  document.querySelectorAll('[data-swap-storage]').forEach(b=>b.onclick=()=>{
   const i=Number(b.dataset.swapStorage),slot=centerSwapSlot;
-  if(!Number.isInteger(i)||!Number.isInteger(slot)||!s.storage[i]||!s.party[slot]||isEgg(s.party[slot]))return;
+  if(!Number.isInteger(i)||!Number.isInteger(slot)||!s.storage[i]||!s.party[slot]||isEgg(s.party[slot])||isEgg(s.storage[i]))return;
   [s.party[slot],s.storage[i]]=[s.storage[i],s.party[slot]];
   save();indexNotice((s.party[slot].name||s.party[slot].type)+' joined your party; '+(s.storage[i].name||s.storage[i].type)+' sent home.');manageParty();
  });
