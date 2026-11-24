@@ -1999,6 +1999,7 @@ function advanceFarmBreeding(){
   pair.progress=Math.min(pair.required,(Number(pair.progress)||0)+1);
   if(pair.progress>=pair.required){
    pair.egg={speciesId:pair.speciesId,rarity:pair.rarity,parents:pair.parents.map(p=>JSON.parse(JSON.stringify(p))),progress:0};
+   normalizeEggGenetics(pair.egg);
    completed=true;notifyWorld('An egg is ready to collect at your farm!');
   }
  }
@@ -2007,6 +2008,10 @@ function advanceFarmBreeding(){
 // Incubation uses integer units: walking with an egg adds two, farm adds one.
 const HATCH_STEPS={common:5000,uncommon:7500,rare:10000,'very rare':15000};
 function isEgg(p){return p?.isEgg===true&&!!p.egg}
+function normalizeEggGenetics(e){
+ if(!e.genetics)e.genetics=inheritGenetics(e.parents);
+ e.genetics=Object.fromEntries(COMBAT_STAT_NAMES.map(k=>[k,geneticValue(e.genetics[k])]));return {...e.genetics};
+}
 function eggRequired(e){return 2*(HATCH_STEPS[e.rarity]||HATCH_STEPS.common)}
 function eggUnits(e){return Math.max(0,Math.min(eggRequired(e),Math.floor(Number(e.incubationUnits)||0)))}
 function eggReady(e){return !!e&&eggUnits(e)>=eggRequired(e)}
@@ -2047,7 +2052,7 @@ function hatchEgg(from,i){
  const home=farmSlots(),e=party?(isEgg(s.party[i])?s.party[i].egg:null):home.incubators[i];
  if(!eggReady(e)||!speciesRegistry.has(e.speciesId))return null;
  const newborn=critter(e.speciesId,1);
- // Keep parental snapshots for later inheritance implementation.
+ newborn.genetics=normalizeEggGenetics(e);newborn.hp=newborn.maxHp=combatStat(newborn,'hp');
  newborn.breedingParents=e.parents||[];
  if(party)s.party[i]=newborn;else{home.incubators[i]=null;s.storage.push(newborn)}
  const c=collectionData(),stamp=encounterStamp(),id=newborn.speciesId;
@@ -2073,7 +2078,10 @@ function migrateHomestead(){
  const old=s.homestead&&typeof s.homestead==='object'?s.homestead:{};
  s.homestead={...old,offered:!!old.offered||!!old.owned,owned:!!old.owned,stage:old.owned?Math.max(1,Math.min(4,Math.floor(Number(old.stage)||1))):0};
  if(s.area==='homesteadHome'&&!s.homestead.owned){s.area='homestead';s.x=17;s.y=13}
- farmSlots();
+ const home=farmSlots();
+ for(const pair of home.pairs){if(pair?.egg)normalizeEggGenetics(pair.egg);for(const p of pair?.parents||[])if(p)normalizeGenetics(p)}
+ for(const e of home.incubators)if(e)normalizeEggGenetics(e);
+ for(const p of s.party||[])if(isEgg(p))normalizeEggGenetics(p.egg);
 }
 function talkMomProperty(){
  if(s.homestead.owned)return say(['Mom: I hope you are enjoying your new home!']);
@@ -2111,7 +2119,7 @@ function confirmFarmUpgrade(next){
  open('Confirm Expansion','<h3>'+p.name+'</h3><p>Cost: '+p.price.toLocaleString()+' money</p><p>Available: '+s.money.toLocaleString()+'</p><p>'+p.pairs+' pairs · '+p.incubators+' incubators</p><button class="btn primary" id="estateConfirm" '+(canUpgradeFarm(next)?'':'disabled')+'>Purchase Expansion</button> <button class="btn" id="estateBack">Back</button>');
  $('estateBack').onclick=homesteadTerminal;$('estateConfirm').onclick=()=>{if(!purchaseFarmUpgrade(next))return;close();indexNotice(p.name+' expansion complete!')};
 }
-function farmParentName(p){return p?escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level:'Empty'}
+function farmParentName(p){return p?escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+geneticsHTML(p):'Empty'}
 function farmManagement(kind){
  if(!farmAccess()||!['pairs','incubators'].includes(kind))return;
  const count=farmCapacity()[kind],slots=farmSlots()[kind];
@@ -2159,7 +2167,7 @@ function farmChooseReplacement(i){
 function homesteadStorage(){
  if(!s.homestead?.owned)return;
  // Shared storage is viewable at home; party maintenance still requires a Center.
- open('Home Storage','<p>Stored Critters: '+s.storage.length+'</p>'+s.storage.map(p=>'<div class="centerPartyRow">'+escapeHtml(p.name||p.type)+' · Lv '+p.level+'</div>').join('')+'<p>Visit a Critter Center to change your active party.</p><button class="btn" id="estateBack">Back</button>');
+ open('Home Storage','<p>Stored Critters: '+s.storage.length+'</p>'+s.storage.map(p=>'<div class="centerPartyRow">'+escapeHtml(p.name||p.type)+' · Lv '+p.level+geneticsHTML(p)+'</div>').join('')+'<p>Visit a Critter Center to change your active party.</p><button class="btn" id="estateBack">Back</button>');
  $('estateBack').onclick=homesteadTerminal;
 }
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
@@ -2188,10 +2196,35 @@ function statProfile(p){
  const base=p?.baseStats||fromSpecies||{};
  return Object.fromEntries(COMBAT_STAT_NAMES.map(key=>[key,safeBaseStat(base[key],BATTLE_BASE_DEFAULT[key])]));
 }
+// Genetics remain separate from species base stats and survive evolution.
+const GENETIC_CAP=10;
+function geneticValue(value){return Math.max(0,Math.min(GENETIC_CAP,Math.round(Number(value)||0)))}
+function normalizeGenetics(p){
+ if(!p||isEgg(p))return p;
+ p.genetics=Object.fromEntries(COMBAT_STAT_NAMES.map(k=>[k,geneticValue(p.genetics?.[k])]));return p;
+}
+function inheritGenetics(parents,rng=Math.random){
+ const [a,b]=parents||[];
+ return Object.fromEntries(COMBAT_STAT_NAMES.map(k=>{
+  const av=geneticValue(a?.genetics?.[k]),bv=geneticValue(b?.genetics?.[k]);
+  const variation=Math.floor(Math.max(0,Math.min(.999999,rng()))*5)-2;
+  return [k,geneticValue((av+bv)/2+variation)];
+ }));
+}
+function geneticsHTML(p){
+ if(!p||isEgg(p))return '';
+ const labels={hp:'HP',attack:'ATK',defense:'DEF',specialAttack:'S.ATK',specialDefense:'S.DEF',speed:'SPD'};
+ return '<div class="geneticsStats"><strong>Genetics · max +10% each</strong><div>'+COMBAT_STAT_NAMES.map(k=>'<span>'+labels[k]+' <b>+'+geneticValue(p.genetics?.[k])+'%</b></span>').join('')+'</div></div>';
+}
 function combatStat(p,key){
  const profile=statProfile(p),lvl=Math.max(1,Number.isFinite(p?.level)?p.level:1);
- if(key==='hp')return Math.max(1,Math.round(profile.hp+(lvl-1)*4));
- return Math.max(1,Math.round(profile[key]+(lvl-1)*1.25));
+ const normal=Math.max(1,Math.round(profile[key]+(lvl-1)*(key==='hp'?4:1.25)));
+ return normal+Math.floor(normal*geneticValue(p?.genetics?.[key])/100);
+}
+function syncGeneticHP(p){
+ if(!p||isEgg(p)||!geneticValue(p.genetics?.hp)||!speciesFor(p))return;
+ const max=combatStat(p,'hp'),oldMax=Number(p.maxHp)||max;
+ p.hp=p.hp<=0?0:Math.max(1,Math.min(max,max-Math.max(0,oldMax-p.hp)));p.maxHp=max;
 }
 function defendTypes(p){
  // A second type is considered only if it is a valid distinct elemental type.
@@ -2222,6 +2255,7 @@ function combatSpeed(side,index){
 }
 function refreshSpeciesMetadata(p){
  if(!p||isEgg(p))return p;
+ normalizeGenetics(p);
  if(p.gender!=='male'&&p.gender!=='female')p.gender=Math.random()<0.5?'male':'female';
  const species=speciesFor(p);
  if(species){
@@ -2229,6 +2263,7 @@ function refreshSpeciesMetadata(p){
   p.types=species.types.slice(0,2);
   p.baseStats={...species.baseStats};
   p.name=species.name;
+  syncGeneticHP(p);
  }else{
   p.types=defendTypes(p);
   p.baseStats={...statProfile(p)};
@@ -2389,7 +2424,7 @@ function indexClock(){
   const pct=Math.max(0,Math.min(100,Math.round(p.hp/Math.max(1,p.maxHp)*100)));
   detail='<div class="watchSelectionHeading">'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+' <span>Lv '+p.level+'</span></div>'
    +'<div class="watchMeter"><div style="width:'+pct+'%"></div></div><div class="watchSelectionStats">HP '+p.hp+' / '+p.maxHp+' · XP '+(p.xp||0)+' / '+p.level*12+'</div>'
-   +'<div class="watchSelectionStats">Status: '+escapeHtml(p.status||'Healthy')+'</div>';
+   +'<div class="watchSelectionStats">Status: '+escapeHtml(p.status||'Healthy')+'</div>'+(!battleIndexActive()?geneticsHTML(p):'');
  }else if(i<8){
   detail='<div class="watchSelectionHeading">Empty party position</div><p>Capture a wild Critter to fill this slot.</p>';
  }else{
@@ -2431,7 +2466,7 @@ function indexParty(){
    +(battleIndexActive()?'<div class="watchPartyMeta">'+(battle.allySlots.includes(i)?'Currently battling':p.hp>0?'Available to switch':'Fainted')+'</div>'+(p.hp>0&&!battle.allySlots.includes(i)&&!battle.pending.some(q=>q.kind==='switch'&&q.target===i)?'<button type="button" class="btn watchBattleAction" data-index-battle-switch="'+i+'">Switch into battle</button>':''):'')
     +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
-   +(battleIndexActive()?'':partyEvolutionControls(p,i))+'</div>';
+   +(battleIndexActive()?'':geneticsHTML(p)+partyEvolutionControls(p,i))+'</div>';
  }).join('');
  return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
@@ -3877,7 +3912,7 @@ function nextLevelMove(p){
  return registeredLearnset(spec).find(e=>e.level>p.level&&validMove(e.moveId))||null;
 }
 function awardExperience(p,xp){
- if(!p)return [];
+ if(!p||isEgg(p))return [];
  if(p.level>=MAX_CRITTER_LEVEL){p.level=MAX_CRITTER_LEVEL;p.xp=0;return []}
  const events=[];
  p.xp=Math.max(0,Number.isFinite(p.xp)?p.xp:0)+Math.max(0,Math.floor(xp));
@@ -3886,8 +3921,9 @@ function awardExperience(p,xp){
   p.xp-=experienceToNextLevel(p);
   p.level++;
   if(p.level===MAX_CRITTER_LEVEL)p.xp=0;
-  p.maxHp+=4;
-  p.hp=Math.min(p.maxHp,p.hp+4);
+  const oldMax=p.maxHp;
+  p.maxHp=geneticValue(p.genetics?.hp)>0?combatStat(p,'hp'):oldMax+4;
+  p.hp=Math.min(p.maxHp,p.hp+Math.max(0,p.maxHp-oldMax));
   events.push((p.name||p.type)+' reached Lv '+p.level+'!');
   const learned=gainLevelMoves(p);
   if(learned.length)events.push((p.name||p.type)+' learned '+learned.join(', ')+'.');
