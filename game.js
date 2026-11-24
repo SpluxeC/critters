@@ -435,6 +435,38 @@ function registeredLearnset(spec){
  return Array.isArray(spec?.levelUp)?spec.levelUp.filter(q=>Number.isInteger(q.level)&&q.level>=1&&typeof q.moveId==='string')
   .sort((a,b)=>a.level-b.level):[];
 }
+// An offspring inherits at most one future level-up move from its base species.
+function inheritableMove(id){
+ const m=validMove(id);return !!m&&!id.startsWith('starter-')&&!['Dragon','Primordial','Beast'].includes(m.type)&&!m.exclusive&&!m.legendary&&!/signature|legendary|exclusive/i.test(m.description||'');
+}
+function eggMoveCandidates(e){
+ const sp=speciesRegistry.get(e?.speciesId);
+ if(!sp||breedingLegendary(sp))return [];
+ const future=new Set(registeredLearnset(sp).filter(q=>q.level>1&&inheritableMove(q.moveId)).map(q=>q.moveId));
+ const atOne=new Set(registeredLearnset(sp).filter(q=>q.level===1).map(q=>q.moveId));
+ return [...new Set((e.parents||[]).flatMap(p=>Array.isArray(p?.moves)?p.moves:[]))].filter(id=>future.has(id)&&!atOne.has(id)).sort();
+}
+function normalizeEggMove(e,rng=Math.random){
+ if(!moveDataReady||!speciesDataReady)return e.inheritedMoveId||null;
+ if(Object.prototype.hasOwnProperty.call(e,'inheritedMoveId'))return e.inheritedMoveId;
+ const choices=eggMoveCandidates(e);
+ e.inheritedMoveId=choices.length?choices[Math.min(choices.length-1,Math.floor(rng()*choices.length))]:null;
+ return e.inheritedMoveId;
+}
+function inheritedMoveFor(p){
+ const id=p?.inheritedMoveId;
+ return inheritableMove(id)&&id?id:null;
+}
+function keepInheritedMove(p,ids){
+ const id=inheritedMoveFor(p);const unique=[...new Set(ids)];
+ if(!id)return unique.slice(-4);
+ // Reserve one slot for the inherited move, retaining the newest three normal moves.
+ const others=unique.filter(x=>x!==id).slice(-3);
+ return [...others,id];
+}
+function inheritedMoveHTML(p){
+ const id=inheritedMoveFor(p);return id?'<div class="watchPartyMeta">Inherited move: '+escapeHtml(validMove(id).name)+'</div>':'';
+}
 function legalLearnedMoves(p){
  const species=speciesFor(p),list=registeredLearnset(species).filter(e=>e.level<=p.level&&validMove(e.moveId)).map(e=>e.moveId);
  if(species&&list.length)return [...new Set(list)].slice(-4);
@@ -449,9 +481,9 @@ function normalizeMoves(p){
  const target=legalLearnedMoves(p);
  // Species learnsets are authoritative on registration; upgrades won't erase equipped
  // valid moves except when the four-slot capacity is exceeded.
- let ids=speciesFor(p)?target:[...new Set([...mapped,...target])].slice(-4);
+ let ids=keepInheritedMove(p,speciesFor(p)?target:[...new Set([...mapped,...target])]);
  if(!ids.length)ids=['opening-flick'];
- if(!ids.some(id=>validMove(id)?.target==='enemy'))ids=['opening-flick',...ids.filter(id=>id!=='opening-flick')].slice(0,4);
+ if(!ids.some(id=>validMove(id)?.target==='enemy')){const inherited=inheritedMoveFor(p);ids=inherited?['opening-flick',...ids.filter(id=>id!=='opening-flick'&&id!==inherited).slice(-2),inherited]:['opening-flick',...ids.filter(id=>id!=='opening-flick')].slice(0,4)}
  const prevPP=p.movePP&&typeof p.movePP==='object'?p.movePP:{};
  p.moves=ids;
  p.movePP=Object.fromEntries(ids.map(id=>[id,Math.min(validMove(id)?.pp||35,Math.max(0,Number.isFinite(prevPP[id])?Math.floor(prevPP[id]):validMove(id)?.pp||35))]));
@@ -464,9 +496,10 @@ function gainLevelMoves(p){
  const learned=[];
  for(const event of options){
   p.moves=Array.isArray(p.moves)?p.moves:[];
-  p.moves=[...p.moves.filter(id=>id!==event.moveId),event.moveId].slice(-4);
-  p.movePP=p.movePP||{};p.movePP[event.moveId]=validMove(event.moveId).pp;
-  learned.push(validMove(event.moveId).name);
+  const alreadyKnown=p.moves.includes(event.moveId);
+  p.moves=keepInheritedMove(p,[...p.moves.filter(id=>id!==event.moveId),event.moveId]);
+  p.movePP=p.movePP||{};if(!alreadyKnown)p.movePP[event.moveId]=validMove(event.moveId).pp;
+  if(!alreadyKnown)learned.push(validMove(event.moveId).name);
  }
  if(!spec)normalizeMoves(p);
  return learned;
@@ -2022,7 +2055,7 @@ function advanceFarmBreeding(){
   pair.progress=Math.min(pair.required,(Number(pair.progress)||0)+1);
   if(pair.progress>=pair.required){
    pair.egg={speciesId:pair.speciesId,rarity:pair.rarity,parents:pair.parents.map(p=>JSON.parse(JSON.stringify(p))),progress:0};
-   normalizeEggGenetics(pair.egg);normalizeEggGender(pair.egg);
+   normalizeEggGenetics(pair.egg);normalizeEggGender(pair.egg);normalizeEggMove(pair.egg);
    completed=true;notifyWorld('An egg is ready to collect at your farm!');
   }
  }
@@ -2077,6 +2110,7 @@ function hatchEgg(from,i){
  const newborn=critter(e.speciesId,1);
  newborn.gender=normalizeEggGender(e);newborn.genetics=normalizeEggGenetics(e);newborn.hp=newborn.maxHp=combatStat(newborn,'hp');
  newborn.breedingParents=e.parents||[];
+ newborn.inheritedMoveId=normalizeEggMove(e);normalizeMoves(newborn);
  if(party)s.party[i]=newborn;else{home.incubators[i]=null;s.storage.push(newborn)}
  const c=collectionData(),stamp=encounterStamp(),id=newborn.speciesId;
  if(!c.seen[id])c.seen[id]={firstArea:stamp.area,firstDay:stamp.day,encounters:0,discoveredBy:'hatching'};
@@ -2102,9 +2136,9 @@ function migrateHomestead(){
  s.homestead={...old,offered:!!old.offered||!!old.owned,owned:!!old.owned,stage:old.owned?Math.max(1,Math.min(4,Math.floor(Number(old.stage)||1))):0};
  if(s.area==='homesteadHome'&&!s.homestead.owned){s.area='homestead';s.x=17;s.y=13}
  const home=farmSlots();
- for(const pair of home.pairs){if(pair?.egg){normalizeEggGenetics(pair.egg);normalizeEggGender(pair.egg)}for(const p of pair?.parents||[])if(p){normalizeGenetics(p);normalizeCritterGender(p)}}
- for(const e of home.incubators)if(e){normalizeEggGenetics(e);normalizeEggGender(e)}
- for(const p of s.party||[])if(isEgg(p)){normalizeEggGenetics(p.egg);normalizeEggGender(p.egg)}
+ for(const pair of home.pairs){if(pair?.egg){normalizeEggGenetics(pair.egg);normalizeEggGender(pair.egg);normalizeEggMove(pair.egg)}for(const p of pair?.parents||[])if(p){normalizeGenetics(p);normalizeCritterGender(p)}}
+ for(const e of home.incubators)if(e){normalizeEggGenetics(e);normalizeEggGender(e);normalizeEggMove(e)}
+ for(const p of s.party||[])if(isEgg(p)){normalizeEggGenetics(p.egg);normalizeEggGender(p.egg);normalizeEggMove(p.egg)}
 }
 function talkMomProperty(){
  if(s.homestead.owned)return say(['Mom: I hope you are enjoying your new home!']);
@@ -2142,7 +2176,7 @@ function confirmFarmUpgrade(next){
  open('Confirm Expansion','<h3>'+p.name+'</h3><p>Cost: '+p.price.toLocaleString()+' money</p><p>Available: '+s.money.toLocaleString()+'</p><p>'+p.pairs+' pairs · '+p.incubators+' incubators</p><button class="btn primary" id="estateConfirm" '+(canUpgradeFarm(next)?'':'disabled')+'>Purchase Expansion</button> <button class="btn" id="estateBack">Back</button>');
  $('estateBack').onclick=homesteadTerminal;$('estateConfirm').onclick=()=>{if(!purchaseFarmUpgrade(next))return;close();indexNotice(p.name+' expansion complete!')};
 }
-function farmParentName(p){return p?escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+geneticsHTML(p):'Empty'}
+function farmParentName(p){return p?escapeHtml(p.name||p.type)+critterGenderLabel(p)+' · Lv '+p.level+geneticsHTML(p)+inheritedMoveHTML(p):'Empty'}
 function farmManagement(kind){
  if(!farmAccess()||!['pairs','incubators'].includes(kind))return;
  const count=farmCapacity()[kind],slots=farmSlots()[kind];
@@ -2190,7 +2224,7 @@ function farmChooseReplacement(i){
 function homesteadStorage(){
  if(!s.homestead?.owned)return;
  // Shared storage is viewable at home; party maintenance still requires a Center.
- open('Home Storage','<p>Stored Critters: '+s.storage.length+'</p>'+s.storage.map(p=>'<div class="centerPartyRow">'+escapeHtml(p.name||p.type)+' · Lv '+p.level+geneticsHTML(p)+'</div>').join('')+'<p>Visit a Critter Center to change your active party.</p><button class="btn" id="estateBack">Back</button>');
+ open('Home Storage','<p>Stored Critters: '+s.storage.length+'</p>'+s.storage.map(p=>'<div class="centerPartyRow">'+escapeHtml(p.name||p.type)+' · Lv '+p.level+geneticsHTML(p)+inheritedMoveHTML(p)+'</div>').join('')+'<p>Visit a Critter Center to change your active party.</p><button class="btn" id="estateBack">Back</button>');
  $('estateBack').onclick=homesteadTerminal;
 }
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
@@ -2447,7 +2481,7 @@ function indexClock(){
   const pct=Math.max(0,Math.min(100,Math.round(p.hp/Math.max(1,p.maxHp)*100)));
   detail='<div class="watchSelectionHeading">'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+' <span>Lv '+p.level+'</span></div>'
    +'<div class="watchMeter"><div style="width:'+pct+'%"></div></div><div class="watchSelectionStats">HP '+p.hp+' / '+p.maxHp+' · XP '+(p.xp||0)+' / '+p.level*12+'</div>'
-   +'<div class="watchSelectionStats">Status: '+escapeHtml(p.status||'Healthy')+'</div>'+(!battleIndexActive()?geneticsHTML(p):'');
+   +'<div class="watchSelectionStats">Status: '+escapeHtml(p.status||'Healthy')+'</div>'+(!battleIndexActive()?geneticsHTML(p)+inheritedMoveHTML(p):'');
  }else if(i<8){
   detail='<div class="watchSelectionHeading">Empty party position</div><p>Capture a wild Critter to fill this slot.</p>';
  }else{
@@ -2489,7 +2523,7 @@ function indexParty(){
    +(battleIndexActive()?'<div class="watchPartyMeta">'+(battle.allySlots.includes(i)?'Currently battling':p.hp>0?'Available to switch':'Fainted')+'</div>'+(p.hp>0&&!battle.allySlots.includes(i)&&!battle.pending.some(q=>q.kind==='switch'&&q.target===i)?'<button type="button" class="btn watchBattleAction" data-index-battle-switch="'+i+'">Switch into battle</button>':''):'')
     +'<div class="watchPartyMeta">ATK '+combatStat(p,'attack')+' · DEF '+combatStat(p,'defense')+' · S.ATK '+combatStat(p,'specialAttack')+' · S.DEF '+combatStat(p,'specialDefense')+' · SPD '+combatStat(p,'speed')+'</div>'
    +'<div class="watchPartyMeta">'+(p.moves||[]).map(id=>{const m=getMove(p,id);return escapeHtml(m.name)+' ('+(p.movePP?.[id]??m.pp)+' PP)'}).join(' · ')+'</div>'
-   +(battleIndexActive()?'':geneticsHTML(p)+partyEvolutionControls(p,i))+'</div>';
+   +(battleIndexActive()?'':geneticsHTML(p)+inheritedMoveHTML(p)+partyEvolutionControls(p,i))+'</div>';
  }).join('');
  return '<div class="watchSectionTitle">Active party <small>'+s.party.length+' / 8</small></div>'
   +'<div class="watchPartyGrid">'+cards+'</div><div class="watchReadOnly">⌁ Party rearranging and home storage retrieval require a Critter Center. Stored at home: '+s.storage.length+'</div>';
