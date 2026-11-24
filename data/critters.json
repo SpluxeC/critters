@@ -73,7 +73,10 @@
         "speciesId": "cr-002-starter-water-2",
         "minLevel": 16
       },
-      "legacySpeciesId": "starter-water-1"
+      "legacySpeciesId": "starter-water-1",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-002-starter-water-2",
@@ -147,7 +150,10 @@
         "minLevel": 32
       },
       "evolvesFrom": "cr-001-starter-water-1",
-      "legacySpeciesId": "starter-water-2"
+      "legacySpeciesId": "starter-water-2",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-003-starter-water-3",
@@ -217,7 +223,10 @@
       "starterForm": 3,
       "signatureMoveId": "starter-water-tidal-heart",
       "evolvesFrom": "cr-002-starter-water-2",
-      "legacySpeciesId": "starter-water-3"
+      "legacySpeciesId": "starter-water-3",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-004-starter-rock-1",
@@ -290,7 +299,10 @@
         "speciesId": "cr-005-starter-rock-2",
         "minLevel": 16
       },
-      "legacySpeciesId": "starter-rock-1"
+      "legacySpeciesId": "starter-rock-1",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-005-starter-rock-2",
@@ -364,7 +376,10 @@
         "minLevel": 32
       },
       "evolvesFrom": "cr-004-starter-rock-1",
-      "legacySpeciesId": "starter-rock-2"
+      "legacySpeciesId": "starter-rock-2",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-006-starter-rock-3",
@@ -434,7 +449,10 @@
       "starterForm": 3,
       "signatureMoveId": "starter-rock-bedrock-vow",
       "evolvesFrom": "cr-005-starter-rock-2",
-      "legacySpeciesId": "starter-rock-3"
+      "legacySpeciesId": "starter-rock-3",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-007-starter-electric-1",
@@ -507,7 +525,10 @@
         "speciesId": "cr-008-starter-electric-2",
         "minLevel": 16
       },
-      "legacySpeciesId": "starter-electric-1"
+      "legacySpeciesId": "starter-electric-1",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-008-starter-electric-2",
@@ -581,7 +602,10 @@
         "minLevel": 32
       },
       "evolvesFrom": "cr-007-starter-electric-1",
-      "legacySpeciesId": "starter-electric-2"
+      "legacySpeciesId": "starter-electric-2",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-009-starter-electric-3",
@@ -651,7 +675,10 @@
       "starterForm": 3,
       "signatureMoveId": "starter-electric-storm-promise",
       "evolvesFrom": "cr-008-starter-electric-2",
-      "legacySpeciesId": "starter-electric-3"
+      "legacySpeciesId": "starter-electric-3",
+      "genderRatio": {
+        "malePercent": 87.5
+      }
     },
     {
       "speciesId": "cr-010-falquill",
@@ -702,7 +729,10 @@
         "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-1-back.png"
       },
       "notes": "Falcon line, stage 1 of 3. Evolution requirements are not assigned.",
-      "legacySpeciesId": "cr-210-falquill"
+      "legacySpeciesId": "cr-210-falquill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-011-falrift",
@@ -744,7 +774,10 @@
         "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-2-back.png"
       },
       "notes": "Falcon line, stage 2 of 3. Evolution requirements are not assigned.",
-      "legacySpeciesId": "cr-211-falrift"
+      "legacySpeciesId": "cr-211-falrift",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-012-falgrath",
@@ -786,7 +819,10 @@
         "rearSpritePath": "assets/critters/route-one-designs/route-1/falcon-stage-3-back.png"
       },
       "notes": "Falcon line, stage 3 of 3. Evolution requirements are not assigned.",
-      "legacySpeciesId": "cr-212-falgrath"
+      "legacySpeciesId": "cr-212-falgrath",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-013-toxidot",
@@ -837,7 +873,10 @@
         "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-larva-back.png"
       },
       "notes": "Venom moth line, stage 1 of 2. Evolution requirements are not assigned.",
-      "legacySpeciesId": "cr-213-toxidot"
+      "legacySpeciesId": "cr-213-toxidot",
+      "genderRatio": {
+        "malePercent": 25
+      }
     },
     {
       "speciesId": "cr-014-mothoxin",
@@ -879,7 +918,10 @@
         "rearSpritePath": "assets/critters/route-one-designs/venom-moth/venom-owl-moth-back.png"
       },
       "notes": "Venom moth line, stage 2 of 2. Evolution requirements are not assigned.",
-      "legacySpeciesId": "cr-214-mothoxin"
+      "legacySpeciesId": "cr-214-mothoxin",
+      "genderRatio": {
+        "malePercent": 25
+      }
     },
     {
       "speciesId": "cr-015-scruffin",
@@ -940,7 +982,10 @@
         }
       },
       "notes": "Australian Shepherd pup; female red merle and male blue merle are cosmetic variants of the same species.",
-      "legacySpeciesId": "cr-215-scruffin"
+      "legacySpeciesId": "cr-215-scruffin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-016-ruffguard",
@@ -1001,7 +1046,10 @@
       },
       "notes": "Artwork-registered aussie design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-216-ruffguard"
+      "legacySpeciesId": "cr-216-ruffguard",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-017-barkwarden",
@@ -1062,7 +1110,10 @@
       },
       "notes": "Artwork-registered aussie design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-217-barkwarden"
+      "legacySpeciesId": "cr-217-barkwarden",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-018-mossplate",
@@ -1113,7 +1164,10 @@
       },
       "notes": "Artwork-registered grass-glyptodont design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-218-mossplate"
+      "legacySpeciesId": "cr-218-mossplate",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-019-bramblevault",
@@ -1164,7 +1218,10 @@
       },
       "notes": "Artwork-registered grass-glyptodont design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-219-bramblevault"
+      "legacySpeciesId": "cr-219-bramblevault",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-020-sparkhorn",
@@ -1215,7 +1272,10 @@
       },
       "notes": "Artwork-registered electric-pronghorn design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-220-sparkhorn"
+      "legacySpeciesId": "cr-220-sparkhorn",
+      "genderRatio": {
+        "malePercent": 75
+      }
     },
     {
       "speciesId": "cr-021-thundelope",
@@ -1266,7 +1326,10 @@
       },
       "notes": "Artwork-registered electric-pronghorn design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-221-thundelope"
+      "legacySpeciesId": "cr-221-thundelope",
+      "genderRatio": {
+        "malePercent": 75
+      }
     },
     {
       "speciesId": "cr-022-pebblusk",
@@ -1317,7 +1380,10 @@
       },
       "notes": "Artwork-registered rock-mastodon design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-222-pebblusk"
+      "legacySpeciesId": "cr-222-pebblusk",
+      "genderRatio": {
+        "malePercent": 75
+      }
     },
     {
       "speciesId": "cr-023-mastolith",
@@ -1368,7 +1434,10 @@
       },
       "notes": "Artwork-registered rock-mastodon design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-223-mastolith"
+      "legacySpeciesId": "cr-223-mastolith",
+      "genderRatio": {
+        "malePercent": 75
+      }
     },
     {
       "speciesId": "cr-024-quilldash",
@@ -1419,7 +1488,10 @@
       },
       "notes": "Artwork-registered flying-microraptor design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-224-quilldash"
+      "legacySpeciesId": "cr-224-quilldash",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-025-aerosaur",
@@ -1470,7 +1542,10 @@
       },
       "notes": "Artwork-registered flying-microraptor design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-225-aerosaur"
+      "legacySpeciesId": "cr-225-aerosaur",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-026-emberpuff",
@@ -1521,7 +1596,10 @@
       },
       "notes": "Artwork-registered fire-red-panda design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-226-emberpuff"
+      "legacySpeciesId": "cr-226-emberpuff",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-027-sludgip",
@@ -1573,7 +1651,10 @@
       },
       "notes": "Artwork-registered water-venom-otter design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-227-sludgip"
+      "legacySpeciesId": "cr-227-sludgip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-028-toxotter",
@@ -1625,7 +1706,10 @@
       },
       "notes": "Artwork-registered water-venom-otter design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-228-toxotter"
+      "legacySpeciesId": "cr-228-toxotter",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-029-venomwake",
@@ -1677,7 +1761,10 @@
       },
       "notes": "Artwork-registered water-venom-otter design, stage 3. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-229-venomwake"
+      "legacySpeciesId": "cr-229-venomwake",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-030-thornix",
@@ -1728,7 +1815,10 @@
       },
       "notes": "Artwork-registered venom-thorny-devil design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-230-thornix"
+      "legacySpeciesId": "cr-230-thornix",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-031-wispurr",
@@ -1779,7 +1869,10 @@
       },
       "notes": "Artwork-registered ghost-cat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-231-wispurr"
+      "legacySpeciesId": "cr-231-wispurr",
+      "genderRatio": {
+        "malePercent": 25
+      }
     },
     {
       "speciesId": "cr-032-phantompaw",
@@ -1830,7 +1923,10 @@
       },
       "notes": "Artwork-registered ghost-cat design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-232-phantompaw"
+      "legacySpeciesId": "cr-232-phantompaw",
+      "genderRatio": {
+        "malePercent": 25
+      }
     },
     {
       "speciesId": "cr-033-mindwink",
@@ -1881,7 +1977,10 @@
       },
       "notes": "Artwork-registered psychic-aye-aye design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-233-mindwink"
+      "legacySpeciesId": "cr-233-mindwink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-034-seerclaw",
@@ -1932,7 +2031,10 @@
       },
       "notes": "Artwork-registered psychic-aye-aye design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-234-seerclaw"
+      "legacySpeciesId": "cr-234-seerclaw",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-035-duskhound",
@@ -1983,7 +2085,10 @@
       },
       "notes": "Artwork-registered shadow-borzoi design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-235-duskhound"
+      "legacySpeciesId": "cr-235-duskhound",
+      "genderRatio": {
+        "malePercent": 75
+      }
     },
     {
       "speciesId": "cr-036-noctirush",
@@ -2034,7 +2139,10 @@
       },
       "notes": "Artwork-registered shadow-borzoi design, stage 2. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-236-noctirush"
+      "legacySpeciesId": "cr-236-noctirush",
+      "genderRatio": {
+        "malePercent": 75
+      }
     },
     {
       "speciesId": "cr-037-froststoat",
@@ -2085,7 +2193,10 @@
       },
       "notes": "Artwork-registered ice-winter-stoat design, stage 1. Draft name/stats/moves; habitat and evolution assignment pending regional design.",
       "catalogOnly": true,
-      "legacySpeciesId": "cr-237-froststoat"
+      "legacySpeciesId": "cr-237-froststoat",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-038-brinefin",
@@ -2159,7 +2270,10 @@
           "minimum": 1
         }
       },
-      "legacySpeciesId": "cr-019-brinefin"
+      "legacySpeciesId": "cr-019-brinefin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-039-coraloo",
@@ -2225,7 +2339,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-038-brinefin",
-      "legacySpeciesId": "cr-020-coraloo"
+      "legacySpeciesId": "cr-020-coraloo",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-040-driftkip",
@@ -2295,7 +2412,10 @@
         "minLevel": 18,
         "stone": "Water Stone"
       },
-      "legacySpeciesId": "cr-021-driftkip"
+      "legacySpeciesId": "cr-021-driftkip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-041-glintgill",
@@ -2361,7 +2481,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-040-driftkip",
-      "legacySpeciesId": "cr-022-glintgill"
+      "legacySpeciesId": "cr-022-glintgill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-042-wavetail",
@@ -2426,7 +2549,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-028-wavetail"
+      "legacySpeciesId": "cr-028-wavetail",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-043-icicleaf",
@@ -2491,7 +2617,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-094-icicleaf"
+      "legacySpeciesId": "cr-094-icicleaf",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-044-kiteclaw",
@@ -2557,7 +2686,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-111-kiteclaw"
+      "legacySpeciesId": "cr-111-kiteclaw",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-045-soarwhisk",
@@ -2623,7 +2755,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "legacySpeciesId": "cr-114-soarwhisk"
+      "legacySpeciesId": "cr-114-soarwhisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-046-flitwing",
@@ -2689,7 +2824,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-115-flitwing"
+      "legacySpeciesId": "cr-115-flitwing",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-047-skyfin",
@@ -2754,7 +2892,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-117-skyfin"
+      "legacySpeciesId": "cr-117-skyfin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-048-dusklet",
@@ -2824,7 +2965,10 @@
         "speciesId": "cr-049-shadepaw",
         "minLevel": 12
       },
-      "legacySpeciesId": "cr-118-dusklet"
+      "legacySpeciesId": "cr-118-dusklet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-049-shadepaw",
@@ -2895,7 +3039,10 @@
         "speciesId": "cr-050-gloomink",
         "minLevel": 28
       },
-      "legacySpeciesId": "cr-119-shadepaw"
+      "legacySpeciesId": "cr-119-shadepaw",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-050-gloomink",
@@ -2961,7 +3108,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-049-shadepaw",
-      "legacySpeciesId": "cr-120-gloomink"
+      "legacySpeciesId": "cr-120-gloomink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-051-crepuskit",
@@ -3026,7 +3176,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-126-crepuskit"
+      "legacySpeciesId": "cr-126-crepuskit",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-052-sablefin",
@@ -3092,7 +3245,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-127-sablefin"
+      "legacySpeciesId": "cr-127-sablefin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-053-poisonip",
@@ -3157,7 +3313,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-162-poisonip"
+      "legacySpeciesId": "cr-162-poisonip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-054-corrofin",
@@ -3223,7 +3382,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-163-corrofin"
+      "legacySpeciesId": "cr-163-corrofin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-055-blightling",
@@ -3288,7 +3450,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-165-blightling"
+      "legacySpeciesId": "cr-165-blightling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-056-thoughtip",
@@ -3358,7 +3523,10 @@
         "speciesId": "cr-057-mindlet",
         "minLevel": 12
       },
-      "legacySpeciesId": "cr-166-thoughtip"
+      "legacySpeciesId": "cr-166-thoughtip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-057-mindlet",
@@ -3433,7 +3601,10 @@
           "areaId": "route3"
         }
       },
-      "legacySpeciesId": "cr-167-mindlet"
+      "legacySpeciesId": "cr-167-mindlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-058-dreamquill",
@@ -3500,7 +3671,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-057-mindlet",
-      "legacySpeciesId": "cr-168-dreamquill"
+      "legacySpeciesId": "cr-168-dreamquill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-059-starwhisp",
@@ -3565,7 +3739,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-174-starwhisp"
+      "legacySpeciesId": "cr-174-starwhisp",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-060-trancelot",
@@ -3631,7 +3808,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-175-trancelot"
+      "legacySpeciesId": "cr-175-trancelot",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-061-synapip",
@@ -3696,7 +3876,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-177-synapip"
+      "legacySpeciesId": "cr-177-synapip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-062-parryfin",
@@ -3762,7 +3945,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-193-parryfin"
+      "legacySpeciesId": "cr-193-parryfin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-063-martialet",
@@ -3827,7 +4013,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-194-martialet"
+      "legacySpeciesId": "cr-194-martialet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-064-grapplet",
@@ -3893,7 +4082,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "legacySpeciesId": "cr-195-grapplet"
+      "legacySpeciesId": "cr-195-grapplet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-065-feintling",
@@ -3958,7 +4150,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-197-feintling"
+      "legacySpeciesId": "cr-197-feintling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-066-cloverkin",
@@ -4030,7 +4225,10 @@
           "kind": "day"
         }
       },
-      "legacySpeciesId": "cr-004-cloverkin"
+      "legacySpeciesId": "cr-004-cloverkin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-067-sapshrew",
@@ -4097,7 +4295,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-066-cloverkin",
-      "legacySpeciesId": "cr-005-sapshrew"
+      "legacySpeciesId": "cr-005-sapshrew",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-068-willowink",
@@ -4163,7 +4364,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-010-willowink"
+      "legacySpeciesId": "cr-010-willowink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-069-streamink",
@@ -4228,7 +4432,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-029-streamink"
+      "legacySpeciesId": "cr-029-streamink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-070-thermalet",
@@ -4294,7 +4501,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-116-thermalet"
+      "legacySpeciesId": "cr-116-thermalet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-071-ebonkip",
@@ -4360,7 +4570,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-125-ebonkip"
+      "legacySpeciesId": "cr-125-ebonkip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-072-miasmoth",
@@ -4426,7 +4639,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-164-miasmoth"
+      "legacySpeciesId": "cr-164-miasmoth",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-073-petaloor",
@@ -4492,7 +4708,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-008-petaloor"
+      "legacySpeciesId": "cr-008-petaloor",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-074-reedrill",
@@ -4557,7 +4776,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-009-reedrill"
+      "legacySpeciesId": "cr-009-reedrill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-075-junibun",
@@ -4623,7 +4845,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "legacySpeciesId": "cr-012-junibun"
+      "legacySpeciesId": "cr-012-junibun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-076-slatetail",
@@ -4689,7 +4914,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-060-slatetail"
+      "legacySpeciesId": "cr-060-slatetail",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-077-winterpaw",
@@ -4755,7 +4983,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-095-winterpaw"
+      "legacySpeciesId": "cr-095-winterpaw",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-078-breezlet",
@@ -4826,7 +5057,10 @@
         "minLevel": 12,
         "stone": "Flying Stone"
       },
-      "legacySpeciesId": "cr-102-breezlet"
+      "legacySpeciesId": "cr-102-breezlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-079-plumehop",
@@ -4901,7 +5135,10 @@
           "areaId": "route3"
         }
       },
-      "legacySpeciesId": "cr-103-plumehop"
+      "legacySpeciesId": "cr-103-plumehop",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-080-skylarkit",
@@ -4968,7 +5205,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-079-plumehop",
-      "legacySpeciesId": "cr-104-skylarkit"
+      "legacySpeciesId": "cr-104-skylarkit",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-081-cloakmoth",
@@ -5033,7 +5273,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-129-cloakmoth"
+      "legacySpeciesId": "cr-129-cloakmoth",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-082-nightquill",
@@ -5098,7 +5341,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-130-nightquill"
+      "legacySpeciesId": "cr-130-nightquill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-083-shadeleaf",
@@ -5164,7 +5410,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-131-shadeleaf"
+      "legacySpeciesId": "cr-131-shadeleaf",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-084-blacket",
@@ -5229,7 +5478,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-133-blacket"
+      "legacySpeciesId": "cr-133-blacket",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-085-veiloo",
@@ -5294,7 +5546,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-146-veiloo"
+      "legacySpeciesId": "cr-146-veiloo",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-086-spiritick",
@@ -5360,7 +5615,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-147-spiritick"
+      "legacySpeciesId": "cr-147-spiritick",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-087-hollowkin",
@@ -5425,7 +5683,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-149-hollowkin"
+      "legacySpeciesId": "cr-149-hollowkin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-088-venomoss",
@@ -5490,7 +5751,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-158-venomoss"
+      "legacySpeciesId": "cr-158-venomoss",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-089-rotwhisk",
@@ -5556,7 +5820,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-159-rotwhisk"
+      "legacySpeciesId": "cr-159-rotwhisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-090-sludgekip",
@@ -5622,7 +5889,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "legacySpeciesId": "cr-161-sludgekip"
+      "legacySpeciesId": "cr-161-sludgekip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-091-oracub",
@@ -5692,7 +5962,10 @@
         "minLevel": 18,
         "stone": "Psychic Stone"
       },
-      "legacySpeciesId": "cr-169-oracub"
+      "legacySpeciesId": "cr-169-oracub",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-092-telekin",
@@ -5758,7 +6031,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-091-oracub",
-      "legacySpeciesId": "cr-170-telekin"
+      "legacySpeciesId": "cr-170-telekin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-093-prismew",
@@ -5828,7 +6104,10 @@
         "speciesId": "cr-094-lucibun",
         "minLevel": 23
       },
-      "legacySpeciesId": "cr-171-prismew"
+      "legacySpeciesId": "cr-171-prismew",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-094-lucibun",
@@ -5895,7 +6174,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-093-prismew",
-      "legacySpeciesId": "cr-172-lucibun"
+      "legacySpeciesId": "cr-172-lucibun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-095-leaflume",
@@ -5960,7 +6242,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-013-leaflume"
+      "legacySpeciesId": "cr-013-leaflume",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-096-dimling",
@@ -6026,7 +6311,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-132-dimling"
+      "legacySpeciesId": "cr-132-dimling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-097-etherfin",
@@ -6092,7 +6380,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-148-etherfin"
+      "legacySpeciesId": "cr-148-etherfin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-098-echomind",
@@ -6158,7 +6449,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-173-echomind"
+      "legacySpeciesId": "cr-173-echomind",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-099-bitterbun",
@@ -6224,7 +6518,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "legacySpeciesId": "cr-160-bitterbun"
+      "legacySpeciesId": "cr-160-bitterbun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-100-visifin",
@@ -6289,7 +6586,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-176-visifin"
+      "legacySpeciesId": "cr-176-visifin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-101-eonolith",
@@ -6355,7 +6655,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-199-eonolith"
+      "legacySpeciesId": "cr-199-eonolith",
+      "genderRatio": {
+        "malePercent": null
+      }
     },
     {
       "speciesId": "cr-102-kindlisk",
@@ -6425,7 +6728,10 @@
         "speciesId": "cr-103-charhoof",
         "minLevel": 23
       },
-      "legacySpeciesId": "cr-040-kindlisk"
+      "legacySpeciesId": "cr-040-kindlisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-103-charhoof",
@@ -6491,7 +6797,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-102-kindlisk",
-      "legacySpeciesId": "cr-041-charhoof"
+      "legacySpeciesId": "cr-041-charhoof",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-104-furnacat",
@@ -6557,7 +6866,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "legacySpeciesId": "cr-047-furnacat"
+      "legacySpeciesId": "cr-047-furnacat",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-105-ignifawn",
@@ -6623,7 +6935,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-049-ignifawn"
+      "legacySpeciesId": "cr-049-ignifawn",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-106-flametip",
@@ -6688,7 +7003,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-050-flametip"
+      "legacySpeciesId": "cr-050-flametip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-107-sparkmoth",
@@ -6753,7 +7071,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-051-sparkmoth"
+      "legacySpeciesId": "cr-051-sparkmoth",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-108-marblisk",
@@ -6819,7 +7140,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-062-marblisk"
+      "legacySpeciesId": "cr-062-marblisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-109-cliffmole",
@@ -6885,7 +7209,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "legacySpeciesId": "cr-063-cliffmole"
+      "legacySpeciesId": "cr-063-cliffmole",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-110-stonewisp",
@@ -6951,7 +7278,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-065-stonewisp"
+      "legacySpeciesId": "cr-065-stonewisp",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-111-gravelark",
@@ -7017,7 +7347,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "legacySpeciesId": "cr-067-gravelark"
+      "legacySpeciesId": "cr-067-gravelark",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-112-chargill",
@@ -7082,7 +7415,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-081-chargill"
+      "legacySpeciesId": "cr-081-chargill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-113-stormew",
@@ -7148,7 +7484,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-082-stormew"
+      "legacySpeciesId": "cr-082-stormew",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-114-wirewhisk",
@@ -7214,7 +7553,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-083-wirewhisk"
+      "legacySpeciesId": "cr-083-wirewhisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-115-plasmip",
@@ -7279,7 +7621,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-085-plasmip"
+      "legacySpeciesId": "cr-085-plasmip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-116-frostip",
@@ -7349,7 +7694,10 @@
         "speciesId": "cr-117-glacibun",
         "minLevel": 12
       },
-      "legacySpeciesId": "cr-086-frostip"
+      "legacySpeciesId": "cr-086-frostip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-117-glacibun",
@@ -7424,7 +7772,10 @@
           "minimum": 1
         }
       },
-      "legacySpeciesId": "cr-087-glacibun"
+      "legacySpeciesId": "cr-087-glacibun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-118-sleetlet",
@@ -7490,7 +7841,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-117-glacibun",
-      "legacySpeciesId": "cr-088-sleetlet"
+      "legacySpeciesId": "cr-088-sleetlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-119-rimesnout",
@@ -7561,7 +7915,10 @@
         "minLevel": 18,
         "stone": "Ice Stone"
       },
-      "legacySpeciesId": "cr-089-rimesnout"
+      "legacySpeciesId": "cr-089-rimesnout",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-120-snowwhisk",
@@ -7628,7 +7985,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-119-rimesnout",
-      "legacySpeciesId": "cr-090-snowwhisk"
+      "legacySpeciesId": "cr-090-snowwhisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-121-chillume",
@@ -7698,7 +8058,10 @@
         "speciesId": "cr-122-crystip",
         "minLevel": 23
       },
-      "legacySpeciesId": "cr-091-chillume"
+      "legacySpeciesId": "cr-091-chillume",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-122-crystip",
@@ -7765,7 +8128,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesFrom": "cr-121-chillume",
-      "legacySpeciesId": "cr-092-crystip"
+      "legacySpeciesId": "cr-092-crystip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-123-updrift",
@@ -7837,7 +8203,10 @@
           "kind": "day"
         }
       },
-      "legacySpeciesId": "cr-105-updrift"
+      "legacySpeciesId": "cr-105-updrift",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-124-gustwing",
@@ -7903,7 +8272,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-123-updrift",
-      "legacySpeciesId": "cr-106-gustwing"
+      "legacySpeciesId": "cr-106-gustwing",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-125-zephip",
@@ -7973,7 +8345,10 @@
         "speciesId": "cr-126-featherkin",
         "minLevel": 23
       },
-      "legacySpeciesId": "cr-107-zephip"
+      "legacySpeciesId": "cr-107-zephip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-126-featherkin",
@@ -8039,7 +8414,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-125-zephip",
-      "legacySpeciesId": "cr-108-featherkin"
+      "legacySpeciesId": "cr-108-featherkin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-127-aerobun",
@@ -8105,7 +8483,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "legacySpeciesId": "cr-113-aerobun"
+      "legacySpeciesId": "cr-113-aerobun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-128-wispkin",
@@ -8175,7 +8556,10 @@
         "speciesId": "cr-129-phantip",
         "minLevel": 12
       },
-      "legacySpeciesId": "cr-134-wispkin"
+      "legacySpeciesId": "cr-134-wispkin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-129-phantip",
@@ -8249,7 +8633,10 @@
           "kind": "night"
         }
       },
-      "legacySpeciesId": "cr-135-phantip"
+      "legacySpeciesId": "cr-135-phantip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-130-hauntlet",
@@ -8315,7 +8702,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-129-phantip",
-      "legacySpeciesId": "cr-136-hauntlet"
+      "legacySpeciesId": "cr-136-hauntlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-131-booquill",
@@ -8385,7 +8775,10 @@
         "minLevel": 18,
         "stone": "Ghost Stone"
       },
-      "legacySpeciesId": "cr-137-booquill"
+      "legacySpeciesId": "cr-137-booquill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-132-echomoth",
@@ -8451,7 +8844,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-131-booquill",
-      "legacySpeciesId": "cr-138-echomoth"
+      "legacySpeciesId": "cr-138-echomoth",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-133-fogwisp",
@@ -8516,7 +8912,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-142-fogwisp"
+      "legacySpeciesId": "cr-142-fogwisp",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-134-lanternik",
@@ -8582,7 +8981,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-143-lanternik"
+      "legacySpeciesId": "cr-143-lanternik",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-135-shroudbun",
@@ -8647,7 +9049,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-145-shroudbun"
+      "legacySpeciesId": "cr-145-shroudbun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-136-brawlbit",
@@ -8717,7 +9122,10 @@
         "speciesId": "cr-137-strikeling",
         "minLevel": 12
       },
-      "legacySpeciesId": "cr-182-brawlbit"
+      "legacySpeciesId": "cr-182-brawlbit",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-137-strikeling",
@@ -8788,7 +9196,10 @@
         "speciesId": "cr-138-knucklepup",
         "minLevel": 28
       },
-      "legacySpeciesId": "cr-183-strikeling"
+      "legacySpeciesId": "cr-183-strikeling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-138-knucklepup",
@@ -8855,7 +9266,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-137-strikeling",
-      "legacySpeciesId": "cr-184-knucklepup"
+      "legacySpeciesId": "cr-184-knucklepup",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-139-sparlet",
@@ -8925,7 +9339,10 @@
         "minLevel": 18,
         "stone": "Fighting Stone"
       },
-      "legacySpeciesId": "cr-185-sparlet"
+      "legacySpeciesId": "cr-185-sparlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-140-dashkick",
@@ -8992,7 +9409,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesFrom": "cr-139-sparlet",
-      "legacySpeciesId": "cr-186-dashkick"
+      "legacySpeciesId": "cr-186-dashkick",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-141-jabmink",
@@ -9062,7 +9482,10 @@
         "speciesId": "cr-142-pummelkin",
         "minLevel": 23
       },
-      "legacySpeciesId": "cr-187-jabmink"
+      "legacySpeciesId": "cr-187-jabmink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-142-pummelkin",
@@ -9128,7 +9551,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-141-jabmink",
-      "legacySpeciesId": "cr-188-pummelkin"
+      "legacySpeciesId": "cr-188-pummelkin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-143-boxibun",
@@ -9193,7 +9619,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-190-boxibun"
+      "legacySpeciesId": "cr-190-boxibun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-144-gemhorn",
@@ -9259,7 +9688,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-068-gemhorn"
+      "legacySpeciesId": "cr-068-gemhorn",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-145-ohmlet",
@@ -9324,7 +9756,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-084-ohmlet"
+      "legacySpeciesId": "cr-084-ohmlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-146-flurryfin",
@@ -9390,7 +9825,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-093-flurryfin"
+      "legacySpeciesId": "cr-093-flurryfin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-147-clouduck",
@@ -9456,7 +9894,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-109-clouduck"
+      "legacySpeciesId": "cr-109-clouduck",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-148-sootsprite",
@@ -9522,7 +9963,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-048-sootsprite"
+      "legacySpeciesId": "cr-048-sootsprite",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-149-rubblit",
@@ -9588,7 +10032,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "legacySpeciesId": "cr-064-rubblit"
+      "legacySpeciesId": "cr-064-rubblit",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-150-buzzmink",
@@ -9653,7 +10100,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-080-buzzmink"
+      "legacySpeciesId": "cr-080-buzzmink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-151-midnibug",
@@ -9718,7 +10168,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-128-midnibug"
+      "legacySpeciesId": "cr-128-midnibug",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-152-roundpaw",
@@ -9784,7 +10237,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
-      "legacySpeciesId": "cr-192-roundpaw"
+      "legacySpeciesId": "cr-192-roundpaw",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-153-feralune",
@@ -9850,7 +10306,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-200-feralune"
+      "legacySpeciesId": "cr-200-feralune",
+      "genderRatio": {
+        "malePercent": null
+      }
     },
     {
       "speciesId": "cr-154-thistlehop",
@@ -9921,7 +10380,10 @@
         "minLevel": 23,
         "stone": "Grass Stone"
       },
-      "legacySpeciesId": "cr-006-thistlehop"
+      "legacySpeciesId": "cr-006-thistlehop",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-155-barkling",
@@ -9987,7 +10449,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-154-thistlehop",
-      "legacySpeciesId": "cr-007-barkling"
+      "legacySpeciesId": "cr-007-barkling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-156-tidewhisk",
@@ -10052,7 +10517,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-030-tidewhisk"
+      "legacySpeciesId": "cr-030-tidewhisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-157-splashowl",
@@ -10118,7 +10586,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-031-splashowl"
+      "legacySpeciesId": "cr-031-splashowl",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-158-dewfin",
@@ -10183,7 +10654,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-033-dewfin"
+      "legacySpeciesId": "cr-033-dewfin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-159-brookettle",
@@ -10248,7 +10722,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-034-brookettle"
+      "legacySpeciesId": "cr-034-brookettle",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-160-ashwhirl",
@@ -10313,7 +10790,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-043-ashwhirl"
+      "legacySpeciesId": "cr-043-ashwhirl",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-161-torchmink",
@@ -10379,7 +10859,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-044-torchmink"
+      "legacySpeciesId": "cr-044-torchmink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-162-pyrelark",
@@ -10444,7 +10927,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-046-pyrelark"
+      "legacySpeciesId": "cr-046-pyrelark",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-163-thundrill",
@@ -10510,7 +10996,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-076-thundrill"
+      "legacySpeciesId": "cr-076-thundrill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-164-circuitip",
@@ -10576,7 +11065,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-078-circuitip"
+      "legacySpeciesId": "cr-078-circuitip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-165-fumefin",
@@ -10650,7 +11142,10 @@
           "minimum": 1
         }
       },
-      "legacySpeciesId": "cr-155-fumefin"
+      "legacySpeciesId": "cr-155-fumefin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-166-acidillo",
@@ -10717,7 +11212,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
       "evolvesFrom": "cr-165-fumefin",
-      "legacySpeciesId": "cr-156-acidillo"
+      "legacySpeciesId": "cr-156-acidillo",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-167-clairling",
@@ -10783,7 +11281,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-178-clairling"
+      "legacySpeciesId": "cr-178-clairling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-168-astralkip",
@@ -10849,7 +11350,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-179-astralkip"
+      "legacySpeciesId": "cr-179-astralkip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-169-mesmeric",
@@ -10914,7 +11418,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-181-mesmeric"
+      "legacySpeciesId": "cr-181-mesmeric",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-170-fistip",
@@ -10980,7 +11487,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-191-fistip"
+      "legacySpeciesId": "cr-191-fistip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-171-staticat",
@@ -11051,7 +11561,10 @@
         "minLevel": 23,
         "stone": "Normal Stone"
       },
-      "legacySpeciesId": "cr-074-staticat"
+      "legacySpeciesId": "cr-074-staticat",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-172-flashbun",
@@ -11118,7 +11631,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-171-staticat",
-      "legacySpeciesId": "cr-075-flashbun"
+      "legacySpeciesId": "cr-075-flashbun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-173-stinglet",
@@ -11184,7 +11700,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-157-stinglet"
+      "legacySpeciesId": "cr-157-stinglet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-174-psychelet",
@@ -11250,7 +11769,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-180-psychelet"
+      "legacySpeciesId": "cr-180-psychelet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-175-marshling",
@@ -11316,7 +11838,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "legacySpeciesId": "cr-032-marshling"
+      "legacySpeciesId": "cr-032-marshling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-176-spooklet",
@@ -11381,7 +11906,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-144-spooklet"
+      "legacySpeciesId": "cr-144-spooklet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-177-cindlet",
@@ -11451,7 +11979,10 @@
         "speciesId": "cr-178-flarefox",
         "minLevel": 12
       },
-      "legacySpeciesId": "cr-035-cindlet"
+      "legacySpeciesId": "cr-035-cindlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-178-flarefox",
@@ -11526,7 +12057,10 @@
           "areaId": "route3"
         }
       },
-      "legacySpeciesId": "cr-036-flarefox"
+      "legacySpeciesId": "cr-036-flarefox",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-179-coalbit",
@@ -11592,7 +12126,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-178-flarefox",
-      "legacySpeciesId": "cr-037-coalbit"
+      "legacySpeciesId": "cr-037-coalbit",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-180-emberling",
@@ -11662,7 +12199,10 @@
         "minLevel": 18,
         "stone": "Fire Stone"
       },
-      "legacySpeciesId": "cr-038-emberling"
+      "legacySpeciesId": "cr-038-emberling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-181-glowpup",
@@ -11729,7 +12269,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-180-emberling",
-      "legacySpeciesId": "cr-039-glowpup"
+      "legacySpeciesId": "cr-039-glowpup",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-182-quartzling",
@@ -11795,7 +12338,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-059-quartzling"
+      "legacySpeciesId": "cr-059-quartzling",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-183-rockoon",
@@ -11861,7 +12407,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Ground typing and matching moves (editable).",
-      "legacySpeciesId": "cr-066-rockoon"
+      "legacySpeciesId": "cr-066-rockoon",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-184-zappet",
@@ -11931,7 +12480,10 @@
         "speciesId": "cr-185-sparkleap",
         "minLevel": 12
       },
-      "legacySpeciesId": "cr-069-zappet"
+      "legacySpeciesId": "cr-069-zappet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-185-sparkleap",
@@ -12005,7 +12557,10 @@
           "kind": "night"
         }
       },
-      "legacySpeciesId": "cr-070-sparkleap"
+      "legacySpeciesId": "cr-070-sparkleap",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-186-voltrit",
@@ -12071,7 +12626,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-185-sparkleap",
-      "legacySpeciesId": "cr-071-voltrit"
+      "legacySpeciesId": "cr-071-voltrit",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-187-coilfin",
@@ -12142,7 +12700,10 @@
         "minLevel": 18,
         "stone": "Electric Stone"
       },
-      "legacySpeciesId": "cr-072-coilfin"
+      "legacySpeciesId": "cr-072-coilfin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-188-arcquill",
@@ -12209,7 +12770,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
       "evolvesFrom": "cr-187-coilfin",
-      "legacySpeciesId": "cr-073-arcquill"
+      "legacySpeciesId": "cr-073-arcquill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-189-powderowl",
@@ -12274,7 +12838,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-097-powderowl"
+      "legacySpeciesId": "cr-097-powderowl",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-190-hailhorn",
@@ -12340,7 +12907,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Steel typing and matching moves (editable).",
-      "legacySpeciesId": "cr-098-hailhorn"
+      "legacySpeciesId": "cr-098-hailhorn",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-191-polarip",
@@ -12406,7 +12976,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-099-polarip"
+      "legacySpeciesId": "cr-099-polarip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-192-geliduck",
@@ -12471,7 +13044,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-101-geliduck"
+      "legacySpeciesId": "cr-101-geliduck",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-193-umbrapip",
@@ -12541,7 +13117,10 @@
         "minLevel": 18,
         "stone": "Shadow Stone"
       },
-      "legacySpeciesId": "cr-121-umbrapip"
+      "legacySpeciesId": "cr-121-umbrapip",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-194-noctibun",
@@ -12608,7 +13187,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves. v36: Normal typing and matching moves (editable).",
       "evolvesFrom": "cr-193-umbrapip",
-      "legacySpeciesId": "cr-122-noctibun"
+      "legacySpeciesId": "cr-122-noctibun",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-195-veilwhisk",
@@ -12678,7 +13260,10 @@
         "speciesId": "cr-196-darklilt",
         "minLevel": 23
       },
-      "legacySpeciesId": "cr-123-veilwhisk"
+      "legacySpeciesId": "cr-123-veilwhisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-196-darklilt",
@@ -12744,7 +13329,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-195-veilwhisk",
-      "legacySpeciesId": "cr-124-darklilt"
+      "legacySpeciesId": "cr-124-darklilt",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-197-spectrill",
@@ -12814,7 +13402,10 @@
         "speciesId": "cr-198-glimmergeist",
         "minLevel": 23
       },
-      "legacySpeciesId": "cr-139-spectrill"
+      "legacySpeciesId": "cr-139-spectrill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-198-glimmergeist",
@@ -12880,7 +13471,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-197-spectrill",
-      "legacySpeciesId": "cr-140-glimmergeist"
+      "legacySpeciesId": "cr-140-glimmergeist",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-199-mirelet",
@@ -12951,7 +13545,10 @@
         "minLevel": 12,
         "stone": "Venom Stone"
       },
-      "legacySpeciesId": "cr-150-mirelet"
+      "legacySpeciesId": "cr-150-mirelet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-200-toxipup",
@@ -13026,7 +13623,10 @@
           "minimum": 1
         }
       },
-      "legacySpeciesId": "cr-151-toxipup"
+      "legacySpeciesId": "cr-151-toxipup",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-201-sporefang",
@@ -13092,7 +13692,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-200-toxipup",
-      "legacySpeciesId": "cr-152-sporefang"
+      "legacySpeciesId": "cr-152-sporefang",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-202-vialisk",
@@ -13161,7 +13764,10 @@
         "speciesId": "cr-203-noxmink",
         "minLevel": 18
       },
-      "legacySpeciesId": "cr-153-vialisk"
+      "legacySpeciesId": "cr-153-vialisk",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-203-noxmink",
@@ -13227,7 +13833,10 @@
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "evolvesFrom": "cr-202-vialisk",
-      "legacySpeciesId": "cr-154-noxmink"
+      "legacySpeciesId": "cr-154-noxmink",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-204-shiverkin",
@@ -13293,7 +13902,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-100-shiverkin"
+      "legacySpeciesId": "cr-100-shiverkin",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-205-pallowl",
@@ -13359,7 +13971,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-141-pallowl"
+      "legacySpeciesId": "cr-141-pallowl",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-206-kickquill",
@@ -13425,7 +14040,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-189-kickquill"
+      "legacySpeciesId": "cr-189-kickquill",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-207-comboon",
@@ -13491,7 +14109,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-196-comboon"
+      "legacySpeciesId": "cr-196-comboon",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-208-blizzlet",
@@ -13556,7 +14177,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-096-blizzlet"
+      "legacySpeciesId": "cr-096-blizzlet",
+      "genderRatio": {
+        "malePercent": 50
+      }
     },
     {
       "speciesId": "cr-209-drakoryn",
@@ -13622,7 +14246,10 @@
         "spritePath": null
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
-      "legacySpeciesId": "cr-198-drakoryn"
+      "legacySpeciesId": "cr-198-drakoryn",
+      "genderRatio": {
+        "malePercent": null
+      }
     }
   ],
   "encounterBalanceVersion": 2

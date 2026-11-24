@@ -487,7 +487,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=88-roster-replacement',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=98-gender-ratios',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -496,11 +496,34 @@ async function loadCritterMoveData(){
      {if(sp.art?.status==='ready'&&!completeCritterArt(sp.art))sp.art={...sp.art,status:'awaiting-upload'};speciesRegistry.set(sp.speciesId,sp);}
   speciesDataReady=true;
  }catch(err){console.warn('Critter species registry unavailable; type placeholders remain available',err)}
- if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){if(isEgg(p))continue;refreshSpeciesMetadata(p);normalizeMoves(p)}migrateCollection();save();if(indexTab==='encyclopedia'&&encyclopediaSection==='critters'&&screen==='game'&&!battle)renderIndex()}
+ if(s){migrateSpeciesIds();for(const p of [...s.party,...s.storage]){if(isEgg(p))continue;refreshSpeciesMetadata(p);normalizeMoves(p)}migrateHomestead();migrateCollection();save();if(indexTab==='encyclopedia'&&encyclopediaSection==='critters'&&screen==='game'&&!battle)renderIndex()}
  if(battle){for(const p of battle.enemies)normalizeMoves(p);if(battle.phase==='choose')renderBattle('Move library loaded. Choose your team’s actions.')}
 }
 
-function critterGenderLabel(p){return p?.gender==='male'?' ♂':p?.gender==='female'?' ♀':'';}
+function speciesGenderRatio(sp){
+ if(breedingLegendary(sp)||sp?.genderRatio?.malePercent===null)return null;
+ const n=sp?.genderRatio?.malePercent;return Number.isFinite(n)?Math.max(0,Math.min(100,n)):50;
+}
+function rollSpeciesGender(sp,rng=Math.random){const ratio=speciesGenderRatio(sp);return ratio===null?'genderless':rng()*100<ratio?'male':'female'}
+function normalizeCritterGender(p){
+ if(!p||isEgg(p))return p;
+ const sp=speciesFor(p);
+ if(sp&&speciesGenderRatio(sp)===null)p.gender='genderless';
+ else if(!['male','female'].includes(p.gender)&&!(p.gender==='genderless'&&!sp)){
+  // A legacy save may load before the species catalog. Defer its first roll.
+  if(p.speciesId&&!sp&&!speciesDataReady)return p;
+  p.gender=rollSpeciesGender(sp);
+ }
+ return p;
+}
+function normalizeEggGender(e){
+ const sp=speciesRegistry.get(e.speciesId);
+ if(!sp)return e.gender;
+ if(speciesGenderRatio(sp)===null)e.gender='genderless';
+ else if(!['male','female'].includes(e.gender))e.gender=rollSpeciesGender(sp);
+ return e.gender;
+}
+function critterGenderLabel(p){return p?.gender==='male'?' ♂':p?.gender==='female'?' ♀':p?.gender==='genderless'?' · Genderless':'';}
 function critter(type,level=5){
  level=Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(level)||1)));
  const spec=speciesRegistry.get(type);
@@ -1999,7 +2022,7 @@ function advanceFarmBreeding(){
   pair.progress=Math.min(pair.required,(Number(pair.progress)||0)+1);
   if(pair.progress>=pair.required){
    pair.egg={speciesId:pair.speciesId,rarity:pair.rarity,parents:pair.parents.map(p=>JSON.parse(JSON.stringify(p))),progress:0};
-   normalizeEggGenetics(pair.egg);
+   normalizeEggGenetics(pair.egg);normalizeEggGender(pair.egg);
    completed=true;notifyWorld('An egg is ready to collect at your farm!');
   }
  }
@@ -2052,7 +2075,7 @@ function hatchEgg(from,i){
  const home=farmSlots(),e=party?(isEgg(s.party[i])?s.party[i].egg:null):home.incubators[i];
  if(!eggReady(e)||!speciesRegistry.has(e.speciesId))return null;
  const newborn=critter(e.speciesId,1);
- newborn.genetics=normalizeEggGenetics(e);newborn.hp=newborn.maxHp=combatStat(newborn,'hp');
+ newborn.gender=normalizeEggGender(e);newborn.genetics=normalizeEggGenetics(e);newborn.hp=newborn.maxHp=combatStat(newborn,'hp');
  newborn.breedingParents=e.parents||[];
  if(party)s.party[i]=newborn;else{home.incubators[i]=null;s.storage.push(newborn)}
  const c=collectionData(),stamp=encounterStamp(),id=newborn.speciesId;
@@ -2079,9 +2102,9 @@ function migrateHomestead(){
  s.homestead={...old,offered:!!old.offered||!!old.owned,owned:!!old.owned,stage:old.owned?Math.max(1,Math.min(4,Math.floor(Number(old.stage)||1))):0};
  if(s.area==='homesteadHome'&&!s.homestead.owned){s.area='homestead';s.x=17;s.y=13}
  const home=farmSlots();
- for(const pair of home.pairs){if(pair?.egg)normalizeEggGenetics(pair.egg);for(const p of pair?.parents||[])if(p)normalizeGenetics(p)}
- for(const e of home.incubators)if(e)normalizeEggGenetics(e);
- for(const p of s.party||[])if(isEgg(p))normalizeEggGenetics(p.egg);
+ for(const pair of home.pairs){if(pair?.egg){normalizeEggGenetics(pair.egg);normalizeEggGender(pair.egg)}for(const p of pair?.parents||[])if(p){normalizeGenetics(p);normalizeCritterGender(p)}}
+ for(const e of home.incubators)if(e){normalizeEggGenetics(e);normalizeEggGender(e)}
+ for(const p of s.party||[])if(isEgg(p)){normalizeEggGenetics(p.egg);normalizeEggGender(p.egg)}
 }
 function talkMomProperty(){
  if(s.homestead.owned)return say(['Mom: I hope you are enjoying your new home!']);
@@ -2256,7 +2279,7 @@ function combatSpeed(side,index){
 function refreshSpeciesMetadata(p){
  if(!p||isEgg(p))return p;
  normalizeGenetics(p);
- if(p.gender!=='male'&&p.gender!=='female')p.gender=Math.random()<0.5?'male':'female';
+ normalizeCritterGender(p);
  const species=speciesFor(p);
  if(species){
   p.type=species.types[0];
