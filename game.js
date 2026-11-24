@@ -1140,7 +1140,7 @@ function sideQuestRewardLabel(q){
 function questUnlocked(q){return !q.requires||s.sideQuests?.[q.requires]?.status==='complete'}
 function questHub(id){
  const quests=SIDE_QUESTS.filter(q=>q.id===id||q.hub===id);
- if(quests.length===1)return talkSideQuest(id);
+ if(!quests.length)return;
  open(quests[0].giver+' · Side Quests','<p>Choose an optional assignment.</p><div class="options">'+quests.map(q=>{
   const state=s.sideQuests?.[q.id],status=state?.status==='complete'?'Completed':!questUnlocked(q)?'Locked':state?'In progress':'Available';
   return '<button class="btn" data-quest-select="'+escapeHtml(q.id)+'" '+(!questUnlocked(q)?'disabled':'')+'>'+escapeHtml(q.title)+' · '+status+'</button>';
@@ -1163,7 +1163,7 @@ function talkSideQuest(id,refresh=false){
   +(ready?'<button class="btn primary" id="questClaim">Claim reward</button>':'')
   +(!state?'<button class="btn primary" id="questAccept">Accept quest</button>':'')
   +(state?.status==='active'&&q.kind==='trainer'&&!ready?'<button class="btn primary" id="questBattle">Start friendly battle</button>':'')
-  +'<button class="btn" id="questClose">Leave</button></div>');
+  +'<button class="btn" id="questClose">Back to quests</button></div>');
  if($('questAccept'))$('questAccept').onclick=()=>{
   s.sideQuests[q.id]={status:'active',baseline:q.kind==='captures'?(s.questCaptureCounts?.[q.captureArea]||0):0};
   save();indexNotice('Quest accepted: '+q.title+'.');talkSideQuest(q.id,true);
