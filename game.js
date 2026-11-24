@@ -319,7 +319,21 @@ function buildVillageColliders(){
 // Phase 1: curated indoor scenes. Objects share one definition for rendering,
 // inspection and solid footprints. No party swapping/module work outside Centers.
 let interiorObjects=[],interiorBlocked=new Set();
-const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area);
+const TOWN_ROOMS=Object.freeze({
+ townHouseA:{parent:'town',name:'Small Town Residence',kind:'home',door:[8,11]},
+ townCenter:{parent:'town',name:'Small Town Critter Center',kind:'center',door:[25,11]},
+ townShop:{parent:'town',name:'Small Town Critter Shop',kind:'shop',door:[8,22]},
+ townHouseB:{parent:'town',name:'Small Town Guest House',kind:'home',door:[25,22]},
+ gardenCenter:{parent:'garden',name:'Garden Town Critter Center',kind:'center',door:[6,8]},
+ gardenHouse:{parent:'garden',name:'Garden Residence',kind:'home',door:[7,23]},
+ gardenShop:{parent:'garden',name:'Garden Town Critter Shop',kind:'shop',door:[25,23]}
+});
+const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)||Object.hasOwn(TOWN_ROOMS,area);
+function townDoorAt(x,y){return Object.entries(TOWN_ROOMS).find(([id,d])=>d.parent===s.area&&d.door[0]===x&&d.door[1]===y)?.[0]||null}
+function enterTownRoom(id){if(!TOWN_ROOMS[id])return;recordWalkingStep();return region(id,17,23,'',true)}
+function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
+function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
+
 function addInteriorObject(id,x,y,w,h,kind,title,description,action=''){
  const o={id,x,y,w,h,kind,title,description,action};
  interiorObjects.push(o);
@@ -329,7 +343,29 @@ function addInteriorObject(id,x,y,w,h,kind,title,description,action=''){
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
  // Always maintain a free central aisle and unobstructed exit at (17,25).
- if(area==='homesteadHome'){
+ if(TOWN_ROOMS[area]){
+  const room=TOWN_ROOMS[area],add=(id,x,y,w,h,kind,title,desc,action='')=>addInteriorObject(area+'-'+id,x,y,w,h,kind,title,[desc],action);
+  if(room.kind==='center'){
+   add('reception',11,7,12,2,'counter','Reception Counter','Speak to the nurse at the reception desk for healing and Index maintenance.','center');
+   add('diagnostics',4,5,5,4,'terminal','Diagnostic Station','Equipment for checking Critter health and the Index.');
+   add('monitor',25,5,5,4,'counter','Treatment Station','Medical supplies and monitoring equipment are neatly arranged.');
+   add('shelf',4,15,4,3,'bookshelf','Reference Shelf','Guides to Critter care and recovery.');
+   add('storage',25,16,4,3,'chest','Supply Cabinet','Emergency medical supplies.');
+   add('waiting',10,16,4,2,'table','Waiting Area','Travelers can rest here.');
+  }else if(room.kind==='shop'){
+   add('checkout',11,7,12,2,'counter','Checkout Counter','Browse supplies, stones, capture-beam charging and battery upgrades.','shop');
+   add('stock1',4,5,4,5,'bookshelf','Healing Supplies','Potions and Revives are arranged on the shelves.');
+   add('stock2',26,5,4,5,'bookshelf','Index Accessories','Batteries and modules are displayed here.');
+   add('display',5,15,5,3,'display','Evolution Stones','A display of colorful evolution stones.');
+   add('stockroom',25,16,4,3,'chest','Stock Crates','Sealed crates of merchandise.');
+  }else{
+   add('bed',5,6,6,4,'bed','Futon','A neatly arranged sleeping area.');
+   add('table',22,11,5,3,'table','Tea Table','A quiet place to share tea.');
+   add('shelf',5,16,4,4,'bookshelf','Bookshelf','Local field guides and family keepsakes.');
+   add('cabinet',26,17,4,3,'chest','Storage Cabinet','Household supplies.');
+   add('plant',25,5,3,3,'display','Potted Plant','A carefully tended houseplant.');
+  }
+ }else if(area==='homesteadHome'){
   addInteriorObject('estate-bed',5,6,6,4,'bed','Your Bed',['Rest and restore your Critters.'],'estate-rest');
   addInteriorObject('estate-terminal',24,6,4,3,'terminal','Home Terminal',['Manage your property.'],'estate-terminal');
   addInteriorObject('estate-storage',26,19,4,2,'chest','Home Storage',['Access your shared family storage.'],'estate-storage');
@@ -404,6 +440,8 @@ function furnishInterior(area){
  }
 }
 function inspectInterior(o){
+ if(o.action==='center')return center();
+ if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
  if(o.action==='estate-rest'&&s.homestead?.owned){s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)});save();return notifyWorld('You rested. Your party has fully recovered.');}
  if(o.action==='estate-terminal'&&s.homestead?.owned)return homesteadTerminal();
@@ -949,7 +987,7 @@ function migrate(){
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
- s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern'].includes(s.area))s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern'].includes(s.area)&&!TOWN_ROOMS[s.area])s.area='village';
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
@@ -1317,6 +1355,14 @@ function build(preview=false){
  npc(12,14,['Welcome to the valley! The scientist works in the northeast laboratory.']);
  npc(22,15,['Follow the eastern road toward Route 1!']);
  break;
+ case 'townHouseA':case 'townHouseB':case 'gardenHouse':case 'townCenter':case 'gardenCenter':case 'townShop':case 'gardenShop':{
+  borders(T.wall);put(17,25,T.door);furnishInterior(s.area);
+  const room=TOWN_ROOMS[s.area];
+  if(room.kind==='center')npc(17,6,['Welcome to the Critter Center.'],'center');
+  else if(room.kind==='shop')npc(17,6,['Welcome to the Critter Shop.'],'shop');
+  else npc(14,11,['Welcome to our home.','Travel safely on the regional trails.']);
+  break;
+ }
  case 'home':
  case 'neighbor':
  borders(T.wall);put(17,25,T.door);
@@ -1374,8 +1420,8 @@ function build(preview=false){
  case 'town':
  borders();roads();rect(16,8,2,5,T.path);rect(16,15,2,7,T.path);houses([[4,5,8,5],[21,5,9,5],[4,17,8,4],[21,17,9,4]]);
  npc(9,12,['Welcome to the town between the rice fields and the bamboo woods!']);
- npc(23,12,['Critter Center technicians heal your party and maintain your Index.'],'center');
- npc(14,18,['Welcome to the supply shop!'],'shop');
+ npc(23,13,['The Critter Center is just north of here. Go inside for healing and Index maintenance.']);
+ npc(14,18,['The supply shop is southwest of here.']);
  npc(16,10,['This town is a good place to rest before Route 2.'],'sidequest','bamboo-survey');
  break;
  case 'route2':
@@ -1408,8 +1454,8 @@ function build(preview=false){
  for(let x=12;x<19;x++)for(let y=3;y<11;y++)if((x+y)%4===0)put(x,y,T.flower);
  rect(11,16,8,6,T.water);rect(14,16,2,6,T.path);
  npc(7,12,['Garden Town is famous for koi ponds, lanterns and the Grass Gym.'],'sidequest','garden-memorial');
- npc(14,13,['Welcome to the Garden Town Critter Center!'],'center');
- npc(20,15,['Need supplies before the Gym?'],'shop');
+ npc(14,13,['The Critter Center is in the northwest of Garden Town.']);
+ npc(20,15,['Visit the shop in the southeast for supplies before the Gym.']);
  npc(25,11,['The Grass Gym entrance is directly north.','Inside is an overgrown hedge maze.']);
  break;
  case 'gym':
@@ -2129,6 +2175,7 @@ function interiorArtPlan(area,o){
  'neighbor-bamboo':['plant-terracotta']
  };
  if(byId[o.id])return byId[o.id];
+ if(TOWN_ROOMS[area]){if(o.kind==='terminal')return ['workstation'];if(o.kind==='counter')return o.id.endsWith('-monitor')?['counter-straight','monitor-wave']:['counter-straight'];if(o.kind==='chest')return ['crate-wide'];if(o.kind==='display')return ['glass-display'];}
  if(o.kind==='bookshelf')return ['book-shelf'];
  return [];
 }
@@ -2170,14 +2217,15 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  // Continuous plank flooring rather than visually isolated square wood tiles.
  const estate=s.area==='homesteadHome';const style=(slot,fallback)=>estate?cosmeticColor(slot,fallback):fallback;
  box(0,0,W,H,style('floor','#8e7258'));
- const floorArt=s.area==='lab'?'ceramic-floor-01':'wood-floor-01';
+ const clinical=s.area==='lab'||TOWN_ROOMS[s.area]?.kind==='center';
+ const floorArt=clinical?'ceramic-floor-01':'wood-floor-01';
  if(!(estate&&activeCosmetic('floor'))&&interiorTexture(floorArt,0,0,W,H,ox,oy,viewW,viewH)){}else{
  for(let y=0;y<H;y+=1.22)line(0,y,W,y,'#6c523f',2);
  for(let x=0;x<W;x+=6)line(x,0,x,H,'#ae9170',1.5);
  for(let y=0;y<H;y+=2.44)for(let x=((y*7)%2)*3;x<W;x+=6)line(x,y,x,y+1.22,'#74563f',1.5);
  }
  // Tatami lounge sections and softly shaded edge bindings.
- const tatami=s.area==='lab'?[[12,15,9,5]]:[[11,6,11,6],[12,15,9,5]];
+ const tatami=TOWN_ROOMS[s.area]?.kind==='center'||TOWN_ROOMS[s.area]?.kind==='shop'?[]:s.area==='lab'?[[12,15,9,5]]:[[11,6,11,6],[12,15,9,5]];
  for(const [x,y,w,h] of tatami){
   box(x,y,w,h,'#b9ad83');
   box(x+.10,y+.10,w-.20,h-.20,'#d9c99b');
@@ -2624,7 +2672,7 @@ const OUTDOOR_GRID=Object.freeze({
  homestead:[0,1],village:[1,1],route1:[2,1],town:[3,1],garden:[4,1],
  forest:[2,0],route2:[3,0],route3:[4,0]
 });
-const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome','grotto','ruins','cavern']);
+const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome','grotto','ruins','cavern',...Object.keys(TOWN_ROOMS)]);
 
 /* Per-column widths and per-row heights keep outdoor sections edge-aligned
    while giving the seven areas substantially different playable footprints. */
@@ -3059,6 +3107,8 @@ function move(d){
  if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking()||trainerApproachLocked())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
+ const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
+ if(TOWN_ROOMS[s.area]&&x===17&&y===25)return exitTownRoom();
  if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned){recordWalkingStep();return region('homesteadHome',17,23)}
  if(s.area==='homesteadHome'&&x===17&&y===25){recordWalkingStep();return region('homestead',9,10)}
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
@@ -3102,7 +3152,8 @@ function canInteractAhead(){
  if(pastureGateAt(x,y)>=0)return true;
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return true;
  if(s.area==='homesteadHome'&&x===17&&y===25)return true;
- if(villageDoorAt(x,y))return true;
+ if(villageDoorAt(x,y)||townDoorAt(x,y))return true;
+ if(TOWN_ROOMS[s.area]&&x===17&&y===25)return true;
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25)return true;
  if(isInterior(s.area)&&interiorObjects.some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return true;
  if(route1SiteAt(x,y)||explorationObjectAt(s.area,x,y)||secretEntranceAt(s.area,x,y))return true;
@@ -3137,6 +3188,8 @@ function interact(){
  return say(npcRoutineDialogue(p))}
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return region('homesteadHome',17,23);
  if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
+ const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
+ if(TOWN_ROOMS[s.area]&&x===17&&y===25)return exitTownRoom();
  const door=villageDoorAt(x,y);
  if(door)return openVillageDoor(door);
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
@@ -3624,6 +3677,7 @@ const REGION_MAP_PLACES=[
  {id:'garden',name:'Garden Town',x:72,y:73,kind:'center',spawn:[14,14]}
 ];
 const REGION_MAP_INTERIORS=[
+ ...Object.entries(TOWN_ROOMS).map(([id,d])=>({id,name:d.name,parent:d.parent})),
  {id:'home',name:'Family Home',parent:'village'},
  {id:'homesteadHome',name:'Personal Home',parent:'homestead'},
  {id:'neighbor',name:'Village Home',parent:'village'},
@@ -3692,7 +3746,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.28</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.29</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -5371,8 +5425,8 @@ function blackout(){
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
- ensureMapDiscovery();if(REGION_MAP_PLACES.some(p=>p.id===s.area&&p.kind==='center'))s.discoveredCenters[s.area]=true;
- s.lastCenter=s.area;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)});save();indexNotice('Your party has been fully healed.');
+ ensureMapDiscovery();const parent=townServiceParent();if(REGION_MAP_PLACES.some(p=>p.id===parent&&p.kind==='center'))s.discoveredCenters[parent]=true;
+ s.lastCenter=parent;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)});save();indexNotice('Your party has been fully healed.');
  open('Critter Center','<p>Manage party storage or install modules.</p><div class="options"><button class="btn" id="manageParty">Manage Party / Home Storage</button><button class="btn" id="manageModules">Install Critter Index Modules</button><button class="btn" id="centerDone">Leave</button></div>');
  $('manageParty').onclick=manageParty;$('manageModules').onclick=manageModules;$('centerDone').onclick=close
 }
