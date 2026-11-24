@@ -2468,7 +2468,7 @@ const OUTDOOR_GRID=Object.freeze({
  homestead:[0,1],village:[1,1],route1:[2,1],town:[3,1],garden:[4,1],
  forest:[2,0],route2:[3,0],route3:[4,0]
 });
-const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome']);
+const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome','grotto','ruins','cavern']);
 
 /* Per-column widths and per-row heights keep outdoor sections edge-aligned
    while giving the seven areas substantially different playable footprints. */
@@ -3428,7 +3428,10 @@ const REGION_MAP_INTERIORS=[
  {id:'homesteadHome',name:'Personal Home',parent:'homestead'},
  {id:'neighbor',name:'Village Home',parent:'village'},
  {id:'lab',name:'Research Laboratory',parent:'village'},
- {id:'gym',name:'Grass Gym',parent:'garden'}
+ {id:'gym',name:'Grass Gym',parent:'garden'},
+ {id:'grotto',name:'Bamboo Grotto',parent:'route2'},
+ {id:'ruins',name:'Forgotten Ruins',parent:'forest'},
+ {id:'cavern',name:'Crystal Cavern',parent:'cave'}
 ];
 function ensureMapDiscovery(){
  if(!s)return;
@@ -3716,7 +3719,7 @@ function collectionCounts(){
  const c=collectionData(),ids=[...speciesRegistry.keys()];
  return {total:ids.length,seen:ids.filter(id=>!!c.seen[id]||!!c.caught[id]).length,captured:ids.filter(id=>!!c.caught[id]).length};
 }
-function encounterStamp(){return {day:Number.isFinite(s?.worldDay)?Math.max(1,Math.floor(s.worldDay)):1,area:s?.area||'unknown'}}
+function encounterStamp(){return {day:Number.isFinite(s?.worldDay)?Math.max(1,Math.floor(s.worldDay)):1,area:SECRET_AREAS[s?.area]?.parent||s?.area||'unknown'}}
 function noteCritterSeen(p){
  const id=p?.speciesId;
  if(!validCollectionSpecies(id))return false;
@@ -4131,7 +4134,7 @@ function encounterWeight(sp,area){
  return Math.max(0,weight);
 }
 function chooseWildSpecies(area,roll=Math.random()){
- const pool=encounterSpeciesFor(area),weights=pool.map(sp=>encounterWeight(sp,area));
+ const pool=encounterSpeciesFor(area),weights=pool.map(sp=>{const weight=encounterWeight(sp,area);const rarity=wildHabitat(sp,area)?.rarity;return SECRET_AREAS[s?.area]?.parent===area&&['grotto','cavern'].includes(s.area)&&rarity==='rare'?weight*1.5:weight});
  const total=weights.reduce((a,b)=>a+b,0);if(total<=0)return null;
  let target=Math.max(0,Math.min(.999999999,roll))*total;
  for(let i=0;i<pool.length;i++){target-=weights[i];if(target<0)return pool[i]}
