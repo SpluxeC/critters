@@ -804,6 +804,47 @@ function npcRoutineDialogue(p){
  const lines={'Resting':'It is late. I am resting until morning.','Preparing breakfast':'Good morning! I am getting ready for the day.','Housework':'I am taking care of things around the house.','Relaxing':'It is nice to unwind after a long day.','Walking':'I am enjoying a little walk.','Checking fields':'I am checking the fields before work.','Tending rice':'The rice needs tending today.','Finishing work':'I am finishing up before nightfall.','Working':'There is plenty of work to do today.','Reviewing notes':'I am reviewing the research notes tonight.'};
  return lines[task]?[lines[task],...p.text]:p.text;
 }
+// Residential schedules only apply to ambient residents with known building entrances.
+// Story, quest and service NPCs never leave their assigned area.
+function npcResidence(area,p){
+ if(p.kind)return null;
+ if(area==='village')return {x:27,y:23,doorY:22,interior:'neighbor'};
+ if(area==='town'&&p.homeX===9&&p.homeY===12)return {x:8,y:12,doorY:11};
+ return null;
+}
+function npcNight(hour=worldHour()){return hour<5||hour>=20}
+function npcEnterResidence(p,home,now){
+ p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting';
+ p.nextRoutine=now+500;
+ if(s.area==='village')npcResidenceDoor={x:home.x,y:home.doorY,until:now+320};
+}
+let npcResidenceDoor=null;
+function tickNpcResidence(p,now){
+ const home=npcResidence(s.area,p);if(!home)return false;
+ if(npcNight()){
+  if(p.indoors)return true;
+  p.task='Returning home';
+  if(p.x===home.x&&p.y===home.y){npcEnterResidence(p,home,now);return true}
+  const step=npcFindStep(p,home.x,home.y,W+H,true,true);
+  if(step)npcBeginWalk(p,step,now);
+  p.nextRoutine=now+(step?500:1200);return true;
+ }
+ if(p.indoors){
+  if(!npcStepAllowed(p,home.x,home.y,true,true)){p.nextRoutine=now+500;return true}
+  p.indoors=false;p.x=home.x;p.y=home.y;p.face='down';npcFinishWalk(p);
+  p.returningToPost=true;p.nextRoutine=now+500;
+  if(s.area==='village')npcResidenceDoor={x:home.x,y:home.doorY,until:now+320};
+  return true;
+ }
+ if(p.returningToPost){
+  p.task='Walking';
+  if(p.x===p.homeX&&p.y===p.homeY){p.returningToPost=false;return false}
+  const step=npcFindStep(p,p.homeX,p.homeY,W+H,true,true);
+  if(step)npcBeginWalk(p,step,now);
+  p.nextRoutine=now+(step?500:1200);return true;
+ }
+ return false;
+}
 function npcRoutinePlan(area,p,hour,starter){
  const x=p.homeX,y=p.homeY;
  if(NPC_PATROLS[p.id])return {task:'Patrolling',points:NPC_PATROLS[p.id],patrol:true};
@@ -828,21 +869,23 @@ function npcReservedCell(area,x,y,w,h){
  // Avoid main road crossings and regional portals; patrols get separate explicit permission.
  return false;
 }
-function npcStepAllowed(p,x,y,patrol=false){
- if(npcReservedCell(s.area,x,y,W,H)||solidAt(x,y)||tiles[y]?.[x]===T.door)return false;
+function npcStepAllowed(p,x,y,patrol=false,residential=false){
+ const home=residential&&npcResidence(s.area,p);
+ const doorstep=home&&Math.abs(x-home.x)<=1&&y>=home.y&&y<=home.y+1;
+ if((npcReservedCell(s.area,x,y,W,H)&&!doorstep)||solidAt(x,y)||tiles[y]?.[x]===T.door)return false;
  if(s.x===x&&s.y===y||npcs.some(q=>q!==p&&((q.x===x&&q.y===y)||(q.walking&&q.fromX===x&&q.fromY===y)||(q.homeX===x&&q.homeY===y))))return false;
  if(explorationSiteAt(s.area,x,y))return false;
  if(!patrol&&tiles[y]?.[x]===T.path&&y>=12&&y<=14&&OUTDOOR_GRID[s.area]&&!(x===p.homeX&&y===p.homeY))return false;
  return true;
 }
-function npcFindStep(p,tx,ty,radius,patrol=false){
+function npcFindStep(p,tx,ty,radius,patrol=false,residential=false){
  if(p.x===tx&&p.y===ty)return null;
  const q=[{x:p.x,y:p.y,first:null}],seen=new Set([key(p.x,p.y)]);
- for(let i=0;i<q.length&&i<100;i++){
+ for(let i=0;i<q.length&&i<(residential?W*H:100);i++){
   const a=q[i];
   for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
    const x=a.x+dx,y=a.y+dy,k=key(x,y);
-   if(seen.has(k)||Math.abs(x-p.homeX)+Math.abs(y-p.homeY)>radius||!npcStepAllowed(p,x,y,patrol))continue;
+   if(seen.has(k)||Math.abs(x-p.homeX)+Math.abs(y-p.homeY)>radius||!npcStepAllowed(p,x,y,patrol,residential))continue;
    seen.add(k);const first=a.first||{x,y};if(x===tx&&y===ty)return first;q.push({x,y,first});
   }
  }
@@ -923,6 +966,7 @@ function tickNpcRoutines(now=performance.now()){
  for(const p of npcs){
   if(p.walking){if(now-p.walkStart<p.walkDuration)continue;npcFinishWalk(p)}
   if(now<(p.pauseUntil||0)||now<(p.nextRoutine||0))continue;
+  if(tickNpcResidence(p,now))continue;
   const plan=npcRoutinePlan(s.area,p,worldHour(),s.starter);
   if(!plan)continue;
   p.task=plan.task;
@@ -1016,7 +1060,7 @@ function sideQuestIndex(){
   +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
 }
 function build(preview=false){
- if(!preview){cancelTrainerApproach();migrate()}
+ if(!preview){cancelTrainerApproach();npcResidenceDoor=null;migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
  case 'homestead':{
@@ -1069,6 +1113,7 @@ function build(preview=false){
  borders(T.wall);put(17,25,T.door);
  furnishInterior(s.area);
  npc(14,11,s.area==='home'?['Your family is happy you came home.','The research lab has been preparing for your first journey.']:['Welcome! We have tea if you want to rest a moment.','The rice paddies look beautiful at sunset.']);
+ if(s.area==='neighbor'&&npcNight()){npc(12,10,['Welcome to our home. We are resting for the night.']);npc(20,10,['We will head back outside in the morning.'])}
  break;
  case 'lab':
  borders(T.wall);put(17,25,T.door);
@@ -1187,6 +1232,8 @@ function build(preview=false){
  }
  decorateExpandedOutdoor();
  prepareOutdoorPortals();
+ // Reconstruct overnight occupancy from saved time, including preview chunks.
+ if(npcNight())for(const p of npcs){if(npcResidence(s.area,p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
  if(!preview){
   snapVisual();
   if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null});
@@ -1638,8 +1685,8 @@ function drawVillageDetails(ox,oy,viewW,viewH){
    ctx.fillStyle='#64585c';ctx.fillRect(px,py,w,h.h*S);
    ctx.fillStyle='#d9c5a2';ctx.fillRect(px,py+h.h*S,w,2*S);
   }
-  if(doorTransition?.house===h){
-   const t=Math.min(1,(performance.now()-doorTransition.start)/220);
+  if(doorTransition?.house===h||(npcResidenceDoor?.x===h.door&&npcResidenceDoor.y===h.y+h.h+1&&npcResidenceDoor.until>performance.now())){
+   const t=doorTransition?.house===h?Math.min(1,(performance.now()-doorTransition.start)/220):.8;
    const doorX=(h.door+.06)*S-ox,doorY=(h.y+h.h+.28)*S-oy;
    ctx.fillStyle='#1f1d20';ctx.fillRect(doorX,doorY,28,40);
    ctx.fillStyle='#b48757';ctx.fillRect(doorX+2,doorY+2,Math.max(0,26*(1-t)),36);
@@ -2632,6 +2679,7 @@ function drawOutdoorWorld(){
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
   if(area==='homestead'&&s.homestead?.owned)drawLivingPastures(localOX,localOY,vw,vh);
   for(const npc of npcs){
+   if(npc.indoors)continue;
    const pos=npcVisualPosition(npc),x=pos.x*S+16-localOX,y=pos.y*S+32-localOY;
    if(x< -40||x>vw+40||y< -70||y>vh+40)continue;
    ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
