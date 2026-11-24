@@ -80,47 +80,94 @@ function drawUploadedFit(name,x,y,w,h){
  const k=Math.min(w/im.naturalWidth,h/im.naturalHeight),iw=im.naturalWidth*k,ih=im.naturalHeight*k;
  return drawUploadedArt(name,x+(w-iw)/2,y+h-ih,iw,ih);
 }
+// Dedicated 4x4 sheets share the existing researcher direction convention.
+const NPC_DEDICATED_ROWS=Object.freeze({down:0,up:1,left:2,right:3});
+const npcFrameCache=new WeakMap();
 function uploadedNpcName(p,area){
  if(area==='home'&&p.x===14&&p.y===11)return 'npc-mother';
  if(p.kind==='center')return 'npc-center-nurse';
  if(p.id==='farmer-fieldwork')return 'npc-rice-farmer';
- if(area==='gym'&&p.kind==='leader')return 'npc-gym-leader-grass';
+ if(p.kind==='rival'||p.id==='rival')return 'npc-rival';
+ if(p.kind==='leader'&&area==='gym')return 'npc-gym-leader-grass';
+ if(p.kind==='leader'&&p.id==='water-leader')return 'npc-gym-leader-water';
+ if(p.kind==='researcher')return 'npc-researcher';
+ if(p.kind==='labassistant')return 'npc-lab-assistant';
  return null;
 }
+function npcSheetMetrics(im){
+ if(!im||!im.complete||im.naturalWidth!==128||im.naturalHeight!==128)return null;
+ if(npcFrameCache.has(im))return npcFrameCache.get(im);
+ const result=[];
+ try{
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const c=canvas.getContext('2d',{willReadFrequently:true});if(!c)return null;
+  c.drawImage(im,0,0);const data=c.getImageData(0,0,128,128).data;
+  for(let row=0;row<4;row++){
+   const frames=[];
+   for(let col=0;col<4;col++){
+    let minX=32,minY=32,maxX=-1,maxY=-1;
+    for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+     if(data[((row*32+y)*128+col*32+x)*4+3]<24)continue;
+     minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);
+    }
+    if(maxX<0){frames.push(null);continue}
+    let sum=0,n=0;
+    for(let y=minY+Math.floor((maxY-minY)*.2);y<=minY+Math.floor((maxY-minY)*.65);y++)for(let x=minX;x<=maxX;x++){
+     if(data[((row*32+y)*128+col*32+x)*4+3]>=100){sum+=x;n++}
+    }
+    frames.push({sx:col*32+minX,sy:row*32+minY,sw:maxX-minX+1,sh:maxY-minY+1,anchorX:(n?sum/n:(minX+maxX)/2)-minX+.5});
+   }
+   result.push(frames);
+  }
+ }catch(e){npcFrameCache.set(im,null);return null}
+ npcFrameCache.set(im,result);return result;
+}
+function npcWalkColumn(moving,now,start=0){
+ if(!moving)return 0;
+ return [0,1,2,3][Math.floor(Math.max(0,now-start)/130)%4];
+}
+function npcFaceToward(p,x,y){
+ const dx=x-p.x,dy=y-p.y;
+ if(!dx&&!dy)return p.face||'down';
+ return Math.abs(dx)>Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down');
+}
+function drawDedicatedNpc(im,p,x,y,now=performance.now()){
+ if(!im||!im.complete||im.naturalWidth!==128||im.naturalHeight!==128)return false;
+ const row=NPC_DEDICATED_ROWS[p.face]??0;
+ // Movement support is opt-in; existing stationary actors never change hitboxes.
+ const col=npcWalkColumn(p.walking===true,now,p.walkStart||0);
+ const metrics=npcSheetMetrics(im),f=metrics?.[row]?.[col]||metrics?.[row]?.[0];
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ if(f){
+  const scale=1.8;
+  ctx.drawImage(im,f.sx,f.sy,f.sw,f.sh,x-f.anchorX*scale,y-f.sh*scale,f.sw*scale,f.sh*scale);
+ }else{
+  ctx.drawImage(im,0,row*32,32,32,x-29.5,y-59,59,59);
+ }
+ ctx.restore();return true;
+}
 function drawNpc(p,x,y){
- const name=uploadedNpcName(p,s.area),custom=name&&uploadedArt(name);
- if(custom&&custom.naturalWidth===128&&custom.naturalHeight===128){
-  const row={down:0,up:1,left:2,right:3}[p.face||'down']??0;
-  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(custom,0,row*32,32,32,x-29.5,y-55,59,59);ctx.restore();return;
- }
- // Dedicated lab assistant asset: same 4x4, 32px layout and feet anchor as researcher.
- if(p.kind==='labassistant'&&npcLabAssistant.complete&&npcLabAssistant.naturalWidth===128){
-  const row={down:0,up:1,left:2,right:3}[p.face||'down']??0;
-  const size=59;
-  ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(npcLabAssistant,0,row*32,32,32,x-size/2,y-size+4,size,size);
-  return;
- }
- // Researcher has a dedicated 16-frame transparent PNG matching the player's
- // directional sheet layout. Align at the feet and avoid sideways frame drift.
- if(p.kind==='researcher'&&npcResearcher.complete&&npcResearcher.naturalWidth===128){
-  const direction={down:0,up:1,left:2,right:3}[p.face||'down']??0;
-  const column=0; // Stable standing pose; other columns are available for walking.
-  const size=59;
-  ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(npcResearcher,column*32,direction*32,32,32,x-size/2,y-size+4,size,size);
-  return;
- }
- const im=npcSheet;
- if(im.complete&&im.naturalWidth){
+ const name=uploadedNpcName(p,s.area);
+ const im=name==='npc-researcher'?npcResearcher:name==='npc-lab-assistant'?npcLabAssistant:name?uploadedArt(name):null;
+ if(drawDedicatedNpc(im,p,x,y))return;
+ const legacy=npcSheet;
+ if(legacy.complete&&legacy.naturalWidth){
   const i=p.sprite??0,row=NPC_ROWS[p.face||'down']??0;
-  const w=38,h=42;
-  ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(im,i*32,row*32,32,32,x-w/2,y-h,w,h);
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(legacy,i*32,row*32,32,32,x-19,y-42,38,42);ctx.restore();
  }else{
   ctx.fillStyle='#544c55';ctx.fillRect(x-9,y-30,18,28);
   ctx.fillStyle='#e0aa88';ctx.fillRect(x-7,y-28,14,12);
  }
+}
+function battleTrainerArt(id){
+ if(id==='tutorial'||id==='rival')return 'npc-rival';
+ if(id==='leader')return 'npc-gym-leader-grass';
+ if(id==='water-leader')return 'npc-gym-leader-water';
+ return null;
+}
+function battleTrainerPortrait(id){
+ const name=battleTrainerArt(id);if(!name)return '';
+ return '<span aria-hidden="true" style="display:inline-block;width:32px;height:32px;vertical-align:middle;image-rendering:pixelated;background:url(assets/'+name+'.png) 0 0 / 128px 128px no-repeat"></span> ';
 }
 const villageBuildings={home:new Image(),lab:new Image(),neighbor:new Image()};
 for(const kind of Object.keys(villageBuildings))villageBuildings[kind].src='assets/village-'+kind+'.svg';
@@ -2421,7 +2468,7 @@ function interact(){
  if(modal||doorTransition||worldTransitionBusy)return;if(narratorBlocking())return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
- if(p)p.face={up:'down',down:'up',left:'right',right:'left'}[s.face];
+ if(p)p.face=npcFaceToward(p,s.x,s.y);
  if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.x===14&&p.y===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return talkSideQuest(p.id);
  if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
@@ -2940,7 +2987,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.08</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.09</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -3726,7 +3773,7 @@ function battleHeader(moveOverlay=''){
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
  return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v86</span><span>TEAM TURN '+battle.turn+'</span></div>'
-  +'<div class="combatRoster"><div><div class="rosterTitle">OPPONENT TEAM</div>'+foe+'</div></div>'
+  +'<div class="combatRoster"><div><div class="rosterTitle">'+battleTrainerPortrait(battle.id)+'OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
 }
