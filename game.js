@@ -1489,7 +1489,9 @@ const spriteFrames={male:null,female:null};
 function spriteMetrics(gender){
  if(spriteFrames[gender])return spriteFrames[gender];
  const im=sprites[gender];if(!im.complete||!im.naturalWidth)return null;
- const rows=gender==='female'?3:4,cellW=Math.floor(im.naturalWidth/4),cellH=Math.floor(im.naturalHeight/rows);
+ const rows=gender==='female'?3:4,cellH=Math.floor(im.naturalHeight/rows);
+ // Male sheet centers are approximately 27, 52, 76, 101 on a 128px sheet.
+ const cuts=(gender==='male'?[0,39,64,89,128]:[0,32,64,96,128]).map(v=>Math.round(v*im.naturalWidth/128));
  const canvas=document.createElement('canvas');
  canvas.width=im.naturalWidth;canvas.height=im.naturalHeight;
  const g=canvas.getContext('2d',{willReadFrequently:true});
@@ -1500,22 +1502,23 @@ function spriteMetrics(gender){
  for(let row=0;row<rows;row++){
   const frames=[];
   for(let col=0;col<4;col++){
+   const cellStart=cuts[col],cellW=cuts[col+1]-cellStart;
    let minX=cellW,minY=cellH,maxX=-1,maxY=-1,torsoX=0,torsoN=0;
    for(let y=0;y<cellH;y++)for(let x=0;x<cellW;x++){
-    const alpha=data[((row*cellH+y)*canvas.width+col*cellW+x)*4+3];
+    const alpha=data[((row*cellH+y)*canvas.width+cellStart+x)*4+3];
     if(alpha<24)continue;
     if(x<minX)minX=x;if(y<minY)minY=y;
     if(x>maxX)maxX=x;if(y>maxY)maxY=y;
    }
-   if(maxX<0){frames.push({sx:col*cellW,sy:row*cellH,sw:cellW,sh:cellH,anchorX:cellW/2});continue}
+   if(maxX<0){frames.push({sx:cellStart,sy:row*cellH,sw:cellW,sh:cellH,anchorX:cellW/2});continue}
    // Anchor horizontal position to the upper body, not to swinging legs.
    const torsoTop=minY+Math.floor((maxY-minY)*0.2);
    const torsoBottom=minY+Math.floor((maxY-minY)*0.65);
    for(let y=torsoTop;y<=torsoBottom;y++)for(let x=minX;x<=maxX;x++){
-    if(data[((row*cellH+y)*canvas.width+col*cellW+x)*4+3]>=100){torsoX+=x;torsoN++}
+    if(data[((row*cellH+y)*canvas.width+cellStart+x)*4+3]>=100){torsoX+=x;torsoN++}
    }
    const center=torsoN?torsoX/torsoN:(minX+maxX)/2;
-   frames.push({sx:col*cellW+minX,sy:row*cellH+minY,sw:maxX-minX+1,sh:maxY-minY+1,anchorX:center-minX});
+   frames.push({sx:cellStart+minX,sy:row*cellH+minY,sw:maxX-minX+1,sh:maxY-minY+1,anchorX:center-minX});
   }
   result.push(frames);
  }
@@ -3689,7 +3692,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.27</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.28</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
