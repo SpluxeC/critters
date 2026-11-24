@@ -3533,7 +3533,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.18</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.19</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -4305,19 +4305,21 @@ function battleFigureArtwork(p,side){
  return critterSpriteTag(p,'combatSprite')||'<span class="combatSymbol">'+(symbols[p.type]||'✦')+'</span>';
 }
 function sceneFigure(p,side,i){
- if(!p||p.hp<=0)return '';
- return '<div class="combatFigure '+side+' '+(battle.impact===side&&battle.lastTarget===i?'hit':'')+'" aria-label="'+escapeHtml(p.name||p.type)+'">'
-  +battleFigureArtwork(p,side)+'</div>';
+ if(!p)return '';
+ const fx=battle.lastVfx,attacking=fx?.side===side&&fx.actorIndex===i,receiving=fx?.targetSide===side&&fx.targetIndex===i&&!fx.missed;
+ if(p.hp<=0&&!receiving)return '';
+ return '<div class="combatFigure '+side+(attacking?' actingFx':'')+(receiving?' receivingFx':'')+(p.hp<=0?' faintFx':'')+' '+(battle.impact===side&&battle.lastTarget===i?'hit':'')+'" aria-label="'+escapeHtml(p.name||p.type)+'">'
+  +battleFigureArtwork(p,side)+(receiving?'<span class="targetImpact" aria-hidden="true"></span>':'')+'</div>';
 }
 function battleVisual(){
  const fx=battle?.lastVfx;
  if(!fx)return '';
  const safeType=String(fx.type||'Typeless').replace(/[^a-zA-Z]/g,'');
  const direction=fx.side==='enemy'?'reverse':'forward';
- const typeClass='vfx-'+safeType.toLowerCase();
+ const typeClass='vfx-'+safeType.toLowerCase()+' fx-'+(fx.category==='physical'?'physical':fx.category==='status'?'status':'special')+(fx.targetSide===fx.side?' fx-support':'');
  return '<div class="battleVfx '+typeClass+' '+direction+(fx.missed?' missed':'')+'" aria-hidden="true">'
   +'<span class="battleVfxBeam"></span><span class="battleVfxCore"></span><span class="battleVfxBurst"></span>'
-  +'<span class="battleVfxLabel">'+escapeHtml(fx.name||'Attack')+'</span></div>';
+  +'<span class="battleVfxParticles"></span><span class="battleVfxLabel">'+escapeHtml(fx.name||'Attack')+'</span></div>';
 }
 // Eight approved, creature-free cinematic backgrounds, selected by saved area.
 const BATTLE_SCENE_ART={
@@ -4339,7 +4341,7 @@ function battleHeader(moveOverlay=''){
  const scene=battle.environment||{area:'route1',phase:'Day'};
  return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v86</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">'+battleTrainerPortrait(battle.id)+'OPPONENT TEAM</div>'+foe+'</div></div>'
-  +'<div class="combatArena '+battleEnvironmentClass()+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
+  +'<div class="combatArena '+battleEnvironmentClass()+(battle.mode===2?' arena-doubles':'')+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
 }
 
@@ -4457,7 +4459,7 @@ function renderBattle(message){
    const moveButtons=allMoves.flatMap(id=>{
     const m=getMove(actor,id),remaining=actor.movePP[id]||0;
     const targetsForMove=m.target==='enemy'?targets:
-     m.target==='ally'?activeAllies().filter(a=>a!==i):[i];
+     m.target==='ally'?activeAllies():[i];
     const choices=targetsForMove.length?targetsForMove:(m.target==='ally'?[i]:m.target==='enemy'?[]:[i]);
     return choices.map(target=>{
      const who=m.target==='enemy'?(battle.enemies[target]?.name||battle.enemies[target]?.type):m.target==='ally'?(s.party[target]?.name||s.party[target]?.type):'';
@@ -4488,7 +4490,7 @@ function renderBattle(message){
  }
  open(battle.kind==='wild'?'Wild Encounter':battle.name,battleHeader(moveOverlay)+battleMessage(battle.feedback)
   +(queued?'<div class="combatQueue"><b>Queued:</b> '+escapeHtml(queued)+'</div>':'')
-  +actions+recentBattleLog()+earlyBattleTip());
+  +actions+(battle.phase==='choose'&&battle.pending.length?'<button class="btn" id="undoBattleAction">Undo previous action</button>':'')+recentBattleLog()+earlyBattleTip());
  // A resolved move should animate exactly once. Keep the current DOM's effect,
  // but do not reinsert it on every later Battle/Index/Back menu redraw.
  battle.lastVfx=null;
@@ -4497,6 +4499,7 @@ function renderBattle(message){
  $('close').hidden=true;
  attachCombatNarrator();
  if(battle.phase!=='choose')return;
+ const undo=$('undoBattleAction');if(undo)undo.onclick=()=>{battle.pending.pop();battle.acting=Math.max(0,battle.acting-1);battle.uiMenu='root';renderBattle('Previous action removed. Choose again.')};
  const menuTo=(next)=>{battle.uiMenu=next;renderBattle()};
  if($('menuBattle'))$('menuBattle').onclick=()=>{
   const next=mode==='battle'?'root':'battle';
@@ -4537,7 +4540,9 @@ function queueBattleAction(action){
     ||battle.allySlots.includes(action.target)
     ||battle.pending.some(q=>q.kind==='switch'&&q.target===action.target))return;
   }
-  if(action.kind==='revive'&&(!Number.isInteger(action.target)||s.party[action.target]?.hp!==0))return;
+  if(action.kind==='revive'&&(!Number.isInteger(action.target)||s.party[action.target]?.hp!==0||battle.pending.some(q=>q.kind==='revive'&&q.target===action.target)))return;
+  const itemFor={potion:'Potion',ppPotion:'PP Potion',revive:'Revive'}[action.kind];
+  if(itemFor&&battle.pending.filter(q=>({potion:'Potion',ppPotion:'PP Potion',revive:'Revive'}[q.kind])===itemFor).length>=itemQty(itemFor))return renderBattle('All available '+itemFor+' items are already queued. Choose another action.');
   if(action.kind==='ppPotion'){
    const p=s.party[actor],move=validMove(action.moveId);
    if(!itemQty('PP Potion')||action.target!==actor||!move||!p.moves.includes(action.moveId)
@@ -4696,13 +4701,13 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  let targetSide=move.target==='enemy'?enemySide(side):side;
  let target=getCombatant(targetSide,targetIndex);
  if(move.target==='enemy'){
-  if(!target||target.hp<=0){
+  if(!target||target.hp<=0||!(targetSide==='enemy'?activeEnemies():activeAllies()).includes(targetIndex)){
    const available=targetSide==='enemy'?activeEnemies():activeAllies();
    targetIndex=available[0];target=getCombatant(targetSide,targetIndex);
   }
  }else if(move.target==='self'||move.target==='field'||move.target==='ally_team'){
   targetIndex=actorIndex;target=actor;
- }else if(move.target==='ally'&&(!target||target.hp<=0)){targetIndex=actorIndex;target=actor}
+ }else if(move.target==='ally'&&(!target||target.hp<=0||!(side==='ally'?activeAllies():activeEnemies()).includes(targetIndex))){targetIndex=actorIndex;target=actor}
  if(!target||target.hp<=0)return;
  const name=actor.name||actor.type;
  // Conditions can disrupt a turn without consuming PP.
@@ -4710,7 +4715,7 @@ function performMove(actor,move,side,actorIndex,targetIndex,log){
  if(interruption&&Math.random()<interruption){log.push(name+' cannot act because of '+actor.status+'!');return}
  log.push(name+' uses '+move.name+'.');
  // Store the final animated action only; the damage and turn system are unchanged.
- battle.lastVfx={name:move.name,type:move.type,side,missed:false};
+ battle.lastVfx={name:move.name,type:move.type,side,actorIndex,targetSide,targetIndex,category:move.category,effect:move.effect?.id,missed:false};
  const hitChance=Math.min(100,Math.max(5,(move.accuracy??100)*
   statFactor(side,actorIndex,'accuracy')/statFactor(targetSide,targetIndex,'evasion')));
  if(Math.random()*100>=hitChance){
@@ -4852,34 +4857,53 @@ function predictedMoveDamage(foe,target,move,enemyIndex,allyIndex){
  const stages=statFactor('enemy',enemyIndex,physical?'attack':'special_attack')/
   statFactor('ally',allyIndex,physical?'defense':'special_defense');
  const factor=move.type==='Typeless'?1:mult(move.type,target);
- const accuracy=Math.min(1,Math.max(.05,(move.accuracy??100)/100));
- return Math.max(1,base*ratio*stages*factor)*accuracy;
+ const accuracy=Math.min(1,Math.max(.05,(move.accuracy??100)*statFactor('enemy',enemyIndex,'accuracy')/statFactor('ally',allyIndex,'evasion')/100));
+ const terrain=battle.terrain?.type===move.type?1.12:1;
+ const ailmentAttack=['dread','intimidate'].includes(foe.status)?.85:1;
+ const ailmentDefense=['drench','fracture'].includes(target.status)?1.12:1;
+ return Math.max(1,base*ratio*stages*factor*activeModifier('enemy')*terrain*ailmentAttack*ailmentDefense*(battle.guards?.[allyIndex]?.5:1))*accuracy;
 }
-function trainerMoveScore(foe,move,enemyIndex,allyIndex){
- const target=s.party[allyIndex],hpRatio=foe.hp/Math.max(1,foe.maxHp);
+// Tactics differ by trainer role; all actions still use learned moves and PP.
+function trainerTactics(){
+ if(battle.id==='leader')return {support:1.65,setup:1.65,noise:.7,conserve:1};
+ if(battle.id==='rival')return {support:1.1,setup:1.2,noise:1.3,conserve:.7};
+ if(battle.mode===2)return {support:1.35,setup:1.2,noise:1,conserve:.8};
+ return {support:1,setup:1,noise:2.4,conserve:.5};
+}
+function trainerMoveScore(foe,move,enemyIndex,targetIndex,planned=[]){
+ const tactics=trainerTactics(),effect=move.effect||{},offensive=move.target==='enemy';
+ const target=offensive?s.party[targetIndex]:battle.enemies[targetIndex]||foe;
  if(!target||target.hp<=0)return -Infinity;
- if(move.target==='enemy'&&move.category!=='status'){
-  const damage=predictedMoveDamage(foe,target,move,enemyIndex,allyIndex);
-  const reward=damage>=target.hp?18:0;
-  const advantage=move.type==='Typeless'?1:mult(move.type,target);
-  return damage+reward+Math.min(4,advantage)*.4+(move.priority||0)*1.5;
+ const hpRatio=target.hp/Math.max(1,target.maxHp),chance=(effect.chance??100)/100;
+ const projected=planned.filter(a=>a.move.target==='enemy'&&a.target===targetIndex).reduce((sum,a)=>sum+predictedMoveDamage(battle.enemies[a.enemyIndex],target,a.move,a.enemyIndex,targetIndex),0);
+ let score=0;
+ if(offensive&&move.category!=='status'){
+  const damage=predictedMoveDamage(foe,target,move,enemyIndex,targetIndex);
+  const remaining=Math.max(0,target.hp-projected);
+  score=Math.min(damage,remaining)*1.2+(remaining>0&&damage>=remaining?18:0)+(move.priority||0)*1.5;
+  if(projected>=target.hp)score-=12;
+  if(effect.id==='recoil')score-=Math.min(foe.hp,foe.maxHp*(effect.fraction||.2))*.55;
+  if(effect.id==='recharge')score-=damage*.25;
  }
- const effect=move.effect||{};
- if(move.target==='self'||move.target==='ally'||move.target==='ally_team'||move.target==='field'){
-  if(effect.id==='heal')return hpRatio<.42?27:hpRatio<.7?13:-8;
-  if(effect.id==='cure_status')return foe.status?12:-8;
-  if(effect.id==='guard'||effect.id==='team_guard')return hpRatio<.35?9:1;
-  if(effect.id==='raise_stat'||effect.id==='team_buff'){
-   const stat=effect.stat||'attack',stage=battleStages('enemy',enemyIndex)[stat]||0;
-   return battle.turn<=3&&stage<2?8:-3;
-  }
-  if(effect.id==='terrain')return !battle.terrain&&battle.turn<=3?5:-4;
- }
- if(move.target==='enemy'&&effect.id==='ailment')return target.status?-3:7;
- if(move.target==='enemy'&&effect.id==='lower_stat')return battle.turn<=3?5:-1;
- return -5;
+ let utility=0;
+ const side=offensive?'ally':'enemy',stage=battleStages(side,targetIndex)[effect.stat||'attack']||0;
+ if(effect.id==='heal')utility=Math.min(target.maxHp-target.hp,target.maxHp*(effect.fraction||.25))*(hpRatio<.45?1.4:.7);
+ if(effect.id==='cure_status')utility=target.status?13:0;
+ if(effect.id==='ailment')utility=!target.status&&!planned.some(a=>a.target===targetIndex&&a.move.effect?.id==='ailment')?(battle.turn<=4?10:6):0;
+ if(effect.id==='lower_stat')utility=stage>-STAGE_LIMIT?(battle.turn<=3?8:4)*tactics.setup:0;
+ if(effect.id==='raise_stat')utility=stage<STAGE_LIMIT?(battle.turn<=3?9:4)*tactics.setup:0;
+ if(effect.id==='team_buff')utility=activeEnemies().reduce((sum,i)=>sum+((battleStages('enemy',i)[effect.stat||'attack']||0)<STAGE_LIMIT?5:0),0)*tactics.setup;
+ if(effect.id==='terrain')utility=battle.terrain?.type===foe.type?0:8*tactics.setup;
+ if(effect.id==='guard'||effect.id==='team_guard')utility=1; // Team order makes enemy guarding less valuable after player attacks.
+ if(effect.id==='switch')utility=0;
+ if(effect.id==='reveal')utility=(battleStages('ally',targetIndex).evasion||0)>0?7:0;
+ if(planned.some(a=>a.move.effect?.id===effect.id&&['terrain','team_buff','team_guard'].includes(effect.id)))utility*=.25;
+ score+=utility*chance*tactics.support;
+ if(move.category==='status'&&utility<=0)score-=9;
+ if((foe.movePP?.[move.id]||0)<=1)score-=tactics.conserve;
+ return score;
 }
-function chooseTrainerAction(enemyIndex){
+function chooseTrainerAction(enemyIndex,planned=[]){
  const foe=battle?.enemies[enemyIndex],allies=activeAllies();
  if(!foe||!allies.length)return null;
  normalizeMoves(foe);
@@ -4887,24 +4911,22 @@ function chooseTrainerAction(enemyIndex){
  if(!legal.length)return {enemyIndex,move:moveFallbacks[0],target:allies[0]};
  const relaxed=battle.kind==='wild'||battle.kind==='tutorial';
  if(relaxed){
-  const attack=legal.filter(m=>m.target==='enemy'&&m.category!=='status');
-  const choices=attack.length?attack:legal;
+  const attack=legal.filter(m=>m.target==='enemy'&&m.category!=='status'),choices=attack.length?attack:legal;
   const move=choices[Math.floor(Math.random()*choices.length)];
-  const target=allies[Math.floor(Math.random()*allies.length)];
-  return {enemyIndex,move,target};
+  return {enemyIndex,move,target:move.target==='enemy'?allies[Math.floor(Math.random()*allies.length)]:enemyIndex};
  }
  const candidates=[];
  for(const move of legal){
-  const enemyTarget=move.target==='enemy';
-  const candidatesForMove=enemyTarget?allies:move.target==='ally'?activeEnemies():[enemyIndex];
-  for(const target of candidatesForMove){
-   const score=trainerMoveScore(foe,move,enemyIndex,enemyTarget?target:allies[0]);
-   // Small variation prevents repetitive AI without overwhelming smarter choices.
-   candidates.push({enemyIndex,move,target,score:score+(Math.random()-.5)*3});
-  }
+  const targets=move.target==='enemy'?allies:move.target==='ally'?activeEnemies():[enemyIndex];
+  for(const target of targets)candidates.push({enemyIndex,move,target,score:trainerMoveScore(foe,move,enemyIndex,target,planned)+(Math.random()-.5)*trainerTactics().noise});
  }
  candidates.sort((a,b)=>b.score-a.score);
  return candidates[0]||null;
+}
+function planEnemyTeam(){
+ const choices=[];
+ for(const i of activeEnemies()){const choice=chooseTrainerAction(i,choices);if(choice)choices.push(choice)}
+ return choices.sort((a,b)=>(b.move.priority||0)-(a.move.priority||0)||combatSpeed('enemy',b.enemyIndex)-combatSpeed('enemy',a.enemyIndex));
 }
 function recentBattleLog(){
  if(!battle?.lastTurnLog?.length)return '';
@@ -4925,7 +4947,7 @@ async function resolveTeamTurn(){
  });
  for(const action of actions){
   if(battle!==currentBattle)return;
-  const before=log.length;
+  const before=log.length; battle.lastVfx=null;
   // A defeated combatant cannot attack again later in the same turn.
   performPlayerAction(action,log);
   if(battle!==currentBattle)return; // capture ended battle
@@ -4944,14 +4966,12 @@ async function resolveTeamTurn(){
  }
  if(battle!==currentBattle)return;
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
- const enemyChoices=activeEnemies().map(chooseTrainerAction).filter(Boolean)
-  .sort((a,b)=>(b.move.priority||0)-(a.move.priority||0)
-   ||combatSpeed('enemy',b.enemyIndex)-combatSpeed('enemy',a.enemyIndex));
+ const enemyChoices=planEnemyTeam();
  for(const {enemyIndex,move,target} of enemyChoices){
   if(battle!==currentBattle)return;
   const foe=battle.enemies[enemyIndex];
   if(!foe||foe.hp<=0||!activeAllies().length)continue;
-  const before=log.length;
+  const before=log.length;battle.lastVfx=null;
   performMove(foe,move,'enemy',enemyIndex,target,log);
   if(battle!==currentBattle)return;
   const fx=battle.lastVfx;
