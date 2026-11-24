@@ -292,7 +292,7 @@ const key=(x,y)=>x+','+y;
 function villageCollider(x,y){if(x>=1&&x<W-1&&y>=1&&y<H-1)villageObstacles.add(key(x,y))}
 function buildVillageColliders(){
  villageObstacles=new Set();
- for(const h of VILLAGE_HOUSES)for(let y=h.y;y<=h.y+h.h+1;y++)for(let x=h.x;x<h.x+h.w;x++){
+ for(const h of VILLAGE_HOUSES)for(let y=h.y+1;y<=h.y+h.h+1;y++)for(let x=h.x;x<h.x+h.w;x++){
   villageCollider(x,y);
  }
  for(const [a,y,b] of VILLAGE_FENCES)for(let x=a;x<b;x++)villageCollider(x,y);
@@ -603,8 +603,9 @@ function inspectRoute1Site(o){
 
 function solidAt(x,y){
  if(x<0||y<0||x>=W||y>=H)return true;
- if(s.area==='village'&&VILLAGE_HOUSES.some(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2))return true;
- if((TOWN_EXTERIORS[s.area]||[]).some(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2))return true;
+ const buildings=s.area==='village'?VILLAGE_HOUSES:TOWN_EXTERIORS[s.area]||[];
+ const house=buildings.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2);
+ if(house)return y>house.y;
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
  if(isInterior(s.area)&&interiorBlocked.has(key(x,y)))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
@@ -1791,7 +1792,6 @@ function drawExteriorSign(h,ox,oy){
 function drawTownExteriors(ox,oy,w,h){
  for(const b of TOWN_EXTERIORS[s.area]||[]){
   if(b.x*S-ox>w||(b.x+b.w)*S-ox<0||b.y*S-oy>h||(b.y+b.h+2)*S-oy<0)continue;
-  if(!exteriorFootprintIntact(b))continue;
   if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
   if(b.label)drawExteriorSign(b,ox,oy);
   if(b.art?.startsWith('shop-')){
@@ -2563,6 +2563,7 @@ function draw(){
    ctx.beginPath();ctx.ellipse(cx,cy,62,43,0,0,Math.PI*2);ctx.fill();
  }
  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
+ startSceneryLayer(visual.x*S+16-ox,visual.y*S+32-oy);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
  if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
@@ -2584,6 +2585,7 @@ function draw(){
  const isMoving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const walkFrame=playerGaitFrame();
  sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
+ finishSceneryLayer();
  drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
  drawWeather(viewportWidth,viewportHeight);
  drawAtmosphereHUD()
