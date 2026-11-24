@@ -157,6 +157,7 @@ function furnishInterior(area){
   addInteriorObject('estate-storage',26,19,4,2,'chest','Home Storage',['Access your shared family storage.'],'estate-storage');
   addInteriorObject('estate-table',22,13,5,3,'table','Dining Table',['A quiet place to relax.']);
   addInteriorObject('estate-books',5,16,4,4,'bookshelf','Bookshelf',['Your field guides and adventure keepsakes.']);
+  if(farmStage()>=2)addInteriorObject('estate-incubators',12,5,9,2,'counter','Incubation Station',['Incubator capacity: '+farmCapacity().incubators+'. Manage through the terminal.']);
  }else if(area==='lab'){
   addInteriorObject('lab-left',4,5,7,4,'counter','Field Research Bench',[
    'Sample jars, carefully labeled leaf specimens and a magnifying lens fill the workbench.',
@@ -629,7 +630,7 @@ function build(preview=false){
  if(stage===1)rect(6,5,6,2,T.stone);
  if(stage===2){rect(6,5,6,3,T.wall);rect(6,8,6,2,T.stone)}
  if(stage>=3)houses([[6,5,6,3]]);
- if(owned){put(9,10,T.path);rect(9,11,2,3,T.path);rect(9,9,1,1,T.door);rect(9,14,7,1,T.path)}
+ if(owned){put(9,10,T.path);rect(9,11,2,3,T.path);rect(9,9,1,1,T.door);rect(9,14,7,1,T.path);buildFarmGrounds()}
  if(stage<4){
   npc(13,11,['We are working on the new building. Please keep clear of the site.'],'construction-worker','builder1');
   npc(18,10,['There is still work to do.'],'construction-worker','builder2');
@@ -1737,6 +1738,21 @@ function followOutdoorCamera(targetX,targetY,now=performance.now()){
  }
  return outdoorCamera;
 }
+function buildFarmGrounds(){
+ const cap=farmCapacity();if(!cap.pairs)return;
+ rect(16,14,2,24,T.path);rect(2,16,30,2,T.path);rect(2,27,30,2,T.path);
+ houses([[24,5,8,5]]);rect(28,12,2,4,T.path);rect(18,14,12,2,T.path);
+ for(const [x,y,w,h] of FARM_PASTURES.slice(0,cap.pairs)){
+  rect(x,y,w,h,T.hedge);rect(x+1,y+1,w-2,h-2,T.grass);put(x+Math.floor(w/2),y,T.gate);
+ }
+}
+function drawFarmGrounds(ox,oy){
+ const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
+ for(const [x,y,w,h] of FARM_PASTURES.slice(0,farmCapacity().pairs)){
+  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(xx===x||xx===x+w-1||yy===y||yy===y+h-1){box(xx,yy+.32,1,.14,'#805b37');box(xx,yy+.66,1,.12,'#a98150');box(xx+.08,yy+.12,.16,.78,'#c49a64')}
+  box(x+1.3,y+1.3,1.1,.42,'#85653f');box(x+1.4,y+1.4,.88,.22,'#7c9b9d');box(x+w-2.4,y+1.3,.8,.55,'#c9ae56');
+ }
+}
 function drawHomesteadConstruction(ox,oy){
  const stage=homesteadConstructionStage();
  if(stage>=4)return;
@@ -1775,7 +1791,7 @@ function drawOutdoorWorld(){
   for(let y=y1;y<y2;y++)for(let x=x1;x<x2;x++)drawTile(tiles[y][x],x*S-localOX,y*S-localOY,x,y);
   if(area==='village')drawVillageDetails(localOX,localOY,vw,vh);
   if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
-  if(area==='homestead')drawHomesteadConstruction(localOX,localOY);
+  if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY)}
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawExplorationSites(localOX,localOY);
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
@@ -1922,12 +1938,29 @@ function interact(){
 }
 // Homestead ownership is independent of breeding and expansion mechanics.
 const HOMESTEAD_PRICE=10000;
+const FARM_STAGES=Object.freeze([{name:'Unowned',price:0,pairs:0,incubators:0},{name:'Personal Home',price:10000,pairs:0,incubators:0},{name:'Breeding Farm',price:10000,pairs:1,incubators:2},{name:'Expanded Farm',price:25000,pairs:3,incubators:4},{name:'Advanced Ranch',price:50000,pairs:5,incubators:8}]);
+const FARM_PASTURES=[[3,18,8,8],[13,18,8,8],[23,18,8,8],[8,29,8,8],[20,29,8,8]];
+function farmStage(){return s?.homestead?.owned?Math.max(1,Math.min(4,Math.floor(Number(s.homestead.stage)||1))):0}
+function farmCapacity(){return FARM_STAGES[farmStage()]}
+function farmSlots(){
+ const home=s.homestead,cap=farmCapacity();
+ home.pairs=Array.isArray(home.pairs)?home.pairs:[];home.incubators=Array.isArray(home.incubators)?home.incubators:[];
+ while(home.pairs.length<cap.pairs)home.pairs.push(null);
+ while(home.incubators.length<cap.incubators)home.incubators.push(null);
+ return home;
+}
+function canUpgradeFarm(next){return s?.area==='homesteadHome'&&!!s.homestead?.owned&&Number.isInteger(next)&&next===farmStage()+1&&next>=2&&next<=4&&s.money>=FARM_STAGES[next].price}
+function purchaseFarmUpgrade(next){
+ if(!canUpgradeFarm(next))return false;
+ s.money-=FARM_STAGES[next].price;s.homestead.stage=next;farmSlots();outdoorChunks.delete('homestead');build();save();return true;
+}
 function homesteadConstructionStage(){return Math.max(0,Math.min(4,Math.floor(Number(s?.badges)||0)))}
-function homesteadGeometryKey(){return homesteadConstructionStage()+':'+Number(!!s?.homestead?.owned)}
+function homesteadGeometryKey(){return homesteadConstructionStage()+':'+farmStage()}
 function migrateHomestead(){
  const old=s.homestead&&typeof s.homestead==='object'?s.homestead:{};
  s.homestead={...old,offered:!!old.offered||!!old.owned,owned:!!old.owned,stage:old.owned?Math.max(1,Math.min(4,Math.floor(Number(old.stage)||1))):0};
  if(s.area==='homesteadHome'&&!s.homestead.owned){s.area='homestead';s.x=17;s.y=13}
+ farmSlots();
 }
 function talkMomProperty(){
  if(s.homestead.owned)return say(['Mom: I hope you are enjoying your new home!']);
@@ -1950,9 +1983,27 @@ function talkPropertyAgent(){
  });
 }
 function homesteadTerminal(){
- if(!s.homestead?.owned)return;
- open('Home Terminal','<p>Personal Home · Property owned</p><p>Functional farm expansions and breeding facilities will become available in a future update.</p><div class="options"><button class="btn" id="estateStorage">Home Storage</button><button class="btn" id="estateClose">Close</button></div>');
+ if(!s.homestead?.owned||s.area!=='homesteadHome')return;
+ const current=farmStage(),cap=farmCapacity(),next=FARM_STAGES[current+1];farmSlots();
+ const rows=FARM_STAGES.slice(1).map((p,i)=>'<div class="centerPartyRow"><b>'+p.name+'</b> · '+p.pairs+' pairs / '+p.incubators+' incubators · '+(i+1<=current?'Owned':p.price.toLocaleString()+' money')+'</div>').join('');
+ open('Home Terminal','<h3>'+cap.name+'</h3><p>Money: '+s.money.toLocaleString()+'</p>'+rows+'<div class="options">'+(next?'<button class="btn primary" id="estateExpand">Upgrade to '+next.name+'</button>':'<p>All expansions purchased.</p>')+(cap.pairs?'<button class="btn" id="estatePairs">Breeding Pairs</button><button class="btn" id="estateIncubators">Incubators</button>':'')+'<button class="btn" id="estateStorage">Home Storage</button><button class="btn" id="estateClose">Close</button></div>');
+ if($('estateExpand'))$('estateExpand').onclick=()=>confirmFarmUpgrade(current+1);
+ if($('estatePairs'))$('estatePairs').onclick=()=>farmManagement('pairs');
+ if($('estateIncubators'))$('estateIncubators').onclick=()=>farmManagement('incubators');
  $('estateStorage').onclick=homesteadStorage;$('estateClose').onclick=close;
+}
+function confirmFarmUpgrade(next){
+ if(!s.homestead?.owned||s.area!=='homesteadHome'||next!==farmStage()+1||!FARM_STAGES[next])return;
+ const p=FARM_STAGES[next];
+ open('Confirm Expansion','<h3>'+p.name+'</h3><p>Cost: '+p.price.toLocaleString()+' money</p><p>Available: '+s.money.toLocaleString()+'</p><p>'+p.pairs+' pairs · '+p.incubators+' incubators</p><button class="btn primary" id="estateConfirm" '+(canUpgradeFarm(next)?'':'disabled')+'>Purchase Expansion</button> <button class="btn" id="estateBack">Back</button>');
+ $('estateBack').onclick=homesteadTerminal;$('estateConfirm').onclick=()=>{if(!purchaseFarmUpgrade(next))return;close();indexNotice(p.name+' expansion complete!')};
+}
+function farmManagement(kind){
+ if(!s.homestead?.owned||s.area!=='homesteadHome'||!['pairs','incubators'].includes(kind))return;
+ const count=farmCapacity()[kind],slots=farmSlots()[kind];
+ if(!count)return homesteadTerminal();
+ open(kind==='pairs'?'Breeding Pairs':'Farm Incubators','<p>'+slots.slice(0,count).filter(Boolean).length+' / '+count+' occupied</p>'+Array.from({length:count},(_,i)=>'<div class="centerPartyRow">'+(kind==='pairs'?'Pasture ':'Incubator ')+(i+1)+' · '+(slots[i]?'Occupied':'Empty')+'</div>').join('')+'<p>Parent assignment and egg actions will be enabled in the breeding update.</p><button class="btn" id="estateBack">Back</button>');
+ $('estateBack').onclick=homesteadTerminal;
 }
 function homesteadStorage(){
  if(!s.homestead?.owned)return;
