@@ -1802,6 +1802,96 @@ function buildFarmGrounds(){
   rect(x,y,w,h,T.hedge);rect(x+1,y+1,w-2,h-2,T.grass);put(x+Math.floor(w/2),y,T.gate);
  }
 }
+// Pasture animation is strictly visual: no timers, breeding effects, or save writes.
+const pastureActors=new Map(),pastureImages=new Map();
+function pastureBounds(i){
+ const [x,y,w,h]=FARM_PASTURES[i];
+ return {left:x+1.65,right:x+w-1.65,top:y+2.35,bottom:y+h-1.35};
+}
+function pasturePoint(i,j,roll=Math.random){
+ const b=pastureBounds(i),mid=(b.left+b.right)/2;
+ const left=j===0?b.left:mid+.25,right=j===0?mid-.25:b.right;
+ return {x:left+(right-left)*roll(),y:b.top+(b.bottom-b.top)*roll()};
+}
+function pastureActorState(p,i,j,now){
+ const key=i+':'+j;let a=pastureActors.get(key);
+ if(!a||a.parent!==p){
+  const q=pasturePoint(i,j);
+  a={parent:p,i,j,x:q.x,y:q.y,fromX:q.x,fromY:q.y,toX:q.x,toY:q.y,state:'idle',start:now,end:now+800+j*300,face:1,greetUntil:0};
+  pastureActors.set(key,a);
+ }
+ if(now<a.greetUntil){a.state='play';return a}
+ if(a.state==='walk'){
+  const t=Math.max(0,Math.min(1,(now-a.start)/Math.max(1,a.end-a.start)));
+  a.x=a.fromX+(a.toX-a.fromX)*t;a.y=a.fromY+(a.toY-a.fromY)*t;
+ }
+ if(now>=a.end){
+  const night=worldHour()>=20||worldHour()<5,roll=Math.random();
+  a.start=now;
+  if(night&&roll<.65){a.state='sleep';a.end=now+4500+Math.random()*3500}
+  else if(roll<.50){
+   const q=pasturePoint(i,j);a.fromX=a.x;a.fromY=a.y;a.toX=q.x;a.toY=q.y;
+   a.face=q.x<a.x?-1:1;a.state='walk';a.end=now+Math.max(650,Math.hypot(q.x-a.x,q.y-a.y)*900);
+  }else if(roll<.72){a.state='rest';a.end=now+1800+Math.random()*2200}
+  else if(roll<.85){a.state='play';a.end=now+900+Math.random()*700}
+  else{a.state='idle';a.end=now+1000+Math.random()*1500}
+ }
+ return a;
+}
+function livingPastureActors(now){
+ const active=[],used=new Set(),pairs=s?.homestead?.pairs||[];
+ for(let i=0;i<farmCapacity().pairs;i++)for(let j=0;j<2;j++){
+  const p=pairs[i]?.parents?.[j];if(!p)continue;
+  used.add(i+':'+j);active.push(pastureActorState(p,i,j,now));
+ }
+ for(const key of pastureActors.keys())if(!used.has(key))pastureActors.delete(key);
+ return active.sort((a,b)=>a.y-b.y);
+}
+function pastureImage(p){
+ const path=critterSpritePath(p);if(!path)return null;
+ if(!pastureImages.has(path)){const image=new Image();image.src=path;pastureImages.set(path,image)}
+ const im=pastureImages.get(path);return im.complete&&im.naturalWidth>0?im:null;
+}
+function drawPastureCreature(a,ox,oy,now){
+ const x=a.x*S-ox,y=a.y*S-oy,im=pastureImage(a.parent);
+ const walking=a.state==='walk',resting=a.state==='sleep'||a.state==='rest';
+ const hop=a.state==='play'?Math.abs(Math.sin((now-a.start)/130))*6:walking?Math.abs(Math.sin((now-a.start)/115))*2:0;
+ const breathe=Math.sin(now/650+a.j)*.025,scaleY=resting?.73:1+breathe;
+ ctx.save();ctx.fillStyle='rgba(30,49,32,.30)';ctx.beginPath();ctx.ellipse(x,y+1,12,4,0,0,Math.PI*2);ctx.fill();
+ ctx.translate(x,y-hop);ctx.scale(a.face,scaleY);ctx.imageSmoothingEnabled=false;
+ if(im){const size=36,k=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*k,h=im.naturalHeight*k;ctx.drawImage(im,-w/2,-h,w,h)}
+ else{
+  // Neutral placeholder for species with no approved sprite; no new asset required.
+  ctx.fillStyle='#e0c99b';ctx.strokeStyle='#3d5641';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.ellipse(0,-13,12,11,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#36483c';ctx.beginPath();ctx.arc(-4,-15,1.5,0,Math.PI*2);ctx.arc(4,-15,1.5,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+ if(a.state==='sleep'||a.state==='play'||now<a.greetUntil){
+  ctx.save();ctx.textAlign='center';ctx.font='bold 12px system-ui';ctx.fillStyle=a.state==='sleep'?'#e1efff':'#fff0b5';
+  ctx.strokeStyle='#3d5641';ctx.lineWidth=2;const symbol=a.state==='sleep'?'zZ':now<a.greetUntil?'♥':'♪';ctx.strokeText(symbol,x,y-39-hop);ctx.fillText(symbol,x,y-39-hop);ctx.restore();
+ }
+}
+function drawLivingPastures(ox,oy,vw,vh,now=performance.now()){
+ for(const a of livingPastureActors(now)){
+  const x=a.x*S-ox,y=a.y*S-oy;if(x<-45||x>vw+45||y<-45||y>vh+45)continue;
+  drawPastureCreature(a,ox,oy,now);
+ }
+}
+function pastureGateAt(x,y){
+ if(s?.area!=='homestead'||!s.homestead?.owned)return -1;
+ return FARM_PASTURES.slice(0,farmCapacity().pairs).findIndex(([px,py,w])=>x===px+Math.floor(w/2)&&y===py);
+}
+function greetPasture(i){
+ if(i<0||i>=farmCapacity().pairs)return;
+ const parents=(s.homestead?.pairs?.[i]?.parents||[]).filter(Boolean);
+ if(!parents.length)return notifyWorld('This pasture is empty.');
+ const now=performance.now();
+ for(const a of livingPastureActors(now).filter(a=>a.i===i)){
+  a.state='play';a.start=now;a.end=now+1600;a.greetUntil=now+1600;
+ }
+ return notifyWorld(parents.map(p=>p.name||p.type).join(' and ')+' happily greet you from the pasture.');
+}
 function drawFarmGrounds(ox,oy){
  const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
  for(const [x,y,w,h] of FARM_PASTURES.slice(0,farmCapacity().pairs)){
@@ -1851,6 +1941,7 @@ function drawOutdoorWorld(){
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawExplorationSites(localOX,localOY);
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
+  if(area==='homestead'&&s.homestead?.owned)drawLivingPastures(localOX,localOY,vw,vh);
   for(const npc of npcs){
    const x=npc.x*S+16-localOX,y=npc.y*S+32-localOY;
    if(x< -40||x>vw+40||y< -70||y>vh+40)continue;
@@ -1944,6 +2035,7 @@ function canInteractAhead(){
  if(!offset)return false;
  const x=s.x+offset[0],y=s.y+offset[1];
  if(npcs.some(p=>p.x===x&&p.y===y))return true;
+ if(pastureGateAt(x,y)>=0)return true;
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return true;
  if(s.area==='homesteadHome'&&x===17&&y===25)return true;
  if(villageDoorAt(x,y))return true;
@@ -1968,6 +2060,7 @@ function updateInteractVisibility(){
 function interact(){
  if(modal||doorTransition||worldTransitionBusy)return;if(narratorBlocking())return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
+ const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)p.face={up:'down',down:'up',left:'right',right:'left'}[s.face];
  if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.x===14&&p.y===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return talkSideQuest(p.id);
  if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
