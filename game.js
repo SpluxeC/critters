@@ -146,14 +146,54 @@ function drawDedicatedNpc(im,p,x,y,now=performance.now()){
  }
  ctx.restore();return true;
 }
+// Task effects enhance existing sprites without inventing action-specific frame sheets.
+function npcActivityKind(task){
+ if(task==='Resting'||task==='Relaxing')return 'rest';
+ if(task==='Tending rice'||task==='Checking fields'||task==='Finishing work')return 'farm';
+ if(task==='Researching'||task==='Reviewing notes'||task==='Checking equipment')return 'research';
+ if(task==='Organizing supplies'||task==='Working')return 'work';
+ if(task==='Preparing breakfast'||task==='Housework')return 'home';
+ if(task==='Observing')return 'observe';
+ return null;
+}
+function drawNpcActivity(p,x,y,now=performance.now()){
+ if(p.alertUntil>now){
+  const bounce=Math.sin(now/90)*2;ctx.save();ctx.fillStyle='#fff4bb';ctx.strokeStyle='#51392b';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(x,y-61+bounce,10,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#b64036';ctx.font='bold 15px monospace';ctx.textAlign='center';ctx.fillText('!',x,y-56+bounce);ctx.restore();return;
+ }
+ if(p.walking||modal||battle||narratorBlocking()||trainerApproach||now<(p.pauseUntil||0))return;
+ const kind=npcActivityKind(p.task);if(!kind)return;
+ const phase=(now/1000+(p.homeX*13+p.homeY*7)*.13)%3;
+ if(phase>1.25)return;
+ const t=phase/1.25,side=p.face==='left'?-1:1,fx=x+side*13,fy=y-24;
+ ctx.save();ctx.globalAlpha=Math.min(1,(1-t)*2);
+ if(kind==='rest'){
+  ctx.fillStyle='#e6e9ef';ctx.font='bold 10px monospace';ctx.fillText(p.task==='Resting'?'z':'♪',x+10+t*5,y-43-t*10);
+ }else if(kind==='farm'){
+  for(let i=0;i<3;i++){ctx.fillStyle=i%2?'#c2b57b':'#6e9c4f';ctx.fillRect(fx+side*i*4,fy+15-i*3-t*5,3,5)}
+ }else if(kind==='research'){
+  ctx.fillStyle='#78d6c9';for(let i=0;i<3;i++)ctx.fillRect(fx+i*3,fy-7-i*4-t*5,2,5);
+  ctx.strokeStyle='#d5f4e8';ctx.strokeRect(fx-3,fy-4,10,7);
+ }else if(kind==='work'){
+  ctx.fillStyle='#d8be93';for(let i=0;i<3;i++)ctx.fillRect(fx+side*i*3,fy-5-i*4-t*7,3,3);
+ }else if(kind==='home'){
+  ctx.strokeStyle='#f0e2be';ctx.lineWidth=1.5;for(let i=0;i<2;i++){ctx.beginPath();ctx.moveTo(fx+i*4,fy+4);ctx.quadraticCurveTo(fx+i*4+4,fy-4,fx+i*4,fy-10-t*6);ctx.stroke()}
+ }else{
+  ctx.fillStyle='#f4e3aa';ctx.font='bold 12px monospace';ctx.fillText('…',x+8,y-48-t*4);
+ }
+ ctx.restore();
+}
 function drawNpc(p,x,y){
  const name=uploadedNpcName(p,s.area);
  const im=name==='npc-researcher'?npcResearcher:name==='npc-lab-assistant'?npcLabAssistant:name?uploadedArt(name):null;
- if(drawDedicatedNpc(im,p,x,y))return;
+ const active=!p.walking&&!modal&&!battle&&!narratorBlocking()&&!trainerApproach&&performance.now()>=(p.pauseUntil||0)&&['farm','research','work','home'].includes(npcActivityKind(p.task));
+ const bob=active?Math.sin(performance.now()/180)*.8:0;
+ if(drawDedicatedNpc(im,p,x,y+bob))return;
  const legacy=npcSheet;
  if(legacy.complete&&legacy.naturalWidth){
   const i=p.sprite??0,row=NPC_ROWS[p.face||'down']??0;
-  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(legacy,i*32,row*32,32,32,x-19,y-42-(p.walking?Math.abs(Math.sin((performance.now()-p.walkStart)/70))*2:0),38,42);ctx.restore();
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(legacy,i*32,row*32,32,32,x-19,y-42+bob-(p.walking?Math.abs(Math.sin((performance.now()-p.walkStart)/70))*2:0),38,42);ctx.restore();
  }else{
   ctx.fillStyle='#544c55';ctx.fillRect(x-9,y-30,18,28);
   ctx.fillStyle='#e0aa88';ctx.fillRect(x-7,y-28,14,12);
@@ -438,7 +478,7 @@ function playerGaitFrame(){
 }
 function syncMovementToggle(){ /* Movement mode is intentionally hidden in the overworld. */ }
 function toggleMovementMode(){
- if(!s||screen!=='game'||modal)return;
+ if(!s||screen!=='game'||modal||trainerApproachLocked())return;
  s.movementMode=s.movementMode==='walk'?'run':'walk';
  syncMovementToggle();save();
 }
@@ -461,7 +501,7 @@ function backUpLegacySaveBeforeMigration(){
  }catch(err){console.warn('Could not back up pre-migration save',err)}
 }
 function save(){if(s){s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false}}
-function show(page){clearWorldNarrator();releaseMovement();if(page==='title'){outdoorChunks.clear();pastureActors.clear();}document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
+function show(page){cancelTrainerApproach();clearWorldNarrator();releaseMovement();if(page==='title'){outdoorChunks.clear();pastureActors.clear();}document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
 // Missing/retired IDs fall back to safe basic moves instead of breaking old saves.
@@ -818,19 +858,59 @@ function trainerSeesPlayer(p,px,py,range,blocked){
  }
  return false;
 }
+// Trainer encounter state is transient; no new save data or battle rules.
+let trainerApproach=null;
+function trainerApproachLocked(){return !!trainerApproach}
+function cancelTrainerApproach(){
+ if(trainerApproach?.p){npcFinishWalk(trainerApproach.p);trainerApproach.p.alertUntil=0}
+ trainerApproach=null;
+}
+function beginTrainerApproach(p,now=performance.now()){
+ if(trainerApproach)return false;
+ p.face=npcFaceToward(p,s.x,s.y);
+ trainerApproach={p,area:s.area,x:s.x,y:s.y,phase:'alert',until:now+650,deadline:now+4200};
+ p.alertUntil=now+650;releaseMovement();return true;
+}
+function trainerApproachStep(p,px,py){
+ const dx=px-p.x,dy=py-p.y;
+ if(Math.abs(dx)+Math.abs(dy)<=1)return null;
+ if(dx!==0&&dy!==0)return null;
+ return {x:p.x+Math.sign(dx),y:p.y+Math.sign(dy)};
+}
+function finishTrainerApproach(now){
+ const e=trainerApproach;if(!e)return;
+ const p=e.p;npcFinishWalk(p);p.alertUntil=0;p.pauseUntil=now+2200;
+ p.face=npcFaceToward(p,s.x,s.y);s.face=npcFaceToward(s,p.x,p.y);
+ trainerApproach=null;releaseMovement();
+ say(p.text,()=>{if(s.area===e.area&&!s.defeated[p.id])startTrainer(p.id)});
+}
+function tickTrainerApproach(now){
+ const e=trainerApproach;if(!e)return false;
+ const p=e.p;
+ if(s.area!==e.area||s.x!==e.x||s.y!==e.y||!npcs.includes(p)||s.defeated[p.id]||battle||screen!=='game'){cancelTrainerApproach();return false}
+ if(document.hidden||modal||worldTransitionBusy||doorTransition||narratorBlocking())return true;
+ if(p.walking){if(now-p.walkStart<p.walkDuration)return true;npcFinishWalk(p)}
+ if(now<e.until)return true;
+ const step=trainerApproachStep(p,e.x,e.y);
+ if(!step||now>=e.deadline||!npcStepAllowed(p,step.x,step.y,true)){
+  // If a route becomes obstructed, finish safely from the current location.
+  finishTrainerApproach(now);return true;
+ }
+ e.phase='walk';npcBeginWalk(p,step,now);p.walkDuration=260;e.until=now+260;return true;
+}
 function checkTrainerSight(){
- if(!s.introComplete||modal||battle||narratorBlocking()||worldTransitionBusy||doorTransition||firstAlive()<0)return false;
+ if(trainerApproach||!s.introComplete||modal||battle||narratorBlocking()||worldTransitionBusy||doorTransition||firstAlive()<0)return false;
  for(const p of npcs){
   if(!NPC_PATROLS[p.id]||s.defeated[p.id]||p.walking||performance.now()<(p.pauseUntil||0))continue;
-  if(!trainerSeesPlayer(p,s.x,s.y,4,(x,y)=>solidAt(x,y)||npcs.some(q=>q!==p&&q.x===x&&q.y===y)))continue;
-  p.face=npcFaceToward(p,s.x,s.y);p.alertUntil=performance.now()+1800;p.pauseUntil=performance.now()+1800;
-  releaseMovement();say(p.text,()=>startTrainer(p.id));return true;
+  if(!trainerSeesPlayer(p,s.x,s.y,4,(x,y)=>solidAt(x,y)||npcs.some(q=>q!==p&&(q.x===x&&q.y===y||q.walking&&q.fromX===x&&q.fromY===y))))continue;
+  return beginTrainerApproach(p);
  }
  return false;
 }
 let npcLastTick=0;
 function tickNpcRoutines(now=performance.now()){
  if(!s||screen!=='game'||modal||battle||narratorBlocking()||worldTransitionBusy||doorTransition||document.hidden)return;
+ if(trainerApproach&&tickTrainerApproach(now))return;
  if(now-npcLastTick<100)return;npcLastTick=now;
  for(const p of npcs){
   if(p.walking){if(now-p.walkStart<p.walkDuration)continue;npcFinishWalk(p)}
@@ -838,7 +918,7 @@ function tickNpcRoutines(now=performance.now()){
   const plan=npcRoutinePlan(s.area,p,worldHour(),s.starter);
   if(!plan)continue;
   p.task=plan.task;
-  const points=plan.points,radius=plan.patrol?6:plan.radius||3;
+  const points=plan.points,radius=plan.patrol?8:plan.radius||3;
   if(p.routineTask!==plan.task){p.routineTask=plan.task;p.routineIndex=0}
   if(points.length===1&&p.x===points[0][0]&&p.y===points[0][1]){p.nextRoutine=now+3500;continue}
   let i=(p.routineIndex||0)%points.length;
@@ -927,7 +1007,7 @@ function sideQuestIndex(){
   +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
 }
 function build(preview=false){
- if(!preview)migrate();
+ if(!preview){cancelTrainerApproach();migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
  case 'homestead':{
@@ -2148,8 +2228,8 @@ function draw(){
  const pos=npcVisualPosition(p),x=pos.x*S+16-ox,y=pos.y*S+32-oy;
  // A soft ground shadow anchors each character to the map.
  ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
- drawNpc(p,x,y);
- if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&!s.defeated[p.id]){
+ drawNpc(p,x,y);drawNpcActivity(p,x,y);
+ if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&!s.defeated[p.id]&&!(p.alertUntil>performance.now())&&trainerApproach?.p!==p){
   ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
  }
 }
@@ -2546,8 +2626,8 @@ function drawOutdoorWorld(){
    const pos=npcVisualPosition(npc),x=pos.x*S+16-localOX,y=pos.y*S+32-localOY;
    if(x< -40||x>vw+40||y< -70||y>vh+40)continue;
    ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
-   drawNpc(npc,x,y);
-   if((npc.kind==='gymtrainer'||npc.kind==='routetrainer')&&!s.defeated[npc.id]){
+   drawNpc(npc,x,y);drawNpcActivity(npc,x,y);
+   if((npc.kind==='gymtrainer'||npc.kind==='routetrainer')&&!s.defeated[npc.id]&&!(npc.alertUntil>performance.now())&&trainerApproach?.p!==npc){
     ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
    }
   }
@@ -2593,7 +2673,7 @@ function region(area,x,y,textLine='',forceFade=false){
 }
 
 function move(d){
- if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking())return;
+ if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking()||trainerApproachLocked())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
  if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned){recordWalkingStep();return region('homesteadHome',17,23)}
@@ -2629,7 +2709,7 @@ function move(d){
 }
 
 function canInteractAhead(){
- if(!s||screen!=='game'||modal||doorTransition||worldTransitionBusy)return false;
+ if(!s||screen!=='game'||modal||doorTransition||worldTransitionBusy||trainerApproachLocked())return false;
  if(narratorBlocking())return true; // Interact advances dialogue.
  const offset=dirs[s.face];
  if(!offset)return false;
@@ -2658,7 +2738,7 @@ function updateInteractVisibility(){
  button.setAttribute('aria-label',available?'Interact with the object ahead':'Nothing to interact with ahead');
 }
 function interact(){
- if(modal||doorTransition||worldTransitionBusy)return;if(narratorBlocking())return advance();
+ if(modal||doorTransition||worldTransitionBusy||trainerApproachLocked())return;if(narratorBlocking())return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
@@ -3180,7 +3260,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.12</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.13</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -3190,7 +3270,7 @@ function indexSettings(){
 let moveBookType='Water';
 let critterBookType='All',critterBookArea='all',critterBookPage=0,critterBookSelected=null,critterBookSearch='';
 
-function index(){
+function index(){if(trainerApproachLocked())return;
  if(screen!=='game'||battle||narratorBlocking())return;
  routeEvolutionNotices();
  indexTab='clock';indexMainSection='clock';mapTravelSelection=null;settingsSavedMessage=false;playerIndexSection='bag';fieldBagItem=null;fieldBagTarget=null;fieldBagResult='';indexSelection=0;renderIndex();
@@ -4914,7 +4994,7 @@ function aimStick(e){
  if(next!==stickDirection){stickDirection=next;stickRepeatAt=0}
 }
 stick.addEventListener('pointerdown',e=>{
- if(screen!=='game'||modal||narratorBlocking()||doorTransition||worldTransitionBusy||stickPointer!==null)return;
+ if(screen!=='game'||modal||narratorBlocking()||doorTransition||worldTransitionBusy||trainerApproachLocked()||stickPointer!==null)return;
  if(e.pointerType==='mouse'&&e.button!==0)return;
  e.preventDefault();stickPointer=e.pointerId;stickActive=true;stickRepeatAt=0;
  touchStarted=performance.now();touchStartX=e.clientX;touchStartY=e.clientY;touchDragged=false;
