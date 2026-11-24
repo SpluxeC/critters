@@ -340,6 +340,7 @@ function furnishInterior(area){
  }
 }
 function inspectInterior(o){
+ if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
  if(o.action==='estate-rest'&&s.homestead?.owned){s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)});save();return notifyWorld('You rested. Your party has fully recovered.');}
  if(o.action==='estate-terminal'&&s.homestead?.owned)return homesteadTerminal();
  if(o.action==='estate-storage'&&s.homestead?.owned)return homesteadStorage();
@@ -892,6 +893,7 @@ function migrate(){
  s.sideQuests=s.sideQuests&&typeof s.sideQuests==='object'&&!Array.isArray(s.sideQuests)?s.sideQuests:{};
  s.questCaptureCounts=s.questCaptureCounts&&typeof s.questCaptureCounts==='object'&&!Array.isArray(s.questCaptureCounts)?s.questCaptureCounts:{};
  s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'&&!Array.isArray(s.earlyJourney)?s.earlyJourney:{};
+ normalizeStoryState();
  if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
  if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
@@ -2959,7 +2961,7 @@ function move(d){
   return region('village',h.door,h.y+h.h+2);
  }
  if(checkTrainerSight())return;
- if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
+ if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3)return rivalGardenScene();
  
  const exploration=explorationSiteAt(s.area,s.x,s.y);
  if(exploration&&discoverExplorationSite(exploration))return;
@@ -3010,7 +3012,7 @@ function interact(){
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
  if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
- if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
+ if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
  if(p.kind==='gymtrainer'||p.kind==='routetrainer')return s.defeated[p.id]?say(['Trainer: Good match! Want a rematch?'],()=>rematchMenu(p.id)):say(p.text,()=>startTrainer(p.id));
@@ -3321,7 +3323,7 @@ function homesteadStorage(){
  $('estateBack').onclick=homesteadTerminal;
 }
 function rematchMenu(id){open('Trainer Rematch','<p>Challenge this trainer again? Their Critters may be stronger.</p><button class="btn primary" id="yesRematch">Battle</button> <button class="btn" id="noRematch">Not now</button>');$('yesRematch').onclick=()=>{close();startTrainer(id)};$('noRematch').onclick=close}
-function enterGym(){if(!s.rivalPassed){s.rivalPassed=true;save();return say(['Your childhood rival is waiting at the Grass Gym entrance!'],()=>startTrainer('rival'))}return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
+function enterGym(){if(!s.rivalPassed)return rivalGardenScene();return region('gym',17,23,'Grass Gym — Find all three trainers in the hedge maze.')}
 function open(title,body){
  suspendWorldNotice();releaseMovement();modal=true;
  const host=$('shade'),panel=host.querySelector('.modal'),watch=body.includes('class="watchShell"');
@@ -3533,7 +3535,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.19</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.20</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -4092,6 +4094,54 @@ function renderIndex(){
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
+// Main story foundation: only the existing first-badge chapter is playable.
+// Later gym types, Eclipse motives and legendary capture conditions are not inferred.
+const STORY_STRUCTURE=Object.freeze({gymCount:8,firstGym:'Grass',eliteFourCount:4,championRole:'evolving rival',antagonist:'Team Eclipse',legendaryTypes:['Dragon','Primordial','Beast']});
+function normalizeStoryState(){
+ const old=s.story&&typeof s.story==='object'&&!Array.isArray(s.story)?s.story:{};
+ const flags=old.flags&&typeof old.flags==='object'&&!Array.isArray(old.flags)?old.flags:{};
+ s.story={...old,flags};
+ if(s.introComplete)flags.tutorial=true;
+ if(s.rivalPassed)flags.gardenRival=true;
+ if(s.defeated?.rival)flags.rivalVictory=true;
+ if(s.badges>=1)flags.grassBadge=true;
+}
+function storyFlag(id){return !!s.story?.flags?.[id]}
+function markStory(id){normalizeStoryState();if(storyFlag(id))return false;s.story.flags[id]=true;save();return true}
+function storyScene(id,lines,callback){
+ if(storyFlag(id)){if(callback)callback();return false}
+ say(lines,()=>{markStory(id);if(callback)callback()});return true;
+}
+function researcherStoryDialogue(){
+ if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
+ if(!s.introComplete)return say(['Researcher: Let us finish your introductory training match.'],()=>startTrainer('tutorial'));
+ if(s.badges>=1&&!storyFlag('researchDebrief'))return storyScene('researchDebrief',[
+  'Researcher: Congratulations on earning your first badge.',
+  'There are eight regional Gyms. Every challenge will help you grow alongside your Critters.',
+  'Our archives contain accounts of three legendary Critters. Their full story remains a subject of research.'
+ ]);
+ return say(['Researcher: Your Critter Index is functioning well. Good luck!']);
+}
+function rivalGardenScene(){
+ if(s.rivalPassed)return;
+ s.rivalPassed=true;markStory('gardenRival');
+ say(['Your childhood rival greets you outside the Grass Gym.','Rival: We have both come a long way since the laboratory.','Rival: Let us see how much we have improved!'],()=>startTrainer('rival'));
+}
+function storyGrassBadgeScene(){
+ if(s.badges<1)return;
+ storyScene('grassCeremony',[
+  'Grass Gym Leader: You have earned the first of the eight regional badges.',
+  'Grass Gym Leader: Your Critter Index vegetation cutter is now unlocked.',
+  'Grass Gym Leader: Keep exploring. Your journey is only beginning.'
+ ]);
+}
+function tickStoryScenes(){
+ if(!s||screen!=='game'||modal||battle||worldTransitionBusy||doorTransition||narratorBlocking()||trainerApproachLocked())return;
+ if(s.area==='gym'&&s.badges>=1&&!storyFlag('grassCeremony'))storyGrassBadgeScene();
+}
+function storyArchiveDialogue(){
+ return say(['The archive contains references to three legendary Critters: Dragon, Primordial and Beast.','The records do not reveal their full history or how to approach them.']);
+}
 function noteOpeningEvent(key){
  s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'?s.earlyJourney:{};
  if(!s.earlyJourney[key]){s.earlyJourney[key]=true;save()}
@@ -4216,6 +4266,11 @@ function trainerSpecies(type,level,area,trainerId,slot,used){
  used.add(chosen.speciesId);
  return critter(chosen.speciesId,level);
 }
+function rivalPartnerAtLevel(level){
+ let id=starterSpeciesId(s.rival),seen=new Set();
+ while(id&&!seen.has(id)){seen.add(id);const rule=speciesRegistry.get(id)?.evolvesTo;if(!rule||!Number.isFinite(rule.minLevel)||level<rule.minLevel||rule.item||rule.stone||rule.condition||!speciesRegistry.has(rule.speciesId))break;id=rule.speciesId}
+ return critter(id,level);
+}
 function startTrainer(id){
  if(firstAlive()<0)return blackout();
  const area=id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden';
@@ -4223,8 +4278,8 @@ function startTrainer(id){
  const make=(t,l)=>trainerSpecies(t,l,area,id,used.size,used);
  const starter=t=>critter(starterSpeciesId(t),5);
  let enemies,name,award,kind='trainer';
- if(id==='tutorial'){enemies=[starter(s.rival)];name='Childhood Rival';award=0;kind='tutorial'}
- else if(id==='rival'){enemies=[critter(starterSpeciesId(s.rival),12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
+ if(id==='tutorial'){enemies=[rivalPartnerAtLevel(5)];name='Childhood Rival';award=0;kind='tutorial'}
+ else if(id==='rival'){enemies=[rivalPartnerAtLevel(12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='quest-garden'){if(s.sideQuests?.['garden-challenge']?.status!=='active'||s.sideQuests['garden-challenge'].won)return;enemies=[make('Grass',10),make('Water',11)];name='Garden Caretaker';award=0}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
  else if(id.startsWith('rt')){const n=Number(id.slice(2)),up=s.defeated[id]?2:0;enemies=n===1?[make('Flying',4+up)]:n===2?[make('Flying',7+up),make('Grass',7+up)]:[make('Rock',10+up),make('Electric',11+up)];name='Route Trainer '+n;award=20+n*15}
@@ -5140,7 +5195,7 @@ function endBattle(won,message,defeated){
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
   ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">⌚</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
  save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
- $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader')build()}
+ $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
  const wasTutorial=battle?.kind==='tutorial';clearCombatNarrator();battle=null;$('close').hidden=false;
@@ -5355,7 +5410,7 @@ document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){tickAmbient();if(screen==='game'){finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){tickAmbient();if(screen==='game'){tickStoryScenes();finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
