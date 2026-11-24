@@ -84,7 +84,7 @@ function drawUploadedFit(name,x,y,w,h){
 const NPC_DEDICATED_ROWS=Object.freeze({down:0,up:1,left:2,right:3});
 const npcFrameCache=new WeakMap();
 function uploadedNpcName(p,area){
- if(area==='home'&&p.x===14&&p.y===11)return 'npc-mother';
+ if(area==='home'&&(p.homeX??p.x)===14&&(p.homeY??p.y)===11)return 'npc-mother';
  if(p.kind==='center')return 'npc-center-nurse';
  if(p.id==='farmer-fieldwork')return 'npc-rice-farmer';
  if(p.kind==='rival'||p.id==='rival')return 'npc-rival';
@@ -153,7 +153,7 @@ function drawNpc(p,x,y){
  const legacy=npcSheet;
  if(legacy.complete&&legacy.naturalWidth){
   const i=p.sprite??0,row=NPC_ROWS[p.face||'down']??0;
-  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(legacy,i*32,row*32,32,32,x-19,y-42,38,42);ctx.restore();
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(legacy,i*32,row*32,32,32,x-19,y-42-(p.walking?Math.abs(Math.sin((performance.now()-p.walkStart)/70))*2:0),38,42);ctx.restore();
  }else{
   ctx.fillStyle='#544c55';ctx.fillRect(x-9,y-30,18,28);
   ctx.fillStyle='#e0aa88';ctx.fillRect(x-7,y-28,14,12);
@@ -753,10 +753,110 @@ function migrate(){
 }
 function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
 function rect(x,y,w,h,t){for(let a=x;a<x+w;a++)for(let b=y;b<y+h;b++)put(a,b,t)}
+// Live routines are transient, local to the active area, and never written to saves.
+// Explicit anchors preserve story roles when actors move.
+const NPC_PATROLS={rt2:[[24,13],[28,13]],rt3:[[12,13],[8,13]]};
+const NPC_STATIONARY=new Set(['leader','switch','property-sign','gymtrainer','rival']);
+function npcRoutinePlan(area,p,hour,starter){
+ const x=p.homeX,y=p.homeY;
+ if(NPC_PATROLS[p.id])return {task:'Patrolling',points:NPC_PATROLS[p.id],patrol:true};
+ if(NPC_STATIONARY.has(p.kind)||p.kind==='routetrainer'||(p.kind==='researcher'&&!starter))return null;
+ if(area==='garden'&&x===25&&y===11)return null;
+ const night=hour<5||hour>=20,morning=hour<8,evening=hour>=17;
+ if(p.kind==='center'||p.kind==='shop')return {task:p.kind==='center'?'Checking equipment':'Organizing supplies',points:[[x,y],[x+1,y],[x,y]],radius:1};
+ if(p.kind==='researcher'||p.kind==='labassistant')return {task:night?'Reviewing notes':'Researching',points:[[x,y],[x-2,y],[x,y+2]],radius:3};
+ if(p.kind==='construction-worker')return night?{task:'Resting',points:[[x,y]]}:{task:'Working',points:[[x,y],[x+1,y],[x,y+1]],radius:2};
+ if(p.id==='farmer-fieldwork')return {task:night?'Resting':morning?'Checking fields':evening?'Finishing work':'Tending rice',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y-1]],radius:3};
+ if(p.kind==='sidequest')return {task:'Observing',points:[[x,y],[x+1,y]],radius:1};
+ if(area==='home'||area==='neighbor')return {task:night?'Resting':morning?'Preparing breakfast':evening?'Relaxing':'Housework',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y+2]],radius:3};
+ return {task:night?'Resting':evening?'Relaxing':'Walking',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y+2],[x-1,y]],radius:3};
+}
+function npcReservedCell(area,x,y,w,h){
+ if(x<2||y<2||x>=w-2||y>=h-2)return true;
+ if(['home','neighbor','lab','homesteadHome','gym'].includes(area)&&x>=15&&x<=19&&y>=22)return true;
+ if(area==='garden'&&x>=23&&x<=26&&y>=9&&y<=12)return true;
+ if(area==='homestead'&&((x>=8&&x<=10&&y>=9&&y<=11)||y>=16))return true;
+ if(area==='village'&&VILLAGE_HOUSES.some(b=>Math.abs(x-b.door)<=1&&y>=b.y+b.h&&y<=b.y+b.h+3))return true;
+ // Avoid main road crossings and regional portals; patrols get separate explicit permission.
+ return false;
+}
+function npcStepAllowed(p,x,y,patrol=false){
+ if(npcReservedCell(s.area,x,y,W,H)||solidAt(x,y)||tiles[y]?.[x]===T.door)return false;
+ if(s.x===x&&s.y===y||npcs.some(q=>q!==p&&((q.x===x&&q.y===y)||(q.walking&&q.fromX===x&&q.fromY===y)||(q.homeX===x&&q.homeY===y))))return false;
+ if(explorationSiteAt(s.area,x,y))return false;
+ if(!patrol&&tiles[y]?.[x]===T.path&&y>=12&&y<=14&&OUTDOOR_GRID[s.area]&&!(x===p.homeX&&y===p.homeY))return false;
+ return true;
+}
+function npcFindStep(p,tx,ty,radius,patrol=false){
+ if(p.x===tx&&p.y===ty)return null;
+ const q=[{x:p.x,y:p.y,first:null}],seen=new Set([key(p.x,p.y)]);
+ for(let i=0;i<q.length&&i<100;i++){
+  const a=q[i];
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const x=a.x+dx,y=a.y+dy,k=key(x,y);
+   if(seen.has(k)||Math.abs(x-p.homeX)+Math.abs(y-p.homeY)>radius||!npcStepAllowed(p,x,y,patrol))continue;
+   seen.add(k);const first=a.first||{x,y};if(x===tx&&y===ty)return first;q.push({x,y,first});
+  }
+ }
+ return null;
+}
+function npcVisualPosition(p,now=performance.now()){
+ if(!p.walking)return {x:p.x,y:p.y};
+ const t=Math.max(0,Math.min(1,(now-p.walkStart)/p.walkDuration));
+ return {x:p.fromX+(p.x-p.fromX)*t,y:p.fromY+(p.y-p.fromY)*t};
+}
+function npcFinishWalk(p){p.walking=false;p.fromX=p.x;p.fromY=p.y}
+function npcBeginWalk(p,step,now){
+ p.face=npcFaceToward(p,step.x,step.y);p.fromX=p.x;p.fromY=p.y;p.x=step.x;p.y=step.y;p.walking=true;p.walkStart=now;p.walkDuration=420;
+}
+function trainerSeesPlayer(p,px,py,range,blocked){
+ const d=dirs[p.face];if(!d)return false;
+ for(let i=1;i<=range;i++){
+  const x=p.x+d[0]*i,y=p.y+d[1]*i;
+  if(blocked(x,y))return false;
+  if(x===px&&y===py)return true;
+ }
+ return false;
+}
+function checkTrainerSight(){
+ if(!s.introComplete||modal||battle||narratorBlocking()||worldTransitionBusy||doorTransition||firstAlive()<0)return false;
+ for(const p of npcs){
+  if(!NPC_PATROLS[p.id]||s.defeated[p.id]||p.walking||performance.now()<(p.pauseUntil||0))continue;
+  if(!trainerSeesPlayer(p,s.x,s.y,4,(x,y)=>solidAt(x,y)||npcs.some(q=>q!==p&&q.x===x&&q.y===y)))continue;
+  p.face=npcFaceToward(p,s.x,s.y);p.alertUntil=performance.now()+1800;p.pauseUntil=performance.now()+1800;
+  releaseMovement();say(p.text,()=>startTrainer(p.id));return true;
+ }
+ return false;
+}
+let npcLastTick=0;
+function tickNpcRoutines(now=performance.now()){
+ if(!s||screen!=='game'||modal||battle||narratorBlocking()||worldTransitionBusy||doorTransition||document.hidden)return;
+ if(now-npcLastTick<100)return;npcLastTick=now;
+ for(const p of npcs){
+  if(p.walking){if(now-p.walkStart<p.walkDuration)continue;npcFinishWalk(p)}
+  if(now<(p.pauseUntil||0)||now<(p.nextRoutine||0))continue;
+  const plan=npcRoutinePlan(s.area,p,worldHour(),s.starter);
+  if(!plan)continue;
+  p.task=plan.task;
+  const points=plan.points,radius=plan.patrol?6:plan.radius||3;
+  if(p.routineTask!==plan.task){p.routineTask=plan.task;p.routineIndex=0}
+  if(points.length===1&&p.x===points[0][0]&&p.y===points[0][1]){p.nextRoutine=now+3500;continue}
+  let i=(p.routineIndex||0)%points.length;
+  if(p.x===points[i][0]&&p.y===points[i][1]){i=(i+1)%points.length;p.routineIndex=i;p.nextRoutine=now+(plan.patrol?850:2200);continue}
+  const step=npcFindStep(p,points[i][0],points[i][1],radius,!!plan.patrol);
+  if(step){npcBeginWalk(p,step,now);p.nextRoutine=now+500}
+  else{p.routineIndex=(i+1)%points.length;p.nextRoutine=now+1200}
+ }
+ checkTrainerSight();
+}
+function pauseNpcForInteraction(p){
+ if(!p)return;
+ npcFinishWalk(p);p.pauseUntil=performance.now()+2200;p.face=npcFaceToward(p,s.x,s.y);
+}
 function npc(x,y,text,kind='',id=''){
  const sprite=pickNpcSprite(x,y,kind,id);
  const face=((x*31+y*7)%7===0)?'left':((x*13+y*11)%9===0)?'right':'down';
- npcs.push({x,y,text,kind,id,sprite,face});
+ npcs.push({x,y,homeX:x,homeY:y,text,kind,id,sprite,face,walking:false});
 }
 function borders(type=T.tree){for(let x=0;x<W;x++){put(x,0,type);put(x,H-1,type)}for(let y=0;y<H;y++){put(0,y,type);put(W-1,y,type)}}
 function houses(list){list.forEach(([x,y,w=7,h=5])=>{rect(x,y,w,h,T.roof);rect(x,y+h,w,2,T.wall);put(x+Math.floor(w/2),y+h+1,T.door)})}
@@ -2045,7 +2145,7 @@ function draw(){
  drawRegionAtmosphere(ox,oy,viewportWidth,viewportHeight,performance.now());
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
- const x=p.x*S+16-ox,y=p.y*S+32-oy;
+ const pos=npcVisualPosition(p),x=pos.x*S+16-ox,y=pos.y*S+32-oy;
  // A soft ground shadow anchors each character to the map.
  ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
  drawNpc(p,x,y);
@@ -2443,7 +2543,7 @@ function drawOutdoorWorld(){
   drawAtmosphericMotion(localOX,localOY,vw,vh,performance.now());
   if(area==='homestead'&&s.homestead?.owned)drawLivingPastures(localOX,localOY,vw,vh);
   for(const npc of npcs){
-   const x=npc.x*S+16-localOX,y=npc.y*S+32-localOY;
+   const pos=npcVisualPosition(npc),x=pos.x*S+16-localOX,y=pos.y*S+32-localOY;
    if(x< -40||x>vw+40||y< -70||y>vh+40)continue;
    ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
    drawNpc(npc,x,y);
@@ -2504,7 +2604,7 @@ function move(d){
  if(x<0||y<0||x>=W||y>=H)return;
  const door=villageDoorAt(x,y);
  if(door){recordWalkingStep();openVillageDoor(door);return}
- if(npcs.some(p=>p.x===x&&p.y===y)||solidAt(x,y))return;
+ if(npcs.some(p=>(p.x===x&&p.y===y)||(p.walking&&p.fromX===x&&p.fromY===y))||solidAt(x,y))return;
  const t=tiles[y][x];
  beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;recordWalkingStep();
  // Village doors use the shared door interaction and short opening animation.
@@ -2512,7 +2612,7 @@ function move(d){
   const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);
   return region('village',h.door,h.y+h.h+2);
  }
- if(s.area==='route2'&&!s.defeated.rt2&&Math.abs(s.x-24)+Math.abs(s.y-13)<=3)return say(['Bamboo trainer: I spotted you! Time for a battle.'],()=>startTrainer('rt2'));
+ if(checkTrainerSight())return;
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3){s.rivalPassed=true;save();return say(['Your childhood rival greets you outside the Grass Gym.','Let us see how much we have improved!'],()=>startTrainer('rival'))}
  
  const exploration=explorationSiteAt(s.area,s.x,s.y);
@@ -2561,8 +2661,8 @@ function interact(){
  if(modal||doorTransition||worldTransitionBusy)return;if(narratorBlocking())return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
- if(p)p.face=npcFaceToward(p,s.x,s.y);
- if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.x===14&&p.y===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return talkSideQuest(p.id);
+ if(p)pauseNpcForInteraction(p);
+ if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return talkSideQuest(p.id);
  if(p.kind==='researcher'){if(!s.starter)return say(p.text,starterMenu);return say(['Researcher: Your Critter Index is functioning well. Good luck!'])}
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -3080,7 +3180,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.11</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.12</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -4855,7 +4955,7 @@ document.addEventListener('gesturestart',e=>{if(screen==='game')e.preventDefault
 window.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{if(screen==='game')resizeGameCanvas()});
 if(read()?.name)$('continue').hidden=false;
-function loop(){if(screen==='game'){finishDoorAnimation();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
+function loop(){if(screen==='game'){finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}draw()}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
