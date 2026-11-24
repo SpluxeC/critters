@@ -88,9 +88,25 @@ function cleanSceneryArt(im,name){
    while(head<tail){const i=queue[head++];if(i%w)push(i-1);if(i%w<w-1)push(i+1);push(i-w);push(i+w)}
    cx.putImageData(img,0,0);
   }
+  // Normalize only grass-like background remnants near the image perimeter
+  // or lower ground strip, preserving interior foliage and roof colors.
+  const ground=[117,166,94];
+  const samples=corners.filter(green);
+  if(matte)samples.push(matte);
+  let recolored=false;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+   const k=(y*w+x)*4,r=d[k],g=d[k+1],b=d[k+2];
+   if(d[k+3]<30||g<r*1.06||g<b*1.12)continue;
+   const lower=y>=h*.83,edge=x<w*.12||x>=w*.88;
+   if(!lower&&!edge)continue;
+   const near=samples.some(p=>Math.hypot(r-p[0],g-p[1],b-p[2])<60);
+   const grassLike=lower&&g>=95&&g<=205&&r>=55&&r<=155&&b>=35&&b<=135&&Math.abs(r-b)<60;
+   if(near||grassLike){d[k]=ground[0];d[k+1]=ground[1];d[k+2]=ground[2];recolored=true}
+  }
+  if(recolored)cx.putImageData(img,0,0);
   let l=w,t=h,rr=-1,b=-1;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>20){l=Math.min(l,x);rr=Math.max(rr,x);t=Math.min(t,y);b=Math.max(b,y)}
-  if(rr>=l&&b>=t&&(matte||l||t||rr<w-1||b<h-1)){
+  if(rr>=l&&b>=t&&(recolored||matte||l||t||rr<w-1||b<h-1)){
    const out=document.createElement('canvas');out.width=rr-l+1;out.height=b-t+1;out.getContext('2d').drawImage(c,l,t,out.width,out.height,0,0,out.width,out.height);result=out;
   }
  }catch(err){console.warn('Scenery cleanup skipped',name,err)}
@@ -293,7 +309,7 @@ function villageCollider(x,y){if(x>=1&&x<W-1&&y>=1&&y<H-1)villageObstacles.add(k
 function buildVillageColliders(){
  villageObstacles=new Set();
  for(const h of VILLAGE_HOUSES)for(let y=h.y+1;y<=h.y+h.h+1;y++)for(let x=h.x;x<h.x+h.w;x++){
-  villageCollider(x,y);
+  if(buildingBlocksTile(h,x,y,'village'))villageCollider(x,y);
  }
  for(const [a,y,b] of VILLAGE_FENCES)for(let x=a;x<b;x++)villageCollider(x,y);
  for(const [x,y] of VILLAGE_LANTERNS)villageCollider(x,y);
@@ -601,11 +617,19 @@ function inspectRoute1Site(o){
  return notifyWorld(o.text);
 }
 
+// Match the drawn building rectangle, not the wider legacy tile footprint.
+function buildingBlocksTile(h,x,y,area){
+ const b=h.art||area==='village'?exteriorRect(h):{x:h.x,y:h.y,w:h.w,h:h.h+2,door:h.door??h.x+Math.floor(h.w/2)};
+ const center=x+.5;
+ if(center<b.x||center>=b.x+b.w||y<=h.y)return false;
+ if(y===h.y+h.h+1&&x===b.door&&area==='village')return false;
+ return y<h.y+h.h+2;
+}
 function solidAt(x,y){
  if(x<0||y<0||x>=W||y>=H)return true;
  const buildings=s.area==='village'?VILLAGE_HOUSES:TOWN_EXTERIORS[s.area]||[];
  const house=buildings.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2);
- if(house)return y>house.y;
+ if(house)return buildingBlocksTile(house,x,y,s.area);
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
  if(isInterior(s.area)&&interiorBlocked.has(key(x,y)))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
@@ -3665,7 +3689,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.26</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.27</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
