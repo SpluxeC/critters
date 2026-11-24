@@ -479,6 +479,8 @@ const ROUTE1_SITES=[
 ];
 // Phase 15: optional walk-over landmarks; these never block map routes.
 const EXPLORATION_SITES=[
+ {id:'exp-river-bridge',area:'route4',x:21,y:13,title:'Willow Bridge',text:'The old bridge crosses the river between the two towns.',credits:60},
+ {id:'exp-ridge-lookout',area:'ridge',x:16,y:7,title:'Ridge Lookout',text:'From the ridge you can see the valleys below.',credits:75},
  {id:'exp-bamboo',area:'route2',x:11,y:7,title:'Bamboo Wayfinder',text:'A ranger marked a shortcut through the bamboo.',reward:'Potion',quantity:1},
  {id:'exp-forest',area:'forest',x:17,y:9,title:'Hidden Forest Shrine',text:'A shrine glows beneath ancient trees.',reward:'Revive',quantity:1},
  {id:'exp-foothills',area:'route3',x:20,y:7,title:'Mountain Lookout',text:'The lookout reveals a beautiful valley.',credits:85},
@@ -488,11 +490,16 @@ const EXPLORATION_SITES=[
 // Optional pocket areas use existing regional encounter catalogs; no new
 // species assignments, time restrictions, or main-story prerequisites.
 const SECRET_AREAS={
+ willowHollow:{name:'Willow Hollow',parent:'route4',entrance:[6,5],returnAt:[6,6],spawn:[17,22],badge:0},
  grotto:{name:'Bamboo Grotto',parent:'route2',entrance:[11,5],returnAt:[11,6],spawn:[17,22],badge:0},
  ruins:{name:'Forgotten Ruins',parent:'forest',entrance:[17,6],returnAt:[17,7],spawn:[17,22],badge:0},
  cavern:{name:'Crystal Cavern',parent:'cave',entrance:[17,5],returnAt:[17,6],spawn:[17,22],badge:1}
 };
 const EXPLORATION_OBJECTS=[
+ {id:'willow-shrine',area:'route4',x:9,y:5,kind:'cache',title:'Willow Shrine',text:'A traveler left a small emergency supply box beside the shrine.',reward:'Potion',quantity:2},
+ {id:'river-cache',area:'route4',x:37,y:26,kind:'cache',title:'Riverside Supply Crate',text:'A weathered supply crate rests along the river trail.',reward:'PP Potion'},
+ {id:'willow-hollow-cache',area:'willowHollow',x:23,y:8,kind:'chest',title:'Hidden Hollow Cache',text:'A preserved supply chest rests in the quiet hollow.',reward:'Revive',credits:90},
+ {id:'ridge-cache',area:'ridge',x:27,y:23,kind:'cache',title:'Abandoned Trail Pack',text:'A forgotten traveler pack lies at the end of the ridge trail.',reward:'Potion',quantity:2},
  {id:'r2-stump-cache',area:'route2',x:12,y:8,kind:'cache',title:'Hollow Bamboo Stump',text:'A small packet is tucked inside the hollow stem.',reward:'Potion',quantity:2},
  {id:'r3-rock-cache',area:'route3',x:22,y:7,kind:'cache',title:'Loose Mountain Stone',text:'Something glints beneath the loose stone.',credits:75},
  {id:'garden-cache',area:'garden',x:16,y:18,kind:'cache',title:'Pondside Offering Box',text:'A forgotten supply packet rests beside the pond.',reward:'PP Potion'},
@@ -547,9 +554,10 @@ function exitSecret(){
 }
 function buildSecretArea(area){
  borders(T.rock);rect(1,1,W-2,H-2,T.rock);
- const ground=area==='grotto'?T.grass:T.stone;
+ const ground=area==='grotto'||area==='willowHollow'?T.grass:T.stone;
  rect(4,3,26,20,ground);rect(15,22,4,3,T.path);put(17,25,T.door);
  if(area==='grotto'){rect(7,5,8,4,T.tall);rect(21,10,6,7,T.tall);rect(5,12,6,4,T.water);rect(15,5,4,17,T.path)}
+ if(area==='willowHollow'){rect(5,5,8,7,T.water);rect(21,7,6,8,T.flower);rect(14,4,5,19,T.path);rect(19,7,5,3,T.path);for(const [x,y] of [[6,17],[9,15],[23,17],[26,5]])put(x,y,T.tree)}
  if(area==='ruins'){
   rect(4,11,26,1,T.rock);rect(15,11,5,1,T.path);
   rect(15,12,5,10,T.path);rect(15,3,5,8,T.path);
@@ -988,7 +996,7 @@ function migrate(){
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
- s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern'].includes(s.area)&&!TOWN_ROOMS[s.area])s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern','route4','ridge','willowHollow'].includes(s.area)&&!TOWN_ROOMS[s.area])s.area='village';
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
@@ -1311,7 +1319,7 @@ function build(preview=false){
  if(!preview){cancelTrainerApproach();npcResidenceDoor=null;migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  switch(s.area){
- case 'grotto':case 'ruins':case 'cavern':buildSecretArea(s.area);break;
+ case 'grotto':case 'ruins':case 'cavern':case 'willowHollow':buildSecretArea(s.area);break;
  case 'homestead':{
  const stage=homesteadConstructionStage(),owned=!!s.homestead?.owned;
  borders();rect(15,12,W-16,3,T.path);rect(15,10,3,4,T.path);
@@ -1450,6 +1458,23 @@ function build(preview=false){
  for(let y=3;y<23;y++)for(let x=3;x<31;x++)if(tiles[y][x]===T.stone&&(x*13+y*21)%18===0)put(x,y,T.rock);
  rect(15,13,4,12,T.stone);
  npc(8,10,['The mountain cave echoes with wild Critter calls.']);
+ break;
+ case 'route4':
+ borders();
+ // Willow-lined river crossing, marshes and a walkable central bridge.
+ rect(19,1,6,H-2,T.water);rect(1,12,W-2,3,T.path);
+ rect(8,5,3,8,T.path);rect(5,5,6,2,T.path);rect(30,14,3,13,T.path);rect(30,25,10,3,T.path);
+ rect(3,17,12,13,T.flower);rect(28,3,12,7,T.tall);
+ for(let y=2;y<H-1;y++)for(let x=2;x<W-1;x++)if(tiles[y][x]===T.grass&&(x*17+y*23)%19<4)put(x,y,T.tree);
+ rect(8,5,3,8,T.path);rect(5,5,6,2,T.path);rect(30,14,3,13,T.path);rect(30,25,10,3,T.path);
+ rect(1,12,W-2,3,T.path);
+ npc(12,11,['The river trail leads to Garden Town.','There is an old shrine north of the bridge.']);
+ break;
+ case 'ridge':
+ borders(T.rock);rect(1,12,W-2,3,T.path);rect(14,6,4,7,T.path);rect(26,14,3,11,T.path);
+ for(let y=2;y<H-1;y++)for(let x=2;x<W-1;x++)if(tiles[y][x]===T.grass&&(x*19+y*13)%17<5)put(x,y,(x+y)%3===0?T.tree:T.rock);
+ rect(1,12,W-2,3,T.path);rect(14,6,4,7,T.path);rect(26,14,3,11,T.path);
+ npc(19,11,['This old ridge trail connects the bamboo woods with the mountain foothills.']);
  break;
  case 'garden':
  borders();roads();rect(23,8,3,5,T.path);rect(5,8,2,5,T.path);houses([[2,3,9,4],[20,3,10,5],[3,18,8,4],[20,18,10,4]]);
@@ -2378,7 +2403,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
 // Phase 5: Cosmetic local-world day/night clock. One real second advances one
 // in-game minute; time is saved on existing save events. No battle/calendar effects.
 let atmospherePreviousFrame=0;
-const atmosphericIndoor=()=>isInterior(s.area)||['gym','cave','grotto','ruins','cavern'].includes(s.area);
+const atmosphericIndoor=()=>isInterior(s.area)||['gym','cave','grotto','ruins','cavern','willowHollow'].includes(s.area);
 function tickAtmosphere(now=performance.now()){
  if(!s)return;
  if(!atmospherePreviousFrame){atmospherePreviousFrame=now;return}
@@ -2394,7 +2419,7 @@ function worldHour(){return ((s?.worldMinutes??480)%1440)/60}
 const WEATHER_PROFILES={
  village:[65,22,5,8,0],town:[65,23,5,7,0],garden:[60,25,5,10,0],
  route1:[60,26,5,9,0],route2:[48,26,8,18,0],forest:[40,27,8,25,0],
- route3:[43,13,8,13,23],homestead:[65,22,5,8,0]
+ route3:[43,13,8,13,23],route4:[58,27,5,10,0],ridge:[53,17,7,16,7],homestead:[65,22,5,8,0]
 };
 const WEATHER_NAMES=['clear','rain','storm','fog','snow'];
 const WEATHER_LABELS={clear:'Clear',rain:'Rain',storm:'Thunderstorm',fog:'Fog',snow:'Snow',sheltered:'Sheltered'};
@@ -2698,14 +2723,14 @@ function draw(){
 /* Two interconnected loops: forest/rice/town/bamboo and town/bamboo/foothills/garden.
    Outdoor maps are separate simulation chunks but share one continuous camera. */
 const OUTDOOR_GRID=Object.freeze({
- homestead:[0,1],village:[1,1],route1:[2,1],town:[3,1],garden:[4,1],
- forest:[2,0],route2:[3,0],route3:[4,0]
+ homestead:[0,1],village:[1,1],route1:[2,1],town:[3,1],route4:[4,1],garden:[5,1],
+ forest:[2,0],route2:[3,0],route3:[5,0],ridge:[4,0]
 });
-const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome','grotto','ruins','cavern',...Object.keys(TOWN_ROOMS)]);
+const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome','grotto','ruins','cavern','willowHollow',...Object.keys(TOWN_ROOMS)]);
 
 /* Per-column widths and per-row heights keep outdoor sections edge-aligned
    while giving the seven areas substantially different playable footprints. */
-const OUTDOOR_COL_WIDTHS=[36,40,44,51,46],OUTDOOR_ROW_HEIGHTS=[34,40];
+const OUTDOOR_COL_WIDTHS=[36,40,44,51,44,46],OUTDOOR_ROW_HEIGHTS=[34,40];
 function outdoorSize(area){
  const grid=OUTDOOR_GRID[area];
  return grid?{w:OUTDOOR_COL_WIDTHS[grid[0]],h:OUTDOOR_ROW_HEIGHTS[grid[1]]}:roomSize(area);
@@ -2758,11 +2783,13 @@ const OUTDOOR_LINKS={
  homestead:{right:['village',12,14]},
  village:{left:['homestead',12,14],right:['route1',12,14]},
  route1:{left:['village',12,14],right:['town',12,14],up:['forest',15,18]},
- town:{left:['route1',12,14],right:['garden',12,14],up:['route2',16,18]},
+ town:{left:['route1',12,14],right:['route4',12,14],up:['route2',16,18]},
+ route4:{left:['town',12,14],right:['garden',12,14]},
  forest:{down:['route1',15,18],right:['route2',12,14]},
- route2:{left:['forest',12,14],right:['route3',12,14],down:['town',16,18]},
- route3:{left:['route2',12,14],down:['garden',17,19],up:['cave',19,21]},
- garden:{left:['town',12,14],up:['route3',17,19]}
+ route2:{left:['forest',12,14],right:['ridge',12,14],down:['town',16,18]},
+ ridge:{left:['route2',12,14],right:['route3',12,14]},
+ route3:{left:['ridge',12,14],down:['garden',17,19],up:['cave',19,21]},
+ garden:{left:['route4',12,14],up:['route3',17,19]}
 };
 const outdoorChunks=new Map();
 let worldTransitionBusy=false,worldFadeTimer=null;
@@ -2808,6 +2835,7 @@ function prepareOutdoorPortals(){
  if(s.area==='route2')vertical(16,18,12,H-1);
  if(s.area==='route3')vertical(17,19,12,H-1);
  if(s.area==='garden')vertical(17,19,0,14);
+ if(s.area==='route4'||s.area==='ridge')horizontal(0,W-1,12,14);
 }
 function outdoorChunk(area){
  if(area==='homestead'&&outdoorChunks.get(area)?.constructionKey!==homesteadGeometryKey())outdoorChunks.delete(area);
@@ -3703,7 +3731,9 @@ const REGION_MAP_PLACES=[
  {id:'forest',name:'Hidden Forest',x:30,y:36,kind:'wild'},
  {id:'route3',name:'Route 3 · Foothills',x:72,y:34,kind:'route'},
  {id:'cave',name:'Mountain Cave',x:89,y:20,kind:'wild'},
- {id:'garden',name:'Garden Town',x:72,y:73,kind:'center',spawn:[14,14]}
+ {id:'route4',name:'Route 4 · Willow River Trail',x:64,y:73,kind:'route'},
+ {id:'ridge',name:'Ridge Trail',x:62,y:39,kind:'route'},
+ {id:'garden',name:'Garden Town',x:84,y:73,kind:'center',spawn:[14,14]}
 ];
 const REGION_MAP_INTERIORS=[
  ...Object.entries(TOWN_ROOMS).map(([id,d])=>({id,name:d.name,parent:d.parent})),
@@ -3713,6 +3743,7 @@ const REGION_MAP_INTERIORS=[
  {id:'lab',name:'Research Laboratory',parent:'village'},
  {id:'gym',name:'Grass Gym',parent:'garden'},
  {id:'grotto',name:'Bamboo Grotto',parent:'route2'},
+ {id:'willowHollow',name:'Willow Hollow',parent:'route4'},
  {id:'ruins',name:'Forgotten Ruins',parent:'forest'},
  {id:'cavern',name:'Crystal Cavern',parent:'cave'}
 ];
@@ -3776,7 +3807,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.30</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.31</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
