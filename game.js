@@ -1161,6 +1161,80 @@ function drawTile(t,x,y,a,b){
 // decorative; existing exits, NPCs and interaction hitboxes stay unchanged.
 // A single cohesive village art pass. Buildings, fences, lanterns and stone colliders
 // all read the same placement data so players cannot walk through visible obstacles.
+// Exterior artwork is tied to existing footprints, not new doors or services.
+// Town service buildings are visual landmarks; their NPC interactions are unchanged.
+const TOWN_EXTERIORS={
+ town:[
+  {x:4,y:5,w:8,h:5,art:'house-terracotta'},
+  {x:21,y:5,w:9,h:5,label:'CRITTER CENTER'},
+  {x:4,y:17,w:8,h:4,art:'shop-red'},
+  {x:21,y:17,w:9,h:4,art:'house-slate'}
+ ],
+ garden:[
+  {x:2,y:3,w:9,h:4,label:'CRITTER CENTER'},
+  {x:20,y:3,w:10,h:5,label:'GRASS GYM'},
+  {x:3,y:18,w:8,h:4,art:'house-sage-porch'},
+  {x:20,y:18,w:10,h:4,art:'shop-green'}
+ ]
+};
+const VILLAGE_EXTERIOR_ART={home:'house-terracotta',lab:'lab-blue',neighbor:'house-slate'};
+function exteriorRect(h){
+ const door=h.door??h.x+Math.floor(h.w/2);
+ const center=door+.5;
+ // Keep the sprite's central doorway aligned with the existing door cell.
+ const width=2*Math.min(center-h.x,h.x+h.w-center);
+ return {x:center-width/2,y:h.y,w:width,h:h.h+2,door};
+}
+function exteriorFootprintIntact(h){
+ for(let y=h.y;y<h.y+h.h+2;y++)for(let x=h.x;x<h.x+h.w;x++){
+  const t=tiles[y]?.[x];
+  if(t!==T.roof&&t!==T.wall&&t!==T.door)return false;
+ }
+ return true;
+}
+function drawBuildingExterior(name,h,ox,oy,clear=false){
+ const im=uploadedArt(name);if(!im)return false;
+ const b=exteriorRect(h);
+ if(clear){
+  // Replace the old roof/wall raster only after the new image is ready.
+  for(let y=h.y;y<h.y+h.h+2;y++)for(let x=h.x;x<h.x+h.w;x++){
+   ctx.fillStyle=palette[T.grass]||'#5f8e5f';ctx.fillRect(x*S-ox,y*S-oy,S,S);
+   drawTerrainArt('grass-plain',x*S-ox,y*S-oy);
+  }
+ }
+ const x=b.x*S-ox,y=b.y*S-oy,w=b.w*S,height=b.h*S;
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ ctx.beginPath();ctx.rect(h.x*S-ox,h.y*S-oy,h.w*S,(h.h+2)*S);ctx.clip();
+ ctx.drawImage(im,x,y,w,height);
+ ctx.restore();return true;
+}
+function drawExteriorSign(h,ox,oy){
+ const x=(h.x+h.w/2)*S-ox,y=(h.y+h.h+.1)*S-oy;
+ ctx.save();ctx.font='bold 12px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+ const width=Math.min(h.w*S-12,ctx.measureText(h.label).width+20);
+ ctx.fillStyle='#342e27';ctx.fillRect(x-width/2,y-10,width,20);
+ ctx.fillStyle='#d1b58a';ctx.fillRect(x-width/2+2,y-8,width-4,16);
+ ctx.fillStyle='#302c26';ctx.fillText(h.label,x,y,width-8);ctx.restore();
+}
+function drawTownExteriors(ox,oy,w,h){
+ for(const b of TOWN_EXTERIORS[s.area]||[]){
+  if(b.x*S-ox>w||(b.x+b.w)*S-ox<0||b.y*S-oy>h||(b.y+b.h+2)*S-oy<0)continue;
+  if(!exteriorFootprintIntact(b))continue;
+  if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
+  if(b.label)drawExteriorSign(b,ox,oy);
+ }
+}
+function drawHomesteadBuildingExteriors(ox,oy){
+ // Leave purchased siding/porch combinations and unfinished construction intact.
+ if(homesteadConstructionStage()>=4&&s.homestead?.owned&&!activeCosmetic('house')&&!activeCosmetic('porch')){
+  const home={x:6,y:5,w:6,h:3,door:9};
+  if(exteriorFootprintIntact(home))drawBuildingExterior(activeCosmetic('roof')?.id==='style-18'?'house-slate':'house-terracotta',home,ox,oy,true);
+ }
+ if(farmStage()>=2){
+  const barn={x:24,y:5,w:8,h:5,door:28};
+  if(exteriorFootprintIntact(barn))drawBuildingExterior(activeCosmetic('barn')?.id==='style-31'?'barn-blue':'barn-red',barn,ox,oy,true);
+ }
+}
 function drawVillageDetails(ox,oy,viewW,viewH){
  if(s.area!=='village')return;
  const pos=(x,y)=>[x*S-ox,y*S-oy];
@@ -1238,7 +1312,9 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   ctx.fillStyle='#15292488';
   ctx.beginPath();ctx.ellipse(px+w/2,py+height-12,w*.55,17,0,0,Math.PI*2);ctx.fill();
   const img=villageBuildings[h.kind];
-  if(img.complete&&img.naturalWidth>0){
+  if(drawBuildingExterior(VILLAGE_EXTERIOR_ART[h.kind],h,ox,oy)){
+   // Existing door animation and entrance cue below are retained.
+  }else if(img.complete&&img.naturalWidth>0){
    ctx.imageSmoothingEnabled=false;ctx.drawImage(img,px,py,w,height);
   }else{
    // Graceful fallback if an image has not yet loaded.
@@ -2120,7 +2196,8 @@ function drawOutdoorWorld(){
   for(let y=y1;y<y2;y++)for(let x=x1;x<x2;x++)drawTile(tiles[y][x],x*S-localOX,y*S-localOY,x,y);
   if(area==='village')drawVillageDetails(localOX,localOY,vw,vh);
   if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
-  if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY)}
+  if(area==='town'||area==='garden')drawTownExteriors(localOX,localOY,vw,vh);
+  if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY);drawHomesteadBuildingExteriors(localOX,localOY)}
   drawNaturalDetails(localOX,localOY,vw,vh);
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawExplorationSites(localOX,localOY);
@@ -2764,7 +2841,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.05</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.06</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
