@@ -797,19 +797,27 @@ function rect(x,y,w,h,t){for(let a=x;a<x+w;a++)for(let b=y;b<y+h;b++)put(a,b,t)}
 // Explicit anchors preserve story roles when actors move.
 const NPC_PATROLS={rt2:[[24,13],[28,13]],rt3:[[12,13],[8,13]]};
 const NPC_STATIONARY=new Set(['leader','switch','property-sign','gymtrainer','rival']);
+// Living world: keep essential staff and story actors available throughout the day.
+function shopIsOpen(hour=worldHour()){return hour>=7&&hour<20}
+function npcRoutineDialogue(p){
+ const task=npcRoutinePlan(s.area,p,worldHour(),s.starter)?.task;
+ const lines={'Resting':'It is late. I am resting until morning.','Preparing breakfast':'Good morning! I am getting ready for the day.','Housework':'I am taking care of things around the house.','Relaxing':'It is nice to unwind after a long day.','Walking':'I am enjoying a little walk.','Checking fields':'I am checking the fields before work.','Tending rice':'The rice needs tending today.','Finishing work':'I am finishing up before nightfall.','Working':'There is plenty of work to do today.','Reviewing notes':'I am reviewing the research notes tonight.'};
+ return lines[task]?[lines[task],...p.text]:p.text;
+}
 function npcRoutinePlan(area,p,hour,starter){
  const x=p.homeX,y=p.homeY;
  if(NPC_PATROLS[p.id])return {task:'Patrolling',points:NPC_PATROLS[p.id],patrol:true};
  if(NPC_STATIONARY.has(p.kind)||p.kind==='routetrainer'||(p.kind==='researcher'&&!starter))return null;
  if(area==='garden'&&x===25&&y===11)return null;
  const night=hour<5||hour>=20,morning=hour<8,evening=hour>=17;
- if(p.kind==='center'||p.kind==='shop')return {task:p.kind==='center'?'Checking equipment':'Organizing supplies',points:[[x,y],[x+1,y],[x,y]],radius:1};
+ if(p.kind==='center')return {task:'Checking equipment',points:[[x,y],[x+1,y],[x,y]],radius:1};
+ if(p.kind==='shop')return shopIsOpen(hour)?{task:'Organizing supplies',points:[[x,y],[x+1,y],[x,y]],radius:1}:{task:'Resting',points:[[x,y]],radius:1};
  if(p.kind==='researcher'||p.kind==='labassistant')return {task:night?'Reviewing notes':'Researching',points:[[x,y],[x-2,y],[x,y+2]],radius:3};
  if(p.kind==='construction-worker')return night?{task:'Resting',points:[[x,y]]}:{task:'Working',points:[[x,y],[x+1,y],[x,y+1]],radius:2};
  if(p.id==='farmer-fieldwork')return {task:night?'Resting':morning?'Checking fields':evening?'Finishing work':'Tending rice',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y-1]],radius:3};
  if(p.kind==='sidequest')return {task:'Observing',points:[[x,y],[x+1,y]],radius:1};
  if(area==='home'||area==='neighbor')return {task:night?'Resting':morning?'Preparing breakfast':evening?'Relaxing':'Housework',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y+2]],radius:3};
- return {task:night?'Resting':evening?'Relaxing':'Walking',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y+2],[x-1,y]],radius:3};
+ return {task:night?'Resting':morning?'Walking':evening?'Relaxing':'Walking',points:night?[[x,y]]:evening?[[x,y],[x-1,y]]:morning?[[x,y],[x,y+2]]:[[x,y],[x+2,y],[x,y+2],[x-1,y]],radius:3};
 }
 function npcReservedCell(area,x,y,w,h){
  if(x<2||y<2||x>=w-2||y>=h-2)return true;
@@ -919,7 +927,8 @@ function tickNpcRoutines(now=performance.now()){
   if(!plan)continue;
   p.task=plan.task;
   const points=plan.points,radius=plan.patrol?8:plan.radius||3;
-  if(p.routineTask!==plan.task){p.routineTask=plan.task;p.routineIndex=0}
+  const scheduleKey=plan.task+':'+JSON.stringify(points);
+  if(p.routineTask!==scheduleKey){p.routineTask=scheduleKey;p.routineIndex=0}
   if(points.length===1&&p.x===points[0][0]&&p.y===points[0][1]){p.nextRoutine=now+3500;continue}
   let i=(p.routineIndex||0)%points.length;
   if(p.x===points[i][0]&&p.y===points[i][1]){i=(i+1)%points.length;p.routineIndex=i;p.nextRoutine=now+(plan.patrol?850:2200);continue}
@@ -2749,7 +2758,7 @@ function interact(){
  if(p.kind==='gymtrainer'||p.kind==='routetrainer')return s.defeated[p.id]?say(['Trainer: Good match! Want a rematch?'],()=>rematchMenu(p.id)):say(p.text,()=>startTrainer(p.id));
  if(p.kind==='leader')return s.badges?say(['Gym Leader: Your first badge is well earned.']):!s.defeated.g1||!s.defeated.g2||!s.defeated.g3||!s.puzzles.gate?say(['Gym Leader: Defeat all three trainers and open the garden mechanism first.']):startTrainer('leader');
  if(p.kind==='switch'){if(s.defeated.g1&&s.defeated.g2&&s.defeated.g3){s.puzzles.gate=true;build();save();return notifyWorld(['You activate the garden mechanism. The roots withdraw!'])}return say(['The mechanism is tangled in roots. Defeat all three Gym trainers first.'])}
- return say(p.text)}
+ return say(npcRoutineDialogue(p))}
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return region('homesteadHome',17,23);
  if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
  const door=villageDoorAt(x,y);
@@ -4937,6 +4946,13 @@ function manageModules(){
  $('modulesBack').onclick=center
 }
 function shop(){
+ if(!shopIsOpen()){
+  open('Critter Shop · After hours','<p>Regular shop hours: 07:00–20:00. Emergency capture-beam charging remains available.</p>'+beamShopHTML()+'<p class="muted">You can wait until morning to browse supplies. Critter Centers remain open all night.</p><button class="btn" id="shopWaitMorning">Wait until 07:00</button>');
+  const upgrade=$('beamUpgrade');if(upgrade)upgrade.disabled=true;
+  $('beamRecharge').onclick=()=>{if(rechargeBeam(s)){save();indexNotice('Capture Beam fully recharged.');shop()}};
+  $('shopWaitMorning').onclick=()=>{if(worldHour()>=20)s.worldDay=(s.worldDay||1)+1;s.worldMinutes=420;save();shop()};
+  return;
+ }
  const supplies=[['Potion',30],['PP Potion',45],['Revive',90]];
  const modules=[['Power Coil',120],['Guard Plate',120],['Weakening Field',150]];
  // Shops sell stones directly into the Critter Index bag, not module sockets.
@@ -4945,7 +4961,7 @@ function shop(){
  const section=(title,items)=>'<h3>'+title+'</h3><div class="options">'
   +items.map(([name,price])=>'<button class="btn" data-buy="'+escapeHtml(name)+'" '+(s.money<price?'disabled':'')+'>'
    +escapeHtml(name)+' — '+price+' ◇'+(EVOLUTION_STONES[name]?' · Owned '+(s.inventory[name]||0):'')+'</button>').join('')+'</div>';
- open('Critter Shop','<p>Money: '+s.money+' ◇</p>'
+ open('Critter Shop','<p>Open 07:00–20:00 · Money: '+s.money+' ◇</p>'
   +beamShopHTML()+section('Healing items',supplies)+section('Index modules',modules)
   +section('Evolution stones',stones)
   +'<p class="muted">Evolution stones are used from the Critter Index Party screen after the required level is reached. Each successful stone evolution consumes one stone. Modules are installed at a Critter Center.</p>');
