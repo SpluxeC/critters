@@ -1420,7 +1420,7 @@ function build(preview=false){
  case 'town':
  borders();roads();rect(16,8,2,5,T.path);rect(16,15,2,7,T.path);houses([[4,5,8,5],[21,5,9,5],[4,17,8,4],[21,17,9,4]]);
  npc(9,12,['Welcome to the town between the rice fields and the bamboo woods!']);
- npc(23,13,['The Critter Center is just north of here. Go inside for healing and Index maintenance.']);
+ npc(22,15,['The Critter Center is just north of here. Go inside for healing and Index maintenance.']);
  npc(14,18,['The supply shop is southwest of here.']);
  npc(16,10,['This town is a good place to rest before Route 2.'],'sidequest','bamboo-survey');
  break;
@@ -1475,6 +1475,11 @@ function build(preview=false){
  decorateExpandedOutdoor();
  prepareOutdoorPortals();
  prepareExplorationGeometry();
+ // Author an unobstructed two-cell apron and visible door for every town room.
+ for(const room of Object.values(TOWN_ROOMS))if(room.parent===s.area){
+  const [dx,dy]=room.door;put(dx,dy,T.door);
+  for(let xx=dx-1;xx<=dx+1;xx++)for(let yy=dy+1;yy<=dy+2;yy++)if(tiles[yy]?.[xx]!==T.roof&&tiles[yy]?.[xx]!==T.wall)put(xx,yy,T.path);
+ }
  if(!preview&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y&&!p.indoors))){
   const originX=s.x,originY=s.y;
   let found=false;
@@ -1867,6 +1872,8 @@ function drawTownExteriors(ox,oy,w,h){
   if(b.x*S-ox>w||(b.x+b.w)*S-ox<0||b.y*S-oy>h||(b.y+b.h+2)*S-oy<0)continue;
   if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
   if(b.label)drawExteriorSign(b,ox,oy);
+  const room=Object.values(TOWN_ROOMS).find(d=>d.parent===s.area&&d.door[0]>=b.x&&d.door[0]<b.x+b.w&&d.door[1]===b.y+b.h+1);
+  if(room){const [dx,dy]=room.door;ctx.fillStyle='#302b25';ctx.fillRect(dx*S-ox+6,dy*S-oy,20,S);ctx.fillStyle='#977653';ctx.fillRect(dx*S-ox+9,dy*S-oy+2,14,S-3);ctx.fillStyle='#e5c581';ctx.fillRect(dx*S-ox+19,dy*S-oy+15,3,3)}
   if(b.art?.startsWith('shop-')){
    const y=b.y+b.h;
    if(tiles[y]?.[b.x]===T.wall)drawUploadedFit('barrel',b.x*S-ox,y*S-oy,S,S);
@@ -2349,7 +2356,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
 // Phase 5: Cosmetic local-world day/night clock. One real second advances one
 // in-game minute; time is saved on existing save events. No battle/calendar effects.
 let atmospherePreviousFrame=0;
-const atmosphericIndoor=()=>['home','neighbor','lab','gym','homesteadHome','cave','grotto','ruins','cavern'].includes(s.area);
+const atmosphericIndoor=()=>isInterior(s.area)||['gym','cave','grotto','ruins','cavern'].includes(s.area);
 function tickAtmosphere(now=performance.now()){
  if(!s)return;
  if(!atmospherePreviousFrame){atmospherePreviousFrame=now;return}
@@ -2591,7 +2598,7 @@ function drawAtmosphereHUD(){
  const h=worldHour(),hours=Math.floor(h),minutes=Math.floor((h-hours)*60);
  const clock=String(hours).padStart(2,'0')+':'+String(minutes).padStart(2,'0');
  const timeLabel='Day '+(s.worldDay||1)+' · '+clock+' · '+WEATHER_LABELS[regionalWeather()];
- const location=SECRET_AREAS[s.area]?.name||(s.area==='homestead'&&s.homestead?.owned?'Personal Home':REGION_MAP_PLACES.find(p=>p.id===s.area)?.name)
+ const location=TOWN_ROOMS[s.area]?.name||SECRET_AREAS[s.area]?.name||(s.area==='homestead'&&s.homestead?.owned?'Personal Home':REGION_MAP_PLACES.find(p=>p.id===s.area)?.name)
   ||REGION_MAP_INTERIORS.find(p=>p.id===s.area)?.name
   ||'The Valley';
  const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
@@ -3740,7 +3747,8 @@ function fastTravelToCenter(id){
  const [x,y]=place.spawn;
  mapTravelSelection=null;
  close(); // Remove watch modal before using the existing region transition.
- region(id==='homestead'?'homesteadHome':id,id==='homestead'?17:x,id==='homestead'?23:y,'',true);indexNotice('Fast Travel complete — '+regionalPlaceName(place)+'.');
+ const room=id==='town'?'townCenter':id==='garden'?'gardenCenter':id==='homestead'?'homesteadHome':null;
+ region(room||id,room?17:x,room?23:y,'',true);indexNotice('Fast Travel complete — '+regionalPlaceName(place)+'.');
  s.face='up';save();
  return true;
 }
