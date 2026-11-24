@@ -65,7 +65,34 @@ function pickNpcSprite(x,y,kind='',id=''){
  const arr=pools[area]||pools.village;
  return arr[Math.abs((x*17+y*29+area.length*13))%arr.length];
 }
+// Uploaded artwork is loaded lazily and always retains a procedural fallback.
+const uploadedArtCache=new Map();
+function uploadedArt(name){
+ if(!uploadedArtCache.has(name)){const im=new Image();im.src='assets/'+name+'.png';uploadedArtCache.set(name,im)}
+ const im=uploadedArtCache.get(name);return im.complete&&im.naturalWidth>0&&im.naturalHeight>0?im:null;
+}
+function drawUploadedArt(name,x,y,w,h){
+ const im=uploadedArt(name);if(!im)return false;
+ ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,w,h);ctx.restore();return true;
+}
+function drawUploadedFit(name,x,y,w,h){
+ const im=uploadedArt(name);if(!im)return false;
+ const k=Math.min(w/im.naturalWidth,h/im.naturalHeight),iw=im.naturalWidth*k,ih=im.naturalHeight*k;
+ return drawUploadedArt(name,x+(w-iw)/2,y+h-ih,iw,ih);
+}
+function uploadedNpcName(p,area){
+ if(area==='home'&&p.x===14&&p.y===11)return 'npc-mother';
+ if(p.kind==='center')return 'npc-center-nurse';
+ if(p.id==='farmer-fieldwork')return 'npc-rice-farmer';
+ if(area==='gym'&&p.kind==='leader')return 'npc-gym-leader-grass';
+ return null;
+}
 function drawNpc(p,x,y){
+ const name=uploadedNpcName(p,s.area),custom=name&&uploadedArt(name);
+ if(custom&&custom.naturalWidth===128&&custom.naturalHeight===128){
+  const row={down:0,up:1,left:2,right:3}[p.face||'down']??0;
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(custom,0,row*32,32,32,x-29.5,y-55,59,59);ctx.restore();return;
+ }
  // Dedicated lab assistant asset: same 4x4, 32px layout and feet anchor as researcher.
  if(p.kind==='labassistant'&&npcLabAssistant.complete&&npcLabAssistant.naturalWidth===128){
   const row={down:0,up:1,left:2,right:3}[p.face||'down']??0;
@@ -946,6 +973,13 @@ function drawTile(t,x,y,a,b){
  if(!natural){ctx.fillStyle=palette[t]||palette[0];ctx.fillRect(x,y,S+0.5,S+0.5)}
  const hash=(v)=>{const z=Math.sin(v*127.1+83.7)*43758.5453;return z-Math.floor(z)};
  const variation=hash(a*3.71+b*1.91);
+ // Only selected terrain tiles are enabled. Existing collision and encounter IDs are unchanged.
+ if(!isInterior(s.area)&&s.area!=='gym'){
+  const name=t===T.grass?'grass-plain':t===T.path?'dirt-path':t===T.water?'water-01':null;
+  if(name&&drawUploadedArt(name,x,y,S,S))return;
+  if(t===T.rock&&drawUploadedArt('rock-small',x,y,S,S))return;
+  if(t===T.flower&&drawUploadedArt('flowers-pink',x,y,S,S))return;
+ }
  if(natural){
    // Tiny blades and irregular clumps repeat across world space with no grid outline.
    ctx.fillStyle='rgba(26,79,44,.14)';
@@ -1327,7 +1361,10 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
   const {x,y,w,h,kind}=o,px=wx(x),py=wy(y),ww=w*S,hh=h*S;
   // Cast shadow and contact shadow before drawing the actual solid furniture.
   ctx.fillStyle='#201b1c66';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.48,Math.max(5,hh*.13),0,0,Math.PI*2);ctx.fill();
-  if(kind==='bed'){
+  if(kind==='bookshelf'&&drawUploadedFit('book-shelf',px,py,ww,hh)){
+   // Preserve the original solid footprint and interaction metadata.
+  }else if(s.area==='lab'&&kind==='terminal'&&drawUploadedFit('workstation',px,py,ww,hh)){
+  }else if(kind==='bed'){
    box(x+.05,y+.2,w-.1,h-.25,'#604639');
    box(x+.25,y+.12,w-.5,h-.5,'#e6ded0');
    box(x+.4,y+.2,w-.8,1.05,'#f7efde');
@@ -1927,7 +1964,8 @@ function drawFarmGrounds(ox,oy){
  const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
  for(const [x,y,w,h] of FARM_PASTURES.slice(0,farmCapacity().pairs)){
   for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(xx===x||xx===x+w-1||yy===y||yy===y+h-1){box(xx,yy+.32,1,.14,cosmeticColor('fence','#805b37'));box(xx,yy+.66,1,.12,cosmeticColor('fence','#a98150'));box(xx+.08,yy+.12,.16,.78,cosmeticColor('fence','#c49a64'))}
-  box(x+1.3,y+1.3,1.1,.42,cosmeticColor('trough','#85653f'));box(x+1.4,y+1.4,.88,.22,'#7c9b9d');box(x+w-2.4,y+1.3,.8,.55,cosmeticColor('hay','#c9ae56'));if(activeCosmetic('hay'))box(x+w-2.6,y+1.1,1.2,.2,'#805b37');if(activeCosmetic('nest')){box(x+w-2.3,y+h-2.2,1.1,.65,'#947150');box(x+w-2.45,y+h-2.4,1.4,.2,'#674b37')}
+  if(activeCosmetic('trough'))drawUploadedFit('stone-water-trough',(x+1.1)*S-ox,(y+1.05)*S-oy,1.6*S,.85*S);
+  else box(x+1.3,y+1.3,1.1,.42,cosmeticColor('trough','#85653f'));box(x+1.4,y+1.4,.88,.22,'#7c9b9d');if(!drawUploadedFit('hay-bale',(x+w-2.6)*S-ox,(y+1.1)*S-oy,1.3*S,.8*S))box(x+w-2.4,y+1.3,.8,.55,cosmeticColor('hay','#c9ae56'));if(activeCosmetic('hay'))box(x+w-2.6,y+1.1,1.2,.2,'#805b37');if(activeCosmetic('nest')){box(x+w-2.3,y+h-2.2,1.1,.65,'#947150');box(x+w-2.45,y+h-2.4,1.4,.2,'#674b37')}
  }
 }
 function drawHomesteadConstruction(ox,oy){
@@ -2611,7 +2649,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.02</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.03</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
