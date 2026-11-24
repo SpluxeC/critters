@@ -1499,6 +1499,53 @@ function drawInteriorDecor(ox,oy){
  if(activeCosmetic('kitchen')){box(30,5,2,3,'#b88d61');box(30.2,5.3,1.6,.7,'#c6cbc5');box(30.4,6.4,1,.6,'#738a88')}
  if(activeCosmetic('trophy')){box(14,2.5,5,.5,'#70523b');for(let i=0;i<Math.min(8,s.badges||0);i++){box(14.3+i*.55,1.9,.3,.45,'#ddbb66');box(14.2+i*.55,2.35,.5,.12,'#c7a45a')}}
 }
+// Interior textures and props use existing solid furniture footprints.
+// Keep purchased cosmetic colors authoritative rather than replacing them.
+function interiorArtPlan(area,o){
+ const lab=area==='lab';
+ const byId={
+ 'lab-left':['chemistry-bench'],'lab-right':['counter-straight','microscope','centrifuge'],
+ 'lab-terminal':['workstation'],'lab-books':['specimen-shelf-1'],
+ 'lab-tools':['counter-straight','laptop','monitor-wave'],
+ 'lab-board':['whiteboard'],'lab-starters':['counter-straight','monitor-dna'],
+ 'estate-terminal':['workstation'],'estate-storage':['storage-crate'],
+ 'estate-incubators':['counter-straight'],'home-storage':['crate-wide'],
+ 'home-supplies':['crate-small-wide'],'home-keepsake':['glass-display'],
+ 'neighbor-bamboo':['plant-terracotta']
+ };
+ if(byId[o.id])return byId[o.id];
+ if(o.kind==='bookshelf')return ['book-shelf'];
+ return [];
+}
+function interiorTexture(name,x,y,w,h,ox,oy,vw,vh){
+ const im=uploadedArt(name);if(!im)return false;
+ // Tile in world coordinates, clipped to the actual architectural surface.
+ const left=x*S-ox,top=y*S-oy,right=left+w*S,bottom=top+h*S;
+ const step=S;ctx.save();ctx.imageSmoothingEnabled=false;ctx.beginPath();
+ ctx.rect(left,top,w*S,h*S);ctx.clip();
+ for(let yy=top+Math.max(0,Math.floor(-top/step))*step;yy<Math.min(bottom,vh);yy+=step)
+  for(let xx=left+Math.max(0,Math.floor(-left/step))*step;xx<Math.min(right,vw);xx+=step)
+   ctx.drawImage(im,xx,yy,step,step);
+ ctx.restore();return true;
+}
+function drawInteriorAsset(area,o,px,py,ww,hh){
+ const plan=interiorArtPlan(area,o);
+ if(!plan.length||!plan.every(n=>uploadedArt(n)))return false;
+ ctx.save();ctx.beginPath();ctx.rect(px,py,ww,hh);ctx.clip();
+ if(o.id==='lab-starters'){
+  // Preserve the three original Rock/Water/Electric display markers.
+  drawUploadedFit(plan[0],px,py,ww,hh);
+  for(let j=0;j<3;j++){
+   const cx=px+ww*(j+.5)/3,cy=py+hh*.34;
+   ctx.fillStyle=['#9d968b','#568ec2','#ddb652'][j];ctx.fillRect(cx-9,cy-7,18,14);
+   ctx.fillStyle='#e3e9dc';ctx.fillRect(cx-4,cy-3,8,5);
+  }
+ }else{
+  drawUploadedFit(plan[0],px,py,ww,hh);
+  for(let j=1;j<plan.length;j++)drawUploadedFit(plan[j],px+ww*(j-1)/Math.max(1,plan.length-1),py,ww/Math.max(1,plan.length-1),hh*.48);
+ }
+ ctx.restore();return true;
+}
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(!isInterior(s.area))return;
  const wx=(x)=>x*S-ox,wy=(y)=>y*S-oy;
@@ -1508,15 +1555,19 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  // Continuous plank flooring rather than visually isolated square wood tiles.
  const estate=s.area==='homesteadHome';const style=(slot,fallback)=>estate?cosmeticColor(slot,fallback):fallback;
  box(0,0,W,H,style('floor','#8e7258'));
+ const floorArt=s.area==='lab'?'ceramic-floor-01':'wood-floor-01';
+ if(!(estate&&activeCosmetic('floor'))&&interiorTexture(floorArt,0,0,W,H,ox,oy,viewW,viewH)){}else{
  for(let y=0;y<H;y+=1.22)line(0,y,W,y,'#6c523f',2);
  for(let x=0;x<W;x+=6)line(x,0,x,H,'#ae9170',1.5);
  for(let y=0;y<H;y+=2.44)for(let x=((y*7)%2)*3;x<W;x+=6)line(x,y,x,y+1.22,'#74563f',1.5);
+ }
  // Tatami lounge sections and softly shaded edge bindings.
  const tatami=s.area==='lab'?[[12,15,9,5]]:[[11,6,11,6],[12,15,9,5]];
  for(const [x,y,w,h] of tatami){
   box(x,y,w,h,'#b9ad83');
   box(x+.10,y+.10,w-.20,h-.20,'#d9c99b');
-  for(let k=0;k<w;k+=2.2)line(x+k,y+.2,x+k,y+h-.2,'#a99f76',1);
+  if(s.area==='lab')interiorTexture('ceramic-floor-01',x+.1,y+.1,w-.2,h-.2,ox,oy,viewW,viewH);
+  else if(!interiorTexture('tatami-01',x+.1,y+.1,w-.2,h-.2,ox,oy,viewW,viewH))for(let k=0;k<w;k+=2.2)line(x+k,y+.2,x+k,y+h-.2,'#a99f76',1);
   line(x+.12,y+h-.2,x+w-.12,y+h-.2,'#687d69',4);
  }
  // Window-wall, waist-high joinery, wooden uprights and overhead beams.
@@ -1527,8 +1578,13 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  box(0,24.85,16.45,.18,'#ad8969');box(17.55,24.85,16.45,.18,'#ad8969');
  box(0,0,.9,H,'#4b3b33');box(W-.9,0,.9,H,'#4b3b33');
  for(let x=4;x<W;x+=6)box(x-.12,0,.24,3.5,'#695040');
+ if(!(estate&&activeCosmetic('wall'))){
+  const wall=s.area==='lab'?'wall-wide':'wall-1';
+  for(let x=1;x<W-1;x+=2)drawUploadedArt(wall,wx(x),wy(0),Math.min(2,W-1-x)*S,3.5*S);
+ }
  // Shoji paper windows along upper wall, framed with dark wooden lattice.
  for(const x of [4,23]){
+  if(s.area==='lab'&&drawUploadedArt('window-wide',wx(x),wy(1.55),6*S,2*S))continue;
   box(x,1.55,6,2,'#4a3930');box(x+.18,1.7,5.64,1.65,'#e7dfc5');
   for(let j=1;j<5;j++)box(x+j*1.1,1.7,.09,1.65,'#795842');
   box(x+.18,2.47,5.64,.1,'#795842');
@@ -1537,6 +1593,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  for(const x of s.area==='lab'?[12,22]:[12,24]){
   const cx=wx(x),cy=wy(3.6);
   ctx.fillStyle='#ffe4a31e';ctx.beginPath();ctx.ellipse(cx,cy,30,18,0,0,Math.PI*2);ctx.fill();
+  if(!(estate&&activeCosmetic('lights'))&&drawUploadedFit('hanging-lamp',cx-16,cy-24,32,32))continue;
   ctx.fillStyle='#3f392f';ctx.fillRect(cx-7,cy-9,14,3);
   ctx.fillStyle=style('lights','#f2dab0');ctx.fillRect(cx-6,cy-6,12,12);
   ctx.fillStyle='#5e4b3a';ctx.fillRect(cx-7,cy+5,14,3);
@@ -1550,7 +1607,9 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
   const {x,y,w,h,kind}=o,px=wx(x),py=wy(y),ww=w*S,hh=h*S;
   // Cast shadow and contact shadow before drawing the actual solid furniture.
   ctx.fillStyle='#201b1c66';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.48,Math.max(5,hh*.13),0,0,Math.PI*2);ctx.fill();
-  if(kind==='bookshelf'&&drawUploadedFit('book-shelf',px,py,ww,hh)){
+  if(drawInteriorAsset(s.area,o,px,py,ww,hh)){
+   // Artwork only: inspection and collision remain defined by o.
+  }else if(kind==='bookshelf'&&drawUploadedFit('book-shelf',px,py,ww,hh)){
    // Preserve the original solid footprint and interaction metadata.
   }else if(s.area==='lab'&&kind==='terminal'&&drawUploadedFit('workstation',px,py,ww,hh)){
   }else if(kind==='bed'){
@@ -2841,7 +2900,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.06</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.07</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
