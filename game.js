@@ -456,6 +456,7 @@ function buildSecretArea(area){
 function prepareExplorationGeometry(){
  for(const d of Object.values(SECRET_AREAS))if(d.parent===s.area){
   put(...d.entrance,T.path);put(...d.returnAt,T.path);
+  if(d.parent==='cave'){rect(16,6,3,8,T.stone);put(...d.returnAt,T.path)}
  }
  for(const o of EXPLORATION_OBJECTS)if(o.area===s.area)put(o.x,o.y,T.path);
 }
@@ -1353,7 +1354,7 @@ function build(preview=false){
  decorateExpandedOutdoor();
  prepareOutdoorPortals();
  prepareExplorationGeometry();
- if(!preview&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y))){
+ if(!preview&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y&&!p.indoors))){
   const originX=s.x,originY=s.y;
   let found=false;
   for(let radius=1;radius<Math.max(W,H)&&!found;radius++){
@@ -1364,7 +1365,7 @@ function build(preview=false){
     s.x=nx;s.y=ny;found=true;break;
    }
   }
-  if(!found){s.x=17;s.y=16}
+  if(!found){for(let yy=1;yy<H-1&&!found;yy++)for(let xx=1;xx<W-1;xx++)if(!solidAt(xx,yy)&&!npcs.some(p=>p.x===xx&&p.y===yy)){s.x=xx;s.y=yy;found=true;break}}
  }
  // Reconstruct overnight occupancy from saved time, including preview chunks.
  if(npcNight())for(const p of npcs){if(npcResidence(s.area,p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
@@ -2874,7 +2875,7 @@ function drawOutdoorWorld(){
  ctx.setTransform(zoom,0,0,zoom,0,0);
  const restore={area:s.area,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null};
  // Nearby chunks are rendered within the same continuous world coordinate system.
- for(const [area,grid] of Object.entries(OUTDOOR_GRID)){
+ try{for(const [area,grid] of Object.entries(OUTDOOR_GRID)){
   const location=outdoorOrigin(area),size=outdoorSize(area);
   const px=location.x*S,py=location.y*S;
   if(px>ox+vw||py>oy+vh||px+size.w*S<ox||py+size.h*S<oy)continue;
@@ -2905,10 +2906,11 @@ function drawOutdoorWorld(){
     ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
    }
   }
- }
+ }}finally{
  s.area=restore.area;W=restore.w;H=restore.h;tiles=restore.tiles;npcs=restore.npcs;
  villageObstacles=restore.villageObstacles;route1Blocked=restore.route1Blocked;
  interiorObjects=restore.interiorObjects;interiorBlocked=restore.interiorBlocked;
+ }
  const moving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const step=playerGaitFrame();
  sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25);
