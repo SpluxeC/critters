@@ -1539,7 +1539,7 @@ function naturalTileName(t,a,b){
 function naturalTileReady(t,a,b){const name=naturalTileName(t,a,b);return !!(name&&uploadedArt(name))}
 function drawNaturalTile(t,x,y,a,b){
  const name=naturalTileName(t,a,b);if(!name||!uploadedArt(name))return false;
- if(t!==T.rice)drawTerrainArt('grass-plain',x,y);
+ // Ground is painted by the continuous terrain pass; avoid square grass stamps.
  if(t===T.rice||t===T.tall){
   ctx.save();ctx.translate(x+S/2,y+S);ctx.rotate(windAt(a,b,performance.now())*.018);
   const result=t===T.rice?drawUploadedArt(name,-S/2,-S,S,S):drawUploadedFit(name,-S/2,-S,S,S);ctx.restore();return result;
@@ -1574,7 +1574,32 @@ function drawNaturalDetails(ox,oy,w,h){
   if(name)drawUploadedFit(name,x*S-ox+4,y*S-oy+7,S-8,S-10);
  }
 }
+// Continuous ground colors with irregular world-space texture. No square
+// terrain sprites are stamped into the grass, roads, ponds or cave floor.
+function seamlessGround(t,x,y,a,b){
+ const colors={[T.grass]:'#75a65e',[T.path]:'#c6ae82',[T.stone]:'#aaa899',[T.water]:'#629fa5',[T.rice]:'#829d68',[T.tall]:'#75a65e',[T.flower]:'#75a65e'};
+ const color=colors[t];if(!color)return false;
+ ctx.fillStyle=color;ctx.fillRect(x-.35,y-.35,S+.8,S+.8);
+ const n=naturalSeed(a,b);
+ if(t===T.water){
+  ctx.fillStyle='rgba(203,237,229,.13)';ctx.fillRect(x+((n>>>4)%23),y+((n>>>12)%26),5+n%8,1);
+ }else{
+  const dark=t===T.path||t===T.stone?'rgba(91,76,54,.12)':'rgba(33,91,44,.13)';
+  ctx.fillStyle=dark;
+  for(let k=0;k<4;k++){const h=naturalSeed(a*5+k,b*7+k);ctx.fillRect(x+(h%30),y+((h>>>8)%30),1+(h%3),1)}
+ }
+ if(t===T.tall||t===T.flower||t===T.rice){
+  const art=naturalTileName(t,a,b);
+  if(t===T.rice){drawRiceClump(x,y,a,b,performance.now());return true}
+  // Sparse vegetation remains organic and does not cover the entire ground cell.
+  if(art&&uploadedArt(art)){ctx.save();ctx.translate(x+16,y+28);if(t===T.tall)ctx.rotate(windAt(a,b,performance.now())*.02);drawUploadedFit(art,-13,-23,26,25);ctx.restore()}
+  else if(t===T.flower){ctx.fillStyle='#e8cfb7';ctx.fillRect(x+9,y+13,3,3);ctx.fillStyle='#dca2ad';ctx.fillRect(x+21,y+21,3,3)}
+  else{ctx.strokeStyle='#467b43';for(let k=0;k<4;k++){ctx.beginPath();ctx.moveTo(x+6+k*6,y+27);ctx.lineTo(x+9+k*6,y+14);ctx.stroke()}}
+ }
+ return true;
+}
 function drawTile(t,x,y,a,b){
+ if(!isInterior(s.area)&&s.area!=='gym'&&seamlessGround(t,x,y,a,b))return;
  // All natural terrain shares a single continuous grass surface. Tile cells now
  // describe objects/foliage rather than independent rectangular patches of color.
  const natural=t===T.grass||t===T.tall||t===T.rice||t===T.flower||(t===T.tree&&treeArtReady());
@@ -2868,7 +2893,8 @@ function drawOutdoorWorld(){
  const bounds=outdoorWorldBounds();
  const minX=0,maxX=bounds.width*S,minY=0,maxY=bounds.height*S;
  const targetX=Math.max(minX,Math.min(Math.max(minX,maxX-vw),worldX-vw/2));
- const targetY=Math.max(minY,Math.min(Math.max(minY,maxY-vh),worldY-vh/2));
+ const narratorInset=($('dialog')?.offsetHeight||0)/zoom;
+ const targetY=Math.max(minY,Math.min(Math.max(minY,maxY-vh),worldY-(vh-narratorInset)/2));
  const camera=followOutdoorCamera(targetX,targetY);
  const ox=camera.x,oy=camera.y;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#5f8e5f';ctx.fillRect(0,0,C.width,C.height);
@@ -3586,7 +3612,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.22</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.23</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -4449,7 +4475,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+' · v86</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">'+battleTrainerPortrait(battle.id)+'OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+(battle.mode===2?' arena-doubles':'')+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
@@ -5061,16 +5087,21 @@ async function resolveTeamTurn(){
   performPlayerAction(action,log);
   if(battle!==currentBattle)return; // capture ended battle
    const fx=battle.lastVfx;
-   await narrateCombatEvents(log.slice(before),fx);
+   // Successful escape uses a bounded, independent transition instead of
+   // waiting for the battle narrator's completion callback indefinitely.
+   if(battle.escapeOutcome==='success'){
+    await Promise.race([narrateCombatEvents(log.slice(before),fx),new Promise(resolve=>setTimeout(resolve,2200))]);
+   }else await narrateCombatEvents(log.slice(before),fx);
    if(battle!==currentBattle)return;
    if(battle.escapeOutcome==='failure')battle.escapeOutcome=null;
    if(battle.escapeOutcome==='success'){
-    // Only successful escape returns to the overworld.
-    while(worldTransitionBusy&&battle===currentBattle)await new Promise(resolve=>setTimeout(resolve,50));
-    if(battle===currentBattle)fadeWorldChange(()=>{
-     if(battle!==currentBattle)return;
-     clearCombatNarrator();battle=null;close();save();
-    });
+    // Escape must not depend on an outstanding fade timer or animation.
+    if(battle===currentBattle){
+     clearCombatNarrator();battle=null;
+     clearTimeout(worldFadeTimer);worldFadeTimer=null;worldTransitionBusy=false;
+     document.getElementById('worldFade')?.classList.remove('active');
+     close();releaseMovement();atmospherePreviousFrame=0;canvasSizeDirty=true;save();draw();
+    }
     return;
    }
  }
