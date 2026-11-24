@@ -966,6 +966,64 @@ function sprite(gender,x,y,d,f,scale=1){
  const pixelScale=1.58*scale;
  ctx.drawImage(im,sx,sy,sw,sh,x-anchorX*pixelScale,y-sh*pixelScale,sw*pixelScale,sh*pixelScale);
 }
+// Terrain topology is visual only: N/E/S/W mask, with stable world-edge links.
+function terrainNeighbor(a,b,dx,dy){
+ const x=a+dx,y=b+dy;
+ if(x>=0&&y>=0&&x<W&&y<H)return tiles[y]?.[x];
+ const dir=dx<0?'left':dx>0?'right':dy<0?'up':'down';
+ const link=OUTDOOR_LINKS[s.area]?.[dir],cross=dx?b:a;
+ if(link&&OUTDOOR_GRID[link[0]]&&cross>=link[1]&&cross<=link[2])return T.path;
+ return undefined;
+}
+function terrainMask(a,b,accept){
+ return [[0,-1],[1,0],[0,1],[-1,0]].reduce((m,[dx,dy],i)=>m|(accept(terrainNeighbor(a,b,dx,dy))?1<<i:0),0);
+}
+function pathArt(mask,stone=false){
+ const prefix=stone?'stone-path':'dirt';
+ const full=stone?'stone-path-full':'dirt-path';
+ // Straight original is E/W; corner 01 opens E/S; junction 02 opens N/E/S.
+ const shapes={10:['horizontal',0],5:['horizontal',1],6:['turn-01',0],12:['turn-01',1],9:['turn-01',2],3:['turn-01',3],7:['junction-02',0],14:['junction-02',1],13:['junction-02',2],11:['junction-02',3],15:['junction-01',0]};
+ const v=shapes[mask];return v?[prefix+'-'+v[0],v[1]]:[full,0];
+}
+function drawTerrainArt(name,x,y,turn=0){
+ const im=uploadedArt(name);if(!im||im.naturalWidth!==32||im.naturalHeight!==32)return false;
+ // Avoid per-cell save/restore for the common unrotated case.
+ if(!turn){ctx.drawImage(im,x,y,S,S);return true}
+ ctx.save();ctx.translate(x+S/2,y+S/2);ctx.rotate(turn*Math.PI/2);ctx.drawImage(im,-S/2,-S/2,S,S);ctx.restore();return true;
+}
+function drawConnectedTerrain(t,x,y,a,b){
+ const seed=((a*73856093)^(b*19349663))>>>0;
+ const outdoor=!!OUTDOOR_GRID[s.area];
+ if(t===T.grass&&outdoor){
+  const name=seed%29===0?'grass-pebbles':seed%13===0?'grass-02':seed%5===0?'grass-01':'grass-plain';
+  return drawTerrainArt(name,x,y)||drawTerrainArt('grass-plain',x,y);
+ }
+ if(t===T.path||t===T.stone){
+  // Keep broad roads filled; only narrow corridors use shaped edges.
+  const mask=terrainMask(a,b,n=>n===T.path||n===T.stone);
+  const [name,turn]=pathArt(mask,t===T.stone);
+  const full=t===T.stone?'stone-path-full':'dirt-path';
+  const wide=[[0,-1],[1,0],[0,1],[-1,0]].some(([dx,dy],i)=>{
+   const [ex,ey]=[[1,0],[0,1],[-1,0],[0,-1]][i];
+   const matches=v=>v===T.path||v===T.stone;
+   return matches(terrainNeighbor(a,b,dx,dy))&&matches(terrainNeighbor(a,b,ex,ey))&&matches(tiles[b+dy+ey]?.[a+dx+ex]);
+  });
+  return wide?drawTerrainArt(full,x,y):drawTerrainArt(name,x,y,turn)||drawTerrainArt(full,x,y);
+ }
+ if(t===T.water){
+  const bank=terrainMask(a,b,n=>n!==undefined&&n!==T.water);
+  // The bank sprite is grass above water. Use it only on a single natural land edge.
+  const natural=terrainMask(a,b,n=>n===T.grass||n===T.flower||n===T.tall||n===T.tree);
+  const turns={1:0,2:1,4:2,8:3};
+  if(outdoor&&bank===natural&&Object.prototype.hasOwnProperty.call(turns,bank)&&drawTerrainArt('riverbank-01',x,y,turns[bank]))return true;
+  return drawTerrainArt(['water-01','water-02','water-03'][seed%3],x,y)||drawTerrainArt('water-01',x,y);
+ }
+ if(t===T.rock&&s.area==='cave'){
+  const mask=terrainMask(a,b,n=>n===T.rock);
+  if(mask===15&&drawTerrainArt(seed%2?'cliff-high-01':'cliff-high-02',x,y))return true;
+ }
+ return false;
+}
 function drawTile(t,x,y,a,b){
  // All natural terrain shares a single continuous grass surface. Tile cells now
  // describe objects/foliage rather than independent rectangular patches of color.
@@ -975,8 +1033,9 @@ function drawTile(t,x,y,a,b){
  const variation=hash(a*3.71+b*1.91);
  // Only selected terrain tiles are enabled. Existing collision and encounter IDs are unchanged.
  if(!isInterior(s.area)&&s.area!=='gym'){
-  const name=t===T.grass?'grass-plain':t===T.path?'dirt-path':t===T.water?'water-01':null;
-  if(name&&drawUploadedArt(name,x,y,S,S))return;
+  ctx.imageSmoothingEnabled=false;
+  if(drawConnectedTerrain(t,x,y,a,b))return;
+  if(t===T.grass&&drawTerrainArt('grass-plain',x,y))return;
   if(t===T.rock&&drawUploadedArt('rock-small',x,y,S,S))return;
   if(t===T.flower&&drawUploadedArt('flowers-pink',x,y,S,S))return;
  }
@@ -2649,7 +2708,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.03</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.04</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
