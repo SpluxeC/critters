@@ -1493,8 +1493,8 @@ function drawRoute1Details(ox,oy,viewW,viewH){
 
 function drawInteriorDecor(ox,oy){
  const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
- const rug=activeCosmetic('rug');if(rug){box(12,16,9,4,rug.color);box(12.15,16.15,8.7,.12,'#ead9b4');box(12.15,19.7,8.7,.12,'#ead9b4');for(let x=13;x<21;x+=1.5)box(x,17.8,.5,.5,'#ead9b4')}
- if(activeCosmetic('plants'))for(const x of [2,31]){box(x,3.8,.7,.6,'#a67652');box(x-.15,3.15,1,.8,cosmeticColor('plants','#629461'))}
+ const rug=activeCosmetic('rug');if(rug&&!estateFit(estateArt(rug.id),12,16,9,4,ox,oy)){box(12,16,9,4,rug.color);box(12.15,16.15,8.7,.12,'#ead9b4');box(12.15,19.7,8.7,.12,'#ead9b4');for(let x=13;x<21;x+=1.5)box(x,17.8,.5,.5,'#ead9b4')}
+ if(activeCosmetic('plants'))for(const x of [2,31])if(!estateFit('plant-terracotta',x-.15,3.15,1,1.25,ox,oy)){box(x,3.8,.7,.6,'#a67652');box(x-.15,3.15,1,.8,cosmeticColor('plants','#629461'))}
  if(activeCosmetic('fireplace')){box(1,1,2.5,2,'#8c8980');box(1.45,1.7,1.6,1,'#372f2b');box(1.8,2,.9,.55,'#e9a34f')}
  if(activeCosmetic('kitchen')){box(30,5,2,3,'#b88d61');box(30.2,5.3,1.6,.7,'#c6cbc5');box(30.4,6.4,1,.6,'#738a88')}
  if(activeCosmetic('trophy')){box(14,2.5,5,.5,'#70523b');for(let i=0;i<Math.min(8,s.badges||0);i++){box(14.3+i*.55,1.9,.3,.45,'#ddbb66');box(14.2+i*.55,2.35,.5,.12,'#c7a45a')}}
@@ -2191,30 +2191,70 @@ function greetPasture(i){
  }
  return notifyWorld(parents.map(p=>p.name||p.type).join(' and ')+' happily greet you from the pasture.');
 }
+// Cosmetic sprites are chosen only from the existing purchased/active styles.
+function estateArt(id){
+ return {'style-22':'flagstone-grass','style-23':'brick-path','style-24':'flowerbed-pink','style-25':'flowerbed-sunflower','style-26':'pond-waterfall','style-27':'fountain-stone','style-28':'lantern-post','style-29':'shrub-white-flowers','style-32':'fence-white-horizontal','style-33':'fence-timber-horizontal','style-34':'hay-shelter','style-35':'stone-water-trough','style-36':'open-shelter','style-37':'windmill','style-38':'flowers-yellow','style-9':'rug-blue','style-10':'rug-red','style-13':'plant-terracotta'}[id]||null;
+}
+function farmFenceKind(x,y,w,h,xx,yy){
+ if(yy===y&&xx===x+Math.floor(w/2))return 'gate';
+ if(yy===y||yy===y+h-1)return 'horizontal';
+ if(xx===x||xx===x+w-1)return 'vertical';
+ return null;
+}
+function estateFit(name,x,y,w,h,ox,oy){
+ return !!name&&drawUploadedFit(name,x*S-ox,y*S-oy,w*S,h*S);
+}
 function drawEstateExterior(ox,oy){
  if(!s.homestead?.owned)return;
  const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
+ const fit=(name,x,y,w,h)=>estateFit(name,x,y,w,h,ox,oy);
+ const art=slot=>estateArt(activeCosmetic(slot)?.id);
  function styledHouse(x,y,w,h,roof,wall){
   box(x,y,w,Math.max(1,h-1),roof);box(x,y+h-1,w,1,wall);
   for(let yy=y+.2;yy<y+h-1;yy+=.45)box(x,yy,w,.055,'#00000025');
  }
+ // Keep independent roof/siding selections visible even when there is no exact combined PNG.
  if(activeCosmetic('roof')||activeCosmetic('house'))styledHouse(6,5,6,3,cosmeticColor('roof','#8d614e'),cosmeticColor('house','#cfb48c'));
  if(activeCosmetic('porch')){box(7.3,8.2,3.4,.6,'#b08b60');for(let i=0;i<5;i++)box(7.4+i*.65,8.3,.06,.45,'#805b37')}
- if(activeCosmetic('path')){const c=cosmeticColor('path','#c5b38e');for(let x=15;x<W-1;x++)for(let y=12;y<=14;y++){box(x,y,1,1,c);box(x,y+.05,1,.055,'#00000022')}}
- const garden=activeCosmetic('garden');if(garden)for(let i=0;i<10;i++){box(4.4+(i%5)*.7,11.5+Math.floor(i/5)*.65,.22,.28,'#487344');box(4.3+(i%5)*.7,11.35+Math.floor(i/5)*.65,.4,.25,garden.color)}
- const water=activeCosmetic('water');if(water){box(3.5,13,3,2,'#b2ac91');box(3.7,13.2,2.6,1.6,water.color);if(water.stage===3){box(4.75,13.4,.5,1,'#ddd6c5');box(4.4,13.4,1.2,.18,'#d2edee')}}
- if(activeCosmetic('lantern'))for(const x of [18,23,28,33]){box(x,11,.12,.8,'#6e5139');box(x-.15,10.7,.42,.4,'#f6c36d')}
- if(activeCosmetic('landscape'))for(const x of [4,6,8,10,12])box(x,2.4,.75,.65,'#759e6b');
+ if(activeCosmetic('path'))for(let x=15;x<W-1;x++)for(let y=12;y<=14;y++)if(tiles[y]?.[x]===T.path){
+  if(!drawUploadedArt(art('path'),x*S-ox,y*S-oy,S,S)){box(x,y,1,1,cosmeticColor('path','#c5b38e'));box(x,y+.05,1,.055,'#00000022')}
+ }
+ const garden=activeCosmetic('garden');if(garden)for(let i=0;i<2;i++){
+  if(!fit(art('garden'),4.2+i*2,11.2,1.8,1.3))for(let j=0;j<5;j++){box(4.4+i*2+(j%3)*.5,11.5+Math.floor(j/3)*.4,.22,.28,'#487344');box(4.3+i*2+(j%3)*.5,11.35+Math.floor(j/3)*.4,.4,.25,garden.color)}
+ }
+ const water=activeCosmetic('water');if(water&&!fit(art('water'),3.5,13,3,2)){box(3.5,13,3,2,'#b2ac91');box(3.7,13.2,2.6,1.6,water.color);if(water.stage===3){box(4.75,13.4,.5,1,'#ddd6c5');box(4.4,13.4,1.2,.18,'#d2edee')}}
+ if(activeCosmetic('lantern'))for(const x of [18,23,28,33])if(!fit(art('lantern'),x-.25,10.1,.7,1.7)){box(x,11,.12,.8,'#6e5139');box(x-.15,10.7,.42,.4,'#f6c36d')}
+ if(activeCosmetic('landscape'))for(const x of [4,6,8,10,12])if(!fit(art('landscape'),x,2.1,.9,1))box(x,2.4,.75,.65,'#759e6b');
  if(farmStage()>=2&&activeCosmetic('barn'))styledHouse(24,5,8,5,cosmeticColor('barn','#a45246'),'#d0b392');
- if(activeCosmetic('windmill')){box(32,29,1.2,3,'#cbbba0');const cx=32.6*S-ox,cy=28.8*S-oy;ctx.save();ctx.translate(cx,cy);ctx.rotate(performance.now()/2400);ctx.fillStyle='#e0d4b8';for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.fillRect(-3,-30,6,30)}ctx.restore()}
- if(activeCosmetic('field'))for(let i=0;i<20;i++)box(2+(i%5)*.65,30+Math.floor(i/5)*.6,.27,.32,'#d2a45c');
+ if(activeCosmetic('windmill')&&!fit(art('windmill'),32,27,2,4)){
+  box(32,29,1.2,3,'#cbbba0');const cx=32.6*S-ox,cy=28.8*S-oy;ctx.save();ctx.translate(cx,cy);ctx.rotate(performance.now()/2400);ctx.fillStyle='#e0d4b8';for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.fillRect(-3,-30,6,30)}ctx.restore();
+ }
+ if(activeCosmetic('field'))for(let i=0;i<20;i++){const x=2+(i%5)*.65,y=30+Math.floor(i/5)*.6;if(!fit(art('field'),x,y,.6,.6))box(x,y,.27,.32,'#d2a45c')}
 }
 function drawFarmGrounds(ox,oy){
  const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
+ const fit=(name,x,y,w,h)=>estateFit(name,x,y,w,h,ox,oy);
+ const fence=estateArt(activeCosmetic('fence')?.id)||'fence-timber-horizontal';
  for(const [x,y,w,h] of FARM_PASTURES.slice(0,farmCapacity().pairs)){
-  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(xx===x||xx===x+w-1||yy===y||yy===y+h-1){box(xx,yy+.32,1,.14,cosmeticColor('fence','#805b37'));box(xx,yy+.66,1,.12,cosmeticColor('fence','#a98150'));box(xx+.08,yy+.12,.16,.78,cosmeticColor('fence','#c49a64'))}
-  if(activeCosmetic('trough'))drawUploadedFit('stone-water-trough',(x+1.1)*S-ox,(y+1.05)*S-oy,1.6*S,.85*S);
-  else box(x+1.3,y+1.3,1.1,.42,cosmeticColor('trough','#85653f'));box(x+1.4,y+1.4,.88,.22,'#7c9b9d');if(!drawUploadedFit('hay-bale',(x+w-2.6)*S-ox,(y+1.1)*S-oy,1.3*S,.8*S))box(x+w-2.4,y+1.3,.8,.55,cosmeticColor('hay','#c9ae56'));if(activeCosmetic('hay'))box(x+w-2.6,y+1.1,1.2,.2,'#805b37');if(activeCosmetic('nest')){box(x+w-2.3,y+h-2.2,1.1,.65,'#947150');box(x+w-2.45,y+h-2.4,1.4,.2,'#674b37')}
+  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++){
+   const kind=farmFenceKind(x,y,w,h,xx,yy);if(!kind)continue;
+   const actual=tiles[yy]?.[xx];if(actual!==T.hedge&&actual!==T.gate)continue;
+   const name=kind==='gate'?'gate-timber-closed':fence;
+   const im=uploadedArt(name);
+   if(im){
+    box(xx,yy,1,1,palette[T.grass]||'#5f8e5f');drawTerrainArt('grass-plain',xx*S-ox,yy*S-oy);
+    if(kind==='vertical'){
+     // No matching side-view fence uploaded: draw narrow rails rather than rotating a front-view sprite.
+     box(xx+.35,yy,.14,1,cosmeticColor('fence','#805b37'));box(xx+.63,yy,.12,1,cosmeticColor('fence','#a98150'));box(xx+.29,yy+.07,.43,.16,cosmeticColor('fence','#c49a64'));
+    }else drawUploadedArt(name,xx*S-ox,yy*S-oy,S,S);
+   }else{
+    box(xx,yy+.32,1,.14,cosmeticColor('fence','#805b37'));box(xx,yy+.66,1,.12,cosmeticColor('fence','#a98150'));box(xx+.08,yy+.12,.16,.78,cosmeticColor('fence','#c49a64'));
+   }
+  }
+  if(!activeCosmetic('trough')||!fit('stone-water-trough',x+1.1,y+1.05,1.6,.85)){box(x+1.3,y+1.3,1.1,.42,'#85653f');box(x+1.4,y+1.4,.88,.22,'#7c9b9d')}
+  const hay=activeCosmetic('hay')?'hay-shelter':'hay-bale';
+  if(!fit(hay,x+w-2.6,y+1.1,1.3,1.25))box(x+w-2.4,y+1.3,.8,.55,cosmeticColor('hay','#c9ae56'));
+  if(activeCosmetic('nest')&&!fit('open-shelter',x+w-2.5,y+h-2.6,1.5,1.4)){box(x+w-2.3,y+h-2.2,1.1,.65,'#947150');box(x+w-2.45,y+h-2.4,1.4,.2,'#674b37')}
  }
 }
 function drawHomesteadConstruction(ox,oy){
@@ -2900,7 +2940,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.07</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.08</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
