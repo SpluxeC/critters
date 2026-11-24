@@ -227,7 +227,7 @@ function drawNpcActivity(p,x,y,now=performance.now()){
   ctx.fillStyle='#b64036';ctx.font='bold 15px monospace';ctx.textAlign='center';ctx.fillText('!',x,y-56+bounce);ctx.restore();return;
  }
  if(p.walking||modal||battle||narratorBlocking()||trainerApproach||now<(p.pauseUntil||0))return;
- const kind=npcActivityKind(p.task);if(!kind)return;
+ const kind=npcActivityKind(p.task);if(!kind||kind==='rest'&&p.task==='Resting'&&!isInterior(s.area))return;
  const phase=(now/1000+(p.homeX*13+p.homeY*7)*.13)%3;
  if(phase>1.25)return;
  const t=phase/1.25,side=p.face==='left'?-1:1,fx=x+side*13,fy=y-24;
@@ -330,7 +330,9 @@ const TOWN_ROOMS=Object.freeze({
 });
 const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)||Object.hasOwn(TOWN_ROOMS,area);
 function townDoorAt(x,y){return Object.entries(TOWN_ROOMS).find(([id,d])=>d.parent===s.area&&d.door[0]===x&&d.door[1]===y)?.[0]||null}
-function enterTownRoom(id){if(!TOWN_ROOMS[id])return;recordWalkingStep();return region(id,17,23,'',true)}
+function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:{w:34,h:26}}
+function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
+function enterTownRoom(id){if(!TOWN_ROOMS[id])return;recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}
 function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
 function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
 
@@ -346,24 +348,23 @@ function furnishInterior(area){
  if(TOWN_ROOMS[area]){
   const room=TOWN_ROOMS[area],add=(id,x,y,w,h,kind,title,desc,action='')=>addInteriorObject(area+'-'+id,x,y,w,h,kind,title,[desc],action);
   if(room.kind==='center'){
-   add('reception',11,7,12,2,'counter','Reception Counter','Speak to the nurse at the reception desk for healing and Index maintenance.','center');
-   add('diagnostics',4,5,5,4,'terminal','Diagnostic Station','Equipment for checking Critter health and the Index.');
-   add('monitor',25,5,5,4,'counter','Treatment Station','Medical supplies and monitoring equipment are neatly arranged.');
-   add('shelf',4,15,4,3,'bookshelf','Reference Shelf','Guides to Critter care and recovery.');
-   add('storage',25,16,4,3,'chest','Supply Cabinet','Emergency medical supplies.');
-   add('waiting',10,16,4,2,'table','Waiting Area','Travelers can rest here.');
+   add('reception',7,5,10,2,'counter','Reception Counter','Heal your party and maintain your Index.','center');
+   add('diagnostics',2,4,3,3,'terminal','Diagnostic Station','Critter health diagnostics.');
+   add('monitor',19,4,3,3,'counter','Treatment Station','Medical equipment.');
+   add('shelf',2,10,3,3,'bookshelf','Reference Shelf','Guides to Critter care.');
+   add('storage',19,10,3,3,'chest','Supply Cabinet','Emergency supplies.');
+   add('waiting',6,11,3,2,'table','Waiting Area','Travelers can rest here.');
   }else if(room.kind==='shop'){
-   add('checkout',11,7,12,2,'counter','Checkout Counter','Browse supplies, stones, capture-beam charging and battery upgrades.','shop');
-   add('stock1',4,5,4,5,'bookshelf','Healing Supplies','Potions and Revives are arranged on the shelves.');
-   add('stock2',26,5,4,5,'bookshelf','Index Accessories','Batteries and modules are displayed here.');
-   add('display',5,15,5,3,'display','Evolution Stones','A display of colorful evolution stones.');
-   add('stockroom',25,16,4,3,'chest','Stock Crates','Sealed crates of merchandise.');
+   add('checkout',6,5,8,2,'counter','Checkout Counter','Shop for supplies and Index upgrades.','shop');
+   add('stock1',2,4,3,4,'bookshelf','Healing Supplies','Potions and Revives.');
+   add('stock2',15,4,3,4,'bookshelf','Index Accessories','Batteries and modules.');
+   add('display',2,10,3,2,'display','Evolution Stones','Colorful evolution stones.');
+   add('stockroom',15,10,3,2,'chest','Stock Crates','Sealed merchandise.');
   }else{
-   add('bed',5,6,6,4,'bed','Futon','A neatly arranged sleeping area.');
-   add('table',22,11,5,3,'table','Tea Table','A quiet place to share tea.');
-   add('shelf',5,16,4,4,'bookshelf','Bookshelf','Local field guides and family keepsakes.');
-   add('cabinet',26,17,4,3,'chest','Storage Cabinet','Household supplies.');
-   add('plant',25,5,3,3,'display','Potted Plant','A carefully tended houseplant.');
+   add('bed',2,4,3,3,'bed','Futon','A neatly arranged sleeping area.');
+   add('table',11,7,3,2,'table','Tea Table','A quiet place to share tea.');
+   add('shelf',2,9,3,2,'bookshelf','Bookshelf','Local field guides.');
+   add('cabinet',11,10,3,2,'chest','Storage Cabinet','Household supplies.');
   }
  }else if(area==='homesteadHome'){
   addInteriorObject('estate-bed',5,6,6,4,'bed','Your Bed',['Rest and restore your Critters.'],'estate-rest');
@@ -1078,14 +1079,15 @@ function npcRoutinePlan(area,p,hour,starter){
  if(p.kind==='center')return {task:'Checking equipment',points:[[x,y],[x+1,y],[x,y]],radius:1};
  if(p.kind==='shop')return shopIsOpen(hour)?{task:'Organizing supplies',points:[[x,y],[x+1,y],[x,y]],radius:1}:{task:'Resting',points:[[x,y]],radius:1};
  if(p.kind==='researcher'||p.kind==='labassistant')return {task:night?'Reviewing notes':'Researching',points:[[x,y],[x-2,y],[x,y+2]],radius:3};
- if(p.kind==='construction-worker')return night?{task:'Resting',points:[[x,y]]}:{task:'Working',points:[[x,y],[x+1,y],[x,y+1]],radius:2};
- if(p.id==='farmer-fieldwork')return {task:night?'Resting':morning?'Checking fields':evening?'Finishing work':'Tending rice',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y-1]],radius:3};
+ if(p.kind==='construction-worker')return night?{task:'Observing',points:[[x,y]]}:{task:'Working',points:[[x,y],[x+1,y],[x,y+1]],radius:2};
+ if(p.id==='farmer-fieldwork')return {task:night?'Observing':morning?'Checking fields':evening?'Finishing work':'Tending rice',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y-1]],radius:3};
  if(p.kind==='sidequest')return {task:'Observing',points:[[x,y],[x+1,y]],radius:1};
  if(area==='home'||area==='neighbor')return {task:night?'Resting':morning?'Preparing breakfast':evening?'Relaxing':'Housework',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y+2]],radius:3};
- return {task:night?'Resting':morning?'Walking':evening?'Relaxing':'Walking',points:night?[[x,y]]:evening?[[x,y],[x-1,y]]:morning?[[x,y],[x,y+2]]:[[x,y],[x+2,y],[x,y+2],[x-1,y]],radius:3};
+ return {task:night?(isInterior(area)?'Resting':'Observing'):morning?'Walking':evening?'Relaxing':'Walking',points:night?[[x,y]]:evening?[[x,y],[x-1,y]]:morning?[[x,y],[x,y+2]]:[[x,y],[x+2,y],[x,y+2],[x-1,y]],radius:3};
 }
 function npcReservedCell(area,x,y,w,h){
  if(x<2||y<2||x>=w-2||y>=h-2)return true;
+ if(TOWN_ROOMS[area]){const [ex,ey]=roomExit(area);if(Math.abs(x-ex)<=1&&y>=ey-3)return true}
  if(['home','neighbor','lab','homesteadHome','gym'].includes(area)&&x>=15&&x<=19&&y>=22)return true;
  if(area==='garden'&&x>=23&&x<=26&&y>=9&&y<=12)return true;
  if(area==='homestead'&&((x>=8&&x<=10&&y>=9&&y<=11)||y>=16))return true;
@@ -1356,11 +1358,11 @@ function build(preview=false){
  npc(22,15,['Follow the eastern road toward Route 1!']);
  break;
  case 'townHouseA':case 'townHouseB':case 'gardenHouse':case 'townCenter':case 'gardenCenter':case 'townShop':case 'gardenShop':{
-  borders(T.wall);put(17,25,T.door);furnishInterior(s.area);
+  borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='center')npc(17,6,['Welcome to the Critter Center.'],'center');
-  else if(room.kind==='shop')npc(17,6,['Welcome to the Critter Shop.'],'shop');
-  else npc(14,11,['Welcome to our home.','Travel safely on the regional trails.']);
+  if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
+  else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
+  else npc(8,7,['Welcome to our home.','Travel safely on the regional trails.']);
   break;
  }
  case 'home':
@@ -1867,11 +1869,29 @@ function drawExteriorSign(h,ox,oy){
  ctx.fillStyle='#d1b58a';ctx.fillRect(x-width/2+2,y-8,width-4,16);
  ctx.fillStyle='#302c26';ctx.fillText(h.label,x,y,width-8);ctx.restore();
 }
+function drawServiceExterior(b,ox,oy){
+ const x=b.x*S-ox,y=b.y*S-oy,w=b.w*S,h=(b.h+2)*S,gym=b.label==='GRASS GYM';
+ ctx.fillStyle=palette[T.grass];ctx.fillRect(x,y,w,h);
+ sceneryLayer(s.area+':service:'+b.x+','+b.y,x,y,w,h,y+h,()=>{
+  const rect=(a,c,d,e,color)=>{ctx.fillStyle=color;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
+  rect(.035,.23,.93,.77,gym?'#b9c49a':'#e9e1cf');
+  rect(.035,.23,.93,.08,gym?'#456c40':'#b96457');
+  rect(.035,.91,.93,.09,'#7a8173');
+  ctx.fillStyle=gym?'#355c3e':'#a64f48';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.13,y+h*.04);ctx.lineTo(x+w*.87,y+h*.04);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
+  for(let i=0;i<11;i++)rect(.12+i*.07,.10,.013,.14,gym?'#69885c':'#c77a6a');
+  for(const a of [.13,.72]){rect(a,.43,.15,.27,'#514c43');rect(a+.012,.45,.126,.22,gym?'#9cbf8e':'#8ec0cc');rect(a+.07,.45,.012,.22,'#e4e2cc')}
+  const door=gym?24:(b.x+Math.floor(b.w/2)),d=(door-b.x+.5)/b.w;
+  rect(d-.065,.68,.13,.32,'#4b5149');rect(d-.049,.70,.098,.30,gym?'#789468':'#8ab8ba');
+  rect(.42,.35,.16,.14,gym?'#638d4e':'#b54b45');
+  if(gym){ctx.fillStyle='#e4e9bd';ctx.beginPath();ctx.ellipse(x+w*.5,y+h*.42,w*.04,h*.035,-.6,0,Math.PI*2);ctx.fill()}
+  else{rect(.486,.365,.028,.11,'#fff2dd');rect(.455,.398,.09,.035,'#fff2dd')}
+ });
+}
 function drawTownExteriors(ox,oy,w,h){
  for(const b of TOWN_EXTERIORS[s.area]||[]){
   if(b.x*S-ox>w||(b.x+b.w)*S-ox<0||b.y*S-oy>h||(b.y+b.h+2)*S-oy<0)continue;
   if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
-  if(b.label)drawExteriorSign(b,ox,oy);
+  if(b.label){drawServiceExterior(b,ox,oy);drawExteriorSign(b,ox,oy);}
   const room=Object.values(TOWN_ROOMS).find(d=>d.parent===s.area&&d.door[0]>=b.x&&d.door[0]<b.x+b.w&&d.door[1]===b.y+b.h+1);
   if(room){const [dx,dy]=room.door;ctx.fillStyle='#302b25';ctx.fillRect(dx*S-ox+6,dy*S-oy,20,S);ctx.fillStyle='#977653';ctx.fillRect(dx*S-ox+9,dy*S-oy+2,14,S-3);ctx.fillStyle='#e5c581';ctx.fillRect(dx*S-ox+19,dy*S-oy+15,3,3)}
   if(b.art?.startsWith('shop-')){
@@ -2232,7 +2252,7 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  for(let y=0;y<H;y+=2.44)for(let x=((y*7)%2)*3;x<W;x+=6)line(x,y,x,y+1.22,'#74563f',1.5);
  }
  // Tatami lounge sections and softly shaded edge bindings.
- const tatami=TOWN_ROOMS[s.area]?.kind==='center'||TOWN_ROOMS[s.area]?.kind==='shop'?[]:s.area==='lab'?[[12,15,9,5]]:[[11,6,11,6],[12,15,9,5]];
+ const tatami=TOWN_ROOMS[s.area]?(TOWN_ROOMS[s.area].kind==='home'?[[6,4,4,3]]:[]):s.area==='lab'?[[12,15,9,5]]:[[11,6,11,6],[12,15,9,5]];
  for(const [x,y,w,h] of tatami){
   box(x,y,w,h,'#b9ad83');
   box(x+.10,y+.10,w-.20,h-.20,'#d9c99b');
@@ -2244,8 +2264,9 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  box(0,0,W,2.4,style('wall','#463b37'));
  box(0,2.4,W,1.0,'#b7a186');
  box(0,3.25,W,.25,'#44382e');
- box(0,24.8,W,1.2,'#57493c');
- box(0,24.85,16.45,.18,'#ad8969');box(17.55,24.85,16.45,.18,'#ad8969');
+ const exitX=TOWN_ROOMS[s.area]?roomExit(s.area)[0]:17;
+ box(0,H-1.2,W,1.2,'#57493c');
+ box(0,H-1.15,exitX-.55,.18,'#ad8969');box(exitX+.55,H-1.15,W-exitX-.55,.18,'#ad8969');
  box(0,0,.9,H,'#4b3b33');box(W-.9,0,.9,H,'#4b3b33');
  for(let x=4;x<W;x+=6)box(x-.12,0,.24,3.5,'#695040');
  if(!(estate&&activeCosmetic('wall'))){
@@ -2253,14 +2274,14 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
   for(let x=1;x<W-1;x+=2)drawUploadedArt(wall,wx(x),wy(0),Math.min(2,W-1-x)*S,3.5*S);
  }
  // Shoji paper windows along upper wall, framed with dark wooden lattice.
- for(const x of [4,23]){
+ for(const x of [Math.min(4,W/4),W-11]){
   if(s.area==='lab'&&drawUploadedArt('window-wide',wx(x),wy(1.55),6*S,2*S))continue;
   box(x,1.55,6,2,'#4a3930');box(x+.18,1.7,5.64,1.65,'#e7dfc5');
   for(let j=1;j<5;j++)box(x+j*1.1,1.7,.09,1.65,'#795842');
   box(x+.18,2.47,5.64,.1,'#795842');
  }
  // Hanging paper lamps spill a restrained golden glow.
- for(const x of s.area==='lab'?[12,22]:[12,24]){
+ for(const x of TOWN_ROOMS[s.area]?[W/3,W*2/3]:s.area==='lab'?[12,22]:[12,24]){
   const cx=wx(x),cy=wy(3.6);
   ctx.fillStyle='#ffe4a31e';ctx.beginPath();ctx.ellipse(cx,cy,30,18,0,0,Math.PI*2);ctx.fill();
   if(!(estate&&activeCosmetic('lights'))&&drawUploadedFit('hanging-lamp',cx-16,cy-24,32,32))continue;
@@ -2270,9 +2291,9 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  }
  if(estate)drawInteriorDecor(ox,oy);
  // Two side wall columns framing the entrance.
- box(15.7,23.95,.3,1,'#644b3a');box(18.98,23.95,.3,1,'#644b3a');
- box(16.92,25,.16,.9,'#2a2e33');box(17.6,25,.15,.9,'#2a2e33');
- box(17.08,25,.52,1,'#48342b');
+ box(exitX-1.3,H-2.05,.3,1,'#644b3a');box(exitX+1.98,H-2.05,.3,1,'#644b3a');
+ box(exitX-.08,H-1,.16,.9,'#2a2e33');box(exitX+.6,H-1,.15,.9,'#2a2e33');
+ box(exitX+.08,H-1,.52,1,'#48342b');
  for(const o of interiorObjects){
   const {x,y,w,h,kind}=o,px=wx(x),py=wy(y),ww=w*S,hh=h*S;
   // Cast shadow and contact shadow before drawing the actual solid furniture.
@@ -2686,7 +2707,7 @@ const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homeste
 const OUTDOOR_COL_WIDTHS=[36,40,44,51,46],OUTDOOR_ROW_HEIGHTS=[34,40];
 function outdoorSize(area){
  const grid=OUTDOOR_GRID[area];
- return grid?{w:OUTDOOR_COL_WIDTHS[grid[0]],h:OUTDOOR_ROW_HEIGHTS[grid[1]]}:{w:34,h:26};
+ return grid?{w:OUTDOOR_COL_WIDTHS[grid[0]],h:OUTDOOR_ROW_HEIGHTS[grid[1]]}:roomSize(area);
 }
 function outdoorOrigin(area){
  const grid=OUTDOOR_GRID[area];
@@ -3115,7 +3136,7 @@ function move(d){
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
  const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
- if(TOWN_ROOMS[s.area]&&x===17&&y===25)return exitTownRoom();
+ if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return exitTownRoom();
  if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned){recordWalkingStep();return region('homesteadHome',17,23)}
  if(s.area==='homesteadHome'&&x===17&&y===25){recordWalkingStep();return region('homestead',9,10)}
  if(s.area==='garden'&&d==='up'&&x===24&&y===10)return enterGym();
@@ -3160,7 +3181,7 @@ function canInteractAhead(){
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return true;
  if(s.area==='homesteadHome'&&x===17&&y===25)return true;
  if(villageDoorAt(x,y)||townDoorAt(x,y))return true;
- if(TOWN_ROOMS[s.area]&&x===17&&y===25)return true;
+ if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return true;
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25)return true;
  if(isInterior(s.area)&&interiorObjects.some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return true;
  if(route1SiteAt(x,y)||explorationObjectAt(s.area,x,y)||secretEntranceAt(s.area,x,y))return true;
@@ -3196,7 +3217,7 @@ function interact(){
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return region('homesteadHome',17,23);
  if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
  const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
- if(TOWN_ROOMS[s.area]&&x===17&&y===25)return exitTownRoom();
+ if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return exitTownRoom();
  const door=villageDoorAt(x,y);
  if(door)return openVillageDoor(door);
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
@@ -3748,13 +3769,13 @@ function fastTravelToCenter(id){
  mapTravelSelection=null;
  close(); // Remove watch modal before using the existing region transition.
  const room=id==='town'?'townCenter':id==='garden'?'gardenCenter':id==='homestead'?'homesteadHome':null;
- region(room||id,room?17:x,room?23:y,'',true);indexNotice('Fast Travel complete — '+regionalPlaceName(place)+'.');
+ const spawn=room?[roomExit(room)[0],roomExit(room)[1]-2]:[x,y];region(room||id,...spawn,'',true);indexNotice('Fast Travel complete — '+regionalPlaceName(place)+'.');
  s.face='up';save();
  return true;
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.29</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.30</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
