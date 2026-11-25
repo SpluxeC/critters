@@ -131,8 +131,22 @@ function finishSceneryLayer(){
  const now=performance.now();for(const [id,o] of sceneryOpacity)if(now-o.at>2000)sceneryOpacity.delete(id);
 }
 
+const RESIDENTIAL_ART=new Set(["armchair-front-alt","armchair-front","bamboo-screen","bed-east","bed-north","bed-south","bed-west","bonsai-blue-pot","bonsai-red-pot","book-table","bookshelf-front","bookshelf-side-a","bookshelf-side-b","ceramic-jar","chair-front-alt","chair-front","chair-side-a","chair-side-b","clock-front","clock-side","crate-a","crate-b","cushion-blue","cushion-green","cushion-purple","cushion-red","desk-front-alt","desk-front","dining-table-horizontal-a","dining-table-horizontal-b","dining-table-vertical-a","dining-table-vertical-b","dresser-front-alt","dresser-front","floor-lantern","flowering-plant","folding-screen-a","folding-screen-b","folding-screen-c","fridge-front-alt","fridge-front","futon-east","futon-north","futon-south","futon-west","hide-rug","hutch-front-narrow","hutch-front","hutch-side","low-table-seats-a","low-table-seats-b","low-table-seats-c","low-table-seats-d","nightstand-front","nightstand-variant-2","nightstand-variant-3","nightstand-variant-4","plant-brown-pot","plant-tall-a","plant-tall-b","prep-counter-front","prep-counter-narrow","round-rug-blue","round-rug-cream","round-tea-table-a","round-tea-table-b","round-tea-table-c","round-tea-table-d","rug-blue","rug-red","sink-front-alt","sink-front","sink-side-a","sink-side-b","small-chest","small-flower-pot","sofa-front-alt","sofa-front","sofa-side-a","sofa-side-b","square-lantern","storage-chest","stove-front-alt","stove-front","stove-side-a","stove-side-b","table-horizontal-a","table-horizontal-b","table-vertical-a","table-vertical-b","tatami-mat","vanity-back","vanity-front","vanity-side","vase-flowers","wall-banner","wall-family-portrait","wall-floral-picture","wall-herb-rack","wall-landscape","wall-scroll-a","wall-scroll-b","wardrobe-front-alt","wardrobe-front","wardrobe-side","wooden-bucket","woven-basket"]);
+function uploadedArtPath(name){
+ if(RESIDENTIAL_ART.has(name))return 'assets/residential-furniture/'+name+'.png';
+ if(name.startsWith('outdoor-'))return 'assets/outdoor-scenery/'+name+'.png';
+ if(/^(family-home|neighbor-house|research-laboratory|critter-center|critter-shop|grass-gym)-(closed|ajar|half-open|open)$/.test(name))return 'assets2/interactive-animated/building-doors/'+name+'.png';
+ if(/^(wooden-chest|supply-crate|storage-cabinet|display-case|mailbox)-/.test(name))return 'assets2/interactive-animated/interactive-props/'+name+'.png';
+ if(/^(paper-lantern|stone-lantern|village-well|water-channel|small-waterfall|wind-chime)-/.test(name))return 'assets2/interactive-animated/environment-animated/'+name+'.png';
+ if(/^(starter-display-station|index-calibration-machine|specimen-containment-tank|research-workstation|scanning-station|storage-pod)-/.test(name))return 'assets2/interactive-animated/laboratory-animated/'+name+'.png';
+ if(name.startsWith('lab-'))return 'assets2/laboratory/'+name+'.png';
+ if(name.startsWith('gym-'))return 'assets2/grass-gym/'+name+'.png';
+ if(name.startsWith('critter-shop-'))return 'assets2/critter-shop/'+name+'.png';
+ if(name.startsWith('critter-center-'))return 'assets2/critter-center/'+name+'.png';
+ return 'assets/'+name+'.png';
+}
 function uploadedArt(name){
- if(!uploadedArtCache.has(name)){const im=new Image();im.src='assets/'+name+'.png';uploadedArtCache.set(name,im)}
+ if(!uploadedArtCache.has(name)){const im=new Image();im.src=uploadedArtPath(name);uploadedArtCache.set(name,im)}
  const im=uploadedArtCache.get(name);return im.complete&&im.naturalWidth>0&&im.naturalHeight>0?im:null;
 }
 function drawUploadedArt(name,x,y,w,h){
