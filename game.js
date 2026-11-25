@@ -675,7 +675,7 @@ function discoverExplorationSite(o){
 }
 // Detail art is bounded by existing geometry; no new blockers or discoveries.
 function routeSiteArt(kind){
- return {sign:'sign-arrow',notice:'sign-board',shrine:'lantern-stone',satchel:'sack',chest:'crate'}[kind]||null;
+ return {sign:'outdoor-signpost-1-120',notice:'outdoor-noticeboard-1-116',shrine:'outdoor-shrine-3-221',satchel:'outdoor-sack-1-155',chest:'crate'}[kind]||null;
 }
 function explorationGroundArt(id){
  return {'exp-bamboo':'pebbles','exp-forest':'ruin-paving','exp-foothills':'stone-circle','exp-cave':'rubble-01','exp-garden':'ruin-inscription'}[id]||null;
@@ -699,10 +699,10 @@ function drawEnvironmentalDetails(ox,oy,w,h){
  }
 }
 function drawBridgeDeck(x,y,w,ox,oy){
- if(!uploadedArt('wood-horizontal'))return false;
  for(let i=0;i<w;i++)if(tiles[y]?.[x+i]!==T.path)return false;
- for(let i=0;i<w;i++)drawUploadedArt('wood-horizontal',(x+i)*S-ox,y*S-oy,S,S);
- return true;
+ if(!uploadedArt('outdoor-bridge-1-098'))return false;
+ ctx.save();ctx.beginPath();ctx.rect(x*S-ox,y*S-oy,w*S,S);ctx.clip();
+ drawUploadedArt('outdoor-bridge-1-098',x*S-ox,y*S-oy,w*S,S);ctx.restore();return true;
 }
 function drawExplorationSites(ox,oy){
  drawExtraExploration(ox,oy);
@@ -1745,19 +1745,25 @@ function drawConnectedTerrain(t,x,y,a,b){
 }
 // Stable, area-aware natural artwork; never modifies tile or encounter data.
 function naturalSeed(x,y){return ((Math.imul(x+1,73856093)^Math.imul(y+1,19349663))>>>0)}
+// New outdoor scenery is selected deterministically, without changing map data.
+const OUTDOOR_SCENERY=Object.freeze({
+ trees:['outdoor-tree-1-026','outdoor-tree-2-052','outdoor-tree-3-018'],
+ rocks:['outdoor-rock-1-058','outdoor-rock-2-084','outdoor-rock-3-073'],
+ flowers:['outdoor-flowers-grass-1-045','outdoor-flowers-grass-2-076','outdoor-flowers-grass-3-063'],
+ shrubs:['outdoor-shrub-1-036','outdoor-shrub-2-068','outdoor-shrub-3-037']
+});
 function naturalTreeName(area,seed){
- if(area==='garden')return seed%3===0?'tree-cherry-blossom':'tree-green';
- if(area==='route3')return seed%3===0?'tree-autumn':'tree-pine';
- if(area==='forest'||area==='route2')return seed%3===0?'tree-green':'tree-pine';
- return seed%7===0?'tree-cherry-blossom':seed%5===0?'tree-autumn':'tree-green';
+ if(area==='route2')return seed%3===0?OUTDOOR_SCENERY.trees[1]:'outdoor-bamboo-3-059';
+ if(area==='forest'||area==='route3'||area==='ridge')return OUTDOOR_SCENERY.trees[1+seed%2];
+ return OUTDOOR_SCENERY.trees[seed%3];
 }
 function naturalTileName(t,a,b){
  const n=naturalSeed(a,b);
  if(t===T.tall)return ['tall-grass-01','tall-grass-02','tall-grass-03'][n%3];
  if(t===T.rice)return ['paddy-01','paddy-02','paddy-03'][n%3];
- if(t===T.flower)return ['flowers-pink','flowers-white','flowers-yellow','flowers-mixed'][n%4];
- if(t===T.rock)return ['rock-small','rock-moss','rocks-cluster'][n%3];
- if(t===T.hedge)return 'hedge-horizontal';
+ if(t===T.flower)return OUTDOOR_SCENERY.flowers[n%3];
+ if(t===T.rock)return OUTDOOR_GRID[s.area]?OUTDOOR_SCENERY.rocks[n%3]:['rock-small','rock-moss','rocks-cluster'][n%3];
+ if(t===T.hedge)return OUTDOOR_GRID[s.area]&&s.area!=='homestead'?OUTDOOR_SCENERY.shrubs[n%3]:'hedge-horizontal';
  return null;
 }
 function naturalTileReady(t,a,b){const name=naturalTileName(t,a,b);return !!(name&&uploadedArt(name))}
@@ -1774,12 +1780,12 @@ function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
  if(nearTree&&(area==='forest'||area==='route2')){
-  if(seed%59===0)return 'fallen-log';
-  if(seed%47===0)return 'tree-stump';
+  if(seed%59===0)return 'outdoor-log-1-069';
+  if(seed%47===0)return 'outdoor-stump-1-075';
   if(seed%19===0)return seed%2?'mushrooms-brown':'mushrooms-red';
  }
- if((area==='garden'||area==='village')&&seed%41===0)return seed%2?'shrub-white-flowers':'shrub-red-flowers';
- if(seed%17===0)return seed%2?'grass-tuft-small':'grass-tuft-sparse';
+ if((area==='garden'||area==='village'||area==='town')&&seed%41===0)return OUTDOOR_SCENERY.shrubs[seed%3];
+ if(seed%17===0)return OUTDOOR_SCENERY.flowers[seed%3];
  return null;
 }
 function drawNaturalDetails(ox,oy,w,h){
@@ -1795,7 +1801,7 @@ function drawNaturalDetails(ox,oy,w,h){
   const neighbors=[tiles[y-1]?.[x],tiles[y+1]?.[x],tiles[y]?.[x-1],tiles[y]?.[x+1]];
   if(neighbors.some(v=>v===T.door||v===T.path||v===T.stone))continue;
   const name=naturalDecoration(s.area,naturalSeed(x,y),t,neighbors.includes(T.tree));
-  if(name)drawUploadedFit(name,x*S-ox+4,y*S-oy+7,S-8,S-10);
+  if(name&&!explorationSiteAt(s.area,x,y)&&!explorationObjectAt(s.area,x,y)&&!secretEntranceAt(s.area,x,y))drawUploadedFit(name,x*S-ox+4,y*S-oy+7,S-8,S-10);
  }
 }
 // Continuous ground colors with irregular world-space texture. No square
@@ -1805,6 +1811,12 @@ function seamlessGround(t,x,y,a,b){
  const color=colors[t];if(!color)return false;
  ctx.fillStyle=color;ctx.fillRect(x-.35,y-.35,S+.8,S+.8);
  const n=naturalSeed(a,b);
+ if(OUTDOOR_GRID[s.area]&&s.area!=='homestead'&&(t===T.grass||t===T.path)){
+  const name=t===T.grass?(n%2?'outdoor-grass-1-001':'outdoor-grass-2-001'):(n%2?'outdoor-path-1-004':'outdoor-path-2-004');
+  const im=uploadedArt(name);
+  // Only use truly square ground swatches; avoid stretching object crops into terrain.
+  if(im&&im.naturalWidth===im.naturalHeight){ctx.save();ctx.globalAlpha=.32;ctx.drawImage(im,x,y,S,S);ctx.restore()}
+ }
  if(t===T.water){
   ctx.fillStyle='rgba(203,237,229,.13)';ctx.fillRect(x+((n>>>4)%23),y+((n>>>12)%26),5+n%8,1);
  }else{
@@ -2031,8 +2043,8 @@ function drawTownExteriors(ox,oy,w,h){
   if(b.label==='GRASS GYM')doorSprite('grass-gym',24,10,ox,oy);
   if(b.art?.startsWith('shop-')){
    const y=b.y+b.h;
-   if(tiles[y]?.[b.x]===T.wall)drawUploadedFit('barrel',b.x*S-ox,y*S-oy,S,S);
-   if(tiles[y]?.[b.x+b.w-1]===T.wall)drawUploadedFit('crate-wide',(b.x+b.w-1)*S-ox,y*S-oy,S,S);
+   if(tiles[y]?.[b.x]===T.wall)drawUploadedFit('outdoor-barrel-1-144',b.x*S-ox,y*S-oy,S,S);
+   if(tiles[y]?.[b.x+b.w-1]===T.wall)drawUploadedFit('outdoor-crate-1-151',(b.x+b.w-1)*S-ox,y*S-oy,S,S);
   }
  }
 }
@@ -2142,8 +2154,8 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  }
  // Fences are drawn in the *same cells* blocked by the collision map.
  for(const [x1,y1,x2,y2] of VILLAGE_FENCES){
-  if(uploadedArt('fence-timber-horizontal')){
-   for(let x=x1;x<x2;x++)drawUploadedArt('fence-timber-horizontal',x*S-ox,y1*S-oy,S,S);
+  if(uploadedArt('outdoor-fence-1-082')){
+   for(let x=x1;x<x2;x++)drawUploadedArt('outdoor-fence-1-082',x*S-ox,y1*S-oy,S,S);
    continue;
   }
   const xa=x1+.15,xb=x2-.15,yy=y1+.52;
@@ -2157,7 +2169,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  }
  for(const [x,y] of VILLAGE_STONES){
   if(tiles[y]?.[x]===T.path)continue;
-  if(drawUploadedFit('rock-moss',x*S-ox,y*S-oy,S,S))continue;
+  if(drawUploadedFit(OUTDOOR_SCENERY.rocks[naturalSeed(x,y)%3],x*S-ox,y*S-oy,S,S))continue;
   const [px,py]=pos(x+.5,y+.55);
   ctx.fillStyle='#29433880';ctx.beginPath();ctx.ellipse(px,py+9,14,6,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#77756c';ctx.beginPath();ctx.ellipse(px,py,11,8,-.2,0,Math.PI*2);ctx.fill();
