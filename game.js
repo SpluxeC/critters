@@ -25,14 +25,14 @@ function drawCinematicTrees(ox,oy,w,h,now){
   if(!img?.complete||!img.naturalWidth)continue;
   const rootX=x*S+S*.5-ox,rootY=(y+1)*S-oy;
   const dense=s.area==='forest'||s.area==='route2';
-  const width=dense?(type===1?48:55):(type===1?63:74);
+  const bamboo=naturalTreeName(s.area,naturalSeed(x,y)).includes('bamboo');
+  const crowded=tiles[y]?.[x-1]===T.tree||tiles[y]?.[x+1]===T.tree;
+  const width=bamboo?(crowded?32:40):dense||crowded?(type===1?42:48):(type===1?58:66);
   const art=custom?cleanSceneryArt(img,naturalTreeName(s.area,naturalSeed(x,y))):img;
   const ratio=artHeight(art)/artWidth(art),height=custom?Math.min(width*1.8,width*ratio):width*(type===1?1.34:type===2?1.07:1.13);
   const drawWidth=custom?Math.min(width,height/ratio):width;
   if(rootX+width/2<0||rootX-width/2>w||rootY-height>h||rootY<0)continue;
-  // Shadow sits under the fixed solid tile; only the art moves in the breeze.
-  ctx.fillStyle='rgba(20,54,32,.27)';
-  ctx.beginPath();ctx.ellipse(rootX,rootY-5,width*.28,6,0,0,Math.PI*2);ctx.fill();
+  queueSolarShadow(rootX,rootY-4,drawWidth,height);
   const bend=reducedWorldMotion()?0:Math.sin(now*.00086-x*.43-y*.22)*.012*weatherWind();
   sceneryLayer(s.area+':tree:'+x+','+y,rootX-drawWidth/2,rootY-4-height,drawWidth,height,rootY,()=>{ctx.save();ctx.translate(rootX,rootY-4);ctx.rotate(bend);ctx.drawImage(art,-drawWidth/2,-height,drawWidth,height);ctx.restore()});
  }
@@ -114,9 +114,37 @@ function cleanSceneryArt(im,name){
  cleanArtCache.set(im,result);return result;
 }
 const artWidth=im=>im.naturalWidth||im.width,artHeight=im=>im.naturalHeight||im.height;
-let sceneryForeground=null,sceneryPlayer=null;
+let sceneryForeground=null,sceneryPlayer=null,solarCasters=null;
 const sceneryOpacity=new Map();
-function startSceneryLayer(x,y){sceneryForeground=[];sceneryPlayer={x,y,now:performance.now()}}
+function solarShadowAt(hour,weather='clear'){
+ if(hour<=6||hour>=18)return null;
+ const phase=(hour-6)/12,altitude=Math.sin(Math.PI*phase);
+ const length=.18+1.4*(1-altitude);
+ const opacity=.24*Math.min(1,altitude*3)*({rain:.35,storm:.2,fog:.3,snow:.65,cloudy:.55}[weather]??1);
+ return {dx:-Math.cos(Math.PI*phase)*length,dy:-.32*length,opacity};
+}
+function startSceneryLayer(x,y){sceneryForeground=[];solarCasters=[];sceneryPlayer={x,y,now:performance.now()}}
+function queueSolarShadow(x,y,w,h,kind='tree'){
+ if(!solarCasters||!OUTDOOR_GRID[s.area])return;
+ const sun=solarShadowAt(worldHour(),regionalWeather());if(!sun)return;
+ solarCasters.push({x,y,w,h,kind,sun});
+}
+function drawSolarShadows(){
+ for(const o of solarCasters||[]){
+  const {x,y,w,h,kind,sun}=o,dx=sun.dx*h,dy=sun.dy*h;
+  ctx.save();ctx.fillStyle='rgba(24,42,48,'+sun.opacity+')';
+  ctx.beginPath();
+  if(kind==='building'){
+   const half=w*.44,depth=Math.min(h*.15,25);
+   ctx.moveTo(x-half,y);ctx.lineTo(x+half,y);ctx.lineTo(x+half+dx,y+dy-depth);ctx.lineTo(x-half+dx,y+dy-depth);ctx.closePath();
+  }else{
+   const radius=Math.max(3,w*.29),len=Math.hypot(dx,dy);
+   ctx.moveTo(x-radius*.22,y);ctx.lineTo(x+dx-radius*.55,y+dy);ctx.lineTo(x+dx+radius*.55,y+dy);ctx.lineTo(x+radius*.22,y);ctx.closePath();
+   ctx.ellipse(x+dx,y+dy,radius,Math.max(3,radius*.55+len*.08),Math.atan2(dy,dx),0,Math.PI*2);
+  }
+  ctx.fill();ctx.restore();
+ }
+}
 function sceneryLayer(id,x,y,w,h,base,draw){
  if(!sceneryForeground||!sceneryPlayer){draw();return}
  const p=sceneryPlayer,overlap=p.x+9>x&&p.x-9<x+w&&p.y>y&&p.y-36<y+h&&p.y<=base;
@@ -124,10 +152,15 @@ function sceneryLayer(id,x,y,w,h,base,draw){
  const dt=Math.min(100,Math.max(0,p.now-old.at)),target=overlap?.38:1;
  const alpha=target+(old.alpha-target)*Math.exp(-dt/150);
  sceneryOpacity.set(id,{alpha,at:p.now});
- if(overlap||alpha<.98&&p.y<=base)sceneryForeground.push({base,alpha,draw});else draw();
+ sceneryForeground.push({base,alpha,draw});
+}
+function queueWorldActor(base,draw){
+ if(!sceneryForeground){draw();return}
+ sceneryForeground.push({base,alpha:1,draw});
 }
 function finishSceneryLayer(){
- const list=sceneryForeground||[];sceneryForeground=null;sceneryPlayer=null;
+ drawSolarShadows();
+ const list=sceneryForeground||[];sceneryForeground=null;sceneryPlayer=null;solarCasters=null;
  for(const o of list.sort((a,b)=>a.base-b.base)){ctx.save();ctx.globalAlpha=o.alpha;o.draw();ctx.restore()}
  const now=performance.now();for(const [id,o] of sceneryOpacity)if(now-o.at>2000)sceneryOpacity.delete(id);
 }
@@ -235,14 +268,14 @@ function npcActivityKind(task){
  if(task==='Observing')return 'observe';
  return null;
 }
-function drawNpcActivity(p,x,y,now=performance.now()){
+function drawNpcActivity(p,x,y,now=performance.now(),area=s.area){
  if(p.alertUntil>now){
   const bounce=Math.sin(now/90)*2;ctx.save();ctx.fillStyle='#fff4bb';ctx.strokeStyle='#51392b';ctx.lineWidth=2;
   ctx.beginPath();ctx.arc(x,y-61+bounce,10,0,Math.PI*2);ctx.fill();ctx.stroke();
   ctx.fillStyle='#b64036';ctx.font='bold 15px monospace';ctx.textAlign='center';ctx.fillText('!',x,y-56+bounce);ctx.restore();return;
  }
  if(p.walking||modal||battle||narratorBlocking()||trainerApproach||now<(p.pauseUntil||0))return;
- const kind=npcActivityKind(p.task);if(!kind||kind==='rest'&&p.task==='Resting'&&!isInterior(s.area))return;
+ const kind=npcActivityKind(p.task);if(!kind||kind==='rest'&&p.task==='Resting'&&!isInterior(area))return;
  const phase=(now/1000+(p.homeX*13+p.homeY*7)*.13)%3;
  if(phase>1.25)return;
  const t=phase/1.25,side=p.face==='left'?-1:1,fx=x+side*13,fy=y-24;
@@ -263,8 +296,8 @@ function drawNpcActivity(p,x,y,now=performance.now()){
  }
  ctx.restore();
 }
-function drawNpc(p,x,y){
- const name=uploadedNpcName(p,s.area);
+function drawNpc(p,x,y,area=s.area){
+ const name=uploadedNpcName(p,area);
  const im=name==='npc-researcher'?npcResearcher:name==='npc-lab-assistant'?npcLabAssistant:name?uploadedArt(name):null;
  const active=!p.walking&&!modal&&!battle&&!narratorBlocking()&&!trainerApproach&&performance.now()>=(p.pauseUntil||0)&&['farm','research','work','home'].includes(npcActivityKind(p.task));
  const bob=active?Math.sin(performance.now()/180)*.8:0;
@@ -324,6 +357,7 @@ function drawAnimatedBuilding(base,h,doorX,doorY,ox,oy){
  const x=center-w/2,y=(h.y+h.h+2)*S-oy-height,baseY=y+height;
  for(let yy=h.y;yy<h.y+h.h+2;yy++)for(let xx=h.x;xx<h.x+h.w;xx++)
   seamlessGround(T.grass,xx*S-ox,yy*S-oy,xx,yy);
+ queueSolarShadow(x+w/2,baseY,w,height,'building');
  sceneryLayer(s.area+':building:'+h.x+','+h.y,x,y,w,height,baseY,()=>{
   ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,w,height);ctx.restore();
  });
@@ -1927,7 +1961,7 @@ function drawTile(t,x,y,a,b){
  // All natural terrain shares a single continuous grass surface. Tile cells now
  // describe objects/foliage rather than independent rectangular patches of color.
  const natural=t===T.grass||t===T.tall||t===T.rice||t===T.flower||(t===T.tree&&treeArtReady());
- if(OUTDOOR_GRID[s.area]&&(t===T.tree||t===T.rock||t===T.hedge))seamlessGround(T.grass,x,y,a,b);
+ if(OUTDOOR_GRID[s.area]&&(t===T.tree||t===T.rock||t===T.hedge)){seamlessGround(T.grass,x,y,a,b);if(t!==T.tree)queueSolarShadow(x+S/2,y+S,S,t===T.rock?15:24);}
  if(!natural&&!(OUTDOOR_GRID[s.area]&&(t===T.tree||t===T.rock||t===T.hedge))){ctx.fillStyle=palette[t]||palette[0];ctx.fillRect(x,y,S+0.5,S+0.5)}
  const hash=(v)=>{const z=Math.sin(v*127.1+83.7)*43758.5453;return z-Math.floor(z)};
  const variation=hash(a*3.71+b*1.91);
@@ -2052,6 +2086,7 @@ function drawBuildingExterior(name,h,ox,oy,clear=false){
  }
  const x=b.x*S-ox,y=b.y*S-oy,w=b.w*S,height=b.h*S;
  const art=cleanSceneryArt(im,name);
+ queueSolarShadow(x+w/2,y+height,w,height,'building');
  sceneryLayer(s.area+':building:'+h.x+','+h.y,x,y,w,height,y+height,()=>{ctx.save();ctx.imageSmoothingEnabled=false;ctx.beginPath();ctx.rect(h.x*S-ox,h.y*S-oy,h.w*S,(h.h+2)*S);ctx.clip();ctx.drawImage(art,x,y,w,height);ctx.restore()});return true;
 }
 function drawExteriorSign(h,ox,oy){
@@ -2065,6 +2100,7 @@ function drawExteriorSign(h,ox,oy){
 function drawServiceExterior(b,ox,oy){
  const x=b.x*S-ox,y=b.y*S-oy,w=b.w*S,h=(b.h+2)*S,gym=b.label==='GRASS GYM';
  ctx.fillStyle=palette[T.grass];ctx.fillRect(x,y,w,h);
+ queueSolarShadow(x+w/2,y+h,w,h,'building');
  sceneryLayer(s.area+':service:'+b.x+','+b.y,x,y,w,h,y+h,()=>{
   const rect=(a,c,d,e,color)=>{ctx.fillStyle=color;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
   rect(.035,.23,.93,.77,gym?'#b9c49a':'#e9e1cf');
@@ -2111,11 +2147,6 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
  };
- // Organic shadows connect the broad grasslands and soften straight tile boundaries.
- for(const [x,y,r] of [[2,12,46],[11,16,68],[17,4,76],[20,18,81],[31,10,52],[4,24,58],[29,24,57]]){
-  const [px,py]=pos(x,y);
-  ctx.fillStyle='#254d3761';ctx.beginPath();ctx.ellipse(px,py,r,r*.6,.18,0,Math.PI*2);ctx.fill();
- }
  // Warm light patches around the dwellings and the village's winding road.
  for(const [x,y,w,h] of [[5.1,10,3,1.5],[17,15.9,3,1.4],[28.8,12,2,1.2]]){
   const [px,py]=pos(x,y);
@@ -2136,8 +2167,6 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  // The buildings are dedicated, single-layer sprites, not canvas tile drawings.
  for(const h of VILLAGE_HOUSES){
   const [px,py]=pos(h.x,h.y),w=h.w*S,height=(h.h+2)*S;
-  ctx.fillStyle='#15292488';
-  ctx.beginPath();ctx.ellipse(px+w/2,py+height-12,w*.55,17,0,0,Math.PI*2);ctx.fill();
   if(!drawAnimatedBuilding(villageDoorBase(h),h,h.door,h.y+h.h+1,ox,oy)){
    drawBuildingExterior(VILLAGE_EXTERIOR_ART[h.kind],h,ox,oy,true);
   }
@@ -2150,7 +2179,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  // Fences are drawn in the *same cells* blocked by the collision map.
  for(const [x1,y1,x2,y2] of VILLAGE_FENCES){
   if(uploadedArt('outdoor-fence-1-082')){
-   for(let x=x1;x<x2;x++)drawUploadedArt('outdoor-fence-1-082',x*S-ox,y1*S-oy,S,S);
+   for(let x=x1;x<x2;x++){queueSolarShadow((x+.5)*S-ox,(y1+1)*S-oy,S,22);drawUploadedArt('outdoor-fence-1-082',x*S-ox,y1*S-oy,S,S);}
    continue;
   }
   const xa=x1+.15,xb=x2-.15,yy=y1+.52;
@@ -2164,14 +2193,15 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  }
  for(const [x,y] of VILLAGE_STONES){
   if(tiles[y]?.[x]===T.path)continue;
+  queueSolarShadow((x+.5)*S-ox,(y+1)*S-oy,26,14);
   if(drawUploadedFit(OUTDOOR_SCENERY.rocks[naturalSeed(x,y)%3],x*S-ox,y*S-oy,S,S))continue;
   const [px,py]=pos(x+.5,y+.55);
-  ctx.fillStyle='#29433880';ctx.beginPath();ctx.ellipse(px,py+9,14,6,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#77756c';ctx.beginPath();ctx.ellipse(px,py,11,8,-.2,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#b9b29b';ctx.fillRect(px-6,py-6,8,3);
  }
  // Warm lantern lighting without mobile-unfriendly filters.
  for(const [x,y] of VILLAGE_LANTERNS){
+  queueSolarShadow((x+.5)*S-ox,(y+1)*S-oy,18,35);
   const [px,py]=pos(x+.5,y+.55);
   ctx.fillStyle='#ffce7750';ctx.beginPath();ctx.arc(px,py-12,22,0,Math.PI*2);ctx.fill();
   const lanternFrames=['stone-lantern-idle','stone-lantern-flicker-1','stone-lantern-idle-2','stone-lantern-flicker-2'];
@@ -2200,10 +2230,6 @@ function drawRoute1Details(ox,oy,viewW,viewH){
   ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(px(x),py(y));ctx.lineTo(px(x2),py(y2));ctx.stroke();
  };
- // Soft field-scale shading makes the route read as a single landscape.
- for(const [x,y,rx,ry] of [[5,6,110,72],[22,5,145,79],[4,19,100,75],[27,20,120,74]]){
-  ctx.fillStyle='#3869462b';ctx.beginPath();ctx.ellipse(px(x),py(y),rx,ry,.14,0,Math.PI*2);ctx.fill();
- }
  // Rice fields: horizontal irrigation ridges, water glints, stalk clusters.
  // Lines only run through rice cells, never across paths or road.
  for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
@@ -2272,7 +2298,7 @@ function drawRoute1Details(ox,oy,viewW,viewH){
  for(const o of ROUTE1_SITES){
   const bx=px(o.x),by=py(o.y);
   const already=!!s.discoveries?.[o.id];
-  ctx.fillStyle='#203e315e';ctx.beginPath();ctx.ellipse(bx+16,by+29,14,6,0,0,Math.PI*2);ctx.fill();
+  queueSolarShadow(bx+16,by+S,24,28);
   const art=o.kind==='chest'?interactivePropArt(o.id,'supply-crate',already):routeSiteArt(o.kind);
   if(art&&drawUploadedFit(art,bx,by,S,S)){
    // Reward marker below remains governed by existing discovery state.
@@ -2430,7 +2456,6 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
  }
  for(const o of interiorObjects){
   const px=X(o.x),py=Y(o.y),ww=o.w*S,hh=o.h*S;
-  ctx.fillStyle='#24343a30';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.46,Math.max(4,hh*.10),0,0,Math.PI*2);ctx.fill();
   const plan=interiorArtPlan(s.area,o);
   ctx.save();ctx.beginPath();ctx.rect(px,py,ww,hh);ctx.clip();
   const animated=lab?labAnimation(o):null;
@@ -2470,7 +2495,6 @@ function drawShopInterior(ox,oy,viewW,viewH){
  for(const x of [.8,W-1.8])fit('plant-042',x,1.5,1,1.8);
  for(const o of interiorObjects){
   const px=X(o.x),py=Y(o.y),ww=o.w*S,hh=o.h*S;
-  ctx.fillStyle='#30241e35';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.46,Math.max(4,hh*.1),0,0,Math.PI*2);ctx.fill();
   if(!drawInteriorAsset(s.area,o,px,py,ww,hh)){
    box(o.x+.1,o.y+.1,o.w-.2,o.h-.2,'#987958');
    box(o.x+.2,o.y+.2,o.w-.4,.18,'#cfb28d');
@@ -2553,8 +2577,6 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  box(exitX+.08,H-1,.52,1,'#48342b');
  for(const o of interiorObjects){
   const {x,y,w,h,kind}=o,px=wx(x),py=wy(y),ww=w*S,hh=h*S;
-  // Cast shadow and contact shadow before drawing the actual solid furniture.
-  ctx.fillStyle='#201b1c66';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.48,Math.max(5,hh*.13),0,0,Math.PI*2);ctx.fill();
   if(drawInteriorAsset(s.area,o,px,py,ww,hh)){
    // Artwork only: inspection and collision remain defined by o.
   }else if(kind==='bookshelf'&&drawUploadedFit('book-shelf',px,py,ww,hh)){
@@ -2922,12 +2944,6 @@ function draw(){
  const ox=visual.x*S+S/2-viewportWidth/2;
  const oy=visual.y*S+S/2-viewportHeight/2;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#6b9e60';ctx.fillRect(0,0,C.width,C.height);ctx.setTransform(zoom,0,0,zoom,0,0);
- // Painted world-space foliage patches extend across tile boundaries.
- for(let y=Math.max(0,Math.floor(oy/96)-1);y<Math.min(Math.ceil(H*S/96)+1,Math.ceil((oy+viewportHeight)/96)+1);y++)for(let x=Math.max(0,Math.floor(ox/96)-1);x<Math.min(Math.ceil(W*S/96)+1,Math.ceil((ox+viewportWidth)/96)+1);x++){
-   const cx=x*96+47-ox,cy=y*96+47-oy;
-   ctx.fillStyle=(x*7+y*11)%3===0?'rgba(54,118,61,.13)':'rgba(145,181,100,.12)';
-   ctx.beginPath();ctx.ellipse(cx,cy,62,43,0,0,Math.PI*2);ctx.fill();
- }
  if(!clinicalInterior(s.area)&&!shopInterior(s.area))for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  startSceneryLayer(visual.x*S+16-ox,visual.y*S+32-oy);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
@@ -2942,16 +2958,14 @@ function draw(){
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
  const pos=npcVisualPosition(p),x=pos.x*S+16-ox,y=pos.y*S+32-oy;
- // A soft ground shadow anchors each character to the map.
- ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
- drawNpc(p,x,y);drawNpcActivity(p,x,y);
+ queueWorldActor(y,()=>{drawNpc(p,x,y);drawNpcActivity(p,x,y);});
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&!s.defeated[p.id]&&!(p.alertUntil>performance.now())&&trainerApproach?.p!==p){
   ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
  }
 }
  const isMoving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const walkFrame=playerGaitFrame();
- sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25);
+ queueWorldActor(visual.y*S+32-oy,()=>sprite(s.gender,visual.x*S+16-ox,visual.y*S+32-oy,s.face,walkFrame,1.25));
  finishSceneryLayer();
  drawAtmosphereOverlay(ox,oy,viewportWidth,viewportHeight);
  drawWeather(viewportWidth,viewportHeight);
@@ -3196,7 +3210,7 @@ function drawPastureCreature(a,ox,oy,now){
  const walking=a.state==='walk',resting=a.state==='sleep'||a.state==='rest';
  const hop=a.state==='play'?Math.abs(Math.sin((now-a.start)/130))*6:walking?Math.abs(Math.sin((now-a.start)/115))*2:0;
  const breathe=Math.sin(now/650+a.j)*.025,scaleY=resting?.73:1+breathe;
- ctx.save();ctx.fillStyle='rgba(30,49,32,.30)';ctx.beginPath();ctx.ellipse(x,y+1,12,4,0,0,Math.PI*2);ctx.fill();
+ ctx.save();
  ctx.translate(x,y-hop);ctx.scale(a.face,scaleY);ctx.imageSmoothingEnabled=false;
  if(im){const size=36,k=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*k,h=im.naturalHeight*k;ctx.drawImage(im,-w/2,-h,w,h)}
  else{
@@ -3348,8 +3362,7 @@ function drawOutdoorWorld(){
    if(npc.indoors)continue;
    const pos=npcVisualPosition(npc),x=pos.x*S+16-localOX,y=pos.y*S+32-localOY;
    if(x< -40||x>vw+40||y< -70||y>vh+40)continue;
-   ctx.fillStyle='#152f2780';ctx.beginPath();ctx.ellipse(x,y-2,12,5,0,0,Math.PI*2);ctx.fill();
-   drawNpc(npc,x,y);drawNpcActivity(npc,x,y);
+   queueWorldActor(y,()=>{drawNpc(npc,x,y,area);drawNpcActivity(npc,x,y,performance.now(),area);});
    if((npc.kind==='gymtrainer'||npc.kind==='routetrainer')&&!s.defeated[npc.id]&&!(npc.alertUntil>performance.now())&&trainerApproach?.p!==npc){
     ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
    }
@@ -3361,7 +3374,7 @@ function drawOutdoorWorld(){
  }
  const moving=(stickActive&&!!stickDirection)||Object.values(held).some(Boolean)||Math.abs(visual.x-s.x)+Math.abs(visual.y-s.y)>.015;
  const step=playerGaitFrame();
- sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25);
+ queueWorldActor(worldY+32-oy,()=>sprite(s.gender,worldX+16-ox,worldY+32-oy,s.face,step,1.25));
  finishSceneryLayer();
  drawAtmosphereOverlay(ox-position.x*S,oy-position.y*S,vw,vh);
  drawWeather(vw,vh);
@@ -4045,7 +4058,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.41</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.42</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
