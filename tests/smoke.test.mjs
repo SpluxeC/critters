@@ -586,3 +586,26 @@ test('v92 routes field notices and Index confirmations through overworld narrato
 });
 
 test('v93 homestead sale is gated behind badge four and mother conversation',()=>{assert.match(game,/function canBuyHomestead\(\)/);assert.match(game,/homesteadConstructionStage\(\)===4&&s\.homestead\?\.offered/);assert.match(game,/s\.homestead\.offered=true;save\(\)/);assert.match(game,/const HOMESTEAD_PRICE=10000/);assert.match(game,/homesteadHome/)});
+
+test('solar shadows follow the game clock and disappear at night',()=>{
+ const {solarShadowAt}=extract('function solarShadowAt(','function startSceneryLayer(',{});
+ assert.equal(solarShadowAt(0),null);
+ assert.equal(solarShadowAt(6),null);
+ assert.equal(solarShadowAt(18),null);
+ const morning=solarShadowAt(8),noon=solarShadowAt(12),evening=solarShadowAt(16);
+ assert.ok(morning.dx<0&&evening.dx>0);
+ assert.ok(Math.hypot(morning.dx,morning.dy)>Math.hypot(noon.dx,noon.dy));
+ assert.ok(Math.hypot(evening.dx,evening.dy)>Math.hypot(noon.dx,noon.dy));
+ assert.ok(solarShadowAt(12,'rain').opacity<noon.opacity);
+});
+test('scenery and actors share stable ground-depth ordering',()=>{
+ const order=[];
+ const ctx={save(){},restore(){},globalAlpha:1};
+ const sandbox=extract('let sceneryForeground=null','const RESIDENTIAL_ART=',{ctx,performance:{now:()=>1000}});
+ sandbox.startSceneryLayer(1000,1000);
+ sandbox.sceneryLayer('south',0,0,20,60,60,()=>order.push('south'));
+ sandbox.queueWorldActor(40,()=>order.push('actor'));
+ sandbox.sceneryLayer('north',0,0,20,20,20,()=>order.push('north'));
+ sandbox.finishSceneryLayer();
+ assert.deepEqual(order,['north','actor','south']);
+});
