@@ -841,6 +841,7 @@ function solidAt(x,y){
  if(isInterior(s.area)&&(interiorBlocked.has(key(x,y))||y<4))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
  if(explorationBlocked(s.area,x,y))return true;
+ if(buildingYardLayout(s.area).some(o=>o.solid&&o.x===x&&o.y===y))return true;
  return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
 }
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
@@ -1882,12 +1883,70 @@ function naturalDecoration(area,seed,t,nearTree){
  if(seed%17===0)return OUTDOOR_SCENERY.flowers[seed%3];
  return null;
 }
+// Curated landscaping from the new outdoor pack, never on a road or entrance.
+const BUILDING_YARD_ART=Object.freeze({
+ home:[['outdoor-planter-1-161',1],['outdoor-garden-bed-1-165',1],['outdoor-flowers-grass-1-045',0],['outdoor-basket-1-158',1],['outdoor-shrub-3-037',1],['outdoor-flowers-grass-2-076',0],['outdoor-woodpile-2-100',1],['outdoor-flowers-grass-3-063',0]],
+ lab:[['outdoor-planter-2-154',1],['outdoor-noticeboard-2-143',1],['outdoor-shrub-2-068',1],['outdoor-planter-1-161',1],['outdoor-flowers-grass-2-076',0],['outdoor-bench-2-148',1]],
+ center:[['outdoor-planter-1-161',1],['outdoor-bench-2-148',1],['outdoor-flowers-grass-2-076',0],['outdoor-planter-2-154',1],['outdoor-shrub-3-037',1],['outdoor-flowers-grass-1-045',0]],
+ shop:[['outdoor-crate-1-151',1],['outdoor-barrel-1-144',1],['outdoor-basket-1-158',1],['outdoor-sack-1-155',1],['outdoor-planter-2-154',1],['outdoor-flowers-grass-3-063',0]],
+ gym:[['outdoor-garden-bed-3-211',1],['outdoor-stone-lantern-3-217',1],['outdoor-flowers-grass-3-063',0],['outdoor-shrub-2-068',1],['outdoor-planter-3-227',1],['outdoor-flowers-grass-1-045',0],['outdoor-rock-3-073',1],['outdoor-flowers-grass-2-076',0]]
+});
+const yardCache=new WeakMap();
+function yardBuildings(area){
+ if(area==='village')return VILLAGE_HOUSES.map(h=>({...h,style:h.kind==='lab'?'lab':'home'}));
+ return (TOWN_EXTERIORS[area]||[]).map(h=>({...h,style:h.label==='GRASS GYM'?'gym':h.label==='CRITTER CENTER'?'center':h.art?.startsWith('shop-')?'shop':'home',door:h.label==='GRASS GYM'?24:Object.values(TOWN_ROOMS).find(r=>r.parent===area&&r.door[0]>=h.x&&r.door[0]<h.x+h.w&&r.door[1]===h.y+h.h+1)?.door[0]??h.x+Math.floor(h.w/2)}));
+}
+function yardCellAllowed(area,x,y,buildings){
+ if(x<2||y<2||x>=W-2||y>=H-2||tiles[y]?.[x]!==T.grass||buildingSceneryReserved(area,x,y))return false;
+ if(buildings.some(h=>Math.abs(x-h.door)<=1&&y>=h.y+h.h&&y<=h.y+h.h+4))return false;
+ if(villageObstacles.has(key(x,y))||route1Blocked.has(key(x,y)))return false;
+ if(npcs.some(p=>Math.abs((p.homeX??p.x)-x)+Math.abs((p.homeY??p.y)-y)<=1))return false;
+ if(explorationSiteAt(area,x,y)||explorationObjectAt(area,x,y)||secretEntranceAt(area,x,y))return false;
+ return true;
+}
+function buildingYardLayout(area){
+ if(!['village','town','garden'].includes(area))return [];
+ if(yardCache.has(tiles))return yardCache.get(tiles);
+ const buildings=yardBuildings(area),used=new Set(),out=[];
+ for(const h of buildings){
+  const front=h.y+h.h+2,options=[];
+  // Front gardens and side strips only; never behind a facade.
+  for(let d=0;d<3;d++)for(let x=h.x-2;x<=h.x+h.w+1;x++)options.push([x,front+d]);
+  for(let y=front-2;y>=h.y+2;y--)options.push([h.x-2,y],[h.x+h.w+1,y]);
+  const art=BUILDING_YARD_ART[h.style];
+  let index=0;
+  for(const [x,y] of options){
+   if(index>=art.length)break;
+   if(used.has(key(x,y))||!yardCellAllowed(area,x,y,buildings))continue;
+   const [name,solid]=art[index];
+   // Keep a walkable grass buffer next to every road, and don't create walls of props.
+   if(solid&&([[0,-1],[1,0],[0,1],[-1,0]].some(([dx,dy])=>[T.path,T.stone,T.door].includes(tiles[y+dy]?.[x+dx]))||out.some(o=>o.solid&&Math.abs(o.x-x)+Math.abs(o.y-y)<=1)))continue;
+   used.add(key(x,y));out.push({x,y,name,solid});index++;
+  }
+  // If the frontage is narrow, add small walkable flowers in remaining safe cells.
+  for(const [x,y] of options){
+   if(index>=art.length)break;
+   if(used.has(key(x,y))||!yardCellAllowed(area,x,y,buildings))continue;
+   used.add(key(x,y));out.push({x,y,name:'outdoor-flowers-grass-1-045',solid:0});index++;
+  }
+ }
+ yardCache.set(tiles,out);return out;
+}
+function drawBuildingYards(ox,oy,w,h){
+ for(const o of buildingYardLayout(s.area)){
+  const x=o.x*S-ox,y=o.y*S-oy;if(x<-S||y<-S||x>w||y>h)continue;
+  if(o.solid){
+   queueSolarShadow(x+S/2,y+S,22,24);
+   sceneryLayer(s.area+':yard:'+o.x+','+o.y,x+2,y+2,S-4,S-4,y+S,()=>drawUploadedFit(o.name,x+2,y+2,S-4,S-4));
+  }else drawUploadedFit(o.name,x+4,y+8,S-8,S-12);
+ }
+}
 function drawNaturalDetails(ox,oy,w,h){
  if(!OUTDOOR_GRID[s.area]||s.area==='homestead')return;
  const x0=Math.max(1,Math.floor(ox/S)),x1=Math.min(W-1,Math.ceil((ox+w)/S));
  const y0=Math.max(1,Math.floor(oy/S)),y1=Math.min(H-1,Math.ceil((oy+h)/S));
  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y))continue;
+  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y)||buildingYardLayout(s.area).some(o=>o.x===x&&o.y===y))continue;
   // Avoid actor positions, doors, roads and named sites; small ground details are walkable.
   if(npcs.some(p=>p.x===x&&p.y===y))continue;
   if(s.area==='village'&&villageObstacles.has(key(x,y)))continue;
@@ -3226,6 +3285,7 @@ function drawOutdoorWorld(){
   if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
   if(area==='town'||area==='garden')drawTownExteriors(localOX,localOY,vw,vh);
   if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY);drawHomesteadBuildingExteriors(localOX,localOY)}
+  drawBuildingYards(localOX,localOY,vw,vh);
   drawNaturalDetails(localOX,localOY,vw,vh);
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawEnvironmentalDetails(localOX,localOY,vw,vh);
@@ -3932,7 +3992,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.46</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.47</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
