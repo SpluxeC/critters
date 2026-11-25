@@ -1769,7 +1769,48 @@ function seamlessGround(t,x,y,a,b){
  }
  return true;
 }
+// Grass Gym artwork follows the authored tile grid; rendering never changes collision.
+function gymTileArt(t,a,b){
+ if(t===T.wall)return 'gym-plain-wall-01';
+ if(t===T.hedge){
+  const n=tiles[b-1]?.[a]===T.hedge, south=tiles[b+1]?.[a]===T.hedge;
+  const e=tiles[b]?.[a+1]===T.hedge,w=tiles[b]?.[a-1]===T.hedge;
+  return n&&south&&e&&w?'gym-hedge-cross-01':n||south||e||w?'gym-hedge-straight-01':'gym-hedge-column-01';
+ }
+ if(t===T.gate)return 'gym-vine-wall-06';
+ if(t===T.mat)return 'gym-leaf-platform-01';
+ if(t===T.door||t===T.path)return 'gym-floor-stone-01';
+ if(t===T.grass||t===T.flower)return 'gym-floor-grass-01';
+ return 'gym-floor-wood-01';
+}
+function drawGymTile(t,x,y,a,b){
+ const solid=t===T.wall||t===T.hedge||t===T.gate;
+ const base=solid?'gym-floor-moss-stone-01':gymTileArt(t,a,b);
+ ctx.fillStyle=solid?'#627b52':t===T.path||t===T.door?'#a3a696':'#897b56';
+ ctx.fillRect(x,y,S+.5,S+.5);
+ drawUploadedArt(base,x,y,S+.5,S+.5);
+ if(solid&&!drawUploadedArt(gymTileArt(t,a,b),x,y,S+.5,S+.5)){
+  ctx.fillStyle=t===T.wall?'#6c7165':t===T.gate?'#644c31':'#397b3e';ctx.fillRect(x+1,y+1,S-2,S-2);
+ }
+ if(t===T.door){ctx.fillStyle='#dfd4a9';ctx.fillRect(x+5,y+S-4,S-10,3)}
+}
+function drawGymDecor(ox,oy){
+ const fit=(n,x,y,w,h)=>drawUploadedFit(n,x*S-ox,y*S-oy,w*S,h*S);
+ // Decoration remains inside the outer wall footprint or the existing switch tile.
+ for(const x of [3, W-5])fit('gym-window-wall-01',x,0,2,1);
+ for(const x of [9,W-11])fit('gym-wall-banner-01',x,0,2,1);
+ for(const x of [1,W-2])fit('gym-lamp-wall-01',x,0,1,1);
+ for(const y of [4,12,20])for(const x of [0,W-1])fit('gym-potted-plant-01',x,y,1,1);
+ for(const x of [6,12,18,24])if(tiles[6]?.[x]===T.hedge)fit('gym-flower-bush-01',x,6,1,1);
+ const p=npcs.find(p=>p.kind==='switch');
+ if(p){
+  const x=(p.homeX??p.x),y=(p.homeY??p.y);
+  fit('gym-leaf-switch-01',x,y,1,1);
+  ctx.fillStyle=s.puzzles.gate?'#a9e4a5':'#e4b56a';ctx.beginPath();ctx.arc((x+.5)*S-ox,(y+.8)*S-oy,3,0,Math.PI*2);ctx.fill();
+ }
+}
 function drawTile(t,x,y,a,b){
+ if(s.area==='gym')return drawGymTile(t,x,y,a,b);
  if(!isInterior(s.area)&&s.area!=='gym'&&seamlessGround(t,x,y,a,b))return;
  // All natural terrain shares a single continuous grass surface. Tile cells now
  // describe objects/foliage rather than independent rectangular patches of color.
@@ -2837,6 +2878,7 @@ function draw(){
  startSceneryLayer(visual.x*S+16-ox,visual.y*S+32-oy);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
+ if(s.area==='gym')drawGymDecor(ox,oy);
  if(s.area==='route1')drawRoute1Details(ox,oy,viewportWidth,viewportHeight);
  drawCinematicTrees(ox,oy,viewportWidth,viewportHeight,performance.now());
  drawEnvironmentalDetails(ox,oy,viewportWidth,viewportHeight);
