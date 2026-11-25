@@ -2250,7 +2250,17 @@ const LAB_INTERIOR_ART=Object.freeze({
  'lab-starters':'starter-display-station-idle'
 });
 function clinicalInterior(area){return area==='lab'||TOWN_ROOMS[area]?.kind==='center'}
+const SHOP_INTERIOR_ART=Object.freeze({
+ checkout:'critter-shop-checkout-counter-001',stock1:'critter-shop-potion-shelf-010',
+ stock2:'critter-shop-accessory-rack-021',display:'critter-shop-merchandise-display-003',
+ stockroom:'critter-shop-crate-033'
+});
+function shopInterior(area){return TOWN_ROOMS[area]?.kind==='shop'}
 function interiorArtPlan(area,o){
+ if(shopInterior(area)){
+  const art=SHOP_INTERIOR_ART[o.id.slice(area.length+1)];
+  return art?[art]:[];
+ }
  if(clinicalInterior(area)){
   const art=area==='lab'?LAB_INTERIOR_ART[o.id]:CENTER_INTERIOR_ART[o.id.slice(area.length+1)];
   return art?[art]:[];
@@ -2348,8 +2358,40 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
  }
  ctx.restore();
 }
+// Shop-specific artwork, with neutral drawn placeholders while images load.
+function drawShopInterior(ox,oy,viewW,viewH){
+ const X=x=>x*S-ox,Y=y=>y*S-oy;
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(X(x),Y(y),w*S,h*S)};
+ const fit=(n,x,y,w,h)=>drawUploadedFit('critter-shop-'+n,X(x),Y(y),w*S,h*S);
+ ctx.save();ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
+ box(0,0,W,H,'#c5a67f');
+ if(!interiorTexture('critter-shop-floor-tile-062',0,0,W,H,ox,oy,viewW,viewH)){
+  for(let y=0;y<H;y++){box(0,y,W,.035,'#9a7f60');for(let x=y%2;x<W;x+=2)box(x,y,.035,1,'#9a7f60')}
+ }
+ box(0,0,W,3.5,'#705747');box(0,2.65,W,.85,'#b69b77');
+ for(let x=1;x<W-1;x+=2)drawUploadedArt('critter-shop-wall-panel-072',X(x),Y(0),Math.min(2,W-1-x)*S,3.5*S);
+ box(0,0,.7,H,'#725747');box(W-.7,0,.7,H,'#725747');box(0,H-1.15,W,1.15,'#725747');
+ const exitX=roomExit(s.area)[0];box(exitX-.45,H-1.15,1.9,1.15,'#ad8964');
+ for(const x of [1,W-2])fit('wall-column-080',x,0,1,3.5);
+ for(const x of [3,W-7])fit('window-076',x,.8,4,2.6);
+ fit('banner-048',W/2-1,.2,2,2.8);
+ for(const x of [W/3,2*W/3])fit('hanging-lamp-060',x-.5,2.5,1,1.5);
+ // Flat rug and wall-side decorative plants never modify collision.
+ fit('rug-065',Math.max(1,exitX-1.5),H-4,4,2);
+ for(const x of [.8,W-1.8])fit('plant-042',x,1.5,1,1.8);
+ for(const o of interiorObjects){
+  const px=X(o.x),py=Y(o.y),ww=o.w*S,hh=o.h*S;
+  ctx.fillStyle='#30241e35';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.46,Math.max(4,hh*.1),0,0,Math.PI*2);ctx.fill();
+  if(!drawInteriorAsset(s.area,o,px,py,ww,hh)){
+   box(o.x+.1,o.y+.1,o.w-.2,o.h-.2,'#987958');
+   box(o.x+.2,o.y+.2,o.w-.4,.18,'#cfb28d');
+  }
+ }
+ ctx.restore();
+}
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(!isInterior(s.area))return;
+ if(shopInterior(s.area))return drawShopInterior(ox,oy,viewW,viewH);
  if(clinicalInterior(s.area))return drawClinicalInterior(ox,oy,viewW,viewH);
  const wx=(x)=>x*S-ox,wy=(y)=>y*S-oy;
  const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x),wy(y),w*S,h*S)};
@@ -2791,7 +2833,7 @@ function draw(){
    ctx.fillStyle=(x*7+y*11)%3===0?'rgba(54,118,61,.13)':'rgba(145,181,100,.12)';
    ctx.beginPath();ctx.ellipse(cx,cy,62,43,0,0,Math.PI*2);ctx.fill();
  }
- if(!clinicalInterior(s.area))for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
+ if(!clinicalInterior(s.area)&&!shopInterior(s.area))for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  startSceneryLayer(visual.x*S+16-ox,visual.y*S+32-oy);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
