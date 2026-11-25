@@ -2224,13 +2224,28 @@ function drawInteriorDecor(ox,oy){
  const rug=activeCosmetic('rug');if(rug&&!estateFit(estateArt(rug.id),12,16,9,4,ox,oy)){box(12,16,9,4,rug.color);box(12.15,16.15,8.7,.12,'#ead9b4');box(12.15,19.7,8.7,.12,'#ead9b4');for(let x=13;x<21;x+=1.5)box(x,17.8,.5,.5,'#ead9b4')}
  if(activeCosmetic('plants'))for(const x of [2,31])if(!estateFit('plant-terracotta',x-.15,3.15,1,1.25,ox,oy)){box(x,3.8,.7,.6,'#a67652');box(x-.15,3.15,1,.8,cosmeticColor('plants','#629461'))}
  if(activeCosmetic('fireplace')){box(1,1,2.5,2,'#8c8980');box(1.45,1.7,1.6,1,'#372f2b');box(1.8,2,.9,.55,'#e9a34f')}
- if(activeCosmetic('kitchen')){box(30,5,2,3,'#b88d61');box(30.2,5.3,1.6,.7,'#c6cbc5');box(30.4,6.4,1,.6,'#738a88')}
+ if(activeCosmetic('kitchen')){
+  // Existing cosmetic footprint is intentionally unchanged; no new blocking tiles.
+  const kitchen=['prep-counter-front','sink-front','stove-front'];
+  if(kitchen.every(n=>uploadedArt(n))){for(let i=0;i<kitchen.length;i++)estateFit(kitchen[i],30,5+i,2,1,ox,oy)}
+  else {box(30,5,2,3,'#b88d61');box(30.2,5.3,1.6,.7,'#c6cbc5');box(30.4,6.4,1,.6,'#738a88')}
+ }
  if(activeCosmetic('trophy')){box(14,2.5,5,.5,'#70523b');for(let i=0;i<Math.min(8,s.badges||0);i++){box(14.3+i*.55,1.9,.3,.45,'#ddbb66');box(14.2+i*.55,2.35,.5,.12,'#c7a45a')}}
 }
 // Interior textures and props use existing solid furniture footprints.
 // Keep purchased cosmetic colors authoritative rather than replacing them.
 const CENTER_INTERIOR_ART=Object.freeze({"reception":"critter-center-reception-counter-002","diagnostics":"critter-center-diagnostic-terminal-015","monitor":"critter-center-treatment-counter-027","shelf":"critter-center-supply-shelf-005","storage":"critter-center-supply-shelf-013","waiting":"critter-center-bench-047"});
+const RESIDENTIAL_INTERIOR_ART=Object.freeze({"home-bed":"bed-south","home-desk":"desk-front","home-bookcase":"bookshelf-front","home-tea":"round-tea-table-a","home-storage":"storage-chest","home-keepsake":"dresser-front","home-supplies":"small-chest","neighbor-bed":"futon-south","neighbor-tea":"low-table-seats-b","neighbor-cupboard":"hutch-front","neighbor-bamboo":"bonsai-blue-pot","neighbor-scroll":"wall-landscape","estate-bed":"bed-east","estate-storage":"storage-chest","estate-table":"dining-table-horizontal-a","estate-books":"bookshelf-front"});
+const TOWN_HOME_ART=Object.freeze({"bed":"futon-east","table":"round-tea-table-b","shelf":"bookshelf-front","cabinet":"wardrobe-front"});
+function residentialRoom(area){return ['home','neighbor','homesteadHome'].includes(area)||TOWN_ROOMS[area]?.kind==='home'}
+function residentialArtName(area,o){
+ if(!residentialRoom(area))return null;
+ if(area==='homesteadHome'&&((o.kind==='bed'&&activeCosmetic('bed'))||(o.kind==='table'&&activeCosmetic('table'))))return null;
+ return RESIDENTIAL_INTERIOR_ART[o.id]|| (TOWN_ROOMS[area]?.kind==='home'?TOWN_HOME_ART[o.id.slice(area.length+1)]:null)||null;
+}
 function interiorArtPlan(area,o){
+ const residential=residentialArtName(area,o);
+ if(residential&&uploadedArt(residential))return [residential];
  if(TOWN_ROOMS[area]?.kind==='center'){
   const art=CENTER_INTERIOR_ART[o.id.slice(area.length+1)];
   if(art&&uploadedArt(art))return [art];
@@ -2335,6 +2350,16 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
   ctx.fillStyle='#3f392f';ctx.fillRect(cx-7,cy-9,14,3);
   ctx.fillStyle=style('lights','#f2dab0');ctx.fillRect(cx-6,cy-6,12,12);
   ctx.fillStyle='#5e4b3a';ctx.fillRect(cx-7,cy+5,14,3);
+ }
+ // Residential accents are either wall-mounted or walkable floor coverings.
+ if(residentialRoom(s.area)){
+  const small=TOWN_ROOMS[s.area]?.kind==='home';
+  const rug=s.area==='home'?'round-rug-cream':s.area==='neighbor'?'round-rug-blue':'rug-red';
+  if(!(estate&&activeCosmetic('rug')))drawUploadedFit(rug,wx(small?6:12),wy(small?4:16),(small?4:9)*S,(small?3:4)*S);
+  if(!(estate&&activeCosmetic('wall'))){
+   const picture=s.area==='home'?'wall-family-portrait':s.area==='neighbor'?'wall-scroll-a':'wall-floral-picture';
+   drawUploadedFit(picture,wx(W/2-1),wy(.3),2*S,1.5*S);
+  }
  }
  if(estate)drawInteriorDecor(ox,oy);
  // Two side wall columns framing the entrance.
