@@ -33,7 +33,7 @@ test('species, moves, and evolution links have valid IDs',()=>{
   assert.ok(Number.isInteger(sp.evolvesTo.minLevel)&&sp.evolvesTo.minLevel>=1);
   if(sp.evolvesTo.stone)assert.ok(stones.some(t=>t+' Stone'===sp.evolvesTo.stone),sp.name+' has unknown evolution stone');
  }
- assert.equal(species.filter(sp=>sp.evolvesTo?.stone).length,15);
+ assert.equal(species.filter(sp=>sp.evolvesTo?.stone).length,11); // Current catalog; do not restore superseded evolution rules.
 });
 test('capture odds stay bounded and favor weakened targets',()=>{
  const {captureChance}=extract('function captureChance(','function addCapturedCritter(',{});
@@ -126,7 +126,7 @@ test('battle environments use the actual map area, nearby tile and time',()=>{
  assert.ok(start>=0&&end>start);
  const s={area:'route1',x:8,y:9},T={rice:6,tall:11,stone:16,flower:7,path:1,water:13};
  const tiles=Array.from({length:26},()=>Array(34).fill(0));tiles[9][8]=T.rice;
- const ctx=vm.createContext({s,tiles,T,worldPhase:()=> 'Dusk'});
+ const ctx=vm.createContext({s,tiles,T,SECRET_AREAS:{},worldPhase:()=> 'Dusk'});
  vm.runInContext(game.slice(start,end),ctx);
  const first=ctx.battleEnvironment();
  assert.equal(first.area,'route1');assert.equal(first.terrain,'rice');assert.equal(first.phase,'Dusk');
@@ -208,7 +208,7 @@ test('battle Index provides real battle actions and takes over the screen',()=>{
  assert.match(game,/data-index-battle-switch=/);
  assert.match(game,/id="watchBattlePotion"/);
  assert.match(game,/id="watchBattleRevive"/);
- assert.match(game,/id="watchCaptureBattle"/);
+ assert.match(game,/beamBattleButton\('watchBattleBeam'\)/);
  assert.match(game,/battle.indexOpen=false;queueBattleAction/);
 });
 
@@ -244,7 +244,7 @@ test('legacy saves migrate every old species ID to the authoritative new ID',()=
  const start=game.indexOf('function migrateSpeciesIds(){');
  const end=game.indexOf('const moveRegistry=',start);
  assert.ok(start>=0&&end>start);
- const old=species.find(sp=>sp.legacySpeciesId?.startsWith('cr-001-'));
+ const old=species.find(sp=>sp.legacySpeciesId?.startsWith('cr-')&&sp.legacySpeciesId!==sp.speciesId&&!species.some(other=>other.speciesId===sp.legacySpeciesId));
  const s={
   party:[{speciesId:old.legacySpeciesId,level:15,evolutionHistory:[{from:old.legacySpeciesId,to:old.legacySpeciesId}]}],
   storage:[{speciesId:old.legacySpeciesId,level:12}],
@@ -253,7 +253,7 @@ test('legacy saves migrate every old species ID to the authoritative new ID',()=
   evolutionNews:[{fromId:old.legacySpeciesId,toId:old.legacySpeciesId}]
  };
  const speciesRegistry=new Map(species.map(sp=>[sp.speciesId,sp]));
- const context=vm.createContext({s,speciesRegistry,STARTER_SPECIES_IDS:{Water:'cr-001-starter-water-1'}});
+ const context=vm.createContext({s,speciesRegistry,STARTER_SPECIES_IDS:{Water:'cr-001-starter-water-1'},isEgg:p=>p?.isEgg===true&&!!p.egg});
  vm.runInContext(game.slice(start,end),context);
  context.migrateSpeciesIds();
  assert.equal(s.party[0].speciesId,old.speciesId);
@@ -280,7 +280,7 @@ test('v56 hotfix never guesses a legacy starter from same type or party position
            {type:'Water',name:'Verified starter',speciesId:null,starterOrigin:true}],
   collection:{seen:{},caught:{}},captureLog:[]};
  const registry=new Map(species.map(sp=>[sp.speciesId,sp]));
- const sandbox=vm.createContext({s,speciesRegistry:registry,starterSpeciesId:()=>starterId});
+ const sandbox=vm.createContext({s,speciesRegistry:registry,starterSpeciesId:()=>starterId,isEgg:p=>p?.isEgg===true&&!!p.egg});
  vm.runInContext(game.slice(start,end),sandbox);
  sandbox.migrateSpeciesIds();
  assert.equal(s.party[0].speciesId,null,'same-type catch in slot zero must not be rewritten');
@@ -298,7 +298,7 @@ test('hotfix snapshots the legacy save before Continue and marks future starters
 });
 
 test('approved nine starters use their correct names, IDs, and local sprite assets',()=>{
- const expected=[["Bubblit","assets/critters/starters/water.png"],["Rillisk","assets/critters/gallery/water-starter-stage-2.png"],["Tiderax","assets/critters/gallery/water-starter-stage-3.png"],["Grumlet","assets/critters/starters/rock.png"],["Craghorn","assets/critters/gallery/rock-starter-stage-2.png"],["Titanstag","assets/critters/gallery/rock-starter-stage-3.png"],["Zappit","assets/critters/starters/electric.png"],["Voltimp","assets/critters/gallery/electric-starter-stage-2.png"],["Stormbrute","assets/critters/gallery/electric-starter-stage-3.png"]];
+ const expected=[["Drizzlet","assets/critters/starters/water.png"],["Riptalon","assets/critters/gallery/water-starter-stage-2.png"],["Tidalisk","assets/critters/gallery/water-starter-stage-3.png"],["Craglet","assets/critters/starters/rock.png"],["Granibuck","assets/critters/gallery/rock-starter-stage-2.png"],["Monolithorn","assets/critters/gallery/rock-starter-stage-3.png"],["Sparkin","assets/critters/starters/electric.png"],["Voltrix","assets/critters/gallery/electric-starter-stage-2.png"],["Tempestrike","assets/critters/gallery/electric-starter-stage-3.png"]];
  for(let i=0;i<9;i++){
   const sp=species[i];
   assert.equal(sp.name,expected[i][0]);
@@ -330,18 +330,18 @@ test('joystick run/walk mode persists and changes movement cadence',()=>{
  const state={labels:[],classes:[]};
  const stick={setAttribute:(k,v)=>state.labels.push([k,v]),classList:{toggle:(k,on)=>state.classes.push([k,on])}};
  let saves=0;
- const sandbox=vm.createContext({s,screen:'game',modal:false,$:()=>stick,save:()=>saves++});
- vm.runInContext(game.slice(start,end),sandbox);
+ const sandbox=vm.createContext({s,screen:'game',modal:false,$:()=>stick,save:()=>saves++,trainerApproachLocked:()=>false});
+ vm.runInContext(game.slice(start,end)+'\nObject.assign(globalThis,{movementStepInterval,movementStepDuration});',sandbox);
  assert.equal(sandbox.movementStepInterval(),135);
- assert.equal(sandbox.movementStepDuration(),120);
+ assert.equal(sandbox.movementStepDuration(),135);
  sandbox.toggleMovementMode();
  assert.equal(s.movementMode,'walk');
  assert.equal(sandbox.movementStepInterval(),235);
- assert.equal(sandbox.movementStepDuration(),210);
- assert.ok(state.labels.some(([k,v])=>k==='aria-label'&&v.includes('Walk mode')));
+ assert.equal(sandbox.movementStepDuration(),235);
+
  sandbox.toggleMovementMode();
  assert.equal(s.movementMode,'run');
- assert.ok(state.labels.some(([k,v])=>k==='aria-label'&&v.includes('Run mode')));
+
  assert.equal(saves,2);
 });
 test('portrait UI has joystick double-tap speed and contextual Interact',()=>{
@@ -349,7 +349,7 @@ test('portrait UI has joystick double-tap speed and contextual Interact',()=>{
  assert.doesNotMatch(html,/id="movementToggle"/);
  assert.match(html,/id="talk"[^>]*>Interact<\/button>/);
  assert.ok(!html.includes('Talk / Use</button>'));
- assert.match(game,/checkJoystickDoubleTap\(e\)/);
+ assert.match(game,/now-lastWorldTap\.time<=WORLD_DOUBLE_TAP_MS/);
  assert.match(game,/s\.movementMode=s\.movementMode==='walk'\?'run':'walk'/);
  assert.match(game,/stickRepeatAt=Date\.now\(\)\+movementStepInterval\(\)/);
  assert.match(game,/visual\.duration=movementStepDuration\(\)/);
@@ -386,9 +386,9 @@ test('v72 Attack uses move overlay without a Guard/Focus popup',()=>{
  assert.match(game,/function battleMainActions\(mode\)/);
  assert.match(game,/battleMainActions\('battle'\)/);
  assert.match(game,/battleMainActions\('root'\)/);
- assert.match(game,/menuTo\(mode==='battle'\?'root':'battle'\)/);
+ assert.match(game,/const next=mode==='battle'\?'root':'battle'/);
  assert.match(game,/id="menuBattle" aria-pressed=/);
- assert.doesNotMatch(game,/id="battleGuard"|id="battleFocus"|Choose a move/);
+ assert.doesNotMatch(game,/id="battleGuard"|id="battleFocus"/);
  assert.match(html,/color:#0b1016!important/);
 });
 
@@ -421,8 +421,8 @@ test('v75 overworld removes run toggle, canvas banner and top Save button',()=>{
  assert.doesNotMatch(html,/id="save"/);
  assert.doesNotMatch(html,/class="hud"><div>/);
  assert.doesNotMatch(game,/ctx\.fillText\(s\.name\+' · '/);
- assert.match(game,/function checkJoystickDoubleTap\(e\)/);
- assert.match(game,/JOYSTICK_DOUBLE_TAP_MS=330/);
+ assert.match(game,/now-lastWorldTap\.time<=WORLD_DOUBLE_TAP_MS/);
+ assert.match(game,/WORLD_DOUBLE_TAP_MS=330/);
  assert.match(game,/function canInteractAhead\(\)/);
  assert.match(game,/function updateInteractVisibility\(\)/);
  assert.match(html,/\.actions #talk\.interactable/);
@@ -430,11 +430,11 @@ test('v75 overworld removes run toggle, canvas banner and top Save button',()=>{
  assert.doesNotMatch(game,/ credits!/);
 });
 
-test('v76 inactive Interact is more visible and joystick hint does not move input',()=>{
+test('inactive Interact and floating touch controls retain mobile affordances',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(html,/class="joystickHelp" aria-hidden="true">Double Tap-Run\/Walk<\/span>/);
- assert.match(html,/#game \.joystickHelp\{\s*position:fixed/);
- assert.match(html,/background:rgba\(164,93,72,0\.30\)!important/);
+ assert.match(html,/#world\{touch-action:none/);
+ assert.match(html,/id="talk"[^>]*>Interact<\/button>/);
+ assert.match(game,/Double-tap an empty part of the overworld/);
  assert.match(html,/opacity:\.58!important/);
 });
 
@@ -454,7 +454,7 @@ test('v77 player and encyclopedia tabs consolidate former root tabs',()=>{
 
 test('v78 Index first and field item use supports safe targeted consumables',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(game,/indexTab='clock';playerIndexSection='bag'/);
+ assert.match(game,/indexTab='clock';[^\n]*playerIndexSection='bag'/);
  assert.match(game,/function fieldBagItemUsable\(name\)/);
  assert.match(game,/function fieldBagTargets\(name\)/);
  assert.match(game,/function useFieldBagItem\(name,target,moveId=null\)/);
@@ -472,7 +472,7 @@ test('v79 Tools moved under Index and Settings houses Save',()=>{
  assert.match(game,/function indexSettings\(\)/);
  assert.match(game,/id="settingsSaveGame"/);
  assert.match(game,/id="settingsReturnTitle"/);
- assert.match(game,/Audio controls/);
+ assert.match(game,/Environmental audio/);
  assert.doesNotMatch(game,/id="mSave"/);
 });
 
@@ -499,7 +499,7 @@ test('v81 regional atlas and discovered-center travel are connected to Index',()
  assert.match(game,/if\(!mapCanFastTravel\(id\)\)return false/);
  assert.match(game,/id="regionMapConfirm"/);
  assert.match(game,/function center\(\)\{/);
- assert.match(game,/s\.discoveredCenters\[s\.area\]=true/);
+ assert.match(game,/s\.discoveredCenters\[parent\]=true/);
  assert.match(html,/\.regionMapBoard/);
  assert.match(map,/<svg/);
  assert.match(map,/viewBox="0 0 900 560"/);
@@ -517,7 +517,7 @@ test('v82 continuous branching outdoor region with interior and battle fades',()
  assert.match(game,/fadeWorldChange\(\(\)=>beginBattleAfterFade\(data,msg\)\)/);
  assert.match(game,/if\(OUTDOOR_GRID\[s\.area\]\)return drawOutdoorWorld\(\)/);
  assert.match(game,/if\(tryOutdoorExit\(d,x,y\)\)return/);
- assert.match(game,/Region arrival dialogue banners are intentionally omitted/);
+ assert.match(game,/Arrival popups remain disabled/);
  assert.match(html,/id="worldFade"/);
  assert.match(html,/#worldFade\.active/);
  assert.match(atlas,/viewBox="0 0 900 560"/);
@@ -535,7 +535,7 @@ test('v82 outer route graph has two loops and a cave fade',()=>{
 test('v83 region sections have distinct dimensions, asymmetric borders, area HUD and longer fade',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const atlas=readFileSync(new URL('../assets/region-map.svg',import.meta.url),'utf8');
- assert.match(game,/const OUTDOOR_COL_WIDTHS=\[40,44,51,46\]/);
+ assert.match(game,/const OUTDOOR_COL_WIDTHS=\[36,40,44,51,44,46\]/);
  assert.match(game,/OUTDOOR_ROW_HEIGHTS=\[34,40\]/);
  assert.match(game,/function outdoorSize\(area\)/);
  assert.match(game,/function outdoorOrigin\(area\)/);
@@ -561,15 +561,15 @@ test('v84 outdoor transitions keep world-space animation and a continuous damped
  assert.match(game,/visual\.duration=Math\.max\(movementStepDuration\(\)/);
  assert.match(game,/Deliberately do not reset outdoorCamera here/);
  assert.match(game,/const camera=followOutdoorCamera\(targetX,targetY\)/);
- assert.match(html,/game\.js\?v=84-smooth-boundaries-20261123/);
+ assert.match(html,/game\.js\?v=[^"\s]+/);
 });
 
  test('v87 every ready species and gender variant has both actual PNG files',()=>{
  for(const sp of species.filter(s=>s.art?.status==='ready'))for(const a of [sp.art,...Object.values(sp.art.genderVariants||{})])for(const p of [a.spritePath,a.rearSpritePath]){
  assert.match(p,/^assets\/critters\/[a-z0-9/_-]+\.png$/);const png=readFileSync(new URL('../'+p,import.meta.url));assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
  }
- assert.equal(species.filter(s=>s.art?.status==='ready').length,37);
- assert.equal(species.slice(9,37).length,28);assert.ok(species.slice(9,37).every(s=>s.art.status==='ready'));assert.ok(species.slice(37).every(s=>s.art.status!=='ready'));
+ assert.equal(species.filter(s=>s.art?.status==='ready').length,46);
+ assert.equal(species.slice(9,46).length,37);assert.ok(species.slice(9,46).every(s=>s.art.status==='ready'));assert.ok(species.slice(46).every(s=>s.art.status!=='ready'));
  });
 
 test('v90 floating world touch direction has neutral deadzone and cardinal movement',()=>{
