@@ -1819,16 +1819,50 @@ function drawNaturalDetails(ox,oy,w,h){
 }
 // Continuous ground colors with irregular world-space texture. No square
 // terrain sprites are stamped into the grass, roads, ponds or cave floor.
+// Paint the union of walkable road cells. Shared edges are never outlined.
+function drawContinuousPath(t,x,y,a,b){
+ const road=v=>v===T.path||v===T.stone;
+ const n=road(terrainNeighbor(a,b,0,-1)),e=road(terrainNeighbor(a,b,1,0)),south=road(terrainNeighbor(a,b,0,1)),w=road(terrainNeighbor(a,b,-1,0));
+ const stone=t===T.stone,fill=stone?'#aaa899':'#c6ae82';
+ const seed=naturalSeed(a,b);
+ ctx.save();
+ ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
+ // Round only exposed outside corners. Keep all shared sides flush.
+ const r=5;
+ const tl=!n&&!w?r:0,tr=!n&&!e?r:0,br=!south&&!e?r:0,bl=!south&&!w?r:0;
+ ctx.fillStyle='#75a65e';ctx.fillRect(x,y,S,S);
+ ctx.beginPath();ctx.moveTo(x+tl,y);ctx.lineTo(x+S-tr,y);ctx.quadraticCurveTo(x+S,y,x+S,y+tr);
+ ctx.lineTo(x+S,y+S-br);ctx.quadraticCurveTo(x+S,y+S,x+S-br,y+S);
+ ctx.lineTo(x+bl,y+S);ctx.quadraticCurveTo(x,y+S,x,y+S-bl);
+ ctx.lineTo(x,y+tl);ctx.quadraticCurveTo(x,y,x+tl,y);ctx.closePath();
+ ctx.fillStyle=fill;ctx.fill();ctx.clip();
+ // Feathered shoulders only along actual grass-facing road edges.
+ const edges=[[!n,0,0,0,5],[!e,S,0,S-5,0],[!south,0,S,0,S-5],[!w,0,0,5,0]];
+ for(const [on,x0,y0,x1,y1] of edges){
+  if(!on)continue;
+  const gradient=ctx.createLinearGradient(x+x0,y+y0,x+x1,y+y1);
+  gradient.addColorStop(0,'rgba(117,166,94,.60)');gradient.addColorStop(1,'rgba(117,166,94,0)');
+  ctx.fillStyle=gradient;
+  if(x0===x1)ctx.fillRect(x,y+Math.min(y0,y1),S,5);
+  else ctx.fillRect(x+Math.min(x0,x1),y,5,S);
+ }
+ ctx.fillStyle=stone?'rgba(76,77,66,.11)':'rgba(107,81,45,.10)';
+ for(let k=0;k<5;k++){const h=naturalSeed(a*7+k,b*13+k);ctx.fillRect(x+(h%30),y+((h>>>9)%30),1+h%3,1)}
+ ctx.restore();
+}
 function seamlessGround(t,x,y,a,b){
  const colors={[T.grass]:'#75a65e',[T.path]:'#c6ae82',[T.stone]:'#aaa899',[T.water]:'#629fa5',[T.rice]:'#829d68',[T.tall]:'#75a65e',[T.flower]:'#75a65e'};
  const color=colors[t];if(!color)return false;
  ctx.fillStyle=color;ctx.fillRect(x-.35,y-.35,S+.8,S+.8);
  const n=naturalSeed(a,b);
- if(OUTDOOR_GRID[s.area]&&s.area!=='homestead'&&(t===T.grass||t===T.path)){
-  const name=t===T.grass?(n%2?'outdoor-grass-1-001':'outdoor-grass-2-001'):(n%2?'outdoor-path-1-004':'outdoor-path-2-004');
-  const im=uploadedArt(name);
-  // Only use truly square ground swatches; avoid stretching object crops into terrain.
-  if(im&&Math.abs(im.naturalWidth/im.naturalHeight-1)<.2){ctx.drawImage(im,x,y,S+.5,S+.5);return true}
+ if(OUTDOOR_GRID[s.area]&&(t===T.path||t===T.stone)){
+  drawContinuousPath(t,x,y,a,b);return true;
+ }
+ if(OUTDOOR_GRID[s.area]&&t===T.grass){
+  // Low-contrast, deterministic ground grain; no individual sprite borders.
+  ctx.fillStyle='rgba(44,91,43,.075)';
+  for(let k=0;k<5;k++){const h=naturalSeed(a*7+k,b*11+k);ctx.fillRect(x+h%32,y+(h>>>8)%32,2+h%3,1)}
+  return true;
  }
  if(t===T.water){
   ctx.fillStyle='rgba(203,237,229,.13)';ctx.fillRect(x+((n>>>4)%23),y+((n>>>12)%26),5+n%8,1);
@@ -2082,28 +2116,6 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   const [px,py]=pos(x,y);
   ctx.fillStyle='#254d3761';ctx.beginPath();ctx.ellipse(px,py,r,r*.6,.18,0,Math.PI*2);ctx.fill();
  }
- // Grass creeping onto the irregular edges of the dirt paths.
- for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
-  if(tiles[y][x]!==T.path)continue;
-  let nearby=0;
-  for(const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]])if(tiles[y+dy]?.[x+dx]===T.grass)nearby++;
-  if(!nearby)continue;
-  const [px,py]=pos(x,y),seed=(x*53+y*31)%11;
-  ctx.fillStyle='#74935c7a';
-  if(tiles[y]?.[x-1]===T.grass)ctx.fillRect(px,py+seed,3,20);
-  if(tiles[y]?.[x+1]===T.grass)ctx.fillRect(px+S-3,py+seed,3,18);
-  if(tiles[y-1]?.[x]===T.grass)ctx.fillRect(px+seed,py,20,3);
-  if(tiles[y+1]?.[x]===T.grass)ctx.fillRect(px+seed,py+S-3,20,3);
- }
- // Dirt paths feel worn-in rather than stamped squares. Keep the main road
- // footprint open and place subtle texture *within* the existing path cells.
- for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
-  if(tiles[y][x]!==T.path)continue;
-  const [px,py]=pos(x,y),seed=(x*43+y*71)%23;
-  ctx.fillStyle='#e0bd8e42';
-  ctx.beginPath();ctx.ellipse(px+8+seed%11,py+7+(seed*3)%17,9,4,.2,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#947f6155';ctx.fillRect(px+2+seed,py+12+(seed%9),3,1.5);
- }
  // Warm light patches around the dwellings and the village's winding road.
  for(const [x,y,w,h] of [[5.1,10,3,1.5],[17,15.9,3,1.4],[28.8,12,2,1.2]]){
   const [px,py]=pos(x,y);
@@ -2220,17 +2232,6 @@ function drawRoute1Details(ox,oy,viewW,viewH){
    ctx.fillStyle='#b9d7bd99';ctx.fillRect(bx+((x*7)%12),by+10,12,2);
    ctx.fillStyle='#436e6b';ctx.fillRect(bx,by+S-4,S,3);
   }
- }
- // Road shoulders blend with surrounding field edges and weathered gravel.
- for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(tiles[y][x]===T.path){
-  const bx=px(x),by=py(y),seed=(x*73+y*41)%19;
-  ctx.fillStyle='#957e5b55';ctx.fillRect(bx+4+seed,by+5+seed%15,3,2);
-  ctx.fillStyle='#efce9666';ctx.beginPath();ctx.ellipse(bx+10+seed%8,by+13,11,4,.3,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#79975e90';
-  if(tiles[y]?.[x-1]===T.grass||tiles[y]?.[x-1]===T.rice)ctx.fillRect(bx,by+6,3,23);
-  if(tiles[y]?.[x+1]===T.grass||tiles[y]?.[x+1]===T.rice)ctx.fillRect(bx+S-3,by+6,3,23);
-  if([T.grass,T.rice].includes(tiles[y-1]?.[x]))ctx.fillRect(bx+4,by,24,3);
-  if([T.grass,T.rice].includes(tiles[y+1]?.[x]))ctx.fillRect(bx+4,by+S-3,24,3);
  }
  // Long bands follow the channels, leaving every crossing footprint clear.
  for(const [x1,x2,y] of [[3,10,9],[15,30,9],[3,13,19],[26,30,19]]){
@@ -4044,7 +4045,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.40</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.41</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
