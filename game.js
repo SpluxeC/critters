@@ -290,20 +290,70 @@ function battleTrainerPortrait(id){
 const villageBuildings={home:new Image(),lab:new Image(),neighbor:new Image()};
 for(const kind of Object.keys(villageBuildings))villageBuildings[kind].src='assets/village-'+kind+'.svg';
 let doorTransition=null;
+const PROP_ANIMATION_MS=180,propAnimations=new Map();
+const reducedWorldMotion=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function loopArt(frames,ms=220,offset=0){
+ const index=reducedWorldMotion()?0:Math.floor((performance.now()+offset)/ms)%frames.length;
+ const name=frames[index];return uploadedArt(name)?name:frames[0];
+}
+function warmFrames(frames){for(const n of frames)uploadedArt(n)}
+function doorArtFrames(base){return ['closed','ajar','half-open','open'].map(f=>base+'-'+f)}
+function propArtFrames(base){return ['closed','opening-1','opening-2','open'].map(f=>base+'-'+f)}
+function villageDoorBase(h){return {home:'family-home',neighbor:'neighbor-house',lab:'research-laboratory'}[h.kind]}
+function roomDoorBase(room){return {home:'neighbor-house',center:'critter-center',shop:'critter-shop'}[room.kind]}
+function beginDoorAnimation(base,x,y,complete){
+ if(doorTransition||worldTransitionBusy||screen!=='game'||modal)return;
+ warmFrames(doorArtFrames(base));doorTransition={area:s.area,x,y,base,start:performance.now(),complete};
+ releaseMovement();
+}
+function doorSprite(base,x,y,ox,oy){
+ const frames=doorArtFrames(base);warmFrames(frames);
+ const t=doorTransition?.area===s.area&&doorTransition.x===x&&doorTransition.y===y?Math.min(3,Math.floor((performance.now()-doorTransition.start)/90)):
+ s.area==='village'&&npcResidenceDoor?.x===x&&npcResidenceDoor.y===y&&npcResidenceDoor.until>performance.now()?2:0;
+ const name=uploadedArt(frames[t])?frames[t]:frames[0];
+ if(!uploadedArt(name))return false;
+ const dx=x*S-ox,dy=y*S-oy;
+ sceneryLayer(s.area+':animated-door:'+x+','+y,dx,dy-12,S, S+12,dy+S,()=>drawUploadedFit(name,dx,dy-12,S,S+12));
+ return true;
+}
+function interactivePropBase(o){
+ if(o.id==='home-supplies')return 'supply-crate';
+ if(o.id==='home-storage'||o.id==='estate-storage')return 'wooden-chest';
+ if(o.id==='home-keepsake')return 'display-case';
+ if(TOWN_ROOMS[s.area]?.kind==='home'&&o.id.endsWith('-cabinet'))return 'storage-cabinet';
+ return null;
+}
+function startPropAnimation(id,base){
+ if(!base)return;warmFrames(propArtFrames(base));propAnimations.set(s.area+':'+id,performance.now());
+}
+function interactivePropArt(id,base,collected=false){
+ const frames=propArtFrames(base);warmFrames(frames);
+ const key=s.area+':'+id,start=propAnimations.get(key),elapsed=start===undefined?Infinity:performance.now()-start;
+ if(elapsed>1500)propAnimations.delete(key);
+ const i=elapsed<900?(reducedWorldMotion()?3:Math.min(3,Math.floor(elapsed/PROP_ANIMATION_MS))):collected?3:0;
+ return uploadedArt(frames[i])?frames[i]:frames[0];
+}
+function labAnimation(o){
+ const families={
+  'lab-starters':['starter-display-station-idle','starter-display-station-lights-'],
+  'lab-terminal':['index-calibration-machine-idle','index-calibration-machine-blink-'],
+  'lab-tools':['research-workstation-idle','research-workstation-screen-'],
+  'lab-right':['scanning-station-idle','scanning-station-pulse-']
+ };
+ const f=families[o.id];if(!f)return null;
+ const frames=[f[0],...['1','2','3'].map(n=>f[1]+n)];warmFrames(frames);
+ return loopArt(frames,240,o.x*41);
+}
 function villageDoorAt(x,y){
  if(s?.area!=='village')return null;
  return VILLAGE_HOUSES.find(h=>h.door===x&&h.y+h.h+1===y)||null;
 }
 function openVillageDoor(h){
- if(doorTransition||screen!=='game'||modal)return;
- doorTransition={house:h,start:performance.now()};
- releaseMovement();
+ return beginDoorAnimation(villageDoorBase(h),h.door,h.y+h.h+1,()=>region(h.kind==='lab'?'lab':h.kind==='neighbor'?'neighbor':'home',17,23));
 }
 function finishDoorAnimation(){
- if(!doorTransition||worldTransitionBusy||performance.now()-doorTransition.start<240)return;
- const {house}=doorTransition;doorTransition=null;
- region(house.kind==='lab'?'lab':house.kind==='neighbor'?'neighbor':'home',17,23,
- house.kind==='home'?'You step inside your home.':house.kind==='neighbor'?'A neighbor welcomes you into their home.':'You enter the Critter Research Laboratory.');
+ if(!doorTransition||worldTransitionBusy||performance.now()-doorTransition.start<360)return;
+ const {complete}=doorTransition;doorTransition=null;complete();
 }
 let s=null,screen='title',tiles=[],npcs=[],dialog=[],dialogDone=null,modal=false,battle=null,frame=0,held={},last=0,editing=false;
 const VILLAGE_HOUSES=[
@@ -346,7 +396,7 @@ const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)|
 function townDoorAt(x,y){return Object.entries(TOWN_ROOMS).find(([id,d])=>d.parent===s.area&&d.door[0]===x&&d.door[1]===y)?.[0]||null}
 function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:{w:34,h:26}}
 function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
-function enterTownRoom(id){if(!TOWN_ROOMS[id])return;recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}
+function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
 function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
 function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
 
@@ -455,6 +505,7 @@ function furnishInterior(area){
  }
 }
 function inspectInterior(o){
+ startPropAnimation(o.id,interactivePropBase(o));
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -541,6 +592,7 @@ function explorationBlocked(area,x,y){
  return !!(o&&(o.id!=='quest-lost-critter'||s.sideQuests?.[o.quest]?.status==='active'&&!s.sideQuests[o.quest].objectDone))||!!secretEntranceAt(area,x,y)||(area==='ruins'&&y===11&&x>=15&&x<=19&&!s?.puzzles?.ruinsOpened);
 }
 function inspectExplorationObject(o){
+ if(o.kind==='chest'&&!s.discoveries?.[o.id])startPropAnimation(o.id,'wooden-chest');
  if(o.kind==='quest'){
   const state=s.sideQuests?.[o.quest];
   if(!state||state.status!=='active')return notifyWorld(state?.status==='complete'?'Your work here is finished.':'Someone nearby may know more about this.');
@@ -605,7 +657,7 @@ function drawExtraExploration(ox,oy){
    ctx.fillStyle=lit?'#c8ba70':'#53605a';ctx.fillRect(x+6,y+6,20,22);
    ctx.fillStyle=lit?'#fff3a6':'#b5c3ae';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText({sun:'☀',water:'≈',stone:'◇'}[o.rune],x+16,y+22);ctx.textAlign='left';
   }else{
-   const art=o.kind==='sign'?'ruin-inscription':o.kind==='chest'?'crate':o.id==='r2-stump-cache'?'tree-stump':'rubble-02';
+   const art=o.kind==='sign'?'ruin-inscription':o.kind==='chest'?interactivePropArt(o.id,'wooden-chest',!!s.discoveries?.[o.id]):o.id==='r2-stump-cache'?'tree-stump':'rubble-02';
    if(!drawUploadedFit(art,x+2,y+2,S-4,S-4)){ctx.fillStyle='#75634e';ctx.fillRect(x+7,y+10,18,17);ctx.fillStyle='#b39a70';ctx.fillRect(x+7,y+10,18,4)}
    if(o.kind==='chest'&&!s.discoveries?.[o.id]){ctx.fillStyle='#e7cb78';ctx.fillRect(x+14,y+15,4,4)}
   }
@@ -669,6 +721,7 @@ function drawExplorationSites(ox,oy){
 let route1Blocked=new Set();
 function route1SiteAt(x,y){return s.area==='route1'?ROUTE1_SITES.find(o=>o.x===x&&o.y===y):null}
 function inspectRoute1Site(o){
+ if(o.kind==='chest'&&!s.discoveries?.[o.id])startPropAnimation(o.id,'supply-crate');
  if(o.reward){
   s.discoveries=s.discoveries||{};
   if(s.discoveries[o.id])return notifyWorld(['The '+o.title.toLowerCase()+' is empty.']);
@@ -1974,7 +2027,8 @@ function drawTownExteriors(ox,oy,w,h){
   if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
   if(b.label){drawServiceExterior(b,ox,oy);drawExteriorSign(b,ox,oy);}
   const room=Object.values(TOWN_ROOMS).find(d=>d.parent===s.area&&d.door[0]>=b.x&&d.door[0]<b.x+b.w&&d.door[1]===b.y+b.h+1);
-  if(room){const [dx,dy]=room.door;ctx.fillStyle='#302b25';ctx.fillRect(dx*S-ox+6,dy*S-oy,20,S);ctx.fillStyle='#977653';ctx.fillRect(dx*S-ox+9,dy*S-oy+2,14,S-3);ctx.fillStyle='#e5c581';ctx.fillRect(dx*S-ox+19,dy*S-oy+15,3,3)}
+  if(room){const [dx,dy]=room.door;if(!doorSprite(roomDoorBase(room),dx,dy,ox,oy)){ctx.fillStyle='#302b25';ctx.fillRect(dx*S-ox+6,dy*S-oy,20,S);ctx.fillStyle='#977653';ctx.fillRect(dx*S-ox+9,dy*S-oy+2,14,S-3);ctx.fillStyle='#e5c581';ctx.fillRect(dx*S-ox+19,dy*S-oy+15,3,3)}}
+  if(b.label==='GRASS GYM')doorSprite('grass-gym',24,10,ox,oy);
   if(b.art?.startsWith('shop-')){
    const y=b.y+b.h;
    if(tiles[y]?.[b.x]===T.wall)drawUploadedFit('barrel',b.x*S-ox,y*S-oy,S,S);
@@ -2079,13 +2133,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
    ctx.fillStyle='#64585c';ctx.fillRect(px,py,w,h.h*S);
    ctx.fillStyle='#d9c5a2';ctx.fillRect(px,py+h.h*S,w,2*S);
   }
-  if(doorTransition?.house===h||(npcResidenceDoor?.x===h.door&&npcResidenceDoor.y===h.y+h.h+1&&npcResidenceDoor.until>performance.now())){
-   const t=doorTransition?.house===h?Math.min(1,(performance.now()-doorTransition.start)/220):.8;
-   const doorX=(h.door+.06)*S-ox,doorY=(h.y+h.h+.28)*S-oy;
-   ctx.fillStyle='#1f1d20';ctx.fillRect(doorX,doorY,28,40);
-   ctx.fillStyle='#b48757';ctx.fillRect(doorX+2,doorY+2,Math.max(0,26*(1-t)),36);
-   ctx.fillStyle='#f4d9a066';ctx.fillRect(doorX+21,doorY+4,5,31);
-  }
+  doorSprite(villageDoorBase(h),h.door,h.y+h.h+1,ox,oy);
   // A restrained entrance cue, seen only while standing in front of the door.
   if(Math.abs(s.x-h.door)<=1&&s.y===h.y+h.h+2){
    const [cx,cy]=pos(h.door+.52,h.y+h.h+1.2);
@@ -2119,6 +2167,8 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  for(const [x,y] of VILLAGE_LANTERNS){
   const [px,py]=pos(x+.5,y+.55);
   ctx.fillStyle='#ffce7750';ctx.beginPath();ctx.arc(px,py-12,22,0,Math.PI*2);ctx.fill();
+  const lanternFrames=['stone-lantern-idle','stone-lantern-flicker-1','stone-lantern-idle-2','stone-lantern-flicker-2'];
+  warmFrames(lanternFrames);if(drawUploadedFit(loopArt(lanternFrames,310,x*71+y*37),x*S-ox,y*S-oy-12,S,S+12))continue;
   if(drawUploadedFit('lantern-stone',x*S-ox,y*S-oy-12,S,S+12))continue;
   ctx.fillStyle='#56554b';ctx.fillRect(px-3,py-12,6,21);
   ctx.fillStyle='#c6b298';ctx.fillRect(px-9,py-17,18,5);
@@ -2227,7 +2277,7 @@ function drawRoute1Details(ox,oy,viewW,viewH){
   const bx=px(o.x),by=py(o.y);
   const already=!!s.discoveries?.[o.id];
   ctx.fillStyle='#203e315e';ctx.beginPath();ctx.ellipse(bx+16,by+29,14,6,0,0,Math.PI*2);ctx.fill();
-  const art=routeSiteArt(o.kind);
+  const art=o.kind==='chest'?interactivePropArt(o.id,'supply-crate',already):routeSiteArt(o.kind);
   if(art&&drawUploadedFit(art,bx,by,S,S)){
    // Reward marker below remains governed by existing discovery state.
   }else if(o.kind==='sign'||o.kind==='notice'){
@@ -2298,6 +2348,7 @@ const SHOP_INTERIOR_ART=Object.freeze({
 });
 function shopInterior(area){return TOWN_ROOMS[area]?.kind==='shop'}
 function interiorArtPlan(area,o){
+ const prop=interactivePropBase(o);if(prop)return [interactivePropArt(o.id,prop,!!s.discoveries?.[o.id])];
  if(shopInterior(area)){
   const art=SHOP_INTERIOR_ART[o.id.slice(area.length+1)];
   return art?[art]:[];
@@ -2386,7 +2437,8 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
   ctx.fillStyle='#24343a30';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.46,Math.max(4,hh*.10),0,0,Math.PI*2);ctx.fill();
   const plan=interiorArtPlan(s.area,o);
   ctx.save();ctx.beginPath();ctx.rect(px,py,ww,hh);ctx.clip();
-  if(!plan.length||!drawUploadedFit(plan[0],px,py,ww,hh)){
+  const animated=lab?labAnimation(o):null;
+  if(!(animated&&drawUploadedFit(animated,px,py,ww,hh))&&(!plan.length||!drawUploadedFit(plan[0],px,py,ww,hh))){
    // Neutral placeholder while the new image loads; never fetch legacy art.
    box(o.x+.12,o.y+.12,o.w-.24,o.h-.24,'#81999f');
    box(o.x+.2,o.y+.2,o.w-.4,.18,'#bfd2d5');
@@ -2741,6 +2793,12 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
    ctx.beginPath();ctx.moveTo(sx+2+ripple*.3,sy+29);ctx.lineTo(sx+8+ripple*.3,sy+29);ctx.stroke();
    if(!naturalTileReady(T.rice,x,y))drawRiceClump(sx,sy,x,y,now);
   }else if(t===T.water){
+   // Only narrow existing channels, not whole ponds, receive the animated tile.
+   const horizontal=tiles[y]?.[x-1]===T.water&&tiles[y]?.[x+1]===T.water&&tiles[y-1]?.[x]!==T.water&&tiles[y+1]?.[x]!==T.water;
+   if(horizontal&&(s.area==='route1'||s.area==='village')){
+    const frames=['1','2','3','4'].map(n=>'water-channel-flow-'+n);warmFrames(frames);
+    if(drawUploadedArt(loopArt(frames,210,x*31),sx,sy,S,S))continue;
+   }
    const ripple=(now/235+x*11+y*17)%25;
    ctx.strokeStyle='rgba(234,255,237,.45)';ctx.lineWidth=1.2;
    ctx.beginPath();ctx.moveTo(sx+3+ripple,sy+9+(x+y)%9);ctx.lineTo(sx+9+ripple,sy+9+(x+y)%9);ctx.stroke();
@@ -3444,7 +3502,7 @@ function interact(){
  const extra=explorationObjectAt(s.area,x,y);if(extra)return inspectExplorationObject(extra);
  const routeSite=route1SiteAt(x,y);
  if(routeSite)return inspectRoute1Site(routeSite);
- if(s.area==='garden'&&x===24&&y===10)return enterGym();
+ if(s.area==='garden'&&x===24&&y===10)return beginDoorAnimation('grass-gym',24,10,enterGym);
  if(s.area==='gym'&&x===17&&y===25)return region('garden',24,12);
 }
 // Homestead ownership is independent of breeding and expansion mechanics.
