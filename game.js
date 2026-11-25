@@ -140,7 +140,7 @@ function uploadedArtPath(name){
  if(/^(wooden-chest|supply-crate|storage-cabinet|display-case|mailbox)-/.test(name))return 'assets2/interactive-animated/interactive-props/'+name+'.png';
  if(/^(paper-lantern|stone-lantern|village-well|water-channel|small-waterfall|wind-chime)-/.test(name))return 'assets2/interactive-animated/environment-animated/'+name+'.png';
  if(/^(starter-display-station|index-calibration-machine|specimen-containment-tank|research-workstation|scanning-station|storage-pod)-/.test(name))return 'assets2/interactive-animated/laboratory-animated/'+name+'.png';
- if(name.startsWith('lab-'))return 'assets2/laboratory/'+name+'.png';
+ if(name.startsWith('lab-')&&name!=='lab-blue')return 'assets2/laboratory/'+name+'.png';
  if(name.startsWith('gym-'))return 'assets2/grass-gym/'+name+'.png';
  if(name.startsWith('critter-shop-'))return 'assets2/critter-shop/'+name+'.png';
  if(name.startsWith('critter-center-'))return 'assets2/critter-center/'+name+'.png';
@@ -308,14 +308,25 @@ function beginDoorAnimation(base,x,y,complete){
  warmFrames(doorArtFrames(base));doorTransition={area:s.area,x,y,base,start:performance.now(),complete};
  releaseMovement();
 }
-function doorSprite(base,x,y,ox,oy){
+function buildingAnimationArt(base,x,y){
  const frames=doorArtFrames(base);warmFrames(frames);
  const t=doorTransition?.area===s.area&&doorTransition.x===x&&doorTransition.y===y?Math.min(3,Math.floor((performance.now()-doorTransition.start)/90)):
  s.area==='village'&&npcResidenceDoor?.x===x&&npcResidenceDoor.y===y&&npcResidenceDoor.until>performance.now()?2:0;
- const name=uploadedArt(frames[t])?frames[t]:frames[0];
- if(!uploadedArt(name))return false;
- const dx=x*S-ox,dy=y*S-oy;
- sceneryLayer(s.area+':animated-door:'+x+','+y,dx,dy-12,S, S+12,dy+S,()=>drawUploadedFit(name,dx,dy-12,S,S+12));
+ return uploadedArt(frames[t])?frames[t]:frames[0];
+}
+function drawAnimatedBuilding(base,h,doorX,doorY,ox,oy){
+ const name=buildingAnimationArt(base,doorX,doorY),im=uploadedArt(name);
+ if(!im)return false;
+ // Frames contain the whole facade. Match the full footprint, anchor the
+ // central doorway to the real entrance, and allow the roof to rise above it.
+ const w=h.w*S,footH=(h.h+2)*S,ratio=im.naturalHeight/im.naturalWidth;
+ const height=Math.max(footH,w*ratio),center=(doorX+.5)*S-ox;
+ const x=center-w/2,y=(h.y+h.h+2)*S-oy-height,baseY=y+height;
+ for(let yy=h.y;yy<h.y+h.h+2;yy++)for(let xx=h.x;xx<h.x+h.w;xx++)
+  seamlessGround(T.grass,xx*S-ox,yy*S-oy,xx,yy);
+ sceneryLayer(s.area+':building:'+h.x+','+h.y,x,y,w,height,baseY,()=>{
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,w,height);ctx.restore();
+ });
  return true;
 }
 function interactivePropBase(o){
@@ -1817,7 +1828,7 @@ function seamlessGround(t,x,y,a,b){
   const name=t===T.grass?(n%2?'outdoor-grass-1-001':'outdoor-grass-2-001'):(n%2?'outdoor-path-1-004':'outdoor-path-2-004');
   const im=uploadedArt(name);
   // Only use truly square ground swatches; avoid stretching object crops into terrain.
-  if(im&&im.naturalWidth===im.naturalHeight){ctx.save();ctx.globalAlpha=.32;ctx.drawImage(im,x,y,S,S);ctx.restore()}
+  if(im&&Math.abs(im.naturalWidth/im.naturalHeight-1)<.2){ctx.drawImage(im,x,y,S+.5,S+.5);return true}
  }
  if(t===T.water){
   ctx.fillStyle='rgba(203,237,229,.13)';ctx.fillRect(x+((n>>>4)%23),y+((n>>>12)%26),5+n%8,1);
@@ -1928,7 +1939,7 @@ function drawTile(t,x,y,a,b){
      ctx.fillRect(x+dx,y+dy,2,2)
    }
  }
- if(t===T.tree&&!treeArtReady()){
+ if(t===T.tree&&!uploadedArt(naturalTreeName(s.area,naturalSeed(a,b)))&&!treeArtReady()){
    if(s.area==='village'){
      // Natural rounded foliage rather than square tree stamps; never place
      // ornamental canopy outside of its solid tree footprint onto paths.
@@ -1985,7 +1996,7 @@ function exteriorRect(h){
  const door=h.door??h.x+Math.floor(h.w/2);
  const center=door+.5;
  // Keep the sprite's central doorway aligned with the existing door cell.
- const width=2*Math.min(center-h.x,h.x+h.w-center);
+ const width=h.w;
  return {x:center-width/2,y:h.y,w:width,h:h.h+2,door};
 }
 function exteriorFootprintIntact(h){
@@ -2037,17 +2048,14 @@ function drawServiceExterior(b,ox,oy){
 }
 function drawTownExteriors(ox,oy,w,h){
  for(const b of TOWN_EXTERIORS[s.area]||[]){
-  if(b.x*S-ox>w||(b.x+b.w)*S-ox<0||b.y*S-oy>h||(b.y+b.h+2)*S-oy<0)continue;
-  if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
-  if(b.label){drawServiceExterior(b,ox,oy);drawExteriorSign(b,ox,oy);}
+  if(b.x*S-ox>w+S||(b.x+b.w)*S-ox<-S||b.y*S-oy>h+S*4||(b.y+b.h+2)*S-oy<0)continue;
   const room=Object.values(TOWN_ROOMS).find(d=>d.parent===s.area&&d.door[0]>=b.x&&d.door[0]<b.x+b.w&&d.door[1]===b.y+b.h+1);
-  if(room){const [dx,dy]=room.door;if(!doorSprite(roomDoorBase(room),dx,dy,ox,oy)){ctx.fillStyle='#302b25';ctx.fillRect(dx*S-ox+6,dy*S-oy,20,S);ctx.fillStyle='#977653';ctx.fillRect(dx*S-ox+9,dy*S-oy+2,14,S-3);ctx.fillStyle='#e5c581';ctx.fillRect(dx*S-ox+19,dy*S-oy+15,3,3)}}
-  if(b.label==='GRASS GYM')doorSprite('grass-gym',24,10,ox,oy);
-  if(b.art?.startsWith('shop-')){
-   const y=b.y+b.h;
-   if(tiles[y]?.[b.x]===T.wall)drawUploadedFit('outdoor-barrel-1-144',b.x*S-ox,y*S-oy,S,S);
-   if(tiles[y]?.[b.x+b.w-1]===T.wall)drawUploadedFit('outdoor-crate-1-151',(b.x+b.w-1)*S-ox,y*S-oy,S,S);
-  }
+  const gym=b.label==='GRASS GYM',base=gym?'grass-gym':room?roomDoorBase(room):null;
+  const dx=gym?24:room?.door[0],dy=gym?10:room?.door[1];
+  // Never draw a legacy building under a ready full-size replacement.
+  if(base&&drawAnimatedBuilding(base,b,dx,dy,ox,oy))continue;
+  if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
+  else if(b.label)drawServiceExterior(b,ox,oy);
  }
 }
 function drawHomesteadBuildingExteriors(ox,oy){
@@ -2096,18 +2104,6 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   ctx.beginPath();ctx.ellipse(px+8+seed%11,py+7+(seed*3)%17,9,4,.2,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#947f6155';ctx.fillRect(px+2+seed,py+12+(seed%9),3,1.5);
  }
- // Long, wind-shaped vegetation clumps on grass, avoiding every impassable
- // tree, road, entrance, lantern, fence and rock position.
- for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
-  if(tiles[y][x]!==T.grass||villageObstacles.has(key(x,y)))continue;
-  const n=(x*29+y*47+x*y*3)%41;
-  if(n>3)continue;
-  const [px,py]=pos(x+.42,y+.64);
-  ctx.fillStyle=n===0?'#6d9855':'#4c8153';
-  ctx.beginPath();ctx.ellipse(px,py,9+n,4.5,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#a5b674';ctx.fillRect(px-2,py-7,2,6);
-  if(n===1){ctx.fillStyle='#edc5ac';ctx.fillRect(px+6,py-8,3,3)}
- }
  // Warm light patches around the dwellings and the village's winding road.
  for(const [x,y,w,h] of [[5.1,10,3,1.5],[17,15.9,3,1.4],[28.8,12,2,1.2]]){
   const [px,py]=pos(x,y);
@@ -2125,29 +2121,14 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  }
  segment(1.6,16.95,1.6,23.15,4,'#79a9a5');
  segment(11.05,17.0,11.05,23.0,4,'#7aada9');
- // Natural planting clusters and moss-softened stones.
- for(const [x,y] of [[2,11],[4,15],[11.5,18],[14.2,23.5],[21,17],[30.5,23],[18.8,7.5],[2,9.5],[30.7,9],[14,4]]){
-  const [px,py]=pos(x,y);ctx.fillStyle='#4d7d4f';
-  ctx.beginPath();ctx.ellipse(px,py,10,6,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#dcb8aa';ctx.fillRect(px-3,py-3,4,4);
-  ctx.fillStyle='#efdbb5';ctx.fillRect(px+3,py-7,3,4);
- }
  // The buildings are dedicated, single-layer sprites, not canvas tile drawings.
  for(const h of VILLAGE_HOUSES){
   const [px,py]=pos(h.x,h.y),w=h.w*S,height=(h.h+2)*S;
   ctx.fillStyle='#15292488';
   ctx.beginPath();ctx.ellipse(px+w/2,py+height-12,w*.55,17,0,0,Math.PI*2);ctx.fill();
-  const img=villageBuildings[h.kind];
-  if(drawBuildingExterior(VILLAGE_EXTERIOR_ART[h.kind],h,ox,oy)){
-   // Existing door animation and entrance cue below are retained.
-  }else if(img.complete&&img.naturalWidth>0){
-   sceneryLayer(s.area+':building:'+h.x+','+h.y,px,py,w,height,py+height,()=>{ctx.imageSmoothingEnabled=false;ctx.drawImage(img,px,py,w,height)});
-  }else{
-   // Graceful fallback if an image has not yet loaded.
-   ctx.fillStyle='#64585c';ctx.fillRect(px,py,w,h.h*S);
-   ctx.fillStyle='#d9c5a2';ctx.fillRect(px,py+h.h*S,w,2*S);
+  if(!drawAnimatedBuilding(villageDoorBase(h),h,h.door,h.y+h.h+1,ox,oy)){
+   drawBuildingExterior(VILLAGE_EXTERIOR_ART[h.kind],h,ox,oy,true);
   }
-  doorSprite(villageDoorBase(h),h.door,h.y+h.h+1,ox,oy);
   // A restrained entrance cue, seen only while standing in front of the door.
   if(Math.abs(s.x-h.door)<=1&&s.y===h.y+h.h+2){
    const [cx,cy]=pos(h.door+.52,h.y+h.h+1.2);
