@@ -447,9 +447,33 @@ function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;return begi
 function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
 function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
 
+// Authored furniture sizes in tiles. Keep original placement centers and bottom anchors.
+const INTERIOR_SIZE=Object.freeze({
+ 'home-bed':[2.4,3.3],'home-desk':[3.2,1.8],'home-bookcase':[2.5,2.7],
+ 'home-tea':[2.6,2.6],'home-storage':[2,1.6],'home-keepsake':[2.4,1.7],'home-supplies':[1.6,1.4],
+ 'neighbor-bed':[2.5,3],'neighbor-tea':[2.8,2.5],'neighbor-cupboard':[2.6,2.5],
+ 'neighbor-bamboo':[1.2,1.8],'neighbor-scroll':[2.5,1],
+ 'estate-bed':[2.5,3.3],'estate-terminal':[2.5,2],'estate-storage':[2.2,1.5],
+ 'estate-table':[3.8,2.5],'estate-books':[2.6,2.7],'estate-incubators':[5,2],
+ 'lab-left':[4.6,2.8],'lab-right':[3.5,2.8],'lab-terminal':[2.2,2.5],
+ 'lab-books':[2.2,3.2],'lab-tools':[3.5,2.6],'lab-starters':[4,3],'lab-board':[4,1],
+ reception:[6,2.8],diagnostics:[2,2.5],monitor:[2.5,2.4],storage:[2,2.4],waiting:[2.6,1.4],
+ checkout:[5,2.5],stock1:[2.3,3],stock2:[2.3,3],display:[2.5,1.8],stockroom:[1.8,1.6],
+ bed:[2.2,2.8],table:[2.3,2.3],shelf:[2.3,2.4],cabinet:[2,2.4]
+});
+function interiorVisualBounds(o){
+ const size=INTERIOR_SIZE[o.id]||INTERIOR_SIZE[o.id.split('-').pop()]||[Math.min(o.w,3),Math.min(o.h,3)];
+ const [w,h]=size;
+ return {x:o.x+(o.w-w)/2,y:o.y+o.h-h,w,h};
+}
 function interiorFootprint(o){
- // Wall hangings occupy no floor. Solid furniture uses its declared tile footprint.
- return o.kind==='board'?{x:o.x,y:o.y,w:o.w,h:0}:{x:o.x,y:o.y,w:o.w,h:o.h};
+ const v=interiorVisualBounds(o);
+ if(o.kind==='board')return {x:Math.floor(v.x),y:o.y,w:Math.ceil(v.w),h:0};
+ // Only the base of upright objects occupies the floor; their upper art can overlap the actor.
+ const depth=['bookshelf','terminal','display','counter','chest'].includes(o.kind)?Math.min(v.h,1.35):v.h;
+ const left=Math.ceil(v.x-.5),right=Math.ceil(v.x+v.w-.5);
+ const top=Math.ceil(v.y+v.h-depth-.5),bottom=Math.ceil(v.y+v.h-.5);
+ return {x:left,y:top,w:Math.max(1,right-left),h:Math.max(1,bottom-top)};
 }
 function interiorObjectAt(x,y){
  return interiorObjects.find(o=>{const b=interiorFootprint(o);return b.h>0?x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h:o.kind==='board'&&x>=o.x&&x<o.x+o.w&&y===o.y;});
@@ -2413,18 +2437,27 @@ function interiorTexture(name,x,y,w,h,ox,oy,vw,vh){
 }
 function drawInteriorAsset(area,o,px,py,ww,hh){
  const animated=area==='lab'?labAnimation(o):null;
- const name=animated||interiorArtPlan(area,o)[0];
- if(!name||!uploadedArt(name))return false;
- // Match the stable collision rectangle with the full furniture sprite.
- const b=interiorFootprint(o);
- const h=b.h?hh:Math.min(hh,S);
- ctx.save();ctx.beginPath();ctx.rect(px,py,ww,h);ctx.clip();
- drawUploadedArt(name,px,py,ww,h);
+ const name=animated||interiorArtPlan(area,o)[0],im=name&&uploadedArt(name);
+ if(!im)return false;
+ const v=interiorVisualBounds(o),ox=o.x*S-px,oy=o.y*S-py;
+ const art=cleanSceneryArt(im,name),scale=Math.min(v.w*S/artWidth(art),v.h*S/artHeight(art));
+ const w=artWidth(art)*scale,h=artHeight(art)*scale;
+ const x=(v.x+v.w/2)*S-ox-w/2,base=(v.y+v.h)*S-oy,y=base-h;
+ const draw=()=>{ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(art,x,y,w,h);
  const slot=area==='homesteadHome'?(o.kind==='bed'?'bed':o.kind==='table'?'table':null):null;
  if(slot&&activeCosmetic(slot)){
-  ctx.globalAlpha=.18;ctx.globalCompositeOperation='multiply';ctx.fillStyle=cosmeticColor(slot,'#ffffff');ctx.fillRect(px,py,ww,h);
+  ctx.globalAlpha=.14;ctx.globalCompositeOperation='multiply';ctx.fillStyle=cosmeticColor(slot,'#ffffff');ctx.fillRect(x,y,w,h);
  }
- ctx.restore();return true;
+ ctx.restore();};
+ if(o.kind==='board')draw();else queueWorldActor(base,draw);
+ return true;
+}
+function interiorWallPanels(name,ox,oy){
+ const im=uploadedArt(name);if(!im)return;
+ const h=3.3*S,w=h*im.naturalWidth/im.naturalHeight;
+ ctx.save();ctx.beginPath();ctx.rect(S-ox,-oy,(W-2)*S,h);ctx.clip();
+ for(let x=S-ox;x<(W-1)*S-ox;x+=w-.4)ctx.drawImage(im,x,-oy,w,h);
+ ctx.restore();
 }
 function connectedInteriorWalls(ox,oy,color,trim,exitX){
  const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
@@ -2456,8 +2489,8 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
   fit('lab-wall-monitor-112',W-8,1.1,4,2);
   fit('lab-security-door-135',exitX-.4,H-1.15,1.8,1.15);
  }else{
-  for(let x=1;x<W-1;x+=2)drawUploadedArt('critter-center-wall-panel-059',X(x),Y(0),Math.min(2,W-1-x)*S,3.5*S);
-  for(const x of [Math.min(4,W/4),W-11])fit('critter-center-window-wall-061',x,1.55,6,2);
+  interiorWallPanels('critter-center-wall-panel-059',ox,oy);
+  for(const x of [Math.min(4,W/4),W-11])fit('critter-center-window-wall-061',x,.6,4,2.2);
   for(const x of [1,W-2])fit('critter-center-wall-column-060',x,0,1,3.5);
   fit('critter-center-wall-banner-073',W/2-1,.2,2,2.5);
   fit('critter-center-entrance-wall-064',exitX-.4,H-1.15,1.8,1.15);
@@ -2477,14 +2510,14 @@ function drawShopInterior(ox,oy,viewW,viewH){
  }
  const exitX=roomExit(s.area)[0];
  connectedInteriorWalls(ox,oy,'#705747','#b69b77',exitX);
- for(let x=1;x<W-1;x+=2)drawUploadedArt('critter-shop-wall-panel-072',X(x),Y(0),Math.min(2,W-1-x)*S,3.3*S);
+ interiorWallPanels('critter-shop-wall-panel-072',ox,oy);
  for(const x of [1,W-2])fit('wall-column-080',x,0,1,3.5);
- for(const x of [3,W-7])fit('window-076',x,.8,4,2.6);
+ for(const x of [3,W-7])fit('window-076',x,.6,3,2.2);
  fit('banner-048',W/2-1,.2,2,2.8);
- for(const x of [W/3,2*W/3])fit('hanging-lamp-060',x-.5,2.5,1,1.5);
+ for(const x of [W/3,2*W/3])fit('hanging-lamp-060',x-.5,1.9,1,1.2);
  // Flat rug and wall-side decorative plants never modify collision.
  fit('rug-065',Math.max(1,exitX-1.5),H-4,4,2);
- for(const x of [.8,W-1.8])fit('plant-042',x,1.5,1,1.8);
+ for(const x of [.8,W-1.8])fit('plant-042',x,1.5,1,1.5);
  for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
  ctx.restore();
 }
@@ -3892,7 +3925,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.43</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.44</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
