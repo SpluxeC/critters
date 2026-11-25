@@ -1996,7 +1996,7 @@ function exteriorRect(h){
  const door=h.door??h.x+Math.floor(h.w/2);
  const center=door+.5;
  // Keep the sprite's central doorway aligned with the existing door cell.
- const width=h.w;
+ const width=2*Math.min(center-h.x,h.x+h.w-center);
  return {x:center-width/2,y:h.y,w:width,h:h.h+2,door};
 }
 function exteriorFootprintIntact(h){
@@ -4044,7 +4044,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.39</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.40</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
