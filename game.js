@@ -841,7 +841,7 @@ function solidAt(x,y){
  if(isInterior(s.area)&&(interiorBlocked.has(key(x,y))||y<4))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
  if(explorationBlocked(s.area,x,y))return true;
- if(buildingYardLayout(s.area).some(o=>o.solid&&o.x===x&&o.y===y))return true;
+ if(buildingYardLayout(s.area).some(o=>o.solid&&yardContains(o,x,y)))return true;
  return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
 }
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
@@ -1884,12 +1884,29 @@ function naturalDecoration(area,seed,t,nearTree){
  return null;
 }
 // Curated landscaping from the new outdoor pack, never on a road or entrance.
-const BUILDING_YARD_ART=Object.freeze({
- home:[['outdoor-planter-1-161',1],['outdoor-garden-bed-1-165',1],['outdoor-flowers-grass-1-045',0],['outdoor-basket-1-158',1],['outdoor-shrub-3-037',1],['outdoor-flowers-grass-2-076',0],['outdoor-woodpile-2-100',1],['outdoor-flowers-grass-3-063',0]],
- lab:[['outdoor-planter-2-154',1],['outdoor-noticeboard-2-143',1],['outdoor-shrub-2-068',1],['outdoor-planter-1-161',1],['outdoor-flowers-grass-2-076',0],['outdoor-bench-2-148',1]],
- center:[['outdoor-planter-1-161',1],['outdoor-bench-2-148',1],['outdoor-flowers-grass-2-076',0],['outdoor-planter-2-154',1],['outdoor-shrub-3-037',1],['outdoor-flowers-grass-1-045',0]],
- shop:[['outdoor-crate-1-151',1],['outdoor-barrel-1-144',1],['outdoor-basket-1-158',1],['outdoor-sack-1-155',1],['outdoor-planter-2-154',1],['outdoor-flowers-grass-3-063',0]],
- gym:[['outdoor-garden-bed-3-211',1],['outdoor-stone-lantern-3-217',1],['outdoor-flowers-grass-3-063',0],['outdoor-shrub-2-068',1],['outdoor-planter-3-227',1],['outdoor-flowers-grass-1-045',0],['outdoor-rock-3-073',1],['outdoor-flowers-grass-2-076',0]]
+// Ordered garden modules: symmetric public frontage, domestic side yards,
+ // and service areas. Dimensions are in tiles, not arbitrary sprite stretches.
+const YARD_MODULES=Object.freeze({
+ home:{
+  front:[['outdoor-planter-1-161',1,1,1],['outdoor-garden-bed-1-165',1,2,2],['outdoor-flowers-grass-1-045',0,1,1],['outdoor-shrub-3-037',1,1,1]],
+  side:[['outdoor-clothesline-3-203',1,2,1],['outdoor-trellis-1-169',1,1,2],['outdoor-woodpile-2-100',1,1,1],['outdoor-basket-1-158',1,1,1]]
+ },
+ lab:{
+  front:[['outdoor-planter-2-154',1,1,1],['outdoor-bench-2-148',1,2,1],['outdoor-shrub-2-068',1,1,1],['outdoor-flowers-grass-2-076',0,1,1]],
+  side:[['outdoor-noticeboard-2-143',1,1,1],['outdoor-crate-1-151',1,1,1],['outdoor-planter-1-161',1,1,1]]
+ },
+ center:{
+  front:[['outdoor-planter-1-161',1,1,1],['outdoor-bench-2-148',1,2,1],['outdoor-garden-bed-3-211',1,2,2],['outdoor-flowers-grass-2-076',0,1,1]],
+  side:[['outdoor-shrub-2-068',1,1,1],['outdoor-bench-3-158',1,2,1],['outdoor-planter-2-154',1,1,1]]
+ },
+ shop:{
+  front:[['outdoor-planter-2-154',1,1,1],['outdoor-market-stall-2-167',1,2,2],['outdoor-basket-1-158',1,1,1],['outdoor-flowers-grass-3-063',0,1,1]],
+  side:[['outdoor-crate-1-151',1,1,1],['outdoor-barrel-1-144',1,1,1],['outdoor-sack-1-155',1,1,1],['outdoor-crate-3-190',1,1,1]]
+ },
+ gym:{
+  front:[['outdoor-stone-lantern-3-217',1,1,1],['outdoor-garden-bed-3-211',1,2,2],['outdoor-shrub-2-068',1,1,1],['outdoor-flowers-grass-3-063',0,1,1]],
+  side:[['outdoor-planter-3-227',1,1,1],['outdoor-rock-3-073',1,1,1],['outdoor-trellis-1-169',1,1,2],['outdoor-flowers-grass-2-076',0,1,1]]
+ }
 });
 const yardCache=new WeakMap();
 function yardBuildings(area){
@@ -1904,41 +1921,86 @@ function yardCellAllowed(area,x,y,buildings){
  if(explorationSiteAt(area,x,y)||explorationObjectAt(area,x,y)||secretEntranceAt(area,x,y))return false;
  return true;
 }
+function yardContains(o,x,y){return x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h}
 function buildingYardLayout(area){
  if(!['village','town','garden'].includes(area))return [];
  if(yardCache.has(tiles))return yardCache.get(tiles);
  const buildings=yardBuildings(area),used=new Set(),out=[];
+ const road=(x,y)=>[T.path,T.stone,T.door].includes(tiles[y]?.[x]);
+ const occupied=(x,y)=>out.some(o=>o.solid&&yardContains(o,x,y));
+ // Check connectivity of all remaining grass/path cells within the local yard.
+ // Solid props must not close a one-cell passage or isolate an entrance.
+ function fits(x,y,w,h,solid){
+  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++){
+   if(used.has(key(xx,yy))||!yardCellAllowed(area,xx,yy,buildings))return false;
+   if(solid&&[[0,-1],[1,0],[0,1],[-1,0]].some(([dx,dy])=>road(xx+dx,yy+dy)))return false;
+  }
+  if(solid){
+   const blocked=(xx,yy)=>xx>=x&&xx<x+w&&yy>=y&&yy<y+h||occupied(xx,yy)||!yardCellAllowed(area,xx,yy,buildings)&&!road(xx,yy);
+   const perimeter=[];
+   for(let xx=x;xx<x+w;xx++)perimeter.push([xx,y-1],[xx,y+h]);
+   for(let yy=y;yy<y+h;yy++)perimeter.push([x-1,yy],[x+w,yy]);
+   const open=perimeter.filter(([xx,yy])=>!blocked(xx,yy));
+   if(!open.length)return false;
+   const minX=x-2,maxX=x+w+1,minY=y-2,maxY=y+h+1;
+   const seen=new Set([key(...open[0])]),q=[open[0]];
+   for(let i=0;i<q.length;i++){
+    const [xx,yy]=q[i];for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]){
+     const nx=xx+dx,ny=yy+dy,k=key(nx,ny);
+     if(nx<minX||nx>maxX||ny<minY||ny>maxY||seen.has(k)||blocked(nx,ny))continue;
+     seen.add(k);q.push([nx,ny]);
+    }
+   }
+   if(open.some(([xx,yy])=>!seen.has(key(xx,yy))))return false;
+  }
+  return true;
+ }
+ function place(spec,x,y){
+  const [name,solid,w,h]=spec;if(!fits(x,y,w,h,solid))return false;
+  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)used.add(key(xx,yy));
+  out.push({name,solid,x,y,w,h});return true;
+ }
  for(const h of buildings){
-  const front=h.y+h.h+2,options=[];
-  // Front gardens and side strips only; never behind a facade.
-  for(let d=0;d<3;d++)for(let x=h.x-2;x<=h.x+h.w+1;x++)options.push([x,front+d]);
-  for(let y=front-2;y>=h.y+2;y--)options.push([h.x-2,y],[h.x+h.w+1,y]);
-  const art=BUILDING_YARD_ART[h.style];
-  let index=0;
-  for(const [x,y] of options){
-   if(index>=art.length)break;
-   if(used.has(key(x,y))||!yardCellAllowed(area,x,y,buildings))continue;
-   const [name,solid]=art[index];
-   // Keep a walkable grass buffer next to every road, and don't create walls of props.
-   if(solid&&([[0,-1],[1,0],[0,1],[-1,0]].some(([dx,dy])=>[T.path,T.stone,T.door].includes(tiles[y+dy]?.[x+dx]))||out.some(o=>o.solid&&Math.abs(o.x-x)+Math.abs(o.y-y)<=1)))continue;
-   used.add(key(x,y));out.push({x,y,name,solid});index++;
+  const front=h.y+h.h+2,modules=YARD_MODULES[h.style];
+  // Mirror the front beds and planters around the door, with an open central approach.
+  for(const side of [-1,1]){
+   const offset=side<0?-3:3;
+   for(let i=0;i<modules.front.length;i++){
+    const spec=modules.front[i],w=spec[2];
+    const base=h.door+offset+(side<0?1-w:0);
+    const candidates=[[base,front+i%2*2],[base+side*2,front+i%2*2],[base,front+3],[base+side*3,front+2]];
+    for(const [x,y] of candidates)if(place(spec,x,y))break;
+   }
+   // Parallel flower borders, not random vegetation on the walking approach.
+   for(let d=0;d<3;d++)for(let k=0;k<3;k++){
+    const x=h.door+side*(2+k),y=front+d;
+    if((d+k)%2===0)place(['outdoor-flowers-grass-'+(h.style==='gym'?'3-063':'2-076'),0,1,1],x,y);
+   }
   }
-  // If the frontage is narrow, add small walkable flowers in remaining safe cells.
-  for(const [x,y] of options){
-   if(index>=art.length)break;
-   if(used.has(key(x,y))||!yardCellAllowed(area,x,y,buildings))continue;
-   used.add(key(x,y));out.push({x,y,name:'outdoor-flowers-grass-1-045',solid:0});index++;
+  // Functional side-yard grouping: laundry and vegetables at homes,
+  // deliveries beside shops, quieter seating at public buildings.
+  for(let side of [-1,1]){
+   for(let i=0;i<modules.side.length;i++){
+    const spec=modules.side[i],w=spec[2];
+    const x=side<0?h.x-2-w:h.x+h.w+2;
+    const y=h.y+h.h-1+i%3*2;
+    for(const [xx,yy] of [[x,y],[x+side,y],[x,front+Math.floor(i/2)*2]])if(place(spec,xx,yy))break;
+   }
   }
+  // Finish each frontage with small, walkable flower clusters on eligible grass.
+  for(let x=h.x-1;x<=h.x+h.w;x++)for(let y=front;y<=front+2;y++)
+   if(Math.abs(x-h.door)>1&&(x+y)%3===0)place(['outdoor-flowers-grass-1-045',0,1,1],x,y);
  }
  yardCache.set(tiles,out);return out;
 }
 function drawBuildingYards(ox,oy,w,h){
  for(const o of buildingYardLayout(s.area)){
-  const x=o.x*S-ox,y=o.y*S-oy;if(x<-S||y<-S||x>w||y>h)continue;
+  const x=o.x*S-ox,y=o.y*S-oy,ww=o.w*S,hh=o.h*S;
+  if(x+ww<0||y+hh<0||x>w||y>h)continue;
   if(o.solid){
-   queueSolarShadow(x+S/2,y+S,22,24);
-   sceneryLayer(s.area+':yard:'+o.x+','+o.y,x+2,y+2,S-4,S-4,y+S,()=>drawUploadedFit(o.name,x+2,y+2,S-4,S-4));
-  }else drawUploadedFit(o.name,x+4,y+8,S-8,S-12);
+   queueSolarShadow(x+ww/2,y+hh,ww*.7,Math.min(hh,42));
+   sceneryLayer(s.area+':yard:'+o.x+','+o.y,x+2,y+2,ww-4,hh-4,y+hh,()=>drawUploadedFit(o.name,x+2,y+2,ww-4,hh-4));
+  }else drawUploadedFit(o.name,x+3,y+5,ww-6,hh-8);
  }
 }
 function drawNaturalDetails(ox,oy,w,h){
@@ -1946,7 +2008,7 @@ function drawNaturalDetails(ox,oy,w,h){
  const x0=Math.max(1,Math.floor(ox/S)),x1=Math.min(W-1,Math.ceil((ox+w)/S));
  const y0=Math.max(1,Math.floor(oy/S)),y1=Math.min(H-1,Math.ceil((oy+h)/S));
  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y)||buildingYardLayout(s.area).some(o=>o.x===x&&o.y===y))continue;
+  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y)||buildingYardLayout(s.area).some(o=>yardContains(o,x,y)))continue;
   // Avoid actor positions, doors, roads and named sites; small ground details are walkable.
   if(npcs.some(p=>p.x===x&&p.y===y))continue;
   if(s.area==='village'&&villageObstacles.has(key(x,y)))continue;
@@ -3992,7 +4054,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.47</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.48</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
