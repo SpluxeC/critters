@@ -27,13 +27,14 @@ function drawCinematicTrees(ox,oy,w,h,now){
   const dense=s.area==='forest'||s.area==='route2';
   const width=dense?(type===1?48:55):(type===1?63:74);
   const art=custom?cleanSceneryArt(img,naturalTreeName(s.area,naturalSeed(x,y))):img;
-  const height=custom?Math.min(width*1.8,width*artHeight(art)/artWidth(art)):width*(type===1?1.34:type===2?1.07:1.13);
+  const ratio=artHeight(art)/artWidth(art),height=custom?Math.min(width*1.8,width*ratio):width*(type===1?1.34:type===2?1.07:1.13);
+  const drawWidth=custom?Math.min(width,height/ratio):width;
   if(rootX+width/2<0||rootX-width/2>w||rootY-height>h||rootY<0)continue;
   // Shadow sits under the fixed solid tile; only the art moves in the breeze.
   ctx.fillStyle='rgba(20,54,32,.27)';
   ctx.beginPath();ctx.ellipse(rootX,rootY-5,width*.28,6,0,0,Math.PI*2);ctx.fill();
-  const bend=Math.sin(now*.00086-x*.43-y*.22)*.012*weatherWind();
-  sceneryLayer(s.area+':tree:'+x+','+y,rootX-width/2,rootY-4-height,width,height,rootY,()=>{ctx.save();ctx.translate(rootX,rootY-4);ctx.rotate(bend);ctx.drawImage(art,-width/2,-height,width,height);ctx.restore()});
+  const bend=reducedWorldMotion()?0:Math.sin(now*.00086-x*.43-y*.22)*.012*weatherWind();
+  sceneryLayer(s.area+':tree:'+x+','+y,rootX-drawWidth/2,rootY-4-height,drawWidth,height,rootY,()=>{ctx.save();ctx.translate(rootX,rootY-4);ctx.rotate(bend);ctx.drawImage(art,-drawWidth/2,-height,drawWidth,height);ctx.restore()});
  }
 }
 // Dedicated hand-crafted-quality researcher art, one 4x4 sheet (32px cells).
@@ -291,7 +292,8 @@ const villageBuildings={home:new Image(),lab:new Image(),neighbor:new Image()};
 for(const kind of Object.keys(villageBuildings))villageBuildings[kind].src='assets/village-'+kind+'.svg';
 let doorTransition=null;
 const PROP_ANIMATION_MS=180,propAnimations=new Map();
-const reducedWorldMotion=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const worldMotionQuery=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
+const reducedWorldMotion=()=>!!worldMotionQuery?.matches;
 function loopArt(frames,ms=220,offset=0){
  const index=reducedWorldMotion()?0:Math.floor((performance.now()+offset)/ms)%frames.length;
  const name=frames[index];return uploadedArt(name)?name:frames[0];
@@ -2420,7 +2422,7 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
  ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
  box(0,0,W,H,lab?'#b9c9cc':'#d7e3df');
  if(lab||!interiorTexture('critter-center-floor-tile-075',0,0,W,H,ox,oy,viewW,viewH)){
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewH)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewW)/S));x++){
    if((x+y)%2===0)box(x,y,1,1,lab?'#c3d1d3':'#dfe9e5');
    box(x,y,1,.025,'#829a9d');box(x,y,.025,1,'#829a9d');
   }
@@ -4061,7 +4063,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.31</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.39</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
