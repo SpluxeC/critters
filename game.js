@@ -2197,16 +2197,15 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  // Fences are drawn in the *same cells* blocked by the collision map.
  for(const [x1,y1,x2,y2] of VILLAGE_FENCES){
   if(uploadedArt('outdoor-fence-1-082')){
-   for(let x=x1;x<x2;x++){queueSolarShadow((x+.5)*S-ox,(y1+1)*S-oy,S,22);drawUploadedArt('outdoor-fence-1-082',x*S-ox,y1*S-oy,S,S);}
+   for(let x=x1;x<x2;x++){if(buildingSceneryReserved(s.area,x,y1))continue;queueSolarShadow((x+.5)*S-ox,(y1+1)*S-oy,S,22);drawUploadedArt('outdoor-fence-1-082',x*S-ox,y1*S-oy,S,S);}
    continue;
   }
-  const xa=x1+.15,xb=x2-.15,yy=y1+.52;
-  segment(xa,yy,xb,yy,4,'#4c3d32');
-  segment(xa,yy-.19,xb,yy-.19,3,'#b18b61');
   for(let x=x1;x<x2;x++){
+   if(buildingSceneryReserved(s.area,x,y1))continue;
+   const yy=y1+.52;segment(x+.05,yy,x+.95,yy,4,'#4c3d32');
+   segment(x+.05,yy-.19,x+.95,yy-.19,3,'#b18b61');
    const [px,py]=pos(x+.48,y1+.16);
    ctx.fillStyle='#4e382c';ctx.fillRect(px-3,py,6,26);
-   ctx.fillStyle='#b7966c';ctx.fillRect(px-3,py,6,4);
   }
  }
  for(const [x,y] of VILLAGE_STONES){
