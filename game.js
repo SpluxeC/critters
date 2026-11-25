@@ -1910,7 +1910,8 @@ function drawContinuousPath(t,x,y,a,b){
  ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
  // Round only exposed outside corners. Keep all shared sides flush.
  const r=5;
- const tl=!n&&!w?r:0,tr=!n&&!e?r:0,br=!south&&!e?r:0,bl=!south&&!w?r:0;
+ const wet=(dx,dy)=>terrainNeighbor(a,b,dx,dy)===T.water;
+ const tl=!n&&!w&&!wet(0,-1)&&!wet(-1,0)?r:0,tr=!n&&!e&&!wet(0,-1)&&!wet(1,0)?r:0,br=!south&&!e&&!wet(0,1)&&!wet(1,0)?r:0,bl=!south&&!w&&!wet(0,1)&&!wet(-1,0)?r:0;
  ctx.fillStyle='#75a65e';ctx.fillRect(x,y,S,S);
  ctx.beginPath();ctx.moveTo(x+tl,y);ctx.lineTo(x+S-tr,y);ctx.quadraticCurveTo(x+S,y,x+S,y+tr);
  ctx.lineTo(x+S,y+S-br);ctx.quadraticCurveTo(x+S,y+S,x+S-br,y+S);
@@ -1918,7 +1919,7 @@ function drawContinuousPath(t,x,y,a,b){
  ctx.lineTo(x,y+tl);ctx.quadraticCurveTo(x,y,x+tl,y);ctx.closePath();
  ctx.fillStyle=fill;ctx.fill();ctx.clip();
  // Feathered shoulders only along actual grass-facing road edges.
- const edges=[[!n,0,0,0,5],[!e,S,0,S-5,0],[!south,0,S,0,S-5],[!w,0,0,5,0]];
+ const edges=[[!n&&!wet(0,-1),0,0,0,5],[!e&&!wet(1,0),S,0,S-5,0],[!south&&!wet(0,1),0,S,0,S-5],[!w&&!wet(-1,0),0,0,5,0]];
  for(const [on,x0,y0,x1,y1] of edges){
   if(!on)continue;
   const gradient=ctx.createLinearGradient(x+x0,y+y0,x+x1,y+y1);
@@ -1955,7 +1956,7 @@ function seamlessGround(t,x,y,a,b){
  const colors={[T.grass]:'#75a65e',[T.path]:'#c6ae82',[T.stone]:'#aaa899',[T.water]:'#629fa5',[T.rice]:'#829d68',[T.tall]:'#75a65e',[T.flower]:'#75a65e'};
  const color=colors[t];if(!color)return false;
  if(t===T.water){drawContinuousWater(x,y,a,b);return true;}
- ctx.fillStyle=color;ctx.fillRect(x-.35,y-.35,S+.8,S+.8);
+ ctx.fillStyle=color;ctx.fillRect(x,y,S,S);
  const n=naturalSeed(a,b);
  if(OUTDOOR_GRID[s.area]&&(t===T.path||t===T.stone)){
   drawContinuousPath(t,x,y,a,b);return true;
@@ -2215,18 +2216,6 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
  };
- // Paddies: parallel ridges, flooded irrigation, staggered rice rows.
- for(let y=17;y<23;y++){
-  segment(1.9,y+.07,10.9,y+.07,4,'#5a7956');
-  segment(2.0,y+.18,10.85,y+.18,2,'#88b5a0');
-  for(let x=2;x<11;x++){
-   const [px,py]=pos(x+.15,y+.16);
-   ctx.fillStyle='#d7c879';ctx.fillRect(px+((x+y)%3)*6,py+2,2,8);
-   ctx.fillStyle='#638c52';ctx.fillRect(px+5,py+7,2,10);
-  }
- }
- segment(1.6,16.95,1.6,23.15,4,'#79a9a5');
- segment(11.05,17.0,11.05,23.0,4,'#7aada9');
  // The buildings are dedicated, single-layer sprites, not canvas tile drawings.
  for(const h of VILLAGE_HOUSES){
   const [px,py]=pos(h.x,h.y),w=h.w*S,height=(h.h+2)*S;
@@ -2319,14 +2308,10 @@ function drawRoute1Details(ox,oy,viewW,viewH){
    continue;
   }
  }
- // Long bands follow the channels, leaving every crossing footprint clear.
- for(const [x1,x2,y] of [[3,10,9],[15,30,9],[3,13,19],[26,30,19]]){
-  stroke(x1,y+.06,x2+1,y+.06,4,'#465c44');
-  stroke(x1,y+.87,x2+1,y+.87,4,'#557b59');
- }
  // Raised wooden footbridges are decorative and align to safe path tiles.
  for(const [x,y,w] of [[11,9,3],[22,19,3]]){
   if(drawBridgeDeck(x,y,w,ox,oy))continue;
+  if(!Array.from({length:w},(_,i)=>tiles[y]?.[x+i]===T.path).every(Boolean))continue;
   block(x,y,w,1,'#7d6548');
   for(let k=0;k<w*3;k++)block(x+k/3,y+.09,.025,.82,'#453c33aa');
   stroke(x,y+.14,x+w,y+.14,3,'#c8a375');
@@ -3947,7 +3932,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.45</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.46</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
