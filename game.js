@@ -5,7 +5,7 @@ const S=32;let W=34,H=26;
 const T={grass:0,path:1,tree:2,roof:3,wall:4,door:5,rice:6,flower:7,wood:8,desk:9,mat:10,tall:11,rock:12,water:13,hedge:14,gate:15,stone:16};
 const palette=['#75a65e','#c6ae82','#38683d','#88684f','#baa78a','#403127','#b7bd6a','#88a961','#b38c6d','#856348','#d9c595','#507e41','#867c6b','#5a9aa5','#397b3e','#7b5c39','#b6b1a0'];
 const strengths={Fire:['Grass','Ice','Steel'],Water:['Fire','Rock','Ground'],Grass:['Water','Shadow','Ground'],Rock:['Electric','Venom'],Electric:['Water','Flying'],Ice:['Dragon','Ghost','Ground'],Flying:['Beast','Fighting'],Shadow:['Ghost','Psychic'],Ghost:['Psychic','Primordial'],Dragon:['Electric','Primordial'],Venom:['Grass','Flying'],Beast:['Dragon','Shadow'],Primordial:['Beast','Fire'],Psychic:['Fighting','Venom'],Fighting:['Rock','Ice','Normal','Steel'],Normal:[],Steel:['Rock','Ice'],Ground:['Electric','Steel','Venom']};
-const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'⛰',Water:'💧',Electric:'⚡',Grass:'🌿',Beast:'🐾',Flying:'🪽',Venom:'☣',Fire:'🔥',Ice:'❄',Ghost:'◈',Shadow:'◉',Psychic:'✦',Fighting:'⚔',Dragon:'◇',Primordial:'✧',Normal:'◯',Steel:'⚙',Ground:'⏚'};
+const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},symbols={Rock:'RK',Water:'WA',Electric:'EL',Grass:'GR',Beast:'BE',Flying:'FL',Venom:'VE',Fire:'FI',Ice:'IC',Ghost:'GH',Shadow:'SH',Psychic:'PS',Fighting:'FG',Dragon:'DR',Primordial:'PR',Normal:'NO',Steel:'ST',Ground:'GD'};
 const sprites={male:new Image(),female:new Image()};sprites.male.src='assets/male.png';sprites.female.src='assets/female.png';
 const npcSheet=new Image();npcSheet.src='assets/npc-characters.svg';
 // Three approved cinematic tree assets, bundled as self-contained SVG wrappers
@@ -734,7 +734,7 @@ function drawExtraExploration(ox,oy){
   if(o.kind==='rune'){
    const lit=s.puzzles?.ruinsOpened||s.puzzles?.ruinsSequence?.includes(o.rune);
    ctx.fillStyle=lit?'#c8ba70':'#53605a';ctx.fillRect(x+6,y+6,20,22);
-   ctx.fillStyle=lit?'#fff3a6':'#b5c3ae';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText({sun:'☀',water:'≈',stone:'◇'}[o.rune],x+16,y+22);ctx.textAlign='left';
+   ctx.fillStyle=lit?'#fff3a6':'#b5c3ae';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText({sun:'Sun',water:'≈',stone:'◇'}[o.rune],x+16,y+22);ctx.textAlign='left';
   }else{
    const art=o.kind==='sign'?'ruin-inscription':o.kind==='chest'?interactivePropArt(o.id,'wooden-chest',!!s.discoveries?.[o.id]):o.id==='r2-stump-cache'?'tree-stump':'rubble-02';
    if(!drawUploadedFit(art,x+2,y+2,S-4,S-4)){ctx.fillStyle='#75634e';ctx.fillRect(x+7,y+10,18,17);ctx.fillStyle='#b39a70';ctx.fillRect(x+7,y+10,18,4)}
@@ -1098,7 +1098,7 @@ function normalizeEggGender(e){
  else if(!['male','female'].includes(e.gender))e.gender=rollSpeciesGender(sp);
  return e.gender;
 }
-function critterGenderLabel(p){return p?.gender==='male'?' ♂':p?.gender==='female'?' ♀':p?.gender==='genderless'?' · Genderless':'';}
+function critterGenderLabel(p){return p?.gender==='male'?' · Male':p?.gender==='female'?' · Female':p?.gender==='genderless'?' · Genderless':'';}
 function critter(type,level=5){
  level=Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(level)||1)));
  const spec=speciesRegistry.get(type);
@@ -1931,9 +1931,30 @@ function drawContinuousPath(t,x,y,a,b){
  for(let k=0;k<5;k++){const h=naturalSeed(a*7+k,b*13+k);ctx.fillRect(x+(h%30),y+((h>>>9)%30),1+h%3,1)}
  ctx.restore();
 }
+function drawContinuousWater(x,y,a,b){
+ const water=(dx,dy)=>terrainNeighbor(a,b,dx,dy)===T.water;
+ const n=water(0,-1),e=water(1,0),south=water(0,1),w=water(-1,0);
+ const land='#75a65e',r=5;
+ const tl=!n&&!w?r:0,tr=!n&&!e?r:0,br=!south&&!e?r:0,bl=!south&&!w?r:0;
+ ctx.save();ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
+ ctx.fillStyle=land;ctx.fillRect(x,y,S,S);
+ ctx.beginPath();ctx.moveTo(x+tl,y);ctx.lineTo(x+S-tr,y);ctx.quadraticCurveTo(x+S,y,x+S,y+tr);
+ ctx.lineTo(x+S,y+S-br);ctx.quadraticCurveTo(x+S,y+S,x+S-br,y+S);
+ ctx.lineTo(x+bl,y+S);ctx.quadraticCurveTo(x,y+S,x,y+S-bl);ctx.lineTo(x,y+tl);ctx.quadraticCurveTo(x,y,x+tl,y);ctx.closePath();
+ ctx.fillStyle='#548f9b';ctx.fill();ctx.clip();
+ const edges=[[!n,0,0,0,7],[!e,S,0,S-7,0],[!south,0,S,0,S-7],[!w,0,0,7,0]];
+ for(const [on,x0,y0,x1,y1] of edges){
+  if(!on)continue;
+  const g=ctx.createLinearGradient(x+x0,y+y0,x+x1,y+y1);
+  g.addColorStop(0,'#9abda0');g.addColorStop(.35,'#80b4b1');g.addColorStop(1,'rgba(128,180,177,0)');
+  ctx.fillStyle=g;if(x0===x1)ctx.fillRect(x,y+Math.min(y0,y1),S,7);else ctx.fillRect(x+Math.min(x0,x1),y,7,S);
+ }
+ ctx.restore();
+}
 function seamlessGround(t,x,y,a,b){
  const colors={[T.grass]:'#75a65e',[T.path]:'#c6ae82',[T.stone]:'#aaa899',[T.water]:'#629fa5',[T.rice]:'#829d68',[T.tall]:'#75a65e',[T.flower]:'#75a65e'};
  const color=colors[t];if(!color)return false;
+ if(t===T.water){drawContinuousWater(x,y,a,b);return true;}
  ctx.fillStyle=color;ctx.fillRect(x-.35,y-.35,S+.8,S+.8);
  const n=naturalSeed(a,b);
  if(OUTDOOR_GRID[s.area]&&(t===T.path||t===T.stone)){
@@ -2295,10 +2316,7 @@ function drawRoute1Details(ox,oy,viewW,viewH){
     ctx.fillRect(sx,sy-9,2,10);ctx.fillRect(sx+2,sy-12,2,10);
    }
   }else if(type===T.water){
-   if(uploadedArt('water-01'))continue;
-   ctx.fillStyle='#6aafa8';ctx.fillRect(bx,by,S+1,S+1);
-   ctx.fillStyle='#b9d7bd99';ctx.fillRect(bx+((x*7)%12),by+10,12,2);
-   ctx.fillStyle='#436e6b';ctx.fillRect(bx,by+S-4,S,3);
+   continue;
   }
  }
  // Long bands follow the channels, leaving every crossing footprint clear.
@@ -2702,15 +2720,19 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
    ctx.beginPath();ctx.moveTo(sx+2+ripple*.3,sy+29);ctx.lineTo(sx+8+ripple*.3,sy+29);ctx.stroke();
    if(!naturalTileReady(T.rice,x,y))drawRiceClump(sx,sy,x,y,now);
   }else if(t===T.water){
-   // Only narrow existing channels, not whole ponds, receive the animated tile.
-   const horizontal=tiles[y]?.[x-1]===T.water&&tiles[y]?.[x+1]===T.water&&tiles[y-1]?.[x]!==T.water&&tiles[y+1]?.[x]!==T.water;
-   if(horizontal&&(s.area==='route1'||s.area==='village')){
-    const frames=['1','2','3','4'].map(n=>'water-channel-flow-'+n);warmFrames(frames);
-    if(drawUploadedArt(loopArt(frames,210,x*31),sx,sy,S,S))continue;
+   // Synchronized flowing highlights, clipped to the water cell and away from shorelines.
+   const east=terrainNeighbor(x,y,1,0)===T.water,west=terrainNeighbor(x,y,-1,0)===T.water;
+   const north=terrainNeighbor(x,y,0,-1)===T.water,south=terrainNeighbor(x,y,0,1)===T.water;
+   const vertical=(north||south)&&!east&&!west;
+   const clock=reducedWorldMotion()?0:now*.014;
+   const ripple=((clock+(vertical?y:x)*11)%18+18)%18;
+   ctx.save();ctx.beginPath();ctx.rect(sx+(west?0:5),sy+(north?0:5),S-(west?0:5)-(east?0:5),S-(north?0:5)-(south?0:5));ctx.clip();
+   ctx.strokeStyle='rgba(207,239,232,.24)';ctx.lineWidth=1;
+   for(let k=0;k<2;k++){
+    const xx=sx+5+(vertical?k*12:ripple),yy=sy+7+(vertical?ripple:k*12);
+    ctx.beginPath();ctx.moveTo(xx,yy);ctx.quadraticCurveTo(xx+3,yy-1,xx+(vertical?5:9),yy+(vertical?5:0));ctx.stroke();
    }
-   const ripple=(now/235+x*11+y*17)%25;
-   ctx.strokeStyle='rgba(234,255,237,.45)';ctx.lineWidth=1.2;
-   ctx.beginPath();ctx.moveTo(sx+3+ripple,sy+9+(x+y)%9);ctx.lineTo(sx+9+ripple,sy+9+(x+y)%9);ctx.stroke();
+   ctx.restore();
   }else if(t===T.tall){
    if(naturalTileReady(T.tall,x,y))continue;
    for(let k=0;k<4;k++){
@@ -3089,7 +3111,7 @@ function drawPastureCreature(a,ox,oy,now){
  ctx.restore();
  if(a.state==='sleep'||a.state==='play'||now<a.greetUntil){
   ctx.save();ctx.textAlign='center';ctx.font='bold 12px system-ui';ctx.fillStyle=a.state==='sleep'?'#e1efff':'#fff0b5';
-  ctx.strokeStyle='#3d5641';ctx.lineWidth=2;const symbol=a.state==='sleep'?'zZ':now<a.greetUntil?'♥':'♪';ctx.strokeText(symbol,x,y-39-hop);ctx.fillText(symbol,x,y-39-hop);ctx.restore();
+  ctx.strokeStyle='#3d5641';ctx.lineWidth=2;const symbol=a.state==='sleep'?'zZ':now<a.greetUntil?'Hi':'♪';ctx.strokeText(symbol,x,y-39-hop);ctx.fillText(symbol,x,y-39-hop);ctx.restore();
  }
 }
 function drawLivingPastures(ox,oy,vw,vh,now=performance.now()){
@@ -3509,7 +3531,7 @@ function hatchEgg(from,i){
 function hatchEggUI(from,i){
  if(battle)return;
  const e=from==='party'?s.party[i]?.egg:farmSlots().incubators[i];if(!eggReady(e))return;
- open('Egg Hatching','<div class="eggHatchArt">🥚</div><p>Your egg is ready to hatch!</p><button class="btn primary" id="eggHatchConfirm">Hatch Egg</button>');
+ open('Egg Hatching','<div class="eggHatchArt">Egg</div><p>Your egg is ready to hatch!</p><button class="btn primary" id="eggHatchConfirm">Hatch Egg</button>');
  $('eggHatchConfirm').onclick=()=>{const p=hatchEgg(from,i);if(!p)return;open('Egg Hatched','<div class="eggHatchArt eggReveal">'+(critterSpriteTag(p,'eggHatchSprite')||symbols[p.type]||'✦')+'</div><h3>'+escapeHtml(p.name)+' · Level 1</h3><p>'+(from==='farm'?'Sent to home storage.':'Joined your party.')+'</p><button class="btn primary" id="eggDone">Continue</button>');$('eggDone').onclick=()=>{close();indexNotice(p.name+' hatched!')}};
 }
 function recordWalkingStep(){s.steps=(s.steps||0)+1;advanceFarmBreeding();advanceEggIncubation();if(s.steps%10===0)save()}
@@ -3925,7 +3947,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.44</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.45</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -3943,7 +3965,7 @@ function index(){if(trainerApproachLocked())return;
 function indexSlotContent(i){
  if(i<8){
   const p=s.party[i];
-  if(isEgg(p))return '<span class="watchSlotIcon">🥚</span><span class="watchSlotName">Egg</span><small>'+eggProgress(p.egg,true)+'</small>';
+  if(isEgg(p))return '<span class="watchSlotIcon">Egg</span><span class="watchSlotName">Egg</span><small>'+eggProgress(p.egg,true)+'</small>';
   return p?'<span class="watchSlotIcon">'+(critterSpriteTag(p,'watchSlotSprite')||symbols[p.type]||'◇')+'</span><span class="watchSlotName">'+escapeHtml(p.name||p.type)+critterGenderLabel(p)+'</span><small>Lv '+p.level+'</small>'
    :'<span class="watchSlotIcon empty">◇</span><span class="watchSlotName">Empty</span>';
  }
@@ -3959,12 +3981,12 @@ function indexClock(){
   const x=50+39*Math.cos(angle),y=50+39*Math.sin(angle);
   clock+='<button type="button" class="watchPosition '+(i>=8?'isModule ':'')+(indexSelection===i?'selected':'')+'" data-index-slot="'+i+'" '
     +'style="left:'+x.toFixed(2)+'%;top:'+y.toFixed(2)+'%" aria-label="'+(i+1)+' o’clock slot">'
-    +'<span class="watchTime">'+(i+1)+'</span><span class="watchTinyIcon">'+(i<8?(s.party[i]?(isEgg(s.party[i])?'🥚':critterSpriteTag(s.party[i],'watchTinySprite'))||symbols[s.party[i].type]||'◇':'·'):'✧')+'</span></button>';
+    +'<span class="watchTime">'+(i+1)+'</span><span class="watchTinyIcon">'+(i<8?(s.party[i]?(isEgg(s.party[i])?'Egg':critterSpriteTag(s.party[i],'watchTinySprite'))||symbols[s.party[i].type]||'◇':'·'):'✧')+'</span></button>';
  }
  clock+='</div>';
  const i=indexSelection,p=s.party[i],mod=s.installed[i-8];
  let detail;
- if(i<8&&isEgg(p))detail='<div class="watchSelectionHeading">🥚 Egg</div><p>'+eggProgress(p.egg,true)+'</p>'+(!battleIndexActive()&&eggReady(p.egg)?'<button class="btn" data-hatch-party="'+i+'">Hatch Egg</button>':'');
+ if(i<8&&isEgg(p))detail='<div class="watchSelectionHeading">Egg</div><p>'+eggProgress(p.egg,true)+'</p>'+(!battleIndexActive()&&eggReady(p.egg)?'<button class="btn" data-hatch-party="'+i+'">Hatch Egg</button>':'');
  else if(i<8&&p){
   const pct=Math.max(0,Math.min(100,Math.round(p.hp/Math.max(1,p.maxHp)*100)));
   detail='<div class="watchSelectionHeading">'+(symbols[p.type]||'◇')+' '+escapeHtml(p.type)+' <span>Lv '+p.level+'</span></div>'
@@ -4000,7 +4022,7 @@ function indexParty(){
  const cards=Array.from({length:8},(_,i)=>{
   const p=s.party[i];
   if(!p)return '<div class="watchPartyCard empty"><span>Slot '+(i+1)+'</span><strong>◇ Empty</strong></div>';
-  if(isEgg(p))return '<div class="watchPartyCard"><strong>🥚 Egg · Slot '+(i+1)+'</strong><p>'+eggProgress(p.egg,true)+'</p>'+(!battleIndexActive()&&eggReady(p.egg)?'<button class="btn" data-hatch-party="'+i+'">Hatch Egg</button>':'')+'</div>';
+  if(isEgg(p))return '<div class="watchPartyCard"><strong>Egg · Slot '+(i+1)+'</strong><p>'+eggProgress(p.egg,true)+'</p>'+(!battleIndexActive()&&eggReady(p.egg)?'<button class="btn" data-hatch-party="'+i+'">Hatch Egg</button>':'')+'</div>';
   const pct=Math.round(100*p.hp/Math.max(1,p.maxHp));
   return '<div class="watchPartyCard"><div><span class="watchPartyNumber">'+(i+1)+'</span><strong>'+(critterSpriteTag(p,'watchPartySprite')||symbols[p.type]||'◇')+' '+escapeHtml(p.name||p.type)+critterGenderLabel(p)+'</strong>'
    +'<small>Lv '+p.level+'</small></div><div class="watchPartyMeta">'+escapeHtml(defendTypes(p).join(' / '))+'</div><div class="watchMeter"><div style="width:'+pct+'%"></div></div>'
@@ -4340,7 +4362,7 @@ function indexTools(){
  let modules=Array.from({length:4},(_,i)=>'<div class="watchModuleRow"><span>'+(i+9)+' O’CLOCK</span><strong>'+escapeHtml(s.installed[i]||'Empty module socket')+'</strong></div>').join('');
  return '<div class="watchSectionTitle">Critter Index maintenance</div>'
   +'<div class="watchToolCard"><strong>✧ Capture Beam</strong><span>'+(beamStatus().charge?'ONLINE':'EMPTY')+'</span><p>'+beamStatus().name+' · '+beamChargeLabel()+'. Recharge and upgrade at Critter Shops.</p>'+beamMeterHTML()+'</div>'
-  +'<div class="watchToolCard"><strong>⚙ Vegetation Cutter</strong><span>'+(cutter?'UNLOCKED':'LOCKED')+'</span><p>'+(cutter?'First-badge cutting function is active.':'Earn the first Grass Gym badge to unlock vegetation cutting.')+'</p></div>'
+  +'<div class="watchToolCard"><strong>Vegetation Cutter</strong><span>'+(cutter?'UNLOCKED':'LOCKED')+'</span><p>'+(cutter?'First-badge cutting function is active.':'Earn the first Grass Gym badge to unlock vegetation cutting.')+'</p></div>'
   +'<div class="watchToolCard"><strong>◇ Module Access</strong><span>'+level.toUpperCase()+'</span><p>Basic at 0 badges · Advanced at 2 · Rare at 5.</p></div>'
   +'<div class="watchSectionTitle">Index appearance upgrades</div><div class="watchToolCard"><p>Earn the first badge to unlock Jade and Slate watch finishes. Cosmetic only.</p>'+['classic','jade','slate'].map(v=>'<button class="btn" data-index-style="'+v+'" '+(s.trainerProgress.indexStyle===v||v!=='classic'&&s.badges<1?'disabled':'')+'>'+v+'</button>').join('')+'</div><div class="watchSectionTitle">Module sockets</div>'+modules
   +'<div class="watchReadOnly">Your watch is read-only away from a Critter Center. Modules are automatic after installation.</div>';
@@ -4924,7 +4946,7 @@ function renderBattle(message){
    // Keep the four commands visible so Attack can toggle the moves closed.
    actions=battleMainActions('battle');
   }else if(mode==='index'){
-   actions='<div class="classicMenu classicIndexMenu"><button class="btn" id="indexSwitch">↔ Switch Critter</button>'
+   actions='<div class="classicMenu classicIndexMenu"><button class="btn" id="indexSwitch">Switch Critter</button>'
      +'<button class="btn" id="indexItem">▣ Use Item</button>'
      +beamBattleButton('indexCapture')
      +'<button class="btn" id="battleBack">Back</button></div>';
@@ -5593,7 +5615,7 @@ function endBattle(won,message,defeated){
  else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});s.area='town';s.x=17;s.y=15;build()}
  const evolveMessages=evolutionNotification();
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
-  ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">⌚</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
+  ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">INDEX</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
  save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
  $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
