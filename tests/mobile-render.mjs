@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises';
 
 const url=process.env.CRITTERS_URL||'https://spluxec.github.io/critters/';
 const output='qa-screenshots';
-const expected=process.env.CRITTERS_BUILD||'1.40';
+const expected=process.env.CRITTERS_BUILD||'1.41';
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true});
 const errors=[];
