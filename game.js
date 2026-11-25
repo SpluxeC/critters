@@ -20,7 +20,7 @@ function treeVariant(x,y){
 }
 function drawCinematicTrees(ox,oy,w,h,now){
  for(let y=Math.max(0,Math.floor(oy/S)-1);y<Math.min(H,Math.ceil((oy+h)/S)+4);y++)for(let x=Math.max(0,Math.floor(ox/S)-2);x<Math.min(W,Math.ceil((ox+w)/S)+2);x++){
-  if(tiles[y]?.[x]!==T.tree)continue;
+  if(tiles[y]?.[x]!==T.tree||buildingSceneryReserved(s.area,x,y))continue;
   const type=treeVariant(x,y),custom=uploadedArt(naturalTreeName(s.area,naturalSeed(x,y))),img=custom||treeArt[type];
   if(!img?.complete||!img.naturalWidth)continue;
   const rootX=x*S+S*.5-ox,rootY=(y+1)*S-oy;
@@ -447,10 +447,18 @@ function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;return begi
 function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
 function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
 
+function interiorFootprint(o){
+ // Wall hangings occupy no floor. Solid furniture uses its declared tile footprint.
+ return o.kind==='board'?{x:o.x,y:o.y,w:o.w,h:0}:{x:o.x,y:o.y,w:o.w,h:o.h};
+}
+function interiorObjectAt(x,y){
+ return interiorObjects.find(o=>{const b=interiorFootprint(o);return b.h>0?x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h:o.kind==='board'&&x>=o.x&&x<o.x+o.w&&y===o.y;});
+}
 function addInteriorObject(id,x,y,w,h,kind,title,description,action=''){
  const o={id,x,y,w,h,kind,title,description,action};
  interiorObjects.push(o);
- for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)interiorBlocked.add(key(xx,yy));
+ const b=interiorFootprint(o);
+ for(let yy=b.y;yy<b.y+b.h;yy++)for(let xx=b.x;xx<b.x+b.w;xx++)interiorBlocked.add(key(xx,yy));
  return o;
 }
 function furnishInterior(area){
@@ -779,6 +787,20 @@ function inspectRoute1Site(o){
 }
 
 // Match the drawn building rectangle, not the wider legacy tile footprint.
+function buildingSceneryReserved(area,x,y){
+ const buildings=area==='village'?VILLAGE_HOUSES:TOWN_EXTERIORS[area]||[];
+ return buildings.some(h=>x>=h.x-1&&x<h.x+h.w+1&&y>=h.y-3&&y<h.y+h.h+2);
+}
+function clearBuildingScenery(){
+ if(!['village','town','garden'].includes(s.area))return;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  if(!buildingSceneryReserved(s.area,x,y))continue;
+  villageObstacles.delete(key(x,y));
+  if([T.tree,T.rock,T.hedge,T.tall,T.flower,T.rice].includes(tiles[y][x])){
+   put(x,y,T.grass);villageObstacles.delete(key(x,y));
+  }
+ }
+}
 function buildingBlocksTile(h,x,y,area){
  const b=h.art||area==='village'?exteriorRect(h):{x:h.x,y:h.y,w:h.w,h:h.h+2,door:h.door??h.x+Math.floor(h.w/2)};
  const center=x+.5;
@@ -792,7 +814,7 @@ function solidAt(x,y){
  const house=buildings.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2);
  if(house)return buildingBlocksTile(house,x,y,s.area);
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
- if(isInterior(s.area)&&interiorBlocked.has(key(x,y)))return true;
+ if(isInterior(s.area)&&(interiorBlocked.has(key(x,y))||y<4))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
  if(explorationBlocked(s.area,x,y))return true;
  return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
@@ -1616,6 +1638,7 @@ function build(preview=false){
  decorateExpandedOutdoor();
  prepareOutdoorPortals();
  prepareExplorationGeometry();
+ clearBuildingScenery();
  // Author an unobstructed two-cell apron and visible door for every town room.
  for(const room of Object.values(TOWN_ROOMS))if(room.parent===s.area){
   const [dx,dy]=room.door;put(dx,dy,T.door);
@@ -1840,7 +1863,7 @@ function drawNaturalDetails(ox,oy,w,h){
  const x0=Math.max(1,Math.floor(ox/S)),x1=Math.min(W-1,Math.ceil((ox+w)/S));
  const y0=Math.max(1,Math.floor(oy/S)),y1=Math.min(H-1,Math.ceil((oy+h)/S));
  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water)continue;
+  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y))continue;
   // Avoid actor positions, doors, roads and named sites; small ground details are walkable.
   if(npcs.some(p=>p.x===x&&p.y===y))continue;
   if(s.area==='village'&&villageObstacles.has(key(x,y)))continue;
@@ -2147,11 +2170,6 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
  };
- // Warm light patches around the dwellings and the village's winding road.
- for(const [x,y,w,h] of [[5.1,10,3,1.5],[17,15.9,3,1.4],[28.8,12,2,1.2]]){
-  const [px,py]=pos(x,y);
-  ctx.fillStyle='#ebcc8a12';ctx.beginPath();ctx.ellipse(px,py,w*S,h*S,0,0,Math.PI*2);ctx.fill();
- }
  // Paddies: parallel ridges, flooded irrigation, staggered rice rows.
  for(let y=17;y<23;y++){
   segment(1.9,y+.07,10.9,y+.07,4,'#5a7956');
@@ -2192,7 +2210,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
   }
  }
  for(const [x,y] of VILLAGE_STONES){
-  if(tiles[y]?.[x]===T.path)continue;
+  if(tiles[y]?.[x]===T.path||buildingSceneryReserved(s.area,x,y))continue;
   queueSolarShadow((x+.5)*S-ox,(y+1)*S-oy,26,14);
   if(drawUploadedFit(OUTDOOR_SCENERY.rocks[naturalSeed(x,y)%3],x*S-ox,y*S-oy,S,S))continue;
   const [px,py]=pos(x+.5,y+.55);
@@ -2201,6 +2219,7 @@ function drawVillageDetails(ox,oy,viewW,viewH){
  }
  // Warm lantern lighting without mobile-unfriendly filters.
  for(const [x,y] of VILLAGE_LANTERNS){
+  if(buildingSceneryReserved(s.area,x,y))continue;
   queueSolarShadow((x+.5)*S-ox,(y+1)*S-oy,18,35);
   const [px,py]=pos(x+.5,y+.55);
   ctx.fillStyle='#ffce7750';ctx.beginPath();ctx.arc(px,py-12,22,0,Math.PI*2);ctx.fill();
@@ -2348,12 +2367,12 @@ function drawInteriorDecor(ox,oy){
 // Interior textures and props use existing solid furniture footprints.
 // Keep purchased cosmetic colors authoritative rather than replacing them.
 const CENTER_INTERIOR_ART=Object.freeze({"reception":"critter-center-reception-counter-002","diagnostics":"critter-center-diagnostic-terminal-015","monitor":"critter-center-treatment-counter-027","shelf":"critter-center-supply-shelf-005","storage":"critter-center-supply-shelf-013","waiting":"critter-center-bench-047"});
-const RESIDENTIAL_INTERIOR_ART=Object.freeze({"home-bed":"bed-south","home-desk":"desk-front","home-bookcase":"bookshelf-front","home-tea":"round-tea-table-a","home-storage":"storage-chest","home-keepsake":"dresser-front","home-supplies":"small-chest","neighbor-bed":"futon-south","neighbor-tea":"low-table-seats-b","neighbor-cupboard":"hutch-front","neighbor-bamboo":"bonsai-blue-pot","neighbor-scroll":"wall-landscape","estate-bed":"bed-east","estate-storage":"storage-chest","estate-table":"dining-table-horizontal-a","estate-books":"bookshelf-front"});
+const RESIDENTIAL_INTERIOR_ART=Object.freeze({"home-bed":"bed-south","home-desk":"desk-front","home-bookcase":"bookshelf-front","home-tea":"round-tea-table-a","home-storage":"storage-chest","home-keepsake":"dresser-front","home-supplies":"small-chest","neighbor-bed":"futon-south","neighbor-tea":"low-table-seats-b","neighbor-cupboard":"hutch-front","neighbor-bamboo":"bonsai-blue-pot","neighbor-scroll":"wall-landscape","estate-bed":"bed-east","estate-storage":"storage-chest","estate-table":"dining-table-horizontal-a","estate-books":"bookshelf-front","estate-terminal":"desk-front-alt","estate-incubators":"prep-counter-front"});
 const TOWN_HOME_ART=Object.freeze({"bed":"futon-east","table":"round-tea-table-b","shelf":"bookshelf-front","cabinet":"wardrobe-front"});
 function residentialRoom(area){return ['home','neighbor','homesteadHome'].includes(area)||TOWN_ROOMS[area]?.kind==='home'}
 function residentialArtName(area,o){
  if(!residentialRoom(area))return null;
- if(area==='homesteadHome'&&((o.kind==='bed'&&activeCosmetic('bed'))||(o.kind==='table'&&activeCosmetic('table'))))return null;
+ 
  return RESIDENTIAL_INTERIOR_ART[o.id]|| (TOWN_ROOMS[area]?.kind==='home'?TOWN_HOME_ART[o.id.slice(area.length+1)]:null)||null;
 }
 const LAB_INTERIOR_ART=Object.freeze({
@@ -2380,17 +2399,7 @@ function interiorArtPlan(area,o){
   return art?[art]:[];
  }
  const residential=residentialArtName(area,o);
- if(residential&&uploadedArt(residential))return [residential];
- const byId={
- 'estate-terminal':['workstation'],'estate-storage':['storage-crate'],
- 'estate-incubators':['counter-straight'],'home-storage':['crate-wide'],
- 'home-supplies':['crate-small-wide'],'home-keepsake':['glass-display'],
- 'neighbor-bamboo':['plant-terracotta']
- };
- if(byId[o.id])return byId[o.id];
- if(TOWN_ROOMS[area]){if(o.kind==='terminal')return ['workstation'];if(o.kind==='counter')return o.id.endsWith('-monitor')?['counter-straight','monitor-wave']:['counter-straight'];if(o.kind==='chest')return ['crate-wide'];if(o.kind==='display')return ['glass-display'];}
- if(o.kind==='bookshelf')return ['book-shelf'];
- return [];
+ return residential?[residential]:[];
 }
 function interiorTexture(name,x,y,w,h,ox,oy,vw,vh){
  const im=uploadedArt(name);if(!im)return false;
@@ -2404,22 +2413,27 @@ function interiorTexture(name,x,y,w,h,ox,oy,vw,vh){
  ctx.restore();return true;
 }
 function drawInteriorAsset(area,o,px,py,ww,hh){
- const plan=interiorArtPlan(area,o);
- if(!plan.length||!plan.every(n=>uploadedArt(n)))return false;
- ctx.save();ctx.beginPath();ctx.rect(px,py,ww,hh);ctx.clip();
- if(o.id==='lab-starters'){
-  // Preserve the three original Rock/Water/Electric display markers.
-  drawUploadedFit(plan[0],px,py,ww,hh);
-  for(let j=0;j<3;j++){
-   const cx=px+ww*(j+.5)/3,cy=py+hh*.34;
-   ctx.fillStyle=['#9d968b','#568ec2','#ddb652'][j];ctx.fillRect(cx-9,cy-7,18,14);
-   ctx.fillStyle='#e3e9dc';ctx.fillRect(cx-4,cy-3,8,5);
-  }
- }else{
-  drawUploadedFit(plan[0],px,py,ww,hh);
-  for(let j=1;j<plan.length;j++)drawUploadedFit(plan[j],px+ww*(j-1)/Math.max(1,plan.length-1),py,ww/Math.max(1,plan.length-1),hh*.48);
+ const animated=area==='lab'?labAnimation(o):null;
+ const name=animated||interiorArtPlan(area,o)[0];
+ if(!name||!uploadedArt(name))return false;
+ // Match the stable collision rectangle with the full furniture sprite.
+ const b=interiorFootprint(o);
+ const h=b.h?hh:Math.min(hh,S);
+ ctx.save();ctx.beginPath();ctx.rect(px,py,ww,h);ctx.clip();
+ drawUploadedArt(name,px,py,ww,h);
+ const slot=area==='homesteadHome'?(o.kind==='bed'?'bed':o.kind==='table'?'table':null):null;
+ if(slot&&activeCosmetic(slot)){
+  ctx.globalAlpha=.18;ctx.globalCompositeOperation='multiply';ctx.fillStyle=cosmeticColor(slot,'#ffffff');ctx.fillRect(px,py,ww,h);
  }
  ctx.restore();return true;
+}
+function connectedInteriorWalls(ox,oy,color,trim,exitX){
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S)};
+ // Four joined wall sections with a one-cell doorway matching the exit tile.
+ box(0,0,W,3.5,color);box(0,0,1,H,color);box(W-1,0,1,H,color);
+ box(0,H-1,exitX,1,color);box(exitX+1,H-1,W-exitX-1,1,color);
+ box(0,3.3,W,.2,trim);box(.8,3.5,.2,H-4.5,trim);box(W-1,3.5,.2,H-4.5,trim);
+ box(0,H-1,exitX,.15,trim);box(exitX+1,H-1,W-exitX-1,.15,trim);
 }
 // Dedicated clinical renderer: no legacy image fallback in either room.
 function drawClinicalInterior(ox,oy,viewW,viewH){
@@ -2435,13 +2449,8 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
    box(x,y,1,.025,'#829a9d');box(x,y,.025,1,'#829a9d');
   }
  }
- box(0,0,W,3.5,lab?'#586b76':'#a2bbb9');
- box(0,2.7,W,.8,lab?'#8ba1aa':'#d0e2df');
- box(0,3.35,W,.15,'#526d75');
- box(0,0,.75,H,'#71868d');box(W-.75,0,.75,H,'#71868d');
- box(0,H-1.15,W,1.15,'#71868d');
  const exitX=lab?17:roomExit(s.area)[0];
- box(exitX-.45,H-1.15,1.9,1.15,'#354b55');
+ connectedInteriorWalls(ox,oy,lab?'#586b76':'#a2bbb9','#526d75',exitX);
  if(lab){
   for(let x=3;x<W-3;x+=7)fit('lab-laboratory-light-087',x,1.1,2,1.1);
   fit('lab-wall-monitor-112',4,1.1,4,2);
@@ -2454,22 +2463,7 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
   fit('critter-center-wall-banner-073',W/2-1,.2,2,2.5);
   fit('critter-center-entrance-wall-064',exitX-.4,H-1.15,1.8,1.15);
  }
- for(const o of interiorObjects){
-  const px=X(o.x),py=Y(o.y),ww=o.w*S,hh=o.h*S;
-  const plan=interiorArtPlan(s.area,o);
-  ctx.save();ctx.beginPath();ctx.rect(px,py,ww,hh);ctx.clip();
-  const animated=lab?labAnimation(o):null;
-  if(!(animated&&drawUploadedFit(animated,px,py,ww,hh))&&(!plan.length||!drawUploadedFit(plan[0],px,py,ww,hh))){
-   // Neutral placeholder while the new image loads; never fetch legacy art.
-   box(o.x+.12,o.y+.12,o.w-.24,o.h-.24,'#81999f');
-   box(o.x+.2,o.y+.2,o.w-.4,.18,'#bfd2d5');
-  }
-  if(o.id==='lab-starters')for(let j=0;j<3;j++){
-   const cx=px+ww*(j+.5)/3,cy=py+hh*.82;
-   ctx.fillStyle=['#9d968b','#568ec2','#ddb652'][j];ctx.fillRect(cx-7,cy-4,14,8);
-  }
-  ctx.restore();
- }
+ for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
  ctx.restore();
 }
 // Shop-specific artwork, with neutral drawn placeholders while images load.
@@ -2482,10 +2476,9 @@ function drawShopInterior(ox,oy,viewW,viewH){
  if(!interiorTexture('critter-shop-floor-tile-062',0,0,W,H,ox,oy,viewW,viewH)){
   for(let y=0;y<H;y++){box(0,y,W,.035,'#9a7f60');for(let x=y%2;x<W;x+=2)box(x,y,.035,1,'#9a7f60')}
  }
- box(0,0,W,3.5,'#705747');box(0,2.65,W,.85,'#b69b77');
- for(let x=1;x<W-1;x+=2)drawUploadedArt('critter-shop-wall-panel-072',X(x),Y(0),Math.min(2,W-1-x)*S,3.5*S);
- box(0,0,.7,H,'#725747');box(W-.7,0,.7,H,'#725747');box(0,H-1.15,W,1.15,'#725747');
- const exitX=roomExit(s.area)[0];box(exitX-.45,H-1.15,1.9,1.15,'#ad8964');
+ const exitX=roomExit(s.area)[0];
+ connectedInteriorWalls(ox,oy,'#705747','#b69b77',exitX);
+ for(let x=1;x<W-1;x+=2)drawUploadedArt('critter-shop-wall-panel-072',X(x),Y(0),Math.min(2,W-1-x)*S,3.3*S);
  for(const x of [1,W-2])fit('wall-column-080',x,0,1,3.5);
  for(const x of [3,W-7])fit('window-076',x,.8,4,2.6);
  fit('banner-048',W/2-1,.2,2,2.8);
@@ -2493,163 +2486,29 @@ function drawShopInterior(ox,oy,viewW,viewH){
  // Flat rug and wall-side decorative plants never modify collision.
  fit('rug-065',Math.max(1,exitX-1.5),H-4,4,2);
  for(const x of [.8,W-1.8])fit('plant-042',x,1.5,1,1.8);
- for(const o of interiorObjects){
-  const px=X(o.x),py=Y(o.y),ww=o.w*S,hh=o.h*S;
-  if(!drawInteriorAsset(s.area,o,px,py,ww,hh)){
-   box(o.x+.1,o.y+.1,o.w-.2,o.h-.2,'#987958');
-   box(o.x+.2,o.y+.2,o.w-.4,.18,'#cfb28d');
-  }
- }
+ for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
  ctx.restore();
 }
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(!isInterior(s.area))return;
  if(shopInterior(s.area))return drawShopInterior(ox,oy,viewW,viewH);
  if(clinicalInterior(s.area))return drawClinicalInterior(ox,oy,viewW,viewH);
- const wx=(x)=>x*S-ox,wy=(y)=>y*S-oy;
- const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x),wy(y),w*S,h*S)};
- const pixel=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x)+w*.0,wy(y),w,h)};
- const line=(x1,y1,x2,y2,color,width=2)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(wx(x1),wy(y1));ctx.lineTo(wx(x2),wy(y2));ctx.stroke()};
- // Continuous plank flooring rather than visually isolated square wood tiles.
- const estate=s.area==='homesteadHome';const style=(slot,fallback)=>estate?cosmeticColor(slot,fallback):fallback;
- box(0,0,W,H,style('floor','#8e7258'));
- const clinical=s.area==='lab'||TOWN_ROOMS[s.area]?.kind==='center';
- const centerRoom=TOWN_ROOMS[s.area]?.kind==='center';
- const floorArt=centerRoom&&uploadedArt('critter-center-floor-tile-075')?'critter-center-floor-tile-075':clinical?'ceramic-floor-01':'wood-floor-01';
- if(!(estate&&activeCosmetic('floor'))&&interiorTexture(floorArt,0,0,W,H,ox,oy,viewW,viewH)){}else{
- for(let y=0;y<H;y+=1.22)line(0,y,W,y,'#6c523f',2);
- for(let x=0;x<W;x+=6)line(x,0,x,H,'#ae9170',1.5);
- for(let y=0;y<H;y+=2.44)for(let x=((y*7)%2)*3;x<W;x+=6)line(x,y,x,y+1.22,'#74563f',1.5);
- }
- // Tatami lounge sections and softly shaded edge bindings.
- const tatami=TOWN_ROOMS[s.area]?(TOWN_ROOMS[s.area].kind==='home'?[[6,4,4,3]]:[]):s.area==='lab'?[[12,15,9,5]]:[[11,6,11,6],[12,15,9,5]];
- for(const [x,y,w,h] of tatami){
-  box(x,y,w,h,'#b9ad83');
-  box(x+.10,y+.10,w-.20,h-.20,'#d9c99b');
-  if(s.area==='lab')interiorTexture('ceramic-floor-01',x+.1,y+.1,w-.2,h-.2,ox,oy,viewW,viewH);
-  else if(!interiorTexture('tatami-01',x+.1,y+.1,w-.2,h-.2,ox,oy,viewW,viewH))for(let k=0;k<w;k+=2.2)line(x+k,y+.2,x+k,y+h-.2,'#a99f76',1);
-  line(x+.12,y+h-.2,x+w-.12,y+h-.2,'#687d69',4);
- }
- // Window-wall, waist-high joinery, wooden uprights and overhead beams.
- box(0,0,W,2.4,style('wall','#463b37'));
- box(0,2.4,W,1.0,'#b7a186');
- box(0,3.25,W,.25,'#44382e');
+ const X=x=>x*S-ox,Y=y=>y*S-oy,estate=s.area==='homesteadHome';
+ const color=(slot,fallback)=>estate?cosmeticColor(slot,fallback):fallback;
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(X(x),Y(y),w*S,h*S)};
+ ctx.save();ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
+ box(0,0,W,H,color('floor','#ae9474'));
+ for(let y=0;y<H;y+=.75)box(0,y,W,.025,'#795d4333');
  const exitX=TOWN_ROOMS[s.area]?roomExit(s.area)[0]:17;
- box(0,H-1.2,W,1.2,'#57493c');
- box(0,H-1.15,exitX-.55,.18,'#ad8969');box(exitX+.55,H-1.15,W-exitX-.55,.18,'#ad8969');
- box(0,0,.9,H,'#4b3b33');box(W-.9,0,.9,H,'#4b3b33');
- for(let x=4;x<W;x+=6)box(x-.12,0,.24,3.5,'#695040');
- if(!(estate&&activeCosmetic('wall'))){
-  const wall=centerRoom&&uploadedArt('critter-center-wall-panel-059')?'critter-center-wall-panel-059':s.area==='lab'?'wall-wide':'wall-1';
-  for(let x=1;x<W-1;x+=2)drawUploadedArt(wall,wx(x),wy(0),Math.min(2,W-1-x)*S,3.5*S);
- }
- // Shoji paper windows along upper wall, framed with dark wooden lattice.
- for(const x of [Math.min(4,W/4),W-11]){
-  if(centerRoom&&drawUploadedFit('critter-center-window-wall-061',wx(x),wy(1.55),6*S,2*S))continue;
-  if(s.area==='lab'&&drawUploadedArt('window-wide',wx(x),wy(1.55),6*S,2*S))continue;
-  box(x,1.55,6,2,'#4a3930');box(x+.18,1.7,5.64,1.65,'#e7dfc5');
-  for(let j=1;j<5;j++)box(x+j*1.1,1.7,.09,1.65,'#795842');
-  box(x+.18,2.47,5.64,.1,'#795842');
- }
- // Hanging paper lamps spill a restrained golden glow.
- for(const x of TOWN_ROOMS[s.area]?[W/3,W*2/3]:s.area==='lab'?[12,22]:[12,24]){
-  const cx=wx(x),cy=wy(3.6);
-  ctx.fillStyle='#ffe4a31e';ctx.beginPath();ctx.ellipse(cx,cy,30,18,0,0,Math.PI*2);ctx.fill();
-  if(!(estate&&activeCosmetic('lights'))&&drawUploadedFit('hanging-lamp',cx-16,cy-24,32,32))continue;
-  ctx.fillStyle='#3f392f';ctx.fillRect(cx-7,cy-9,14,3);
-  ctx.fillStyle=style('lights','#f2dab0');ctx.fillRect(cx-6,cy-6,12,12);
-  ctx.fillStyle='#5e4b3a';ctx.fillRect(cx-7,cy+5,14,3);
- }
- // Residential accents are either wall-mounted or walkable floor coverings.
- if(residentialRoom(s.area)){
-  const small=TOWN_ROOMS[s.area]?.kind==='home';
-  const rug=s.area==='home'?'round-rug-cream':s.area==='neighbor'?'round-rug-blue':'rug-red';
-  if(!(estate&&activeCosmetic('rug')))drawUploadedFit(rug,wx(small?6:12),wy(small?4:16),(small?4:9)*S,(small?3:4)*S);
-  if(!(estate&&activeCosmetic('wall'))){
-   const picture=s.area==='home'?'wall-family-portrait':s.area==='neighbor'?'wall-scroll-a':'wall-floral-picture';
-   drawUploadedFit(picture,wx(W/2-1),wy(.3),2*S,1.5*S);
-  }
- }
+ connectedInteriorWalls(ox,oy,color('wall','#77614e'),'#493d33',exitX);
+ const picture=s.area==='home'?'wall-family-portrait':s.area==='neighbor'?'wall-scroll-a':'wall-floral-picture';
+ drawUploadedFit(picture,X(W/2-1),Y(.4),2*S,2*S);
+ for(const x of [3,W-5])drawUploadedFit('wall-scroll-b',X(x),Y(.4),2*S,2*S);
+ for(const x of [W/3,W*2/3])drawUploadedFit('square-lantern',X(x-.5),Y(2),S,S);
+ if(!(estate&&activeCosmetic('rug')))drawUploadedFit(s.area==='home'?'round-rug-cream':'round-rug-blue',X(W/2-2),Y(H-7),4*S,3*S);
  if(estate)drawInteriorDecor(ox,oy);
- // Two side wall columns framing the entrance.
- box(exitX-1.3,H-2.05,.3,1,'#644b3a');box(exitX+1.98,H-2.05,.3,1,'#644b3a');
- box(exitX-.08,H-1,.16,.9,'#2a2e33');box(exitX+.6,H-1,.15,.9,'#2a2e33');
- box(exitX+.08,H-1,.52,1,'#48342b');
- for(const o of interiorObjects){
-  const {x,y,w,h,kind}=o,px=wx(x),py=wy(y),ww=w*S,hh=h*S;
-  if(drawInteriorAsset(s.area,o,px,py,ww,hh)){
-   // Artwork only: inspection and collision remain defined by o.
-  }else if(kind==='bookshelf'&&drawUploadedFit('book-shelf',px,py,ww,hh)){
-   // Preserve the original solid footprint and interaction metadata.
-  }else if(s.area==='lab'&&kind==='terminal'&&drawUploadedFit('workstation',px,py,ww,hh)){
-  }else if(kind==='bed'){
-   box(x+.05,y+.2,w-.1,h-.25,'#604639');
-   box(x+.25,y+.12,w-.5,h-.5,'#e6ded0');
-   box(x+.4,y+.2,w-.8,1.05,'#f7efde');
-   box(x+.4,y+1.4,w-.8,h-1.9,style('bed','#a4b0a6'));
-   line(x+.5,y+1.4,x+w-.5,y+1.4,'#d9dfd0',4);
-   box(x+.6,y+h-.4,w-1.2,.25,'#55433a');
-  }else if(kind==='bookshelf'){
-   box(x+.05,y+.12,w-.1,h-.12,'#503c32');
-   box(x+.23,y+.3,w-.46,h-.56,'#ad845c');
-   for(let k=0;k<3;k++){
-    const yy=y+.48+(h-.9)*(k+.2)/3;
-    box(x+.23,yy,w-.46,.16,'#4d3a30');
-    for(let j=0;j<Math.floor(w*3);j++){
-     const xx=x+.36+j*(w-.82)/Math.max(1,Math.floor(w*3));
-     box(xx,yy-.4,.14,.38,['#647786','#b78568','#a8a380','#d4bca4','#76776e'][(j+k)%5]);
-    }
-   }
-  }else if(kind==='counter'||kind==='desk'){
-   box(x+.12,y+.35,w-.24,h-.4,'#59443c');
-   box(x+.02,y+.1,w-.04,h-.5,'#a27a57');
-   box(x+.22,y+.23,w-.44,h-.8,'#b99068');
-   for(let j=0;j<Math.min(4,w-1);j++)box(x+.55+j*1.2,y+.55,.45,.6,['#c6d5cd','#647f7d','#d8c28e','#535f71'][j]);
-   line(x+.15,y+h-.33,x+w-.15,y+h-.33,'#493831',3);
-   if(kind==='desk'){box(x+w*.52,y+.36,1,.75,'#e5d8b8');line(x+w*.52,y+.42,x+w*.52+.9,y+.42,'#746b66',1);}
-  }else if(kind==='terminal'){
-   box(x+.2,y+.35,w-.4,h-.5,'#4a5554');
-   box(x+.3,y+.15,w-.6,h-.9,'#708682');
-   box(x+.46,y+.32,w-.92,h-1.45,'#203e48');
-   for(let j=0;j<4;j++)box(x+.65,y+.55+j*.35,w-1.3,.08,j%2?'#6fc0a9':'#a4dacf');
-   box(x+.48,y+h-.55,w-.96,.23,'#c4c6ae');
-  }else if(kind==='display'){
-   box(x+.12,y+.25,w-.24,h-.32,'#705441');
-   box(x+.22,y+.08,w-.44,h-.5,'#d4bb8e');
-   if(o.id==='lab-starters'){
-    for(let j=0;j<3;j++){
-     const cx=x+.9+j*(w-1.8)/2;
-     box(cx-.38,y+.23,.78,.85,['#9d968b','#568ec2','#ddb652'][j]);
-     box(cx-.2,y+.4,.4,.35,'#e3e9dc');
-    }
-   }else box(x+.5,y+.3,w-1,.33,'#a3ae9e');
-  }else if(kind==='chest'){
-   box(x+.1,y+.4,w-.2,h-.45,'#483b32');
-   box(x+.13,y+.1,w-.26,h-.65,'#9f7550');
-   box(x+.13,y+.1,w-.26,.27,'#c39464');
-   for(let j=0;j<3;j++)box(x+.4+j*(w-.8)/2,y+.1,.12,h-.7,'#5f4c40');
-   box(x+w/2-.14,y+h/2-.14,.28,.38,'#e6c887');
-  }else if(kind==='table'){
-   box(x+.15,y+.35,w-.3,h-.4,'#5a4031');
-   box(x+.12,y+.1,w-.24,h-.65,style('table','#ae825d'));
-   box(x+.5,y+.35,.8,.55,'#e3e0ce');
-   box(x+1.65,y+.35,.7,.55,'#eee3c9');
-   box(x+2.4,y+.48,.3,.45,'#4b8071');
-  }else if(kind==='board'){
-   box(x+.12,y+.04,w-.24,h-.1,'#46382f');
-   box(x+.23,y+.14,w-.46,h-.32,'#ddd2b5');
-   for(let j=0;j<Math.min(5,w-1);j++)box(x+.55+j*1.2,y+.27,.7,.08,'#817263');
-  }
-  // Brief sparkle on the object's edge when it's immediately inspectable.
-  const near=s&&s.area&&Math.abs(s.x-(x+w/2))<=w/2+1&&Math.abs(s.y-(y+h/2))<=h/2+1;
-  if(near){
-   const blink=Math.floor(performance.now()/450)%2;
-   ctx.fillStyle=blink?'#f9e6a4':'#fff7d3';
-   ctx.beginPath();ctx.arc(px+ww-8,py+9,3,0,Math.PI*2);ctx.fill();
-  }
- }
- // Light overall warmth; avoid affecting legibility of character sprites.
- ctx.fillStyle='#edc99308';ctx.fillRect(0,0,viewW,viewH);
+ for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
+ ctx.restore();
 }
 
 
@@ -2847,19 +2706,7 @@ function drawRegionAtmosphere(ox,oy,w,h,now){
  const hour=worldHour(),daylight=hour>=6&&hour<19;
  const haze=s.area==='forest'?.075:s.area==='cave'?.10:s.area==='route2'?.05:s.area==='route1'?.035:.025;
  ctx.fillStyle=s.area==='cave'?'rgba(95,118,139,'+haze+')':'rgba(232,245,203,'+haze+')';ctx.fillRect(0,0,w,h);
- if(daylight&&(s.area==='forest'||s.area==='route2'||s.area==='route1')){
-  const phase=Math.sin(now/2500)*9;
-  ctx.save();ctx.globalAlpha=s.area==='forest'?.08:.045;
-  for(let n=0;n<3;n++){
-   const atX=((n*257+94+phase)-ox*.08+w)%w;
-   const grad=ctx.createLinearGradient(atX-45,0,atX+80,h);
-   grad.addColorStop(0,'rgba(255,249,198,0)');
-   grad.addColorStop(.45,'rgba(255,249,198,.8)');
-   grad.addColorStop(1,'rgba(255,249,198,0)');
-   ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(atX,0);ctx.lineTo(atX+44,0);ctx.lineTo(atX+120,h);ctx.lineTo(atX+40,h);ctx.closePath();ctx.fill();
-  }
-  ctx.restore();
- }
+
 }
 function drawAtmosphereOverlay(ox,oy,w,h){
  const inside=atmosphericIndoor();
@@ -2880,25 +2727,13 @@ function drawAtmosphereOverlay(ox,oy,w,h){
    ctx.fillStyle='rgba(18,24,43,'+(darkness*.24).toFixed(3)+')';ctx.fillRect(0,0,w,h);
   }
  }
- // Dynamic lantern pools are painted after darkening, so their colors remain warm.
- const lamps=inside?(s.area==='lab'?[[12,3.6],[22,3.6]]:[[12,3.6],[24,3.6]]):
-  s.area==='village'?[[10,11],[24,12],[17,20],[29,14],[6,13]]:
-  s.area==='route1'?[[5,11],[28,11],[14,5]]:
-  s.area==='town'?[[8,11],[22,11],[25,16]]:
-  s.area==='garden'?[[6,13],[20,15]]:[];
- const strength=inside?1.2:Math.max(.15,darkness/.52);
- if(strength>.1)for(const [x,y] of lamps){
-  const sx=x*S+S*.5-ox,sy=y*S+S*.2-oy;
-  if(sx<-115||sy<-115||sx>w+115||sy>h+115)continue;
-  atmosphericLight(sx,sy,inside?92:85,strength);
-  ctx.fillStyle='#fff0be';ctx.fillRect(sx-2,sy-3,4,7);
-  ctx.fillStyle='#b77e49';ctx.fillRect(sx-4,sy+3,8,3);
+ // Only real outdoor lanterns emit light, and only after dark.
+ if(!inside&&s.area==='village'&&darkness>.18)for(const [x,y] of VILLAGE_LANTERNS){
+  if(buildingSceneryReserved(s.area,x,y))continue;
+  const sx=(x+.5)*S-ox,sy=(y+.1)*S-oy;
+  if(sx>=-85&&sy>=-85&&sx<=w+85&&sy<=h+85)atmosphericLight(sx,sy,60,Math.min(1,darkness/.52));
  }
- // A light halo keeps the player legible at night without negating darkness.
- if(!inside&&darkness>.25){
-  const px=visual.x*S+16-ox,py=visual.y*S+15-oy;
-  atmosphericLight(px,py,62,Math.min(.95,darkness));
- }
+
 }
 function drawAtmosphereHUD(){
  const h=worldHour(),hours=Math.floor(h),minutes=Math.floor((h-hours)*60);
@@ -2944,7 +2779,7 @@ function draw(){
  const ox=visual.x*S+S/2-viewportWidth/2;
  const oy=visual.y*S+S/2-viewportHeight/2;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#6b9e60';ctx.fillRect(0,0,C.width,C.height);ctx.setTransform(zoom,0,0,zoom,0,0);
- if(!clinicalInterior(s.area)&&!shopInterior(s.area))for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
+ if(!isInterior(s.area))for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  startSceneryLayer(visual.x*S+16-ox,visual.y*S+32-oy);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
@@ -3463,7 +3298,7 @@ function canInteractAhead(){
  if(villageDoorAt(x,y)||townDoorAt(x,y))return true;
  if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return true;
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25)return true;
- if(isInterior(s.area)&&interiorObjects.some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return true;
+ if(isInterior(s.area)&&interiorObjectAt(x,y))return true;
  if(route1SiteAt(x,y)||explorationObjectAt(s.area,x,y)||secretEntranceAt(s.area,x,y))return true;
  if(SECRET_AREAS[s.area]&&x===17&&y===25)return true;
  if(s.area==='garden'&&x===24&&y===10)return true;
@@ -3504,7 +3339,7 @@ function interact(){
   const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);
   return region('village',h.door,h.y+h.h+2);
  }
- const object=interiorObjects.find(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h);
+ const object=interiorObjectAt(x,y);
  if(object&&isInterior(s.area))return inspectInterior(object);
  const secret=secretEntranceAt(s.area,x,y);if(secret)return enterSecret(...secret);
  if(SECRET_AREAS[s.area]&&x===17&&y===25)return exitSecret();
@@ -4058,7 +3893,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.42</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.43</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
