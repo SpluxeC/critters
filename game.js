@@ -2243,19 +2243,21 @@ function residentialArtName(area,o){
  if(area==='homesteadHome'&&((o.kind==='bed'&&activeCosmetic('bed'))||(o.kind==='table'&&activeCosmetic('table'))))return null;
  return RESIDENTIAL_INTERIOR_ART[o.id]|| (TOWN_ROOMS[area]?.kind==='home'?TOWN_HOME_ART[o.id.slice(area.length+1)]:null)||null;
 }
+const LAB_INTERIOR_ART=Object.freeze({
+ 'lab-left':'lab-chemistry-bench-001','lab-right':'lab-research-bench-137',
+ 'lab-terminal':'lab-calibration-machine-085','lab-books':'lab-specimen-cabinet-036',
+ 'lab-tools':'lab-computer-workstation-146','lab-board':'lab-noticeboard-116',
+ 'lab-starters':'starter-display-station-idle'
+});
+function clinicalInterior(area){return area==='lab'||TOWN_ROOMS[area]?.kind==='center'}
 function interiorArtPlan(area,o){
+ if(clinicalInterior(area)){
+  const art=area==='lab'?LAB_INTERIOR_ART[o.id]:CENTER_INTERIOR_ART[o.id.slice(area.length+1)];
+  return art?[art]:[];
+ }
  const residential=residentialArtName(area,o);
  if(residential&&uploadedArt(residential))return [residential];
- if(TOWN_ROOMS[area]?.kind==='center'){
-  const art=CENTER_INTERIOR_ART[o.id.slice(area.length+1)];
-  if(art&&uploadedArt(art))return [art];
- }
- const lab=area==='lab';
  const byId={
- 'lab-left':['chemistry-bench'],'lab-right':['counter-straight','microscope','centrifuge'],
- 'lab-terminal':['workstation'],'lab-books':['specimen-shelf-1'],
- 'lab-tools':['counter-straight','laptop','monitor-wave'],
- 'lab-board':['whiteboard'],'lab-starters':['counter-straight','monitor-dna'],
  'estate-terminal':['workstation'],'estate-storage':['storage-crate'],
  'estate-incubators':['counter-straight'],'home-storage':['crate-wide'],
  'home-supplies':['crate-small-wide'],'home-keepsake':['glass-display'],
@@ -2295,8 +2297,60 @@ function drawInteriorAsset(area,o,px,py,ww,hh){
  }
  ctx.restore();return true;
 }
+// Dedicated clinical renderer: no legacy image fallback in either room.
+function drawClinicalInterior(ox,oy,viewW,viewH){
+ const lab=s.area==='lab', X=x=>x*S-ox,Y=y=>y*S-oy;
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(X(x),Y(y),w*S,h*S)};
+ const fit=(n,x,y,w,h)=>drawUploadedFit(n,X(x),Y(y),w*S,h*S);
+ ctx.save();
+ ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
+ box(0,0,W,H,lab?'#b9c9cc':'#d7e3df');
+ if(lab||!interiorTexture('critter-center-floor-tile-075',0,0,W,H,ox,oy,viewW,viewH)){
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   if((x+y)%2===0)box(x,y,1,1,lab?'#c3d1d3':'#dfe9e5');
+   box(x,y,1,.025,'#829a9d');box(x,y,.025,1,'#829a9d');
+  }
+ }
+ box(0,0,W,3.5,lab?'#586b76':'#a2bbb9');
+ box(0,2.7,W,.8,lab?'#8ba1aa':'#d0e2df');
+ box(0,3.35,W,.15,'#526d75');
+ box(0,0,.75,H,'#71868d');box(W-.75,0,.75,H,'#71868d');
+ box(0,H-1.15,W,1.15,'#71868d');
+ const exitX=lab?17:roomExit(s.area)[0];
+ box(exitX-.45,H-1.15,1.9,1.15,'#354b55');
+ if(lab){
+  for(let x=3;x<W-3;x+=7)fit('lab-laboratory-light-087',x,1.1,2,1.1);
+  fit('lab-wall-monitor-112',4,1.1,4,2);
+  fit('lab-wall-monitor-112',W-8,1.1,4,2);
+  fit('lab-security-door-135',exitX-.4,H-1.15,1.8,1.15);
+ }else{
+  for(let x=1;x<W-1;x+=2)drawUploadedArt('critter-center-wall-panel-059',X(x),Y(0),Math.min(2,W-1-x)*S,3.5*S);
+  for(const x of [Math.min(4,W/4),W-11])fit('critter-center-window-wall-061',x,1.55,6,2);
+  for(const x of [1,W-2])fit('critter-center-wall-column-060',x,0,1,3.5);
+  fit('critter-center-wall-banner-073',W/2-1,.2,2,2.5);
+  fit('critter-center-entrance-wall-064',exitX-.4,H-1.15,1.8,1.15);
+ }
+ for(const o of interiorObjects){
+  const px=X(o.x),py=Y(o.y),ww=o.w*S,hh=o.h*S;
+  ctx.fillStyle='#24343a30';ctx.beginPath();ctx.ellipse(px+ww/2,py+hh-1,ww*.46,Math.max(4,hh*.10),0,0,Math.PI*2);ctx.fill();
+  const plan=interiorArtPlan(s.area,o);
+  ctx.save();ctx.beginPath();ctx.rect(px,py,ww,hh);ctx.clip();
+  if(!plan.length||!drawUploadedFit(plan[0],px,py,ww,hh)){
+   // Neutral placeholder while the new image loads; never fetch legacy art.
+   box(o.x+.12,o.y+.12,o.w-.24,o.h-.24,'#81999f');
+   box(o.x+.2,o.y+.2,o.w-.4,.18,'#bfd2d5');
+  }
+  if(o.id==='lab-starters')for(let j=0;j<3;j++){
+   const cx=px+ww*(j+.5)/3,cy=py+hh*.82;
+   ctx.fillStyle=['#9d968b','#568ec2','#ddb652'][j];ctx.fillRect(cx-7,cy-4,14,8);
+  }
+  ctx.restore();
+ }
+ ctx.restore();
+}
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(!isInterior(s.area))return;
+ if(clinicalInterior(s.area))return drawClinicalInterior(ox,oy,viewW,viewH);
  const wx=(x)=>x*S-ox,wy=(y)=>y*S-oy;
  const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x),wy(y),w*S,h*S)};
  const pixel=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(wx(x)+w*.0,wy(y),w,h)};
@@ -2737,7 +2791,7 @@ function draw(){
    ctx.fillStyle=(x*7+y*11)%3===0?'rgba(54,118,61,.13)':'rgba(145,181,100,.12)';
    ctx.beginPath();ctx.ellipse(cx,cy,62,43,0,0,Math.PI*2);ctx.fill();
  }
- for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
+ if(!clinicalInterior(s.area))for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewportHeight)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewportWidth)/S));x++)drawTile(tiles[y][x],x*S-ox,y*S-oy,x,y);
  startSceneryLayer(visual.x*S+16-ox,visual.y*S+32-oy);
  if(s.area==='village')drawVillageDetails(ox,oy,viewportWidth,viewportHeight);
  if(isInterior(s.area))drawInteriorDetails(ox,oy,viewportWidth,viewportHeight);
