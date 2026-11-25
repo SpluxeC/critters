@@ -1,0 +1,32 @@
+name: Critters mobile rendering QA
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install mobile browser emulator
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+      - name: Wait for live build
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsSL 'https://spluxec.github.io/critters/?qa='$(date +%s) | grep -q 'game.js?v=1.39'; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+      - name: Test deployed game on mobile viewports
+        run: node tests/mobile-render.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-render-screenshots
+          path: qa-screenshots/
