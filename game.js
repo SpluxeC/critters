@@ -2229,7 +2229,12 @@ function drawInteriorDecor(ox,oy){
 }
 // Interior textures and props use existing solid furniture footprints.
 // Keep purchased cosmetic colors authoritative rather than replacing them.
+const CENTER_INTERIOR_ART=Object.freeze({"reception":"critter-center-reception-counter-002","diagnostics":"critter-center-diagnostic-terminal-015","monitor":"critter-center-treatment-counter-027","shelf":"critter-center-supply-shelf-005","storage":"critter-center-supply-shelf-013","waiting":"critter-center-bench-047"});
 function interiorArtPlan(area,o){
+ if(TOWN_ROOMS[area]?.kind==='center'){
+  const art=CENTER_INTERIOR_ART[o.id.slice(area.length+1)];
+  if(art&&uploadedArt(art))return [art];
+ }
  const lab=area==='lab';
  const byId={
  'lab-left':['chemistry-bench'],'lab-right':['counter-straight','microscope','centrifuge'],
@@ -2285,7 +2290,8 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  const estate=s.area==='homesteadHome';const style=(slot,fallback)=>estate?cosmeticColor(slot,fallback):fallback;
  box(0,0,W,H,style('floor','#8e7258'));
  const clinical=s.area==='lab'||TOWN_ROOMS[s.area]?.kind==='center';
- const floorArt=clinical?'ceramic-floor-01':'wood-floor-01';
+ const centerRoom=TOWN_ROOMS[s.area]?.kind==='center';
+ const floorArt=centerRoom&&uploadedArt('critter-center-floor-tile-075')?'critter-center-floor-tile-075':clinical?'ceramic-floor-01':'wood-floor-01';
  if(!(estate&&activeCosmetic('floor'))&&interiorTexture(floorArt,0,0,W,H,ox,oy,viewW,viewH)){}else{
  for(let y=0;y<H;y+=1.22)line(0,y,W,y,'#6c523f',2);
  for(let x=0;x<W;x+=6)line(x,0,x,H,'#ae9170',1.5);
@@ -2310,11 +2316,12 @@ function drawInteriorDetails(ox,oy,viewW,viewH){
  box(0,0,.9,H,'#4b3b33');box(W-.9,0,.9,H,'#4b3b33');
  for(let x=4;x<W;x+=6)box(x-.12,0,.24,3.5,'#695040');
  if(!(estate&&activeCosmetic('wall'))){
-  const wall=s.area==='lab'?'wall-wide':'wall-1';
+  const wall=centerRoom&&uploadedArt('critter-center-wall-panel-059')?'critter-center-wall-panel-059':s.area==='lab'?'wall-wide':'wall-1';
   for(let x=1;x<W-1;x+=2)drawUploadedArt(wall,wx(x),wy(0),Math.min(2,W-1-x)*S,3.5*S);
  }
  // Shoji paper windows along upper wall, framed with dark wooden lattice.
  for(const x of [Math.min(4,W/4),W-11]){
+  if(centerRoom&&drawUploadedFit('critter-center-window-wall-061',wx(x),wy(1.55),6*S,2*S))continue;
   if(s.area==='lab'&&drawUploadedArt('window-wide',wx(x),wy(1.55),6*S,2*S))continue;
   box(x,1.55,6,2,'#4a3930');box(x+.18,1.7,5.64,1.65,'#e7dfc5');
   for(let j=1;j<5;j++)box(x+j*1.1,1.7,.09,1.65,'#795842');
