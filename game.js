@@ -875,6 +875,7 @@ function furnishExpansionRoom(area,add){
   const x=(a,w)=>flip?W-a-w:a;
   if(room.parent==='harborTown')item('harborNotes',x(2,3),3,3,1,'board','Coastal Chart','A chart of the local shoreline and harbor.','wall-landscape');
   if(room.parent==='marshTown')item('wetlandNotes',x(2,3),3,3,1,'board','Wetland Landscape','A landscape of the reed beds and raised walking paths.','wall-landscape');
+  if(room.parent==='ancientTown')item('ruinsNotes',x(2,3),3,3,1,'board','Ruins Landscape','A painting of weathered stone walls and overgrown pathways.','wall-landscape');
   if(room.parent==='highlandTown')item('highlandNotes',x(2,3),3,3,1,'board','Highland Landscape','A painting of hillside gardens and distant mountain ridges.','wall-landscape');
   if(room.parent==='snowTown')item('winterNotes',x(2,3),3,3,1,'board','Winter Landscape','A painting of snow-covered peaks and frozen lakes.','wall-landscape');
   if(room.parent==='volcanicTown')item('thermalNotes',x(2,3),3,3,1,'board','Mineral Springs','A painting of the local mineral springs and dark ridges.','wall-landscape');
@@ -2331,6 +2332,7 @@ function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
  if(isSnowDistrict(area))return null;
+ if(area==='ancientRoute'||area==='ancientTown')return seed%43===0?'outdoor-shrub-3-037':seed%59===0?'outdoor-flowers-grass-2-076':null;
  if(area==='highlandTown')return seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='ashPass')return seed%89===0?'outdoor-stump-1-075':null;
  if(isVolcanicDistrict(area))return seed%53===0?'outdoor-shrub-3-037':null;
@@ -2498,7 +2500,7 @@ function drawNaturalDetails(ox,oy,w,h){
 function drawContinuousPath(t,x,y,a,b){
  const road=v=>v===T.path||v===T.stone;
  const n=road(terrainNeighbor(a,b,0,-1)),e=road(terrainNeighbor(a,b,1,0)),south=road(terrainNeighbor(a,b,0,1)),w=road(terrainNeighbor(a,b,-1,0));
- const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(s.area==='highlandTown'?'#b0ad96':isSnowDistrict(s.area)?'#a6b6bd':isVolcanicDistrict(s.area)?'#797775':canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
+ const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?((s.area==='ancientRoute'||s.area==='ancientTown')?'#979b88':s.area==='highlandTown'?'#b0ad96':isSnowDistrict(s.area)?'#a6b6bd':isVolcanicDistrict(s.area)?'#797775':canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
  const seed=naturalSeed(a,b);
  ctx.save();
  ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
@@ -2739,7 +2741,27 @@ function drawHighlandSteps(x,y){
  ctx.fillStyle='#a49f8b';ctx.fillRect(x,y,S,S);
  for(let k=0;k<4;k++){ctx.fillStyle='#c3bda4';ctx.fillRect(x,y+k*8,S,5);ctx.fillStyle='#817d70';ctx.fillRect(x,y+k*8+5,S,2)}
 }
+function drawAncientMasonry(x,y,a,b,kind){
+ const seed=naturalSeed(a,b);
+ ctx.fillStyle='#8a9c75';ctx.fillRect(x,y,S,S);
+ if(kind==='pillar'){
+  ctx.fillStyle='#666e65';ctx.fillRect(x+5,y+25,22,6);ctx.fillStyle='#8e9182';ctx.fillRect(x+9,y+6,14,20);
+  ctx.fillStyle='#b2b0a0';ctx.fillRect(x+7,y+3,18,6);ctx.fillStyle='#737969';ctx.fillRect(x+19,y+10,4,15);
+  queueSolarShadow(x+S/2,y+S,22,28);
+ }else{
+  ctx.fillStyle='#666e65';ctx.fillRect(x,y+8,S,24);
+  for(let row=0;row<3;row++)for(let k=-1;k<3;k++){
+   const l=Math.max(0,k*16+(row%2)*8),r=Math.min(S,k*16+(row%2)*8+15);
+   if(r>l){ctx.fillStyle=(seed+row+k)%2?'#999b89':'#858b7b';ctx.fillRect(x+l,y+9+row*7,r-l,6)}
+  }
+  ctx.fillStyle='#b0b19a';ctx.fillRect(x,y+4,S,6);queueSolarShadow(x+S/2,y+S,S,15);
+ }
+ ctx.fillStyle='#647d4e';for(let k=0;k<4;k++)ctx.fillRect(x+6+(seed+k*7)%20,y+18+((seed>>>5)+k*3)%10,4,2);
+}
 function drawTile(t,x,y,a,b){
+ if(t===T.rock&&(s.area==='ancientRoute'||s.area==='ancientTown')){
+  const ruin=ancientRuinKind(s.area,a,b);if(ruin){drawAncientMasonry(x,y,a,b,ruin);return;}
+ }
  if(s.area==='highlandTown'&&t===T.rock&&highlandWallCell(a,b)){drawHighlandWall(x,y,a,b);return;}
  if(isSnowDistrict(s.area)&&t===T.tree){drawSnowGround(T.grass,x,y,a,b);return;}
  if(isSnowDistrict(s.area)&&t===T.rock){drawSnowGround(T.grass,x,y,a,b);ctx.fillStyle='#778a91';ctx.fillRect(x+2,y+9,S-4,S-11);ctx.fillStyle='#f2f6f2';ctx.fillRect(x+3,y+4,S-6,12);queueSolarShadow(x+S/2,y+S,S,16);return;}
@@ -4187,6 +4209,7 @@ function buildExpansionArea(area){
  if(area==='ashPass')buildAshPassLandscape();
  if(isSnowDistrict(area))buildSnowLandscape(area);
  if(area==='highlandTown')buildHighlandLandscape();
+ if(area==='ancientRoute'||area==='ancientTown')buildAncientLandscape(area);
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
@@ -4403,6 +4426,39 @@ function buildHighlandLandscape(){
  // Public furniture remains on reserved pockets, not stairways or retaining walls.
  for(const o of settlementPublicProps('highlandTown'))if(o.x<17&&o.y>=28)rect(o.x,o.y,o.w,o.h,T.grass);
 }
+// Phase 9.8: preserved ruins, without assigning their builders or history.
+function ancientRuinKind(area,x,y){
+ if(area==='ancientRoute'){
+  if((y===5&&x>=5&&x<=13)||(y===8&&x>=25&&x<=35)||(x===5&&y>=6&&y<=10)||(x===35&&y>=9&&y<=10)||(y===30&&x>=5&&x<=15)||(y===29&&x>=25&&x<=34))return 'wall';
+  if([[7,9],[12,9],[27,10],[33,10],[6,27],[14,27],[25,26],[34,26]].some(([a,b])=>a===x&&b===y))return 'pillar';
+ }
+ if(area==='ancientTown'){
+  if(y===32&&((x>=3&&x<=7)||(x>=12&&x<=15)))return 'wall';
+  if(y===29&&(x===4||x===14))return 'pillar';
+ }
+ return null;
+}
+function buildAncientLandscape(area){
+ if(area==='ancientRoute'){
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+   if(tiles[y][x]===T.path)continue;
+   const ruin=ancientRuinKind(area,x,y);
+   if(ruin)put(x,y,T.rock);
+   else if(tiles[y][x]===T.rock&&x>3&&x<W-4&&y>4&&y<H-4)put(x,y,T.grass);
+  }
+  // Three clear approaches, a linked southern courtyard, and northern viewing paths.
+  rect(9,14,3,13,T.path);rect(18,14,3,13,T.path);rect(29,14,3,13,T.path);
+  rect(9,24,23,3,T.stone);rect(8,10,3,3,T.path);rect(29,10,3,3,T.path);
+  for(const [x,y,w,h] of [[5,16,3,6],[13,17,4,5],[23,17,4,5],[33,19,5,5]]){
+   for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(tiles[yy]?.[xx]===T.grass&&naturalSeed(xx,yy)%4!==0)put(xx,yy,T.tall);
+  }
+ }else{
+  rect(3,28,13,5,T.grass);rect(8,26,3,7,T.path);rect(5,30,9,2,T.stone);
+  rect(8,30,3,3,T.path);rect(11,30,7,2,T.stone);
+  for(let y=28;y<H-1;y++)for(let x=3;x<=15;x++)if(ancientRuinKind(area,x,y)&&tiles[y][x]===T.grass)put(x,y,T.rock);
+  for(const o of settlementPublicProps(area))if(o.x<17&&o.y>=28)rect(o.x,o.y,o.w,o.h,T.grass);
+ }
+}
 function buildSpecialStorySite(area){
  const plans={
   leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
@@ -4490,7 +4546,8 @@ function settlementPublicProps(area){
  const thermal=area==='volcanicTown'?[{x:4,y:29,w:2,h:1,name:'outdoor-bench-2-148'},{x:11,y:29,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:4,y:36,w:1,h:1,name:'outdoor-rock-3-073'}]:[];
  const winter=area==='snowTown'?[{x:12,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:4,y:28,w:2,h:1,name:'outdoor-bench-2-148'}]:[];
  const highland=area==='highlandTown'?[{x:4,y:30,w:2,h:1,name:'outdoor-bench-2-148'},{x:13,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:12,y:29,w:1,h:1,name:'outdoor-planter-1-161'}]:[];
- return [...harbor,...wetland,...canyon,...thermal,...winter,...highland,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
+ const ancient=area==='ancientTown'?[{x:5,y:28,w:1,h:1,name:'outdoor-stone-lantern-3-217'},{x:13,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:6,y:32,w:1,h:1,name:'outdoor-rock-3-073'}]:[];
+ return [...harbor,...wetland,...canyon,...thermal,...winter,...highland,...ancient,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
 }
 function buildSettlement(area){
  const p=SETTLEMENT_PLANS[area],lots=settlementLots(area),[px,py]=p.public;
@@ -4532,9 +4589,9 @@ function drawSettlementGym(b,ox,oy){
  queueSolarShadow(x+w/2,base,w,h,'building');
  sceneryLayer(s.area+':gym-site',x,y,w,h,base,()=>{
   const box=(a,c,d,e,col)=>{ctx.fillStyle=col;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
-  const highland=s.area==='highlandTown',winter=s.area==='snowTown',wetland=s.area==='marshTown',canyon=s.area==='canyonTown',volcanic=s.area==='volcanicTown';
-  box(.035,.25,.93,.75,highland?'#c4c4a3':winter?'#c3d4d6':volcanic?'#9d9185':canyon?'#c9aa87':wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,volcanic?'#514d4b':canyon?'#886b55':wetland?'#776c52':'#72797a');
-  ctx.fillStyle=highland?'#526c58':winter?'#edf3ef':volcanic?'#50413e':canyon?'#795848':wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
+  const ancient=s.area==='ancientTown',highland=s.area==='highlandTown',winter=s.area==='snowTown',wetland=s.area==='marshTown',canyon=s.area==='canyonTown',volcanic=s.area==='volcanicTown';
+  box(.035,.25,.93,.75,ancient?'#b4b3a2':highland?'#c4c4a3':winter?'#c3d4d6':volcanic?'#9d9185':canyon?'#c9aa87':wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,volcanic?'#514d4b':canyon?'#886b55':wetland?'#776c52':'#72797a');
+  ctx.fillStyle=ancient?'#646b62':highland?'#526c58':winter?'#edf3ef':volcanic?'#50413e':canyon?'#795848':wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
   for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
   const door=(b.door-b.x+.5)/b.w;box(door-.07,.67,.14,.33,'#384950');box(door-.055,.69,.11,.31,'#81949b');
   box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM',x+w/2,y+h*.45);ctx.textAlign='left';if(winter)drawWinterEaves(x,y,w,h);
@@ -5530,7 +5587,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.63</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.64</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
