@@ -2470,7 +2470,7 @@ function drawNaturalDetails(ox,oy,w,h){
 function drawContinuousPath(t,x,y,a,b){
  const road=v=>v===T.path||v===T.stone;
  const n=road(terrainNeighbor(a,b,0,-1)),e=road(terrainNeighbor(a,b,1,0)),south=road(terrainNeighbor(a,b,0,1)),w=road(terrainNeighbor(a,b,-1,0));
- const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
+ const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(isVolcanicDistrict(s.area)?'#797775':canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
  const seed=naturalSeed(a,b);
  ctx.save();
  ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
@@ -3345,6 +3345,25 @@ function drawRiceClump(sx,sy,x,y,now){
   }
  }
 }
+// Sparse steam plumes anchored to actual pool cells, clipped away from trails.
+function drawGeothermalSteam(ox,oy,w,h,now){
+ if(!isVolcanicDistrict(s.area))return;
+ const anchors=s.area==='volcanicRoute'?[[8,29],[29,29],[6,31],[31,30]]:[[9,33],[7,34],[10,35]];
+ const still=reducedWorldMotion(),wind=weatherWind();
+ for(const [a,b] of anchors){
+  if(tiles[b]?.[a]!==T.water)continue;
+  const x=(a+.5)*S-ox,y=(b+.5)*S-oy;
+  if(x< -45||x>w+45||y< -20||y>h+75)continue;
+  ctx.save();ctx.beginPath();ctx.rect(x-S*.45,y-S*.48,S*.9,S*.96);ctx.clip();
+  for(let k=0;k<3;k++){
+   const phase=still?.35+k*.2:((now/2200+k/3+(a+b)*.13)%1);
+   const radius=4+phase*8,drift=Math.sin(phase*3+a)*3*wind;
+   ctx.fillStyle='rgba(230,239,222,'+(.17*Math.sin(phase*Math.PI)).toFixed(3)+')';
+   ctx.beginPath();ctx.ellipse(x+drift,y+11-phase*26,radius,radius*.65,0,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+ }
+}
 function drawAtmosphericMotion(ox,oy,w,h,now){
  if(atmosphericIndoor())return;
  const lowX=Math.max(0,Math.floor(ox/S)-1),hiX=Math.min(W,Math.ceil((ox+w)/S)+1);
@@ -3387,6 +3406,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
    ctx.beginPath();ctx.arc(sx+14+gust*1.2,sy+12,11,3.45,5.5);ctx.stroke();
   }
  }
+ drawGeothermalSteam(ox,oy,w,h,now);
  const motes=Math.min(23,Math.ceil(w*h/23000));
  for(let i=0;i<motes;i++){
   const mx=((i*173.1+Math.sin(i*33)*135+now/160*(i%3+1))%(W*S)+W*S)%(W*S)-ox;
@@ -4340,6 +4360,7 @@ function drawSettlementGym(b,ox,oy){
 }
 function expansionGroundColor(area,t){
  const biome=REGIONAL_EXPANSION[area]?.biome;
+ if(isVolcanicDistrict(area))return t===T.path?'#aca398':'#66635f';
  if(!biome)return null;
  const colors={coast:['#b6b98a','#cdb892'],marsh:['#779b71','#b5a787'],canyon:['#b49a70','#cbb58d'],volcanic:['#777772','#aaa394'],snow:['#d5e1dc','#b8c7c9'],highland:['#8da779','#c4b596'],ancient:['#8a9c75','#b6aa92']};
  const c=colors[biome];return t===T.path?c[1]:c[0];
