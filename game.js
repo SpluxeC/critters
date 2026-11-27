@@ -1103,7 +1103,7 @@ EXPLORATION_OBJECTS.push(
 const REGIONAL_EXPEDITIONS=[
  ['coastRoute','harborTown','Coastal Survey','Harbor Surveyor','Tidepool Lookout',11,24,'Potion',120],
  ['marshRoute','marshTown','Wetland Survey','Wetland Surveyor','Reedbed Lookout',19,25,'PP Potion',140],
- ['canyonRoute','canyonTown','Canyon Survey','Mountain Surveyor','Sandstone Overlook',16,23,'Revive',160],
+ ['canyonRoute','canyonTown','Canyon Survey','Mountain Surveyor','Sandstone Overlook',15,22,'Revive',160],
  ['volcanicRoute','volcanicTown','Spring Survey','Spring Surveyor','Mineral Spring Overlook',13,23,'Potion',180],
  ['ashPass','volcanicTown','Ash Pass Survey','Spring Surveyor','Ashen Trail Marker',28,21,'PP Potion',180],
  ['snowRoute','snowTown','Winter Survey','Winter Surveyor','Frozen Lake Overlook',19,26,'Revive',200],
@@ -1164,6 +1164,7 @@ function inspectExplorationObject(o){
   if(seq.length===PUZZLE_RUNES.length){s.puzzles.ruinsOpened=true;s.puzzles.ruinsSequence=[];save();return notifyWorld('The final rune glows. The stone barrier opens!')}
   save();return notifyWorld('The '+o.rune+' rune lights up.');
  }
+ if(o.area==='oldArchive'&&o.kind==='chest'&&!s.puzzles.archiveOpened)return notifyWorld('Solve the archive inscription first.');
  if(s.discoveries[o.id])return notifyWorld('You already collected this cache.');
  return discoverExplorationSite(o);
 }
@@ -1195,6 +1196,7 @@ function prepareExplorationGeometry(){
   if(d.parent==='cave'){rect(16,6,3,8,T.stone);put(...d.returnAt,T.path)}
  }
  for(const o of EXPLORATION_OBJECTS)if(o.area===s.area)put(o.x,o.y,T.path);
+ for(const o of EXPLORATION_SITES)if(o.area===s.area&&o.id.startsWith('regional-'))put(o.x,o.y,T.path);
 }
 function drawExtraExploration(ox,oy){
  for(const [id,d] of Object.entries(SECRET_AREAS))if(d.parent===s.area){
@@ -1216,7 +1218,7 @@ function drawExtraExploration(ox,oy){
    ctx.fillStyle=lit?'#c8ba70':'#53605a';ctx.fillRect(x+6,y+6,20,22);
    ctx.fillStyle=lit?'#fff3a6':'#b5c3ae';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText({sun:'Sun',water:'≈',stone:'◇'}[o.rune],x+16,y+22);ctx.textAlign='left';
   }else{
-   const art=o.kind==='sign'?'ruin-inscription':o.kind==='chest'?interactivePropArt(o.id,'wooden-chest',!!s.discoveries?.[o.id]):o.id==='r2-stump-cache'?'tree-stump':'rubble-02';
+   const art=o.kind==='quest'&&o.id.startsWith('regional-')?'outdoor-signpost-1-120':o.kind==='sign'?'ruin-inscription':o.kind==='chest'?interactivePropArt(o.id,'wooden-chest',!!s.discoveries?.[o.id]):o.id==='r2-stump-cache'?'tree-stump':'rubble-02';
    if(!drawUploadedFit(art,x+2,y+2,S-4,S-4)){ctx.fillStyle='#75634e';ctx.fillRect(x+7,y+10,18,17);ctx.fillStyle='#b39a70';ctx.fillRect(x+7,y+10,18,4)}
    if(o.kind==='chest'&&!s.discoveries?.[o.id]){ctx.fillStyle='#e7cb78';ctx.fillRect(x+14,y+15,4,4)}
   }
@@ -1237,7 +1239,7 @@ function routeSiteArt(kind){
  return {sign:'outdoor-signpost-1-120',notice:'outdoor-noticeboard-1-116',shrine:'outdoor-shrine-3-221',satchel:'outdoor-sack-1-155',chest:'crate'}[kind]||null;
 }
 function explorationGroundArt(id){
- return {'exp-bamboo':'pebbles','exp-forest':'ruin-paving','exp-foothills':'stone-circle','exp-cave':'rubble-01','exp-garden':'ruin-inscription'}[id]||null;
+ return {'regional-coastRoute':'outdoor-rock-1-058','regional-marshRoute':'outdoor-rock-2-084','regional-canyonRoute':'stone-circle','regional-volcanicRoute':'stone-circle','regional-ashPass':'outdoor-rock-3-073','regional-snowRoute':'outdoor-rock-1-058','regional-ancientRoute':'ruin-paving','regional-victoryRoad':'stone-circle','exp-bamboo':'pebbles','exp-forest':'ruin-paving','exp-foothills':'stone-circle','exp-cave':'rubble-01','exp-garden':'ruin-inscription'}[id]||null;
 }
 function environmentalRockArt(area,x,y){
  const seed=naturalSeed(x,y);
@@ -1806,7 +1808,7 @@ function npcStepAllowed(p,x,y,patrol=false,residential=false){
  const doorstep=home&&Math.abs(x-home.x)<=1&&y>=home.y&&y<=home.y+1;
  if((npcReservedCell(s.area,x,y,W,H)&&!doorstep)||solidAt(x,y)||tiles[y]?.[x]===T.door)return false;
  if(s.x===x&&s.y===y||npcs.some(q=>q!==p&&!q.indoors&&((q.x===x&&q.y===y)||(q.walking&&q.fromX===x&&q.fromY===y)||(q.homeX===x&&q.homeY===y))))return false;
- if(explorationSiteAt(s.area,x,y))return false;
+ if(explorationSiteAt(s.area,x,y)||explorationObjectAt(s.area,x,y)||secretEntranceAt(s.area,x,y))return false;
  if(!patrol&&tiles[y]?.[x]===T.path&&y>=12&&y<=14&&OUTDOOR_GRID[s.area]&&!(x===p.homeX&&y===p.homeY))return false;
  return true;
 }
