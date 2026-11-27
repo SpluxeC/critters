@@ -1352,6 +1352,18 @@ button:focus-visible{outline:2px solid #f6db91;outline-offset:2px}
 #game #world{inset:0!important;height:100%!important;width:100%!important}
 #game .dialog{background:linear-gradient(100deg,#253d55,#2f575a)!important;box-shadow:0 -3px 12px #0004}
 #shade .regionMapScroll{max-width:100%;overflow-x:auto;overflow-y:hidden;padding-bottom:8px;touch-action:pan-x;overscroll-behavior-x:contain}#shade .expandedRegionMap{width:1800px;min-width:1800px;aspect-ratio:1800/560}#shade .expandedRegionMap .regionMapPinName{font-size:11px;max-width:112px}#shade .expandedRegionMap .regionMapPin{min-width:60px}
+
+/* Phase 6: regional terrain placeholders behind battle participants. */
+.combatArena.biome-coast {background:linear-gradient(#86b9c8 0%,#d7e5d7 43%,#559cac 44%,#8fbab2 59%,#c8b697 60%,#94836d 100%)}
+.combatArena.biome-marsh {background:linear-gradient(#a4b4a7 0%,#718b72 44%,#577b70 45%,#789278 62%,#6a7552 63%,#435841 100%)}
+.combatArena.biome-canyon {background:linear-gradient(#aebac4 0%,#d4b49a 38%,#a76f53 39%,#be9878 60%,#9a765d 61%,#705346 100%)}
+.combatArena.biome-volcanic {background:linear-gradient(#9e9190 0%,#69585b 43%,#524547 44%,#78605a 61%,#574843 62%,#383334 100%)}
+.combatArena.biome-snow {background:linear-gradient(#a9c9dc 0%,#e0edf2 44%,#b5cbd7 45%,#f0f3f3 62%,#c8d6dd 63%,#91a7b6 100%)}
+.combatArena.biome-ancient {background:linear-gradient(#a5b8ac 0%,#8b9980 43%,#777b70 44%,#aaa38c 61%,#8d8a74 62%,#5c6254 100%)}
+.combatArena.biome-highland {background:linear-gradient(#9abbd0 0%,#829b9b 43%,#658478 44%,#9bad8b 61%,#78876a 62%,#4d6452 100%)}
+.combatArena[class*="biome-"] .sceneryCloud {opacity:.45}
+.combatArena.biome-canyon .sceneryTree,.combatArena.biome-volcanic .sceneryTree,.combatArena.biome-snow .sceneryTree {opacity:.15}
+.combatArena[class*="biome-"].phase-night {background-image:linear-gradient(#25354a99,#101c2c77),var(--regional-night-fallback,linear-gradient(#64798b,#414d4d))}
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1373,4 +1385,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=1.53-special-sites" defer></script></body></html>
+<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=1.54-world-integration" defer></script></body></html>
