@@ -1461,7 +1461,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=98-gender-ratios',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=152-expanded-habitats',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -1587,6 +1587,7 @@ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
 function rect(x,y,w,h,t){for(let a=x;a<x+w;a++)for(let b=y;b<y+h;b++)put(a,b,t)}
 // Live routines are transient, local to the active area, and never written to saves.
 // Explicit anchors preserve story roles when actors move.
+const EXPANSION_TRAINERS=Object.freeze({"exp-coastRoute-1":{"area":"coastRoute","name":"Coastal Scout","levels":[17,18],"types":["Water","Flying"],"award":90,"patrol":true,"doubles":false},"exp-coastRoute-2":{"area":"coastRoute","name":"Traveling Trainer","levels":[19,20],"types":["Water","Flying"],"award":105,"patrol":false,"doubles":false},"exp-marshRoute-1":{"area":"marshRoute","name":"Wetland Ranger","levels":[20,21],"types":["Venom","Water","Grass"],"award":115,"patrol":true,"doubles":false},"exp-marshRoute-2":{"area":"marshRoute","name":"Traveling Trainer","levels":[22,23],"types":["Venom","Water","Grass"],"award":130,"patrol":false,"doubles":false},"exp-canyonRoute-1":{"area":"canyonRoute","name":"Canyon Hiker","levels":[24,25,26],"types":["Rock","Ground","Steel","Fighting"],"award":140,"patrol":true,"doubles":false},"exp-canyonRoute-2":{"area":"canyonRoute","name":"Traveling Trainer","levels":[26,27,28],"types":["Rock","Ground","Steel","Fighting"],"award":155,"patrol":false,"doubles":true},"exp-volcanicRoute-1":{"area":"volcanicRoute","name":"Trail Surveyor","levels":[28,29,30],"types":["Fire","Ground","Rock"],"award":165,"patrol":true,"doubles":false},"exp-volcanicRoute-2":{"area":"volcanicRoute","name":"Traveling Trainer","levels":[30,31,32],"types":["Fire","Ground","Rock"],"award":180,"patrol":false,"doubles":false},"exp-ashPass-1":{"area":"ashPass","name":"Ash Pass Explorer","levels":[32,33,34],"types":["Fire","Shadow","Steel"],"award":190,"patrol":true,"doubles":false},"exp-ashPass-2":{"area":"ashPass","name":"Traveling Trainer","levels":[34,35,36],"types":["Fire","Shadow","Steel"],"award":205,"patrol":false,"doubles":false},"exp-snowRoute-1":{"area":"snowRoute","name":"Snowfield Guide","levels":[36,37,38,39],"types":["Ice","Steel"],"award":215,"patrol":true,"doubles":false},"exp-snowRoute-2":{"area":"snowRoute","name":"Traveling Trainer","levels":[38,39,40,41],"types":["Ice","Steel"],"award":230,"patrol":false,"doubles":true},"exp-ancientRoute-1":{"area":"ancientRoute","name":"Ruin Explorer","levels":[40,41,42,43],"types":["Ghost","Psychic","Rock"],"award":240,"patrol":true,"doubles":false},"exp-ancientRoute-2":{"area":"ancientRoute","name":"Traveling Trainer","levels":[42,43,44,45],"types":["Ghost","Psychic","Rock"],"award":255,"patrol":false,"doubles":false},"exp-victoryRoad-1":{"area":"victoryRoad","name":"Veteran Challenger","levels":[44,45,46,47],"types":["Fighting","Steel","Ground","Flying","Electric","Rock"],"award":265,"patrol":true,"doubles":false},"exp-victoryRoad-2":{"area":"victoryRoad","name":"Traveling Trainer","levels":[46,47,48,49],"types":["Fighting","Steel","Ground","Flying","Electric","Rock"],"award":280,"patrol":false,"doubles":false}});
 const NPC_PATROLS={rt2:[[24,13],[28,13]],rt3:[[12,13],[8,13]]};
 const NPC_STATIONARY=new Set(['leader','switch','property-sign','gymtrainer','rival']);
 // Living world: keep essential staff and story actors available throughout the day.
@@ -1599,6 +1600,7 @@ function npcRoutineDialogue(p){
 // Residential schedules only apply to ambient residents with known building entrances.
 // Story, quest and service NPCs never leave their assigned area.
 function npcResidence(area,p){
+ if(p.residence)return p.residence;
  if(p.kind)return null;
  if(area==='village')return {x:27,y:23,doorY:22,interior:'neighbor'};
  if(area==='town'&&p.homeX===9&&p.homeY===12)return {x:8,y:12,doorY:11};
@@ -1639,7 +1641,9 @@ function tickNpcResidence(p,now){
 }
 function npcRoutinePlan(area,p,hour,starter){
  const x=p.homeX,y=p.homeY;
- if(NPC_PATROLS[p.id])return {task:'Patrolling',points:NPC_PATROLS[p.id],patrol:true};
+ if(p.patrol||NPC_PATROLS[p.id])return {task:'Patrolling',points:p.patrol||NPC_PATROLS[p.id],patrol:true};
+ if(p.kind==='center'||p.kind==='shop'||p.kind==='gym-attendant')return {task:p.kind==='center'?'Checking equipment':p.kind==='shop'?'Organizing supplies':'Observing',points:[[x,y]],radius:1};
+ if(p.workPoints)return {task:hour<5||hour>=20?'Observing':'Working',points:hour<5||hour>=20?[[x,y]]:p.workPoints,radius:5};
  if(NPC_STATIONARY.has(p.kind)||p.kind==='routetrainer'||(p.kind==='researcher'&&!starter))return null;
  if(area==='garden'&&x===25&&y===11)return null;
  const night=hour<5||hour>=20,morning=hour<8,evening=hour>=17;
@@ -1746,7 +1750,7 @@ function tickTrainerApproach(now){
 function checkTrainerSight(){
  if(trainerApproach||!s.introComplete||modal||battle||narratorBlocking()||worldTransitionBusy||doorTransition||firstAlive()<0)return false;
  for(const p of npcs){
-  if(!NPC_PATROLS[p.id]||s.defeated[p.id]||p.walking||performance.now()<(p.pauseUntil||0))continue;
+  if(!(NPC_PATROLS[p.id]||p.patrol||EXPANSION_TRAINERS[p.id])||s.defeated[p.id]||p.walking||performance.now()<(p.pauseUntil||0))continue;
   if(!trainerSeesPlayer(p,s.x,s.y,4,(x,y)=>solidAt(x,y)||npcs.some(q=>q!==p&&(q.x===x&&q.y===y||q.walking&&q.fromX===x&&q.fromY===y))))continue;
   return beginTrainerApproach(p);
  }
@@ -3950,6 +3954,48 @@ function buildExpansionArea(area){
   if(side==='down')rect(a,cy-1,b-a+1,H-cy+1,T.path);
  }
  if(SETTLEMENT_PLANS[area])buildSettlement(area);
+ if(typeof populateExpansionArea==='function')populateExpansionArea(area);
+}
+// Authored population is built before scenery so yards avoid NPC home cells.
+function populateExpansionArea(area){
+ const d=REGIONAL_EXPANSION[area];if(!d)return;
+ const open=(x,y)=>x>=2&&y>=2&&x<W-2&&y<H-2&&[T.grass,T.path,T.stone,T.tall,T.flower].includes(tiles[y]?.[x])&&!npcs.some(p=>p.x===x&&p.y===y)&&!settlementPublicProps(area).some(o=>yardContains(o,x,y))&&!settlementLots(area).some(b=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h+2);
+ function add(x,y,lines,kind,id,extra={}){
+  if(!open(x,y))return null;
+  npc(x,y,lines,kind,id);const p=npcs[npcs.length-1];Object.assign(p,extra);return p;
+ }
+ if(SETTLEMENT_PLANS[area]){
+  const lots=settlementLots(area);
+  for(const [i,b] of lots.filter(b=>b.kind==='home').entries()){
+   const home={x:b.door,y:b.y+b.h+2,doorY:b.y+b.h+1,interior:b.id};
+   const points=[[b.door-2,home.y+1],[b.door+2,home.y+1],[b.door-2,home.y],[b.door+2,home.y]];
+   for(const [x,y] of points)if(add(x,y,['I live nearby. The local paths are lovely in the morning.'],'',area+'-resident-'+i,{residence:home}))break;
+  }
+  const [px,py]=SETTLEMENT_PLANS[area].public;
+  for(const [x,y] of [[px-6,py],[px+6,py],[px-2,py-3]])if(add(x,y,['I help look after the public gardens. Please leave the paths clear.'],'groundskeeper',area+'-keeper',{workPoints:[[x,y],[x,y-1],[x+1,y]]}))break;
+  for(const [x,y] of [[15,10],[21,16],[15,23]])if(add(x,y,['The Critter Center is available for healing and Index maintenance.'],'guide',area+'-guide'))break;
+  for(const [x,y] of [[21,10],[15,18],[21,23]])if(add(x,y,['I am traveling through the region. There is always another route to discover.'],'',area+'-traveler'))break;
+  return;
+ }
+ const trainers=Object.entries(EXPANSION_TRAINERS).filter(([id,p])=>p.area===area);
+ if(!trainers.length)return; // Keep special story sites unpopulated until phase 5.
+ // Two deliberately separate encounter positions, away from the central portal junction.
+ for(const [i,[id,t]] of trainers.entries()){
+  const candidates=i===0?[[8,13],[10,13],[8,21]]:[[23,21],[25,13],[20,21]];
+  for(const [x,y] of candidates){
+   const p=add(x,y,['I have been training with the local Critters. Ready for a battle?'],'routetrainer',id,{face:i===0?'right':'left'});
+   if(!p)continue;
+   if(t.patrol){const end=[[x+3,y],[x,y+3],[x-3,y]].find(([xx,yy])=>open(xx,yy)&&[T.path,T.stone].includes(tiles[yy]?.[xx]));if(end)p.patrol=[[x,y],end]}
+   break;
+  }
+ }
+ const guide={coast:'Watch the shoreline. Wild Critters gather in the long grass near the coast.',marsh:'The wetland pools are home to many different Critters.',canyon:'Keep to the paths between the cliffs.',volcanic:'The rocky trails can be harsh. Keep your party healthy.',snow:'Snow and cold weather change the landscape.',ancient:'Old trails wind through the ruins. Take care of the surroundings.',highland:'This trail attracts experienced challengers.'}[d.biome]||'Stay on the trail.';
+ for(const [x,y] of [[6,16],[12,18],[21,16]])if(add(x,y,[guide],'guide',area+'-guide'))break;
+ // Discrete habitat patches off the roads; never overwrite water, stone paths or buildings.
+ for(const [bx,by] of [[5,5],[W-12,5],[5,H-13],[W-13,H-14],[23,18]]){
+  for(let y=by;y<by+5;y++)for(let x=bx;x<bx+6;x++)
+   if(open(x,y)&&tiles[y][x]===T.grass&&naturalSeed(x+by,y+bx)%5!==0)put(x,y,T.tall);
+ }
 }
 function settlementPublicProps(area){
  const p=SETTLEMENT_PLANS[area];if(!p)return [];
@@ -4365,7 +4411,7 @@ function move(d){
  
  const exploration=explorationSiteAt(s.area,s.x,s.y);
  if(exploration&&discoverExplorationSite(exploration))return;
- if((['route1','route2','route3','forest','cave','grotto','cavern'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower)&&s.introComplete){
+ if((['route1','route2','route3','forest','cave','grotto','cavern'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower||REGIONAL_EXPANSION[s.area]&&WILD_AREA_BALANCE[s.area]&&t===T.tall)&&s.introComplete){
  const first=s.area==='route1'&&!s.earlyJourney?.firstEncounter;
  if(first){s.earlyJourney=s.earlyJourney||{};s.earlyJourney.fieldSteps=(s.earlyJourney.fieldSteps||0)+1}
  // Roll independently on each eligible wild tile. Retain the first Route 1
@@ -4987,7 +5033,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.51</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.52</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -5314,7 +5360,7 @@ function indexMoves(){
 
 // The 200-species library is a view of the live registry, not a hard-coded
 // duplicate. Names, artwork, habitat and learnsets update from critters.json.
-const CRITTER_AREA_LABELS={all:'All areas',route1:'Route 1 · Rice Fields',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town Outskirts'};
+const CRITTER_AREA_LABELS={...Object.fromEntries(Object.entries(REGIONAL_EXPANSION).map(([id,d])=>[id,d.name])),all:'All areas',route1:'Route 1 · Rice Fields',route2:'Route 2 · Bamboo Forest',forest:'Hidden Forest',route3:'Route 3 · Foothills',cave:'Mountain Cave',garden:'Garden Town Outskirts'};
 const LIBRARY_PAGE_SIZE=16;
 function critterArtwork(sp){
  const artwork=critterSpriteTag(sp,'speciesPortrait');
@@ -5628,7 +5674,15 @@ const WILD_AREA_BALANCE={
  forest:{stepRate:.105,levels:[7,14],weights:{common:12,uncommon:5,rare:1.35,legendary:.025},novelty:1.55},
  route3:{stepRate:.10,levels:[10,18],weights:{common:12,uncommon:5.5,rare:1.5,legendary:.03},novelty:1.45},
  garden:{stepRate:.08,levels:[12,20],weights:{common:14,uncommon:4.5,rare:1.25,legendary:0},novelty:1.5},
- cave:{stepRate:.11,levels:[15,22],weights:{common:11,uncommon:5.5,rare:1.8,legendary:.04},novelty:1.4}
+ cave:{stepRate:.11,levels:[15,22],weights:{common:11,uncommon:5.5,rare:1.8,legendary:.04},novelty:1.4},
+ coastRoute:{stepRate:.085,levels:[17,23],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35},
+ marshRoute:{stepRate:.085,levels:[20,27],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35},
+ canyonRoute:{stepRate:.085,levels:[24,31],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35},
+ volcanicRoute:{stepRate:.085,levels:[28,35],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35},
+ ashPass:{stepRate:.085,levels:[32,39],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35},
+ snowRoute:{stepRate:.085,levels:[36,43],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35},
+ ancientRoute:{stepRate:.085,levels:[40,47],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35},
+ victoryRoad:{stepRate:.085,levels:[44,52],weights:{common:13,uncommon:5,rare:1.1,legendary:0},novelty:1.35}
 };
 function activeWildLevelRange(area){
  const config=WILD_AREA_BALANCE[area];
@@ -5688,7 +5742,7 @@ function chooseWildSpecies(area,roll=Math.random()){
  for(let i=pool.length-1;i>=0;i--)if(weights[i]>0)return pool[i];return null;
 }
 function wildEncounterChance(area){return WILD_AREA_BALANCE[SECRET_AREAS[area]?.parent||area]?.stepRate||0}
-function areaTypes(){return {route1:['Grass','Water','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Shadow'],route3:['Rock','Electric','Fighting'],cave:['Rock','Ghost','Ice'],garden:['Grass','Water','Psychic']}[s.area]||['Grass']}
+function areaTypes(){return {coastRoute:["Water","Flying"],marshRoute:["Venom","Water","Grass"],canyonRoute:["Rock","Ground","Steel","Fighting"],volcanicRoute:["Fire","Ground","Rock"],ashPass:["Fire","Shadow","Steel"],snowRoute:["Ice","Steel"],ancientRoute:["Ghost","Psychic","Rock"],victoryRoad:["Fighting","Steel","Ground","Flying","Electric","Rock"],route1:['Grass','Water','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Shadow'],route3:['Rock','Electric','Fighting'],cave:['Rock','Ghost','Ice'],garden:['Grass','Water','Psychic']}[s.area]||['Grass']}
 function startWild(){
  if(firstAlive()<0)return blackout();
  s.wildStepsSinceEncounter=0;
@@ -5729,11 +5783,13 @@ function rivalPartnerAtLevel(level){
 }
 function startTrainer(id){
  if(firstAlive()<0)return blackout();
- const area=id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden';
+ const expansion=EXPANSION_TRAINERS[id];
+ const area=expansion?.area||(id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden');
  const used=new Set();
  const make=(t,l)=>trainerSpecies(t,l,area,id,used.size,used);
  let enemies,name,award,kind='trainer';
- if(id==='tutorial'){enemies=[rivalPartnerAtLevel(5)];name='Childhood Rival';award=0;kind='tutorial'}
+ if(expansion){const up=s.defeated[id]?2:0;enemies=expansion.levels.map((l,i)=>make(expansion.types[i%expansion.types.length],l+up));name=expansion.name;award=expansion.award;}
+ else if(id==='tutorial'){enemies=[rivalPartnerAtLevel(5)];name='Childhood Rival';award=0;kind='tutorial'}
  else if(id==='rival'){enemies=[rivalPartnerAtLevel(12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='quest-garden'){if(s.sideQuests?.['garden-challenge']?.status!=='active'||s.sideQuests['garden-challenge'].won)return;enemies=[make('Grass',10),make('Water',11)];name='Garden Caretaker';award=0}
  else if(id==='leader'){enemies=[make('Grass',13),make('Grass',15),make('Grass',16),make('Grass',18)];name='Grass Gym Leader';award=180}
@@ -5749,7 +5805,7 @@ const BATTLE_AREAS=['village','route1','town','route2','forest','route3','cave',
 const BATTLE_AREA_LABELS={village:'Starting Village',route1:'Rice Fields',town:'First Town',route2:'Bamboo Trail',forest:'Hidden Forest',route3:'Mountain Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home'};
 function battleEnvironment(){
  const sourceArea=SECRET_AREAS[s.area]?.parent||s.area;
- const area=BATTLE_AREAS.includes(sourceArea)?sourceArea:'route1';
+ const area=BATTLE_AREAS.includes(sourceArea)||REGIONAL_EXPANSION[sourceArea]?sourceArea:'route1';
  const tile=tiles?.[s.y]?.[s.x];
  const terrain=tile===T.rice?'rice':tile===T.tall?'grass':tile===T.stone?'stone':tile===T.flower?'flowers':tile===T.path?'path':tile===T.water?'water':'field';
  return {area,terrain,phase:worldPhase()};
@@ -5760,7 +5816,7 @@ function startBattle(data,msg){
  fadeWorldChange(()=>beginBattleAfterFade(data,msg));
 }
 function beginBattleAfterFade(data,msg){
- const doubles=data.kind==='trainer'&&['rt2','rt3'].includes(data.id)&&s.party.filter(p=>!isEgg(p)&&p.hp>0).length>=2&&data.enemies.length>=2;
+ const doubles=data.kind==='trainer'&&(['rt2','rt3'].includes(data.id)||EXPANSION_TRAINERS[data.id]?.doubles)&&s.party.filter(p=>!isEgg(p)&&p.hp>0).length>=2&&data.enemies.length>=2;
  const allySlots=s.party.map((p,i)=>!isEgg(p)&&p.hp>0?i:-1).filter(i=>i>=0).slice(0,doubles?2:1);
  data.enemies.forEach(p=>{normalizeMoves(refreshSpeciesMetadata(p));noteCritterSeen(p)});
  if(data.kind==='wild'&&s.area==='route1')noteOpeningEvent('firstEncounter');
@@ -5850,7 +5906,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||'Wildlands')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||REGIONAL_EXPANSION[scene.area]?.name||'Wildlands')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">'+battleTrainerPortrait(battle.id)+'OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+(battle.mode===2?' arena-doubles':'')+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
