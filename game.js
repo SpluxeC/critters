@@ -814,7 +814,13 @@ function townDoorAt(x,y){return Object.entries(TOWN_ROOMS).find(([id,d])=>d.pare
 // Phase 12.1: shared challenge registry. Only approved, fully authored gyms activate.
 const GYM_CHALLENGES=Object.freeze([
  {id:'grass',room:'gym',town:'garden',number:1,type:'Grass',active:true,trainerIds:['g1','g2','g3'],leaderId:'leader',puzzle:'gate'},
- ...['harborTown','marshTown','canyonTown','volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+2,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
+ {id:'harborTown',room:'harborTownGym',town:'harborTown',number:2,type:'Water',active:true,badgeName:'Tide Badge',trainerIds:['harbor-g1','harbor-g2','harbor-g3'],leaderId:'water-leader',puzzle:'tide-valves',
+ trainers:[
+ {id:'harbor-g1',name:'Harbor Deckhand',x:8,y:17,award:110,team:[{speciesId:'cr-069-streamink',level:17},{speciesId:'cr-125-zephip',level:18}],dialogue:['Let us see how you handle the coastal currents.']},
+ {id:'harbor-g2',name:'Tide Keeper',x:22,y:17,award:125,team:[{speciesId:'cr-072-miasmoth',level:18},{speciesId:'cr-175-marshling',level:19}],dialogue:['A steady team can weather any tide.']},
+ {id:'harbor-g3',name:'Harbor Navigator',x:15,y:12,award:140,team:[{speciesId:'cr-168-astralkip',level:19},{speciesId:'cr-069-streamink',level:20}],dialogue:['Keep your balance and plan your next move.']}
+ ],leader:{id:'water-leader',name:'Harbor Gym Leader',x:15,y:6,award:260,team:[{speciesId:'cr-069-streamink',level:21},{speciesId:'cr-175-marshling',level:22},{speciesId:'cr-163-thundrill',level:23}],dialogue:['A strong trainer adapts like water.']}},
+ ...['marshTown','canyonTown','volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+3,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
 ]);
 function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
 function gymTrainerDefinition(id){
@@ -966,6 +972,7 @@ function furnishExpansionRoom(area,add){
  }
 }
 function furnishExpansionGym(area,add){
+ if(area==='harborTownGym'){furnishHarborGym(add);return;}
  const theme=expansionInteriorTheme(area),gym=theme.gym;
  // Practice hall fixtures are deliberately non-battling, with unobstructed
  // entrance, middle aisle, arena and attendant access.
@@ -977,6 +984,31 @@ function furnishExpansionGym(area,add){
  const layout={court:[[4,11],[24,11]],ring:[[5,9],[23,9],[5,15],[23,15]],terrace:[[4,8],[24,8],[7,15],[21,15]],split:[[4,10],[24,10],[4,14],[24,14]],gallery:[[3,8],[25,8],[3,13],[25,13]],lanes:[[7,8],[21,8],[7,15],[21,15]],pillars:[[5,8],[23,8],[5,13],[23,13],[5,17],[23,17]]};
  for(const [i,[x,y]] of layout[gym].entries())item('fixture'+i,x,y,2,2,'display','Practice Marker','critter-center-wall-column-060');
  item('notice',13,4,4,1,'board','Practice Hall Notice','wall-banner');
+}
+function furnishHarborGym(add){
+ for(const x of [3,24]){const o=add('bench'+x,x,20,3,2,'table','Waiting Bench','A place to prepare.');o.art='gym-bench-01';}
+ const notice=add('tideNotice',13,4,4,1,'board','Tide Instructions','Defeat all three trainers, then operate the west, east and central valves in that order.');notice.art='wall-banner';
+ for(const [id,x,y] of [['west',5,15],['east',24,15],['central',14,10]]){
+  const o=add('valve-'+id,x,y,1,1,'terminal','Tide Valve — '+id,'Controls the training pool.','harbor-valve-'+id);o.art='critter-center-diagnostic-terminal-015';
+ }
+}
+function harborGymGeometry(){
+ // Water channels surround a central bridge and two side lanes.
+ rect(3,8,9,6,T.water);rect(18,8,9,6,T.water);
+ rect(3,9,9,2,T.water);rect(18,9,9,2,T.water);
+ rect(6,8,3,6,T.path);rect(21,8,3,6,T.path);
+ if(!s.gymProgress?.puzzles?.harborTown&&!gymEarned(gymChallenge('harborTown')))rect(1,8,W-2,1,T.water);
+}
+function operateHarborValve(id){
+ const g=gymChallenge('harborTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.harborTown)return notifyWorld('The tide gates are already open.');
+ if(!gymEarned(gymChallenge('grass'))||g.trainerIds.some(t=>!s.defeated?.[t]))return notifyWorld('Earn the Grass badge and defeat all three Harbor Gym trainers first.');
+ normalizeGymProgress(s);
+ const seq=s.gymProgress.harborSequence||[],order=['west','east','central'];
+ if(order[seq.length]!==id){s.gymProgress.harborSequence=[];save();return notifyWorld('The valves reset. West, east, then central.');}
+ s.gymProgress.harborSequence=[...seq,id];
+ if(seq.length===2){completeGymPuzzle(g);s.gymProgress.harborSequence=[];build();save();return notifyWorld('The tide gates open. The Gym Leader is now accessible!');}
+ save();return notifyWorld('Valve activated. '+(seq.length+1)+'/3.');
 }
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
@@ -1082,6 +1114,7 @@ function furnishInterior(area){
 }
 function inspectInterior(o){
  startPropAnimation(o.id,interactivePropBase(o));
+ if(o.action?.startsWith('harbor-valve-'))return operateHarborValve(o.action.slice(13));
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -2089,7 +2122,7 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym')populateGymChallenge(s.area);
+  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();populateGymChallenge(s.area);}
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -3514,6 +3547,12 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  ctx.strokeRect(X(9),Y(9),12*S,8*S);
  ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
  ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
+ if(s.area==='harborTownGym'){
+  for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
+   if(tiles[y][x]===T.water){box(x,y,1,1,'#367c91');box(x+.12,y+.22,.7,.06,'#8dc5c8');}
+   else if(tiles[y][x]===T.path){box(x,y,1,1,'#b5a17d');for(let k=0;k<4;k++)box(x,y+k*.25,1,.035,'#78664c');}
+  }
+ }
  connectedInteriorWalls(ox,oy,theme.wall,theme.trim,roomExit(s.area)[0]);
  for(const x of [3,W-7])drawUploadedFit('critter-center-window-wall-061',X(x),Y(.5),4*S,2.4*S);
  for(const x of [9,W-11])drawUploadedFit('wall-banner',X(x),Y(.5),2*S,2*S);
@@ -5945,7 +5984,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.70</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.71</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7624,7 +7663,7 @@ function endBattle(won,message,defeated){
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)})}
  else if(defeated&&won){s.money+=b.award||0;if(b.id==='quest-garden'&&s.sideQuests?.['garden-challenge']?.status==='active')s.sideQuests['garden-challenge'].won=true;else if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   const g=GYM_CHALLENGES.find(g=>g.active&&g.leaderId===b.id);
-  if(g&&awardGymBadge(g)){message+=g.number===1?' You earned your first badge! The Critter Index vegetation cutter is now unlocked.':' You earned regional badge '+g.number+'!';}
+  if(g&&awardGymBadge(g)){message+=g.number===1?' You earned your first badge! The Critter Index vegetation cutter is now unlocked.':' You earned the '+(g.badgeName||'regional badge '+g.number)+'!';}
  }
  else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});s.area='town';s.x=17;s.y=15;build()}
  const evolveMessages=evolutionNotification();
