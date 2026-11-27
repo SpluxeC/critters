@@ -1589,7 +1589,7 @@ function rect(x,y,w,h,t){for(let a=x;a<x+w;a++)for(let b=y;b<y+h;b++)put(a,b,t)}
 // Explicit anchors preserve story roles when actors move.
 const EXPANSION_TRAINERS=Object.freeze({"exp-coastRoute-1":{"area":"coastRoute","name":"Coastal Scout","levels":[17,18],"types":["Water","Flying"],"award":90,"patrol":true,"doubles":false},"exp-coastRoute-2":{"area":"coastRoute","name":"Traveling Trainer","levels":[19,20],"types":["Water","Flying"],"award":105,"patrol":false,"doubles":false},"exp-marshRoute-1":{"area":"marshRoute","name":"Wetland Ranger","levels":[20,21],"types":["Venom","Water","Grass"],"award":115,"patrol":true,"doubles":false},"exp-marshRoute-2":{"area":"marshRoute","name":"Traveling Trainer","levels":[22,23],"types":["Venom","Water","Grass"],"award":130,"patrol":false,"doubles":false},"exp-canyonRoute-1":{"area":"canyonRoute","name":"Canyon Hiker","levels":[24,25,26],"types":["Rock","Ground","Steel","Fighting"],"award":140,"patrol":true,"doubles":false},"exp-canyonRoute-2":{"area":"canyonRoute","name":"Traveling Trainer","levels":[26,27,28],"types":["Rock","Ground","Steel","Fighting"],"award":155,"patrol":false,"doubles":true},"exp-volcanicRoute-1":{"area":"volcanicRoute","name":"Trail Surveyor","levels":[28,29,30],"types":["Fire","Ground","Rock"],"award":165,"patrol":true,"doubles":false},"exp-volcanicRoute-2":{"area":"volcanicRoute","name":"Traveling Trainer","levels":[30,31,32],"types":["Fire","Ground","Rock"],"award":180,"patrol":false,"doubles":false},"exp-ashPass-1":{"area":"ashPass","name":"Ash Pass Explorer","levels":[32,33,34],"types":["Fire","Shadow","Steel"],"award":190,"patrol":true,"doubles":false},"exp-ashPass-2":{"area":"ashPass","name":"Traveling Trainer","levels":[34,35,36],"types":["Fire","Shadow","Steel"],"award":205,"patrol":false,"doubles":false},"exp-snowRoute-1":{"area":"snowRoute","name":"Snowfield Guide","levels":[36,37,38,39],"types":["Ice","Steel"],"award":215,"patrol":true,"doubles":false},"exp-snowRoute-2":{"area":"snowRoute","name":"Traveling Trainer","levels":[38,39,40,41],"types":["Ice","Steel"],"award":230,"patrol":false,"doubles":true},"exp-ancientRoute-1":{"area":"ancientRoute","name":"Ruin Explorer","levels":[40,41,42,43],"types":["Ghost","Psychic","Rock"],"award":240,"patrol":true,"doubles":false},"exp-ancientRoute-2":{"area":"ancientRoute","name":"Traveling Trainer","levels":[42,43,44,45],"types":["Ghost","Psychic","Rock"],"award":255,"patrol":false,"doubles":false},"exp-victoryRoad-1":{"area":"victoryRoad","name":"Veteran Challenger","levels":[44,45,46,47],"types":["Fighting","Steel","Ground","Flying","Electric","Rock"],"award":265,"patrol":true,"doubles":false},"exp-victoryRoad-2":{"area":"victoryRoad","name":"Traveling Trainer","levels":[46,47,48,49],"types":["Fighting","Steel","Ground","Flying","Electric","Rock"],"award":280,"patrol":false,"doubles":false}});
 const NPC_PATROLS={rt2:[[24,13],[28,13]],rt3:[[12,13],[8,13]]};
-const NPC_STATIONARY=new Set(['leader','switch','property-sign','gymtrainer','rival']);
+const NPC_STATIONARY=new Set(['leader','switch','property-sign','gymtrainer','rival','site-attendant']);
 // Living world: keep essential staff and story actors available throughout the day.
 function shopIsOpen(hour=worldHour()){return hour>=7&&hour<20}
 function npcRoutineDialogue(p){
@@ -3957,6 +3957,45 @@ function buildExpansionArea(area){
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
+// Phase 5: special-site geography and neutral, non-battling attendants.
+// No story progression, legendary species assignment or capture rules are authored here.
+function buildSpecialStorySite(area){
+ const plans={
+  leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
+  eclipseSite:{kind:'facility',actors:[[12,18,'Survey worker: The facility entrance is closed. Please remain on the public grounds.']]},
+  legendaryReserveA:{kind:'coast',actors:[[12,18,'Coastal observer: Please leave the sanctuary undisturbed. The shoreline is open for quiet exploration.']]},
+  legendaryReserveB:{kind:'marsh',actors:[[12,18,'Wetland observer: Keep to the raised paths around the pools.']]},
+  legendaryReserveC:{kind:'volcanic',actors:[[12,18,'Trail observer: Follow the stone-lined paths around the clearing.']]}
+ };
+ const plan=plans[area];if(!plan)return false;
+ // Keep the main junction, all map portals and their three-wide corridors intact.
+ if(plan.kind==='league'||plan.kind==='facility'){
+  rect(8,4,9,5,T.roof);rect(8,9,9,2,T.wall);
+  rect(22,4,9,5,T.roof);rect(22,9,9,2,T.wall);
+  rect(9,18,23,10,T.grass);
+  rect(16,16,5,13,T.path);
+  rect(10,20,6,6,T.stone);rect(21,20,10,6,T.stone);
+  if(plan.kind==='league'){
+   rect(12,22,2,2,T.flower);rect(27,22,2,2,T.flower);
+  }else{
+   rect(11,23,3,2,T.rock);rect(27,23,3,2,T.rock);
+  }
+ }else{
+  rect(10,17,17,12,T.grass);
+  rect(16,13,5,15,T.path);
+  rect(11,19,15,2,T.path);rect(11,26,15,2,T.path);
+  rect(11,19,2,9,T.path);rect(24,19,2,9,T.path);
+  // A quiet central feature, with the central path and loop remaining open.
+  const feature=plan.kind==='volcanic'?T.rock:plan.kind==='marsh'?T.water:T.flower;
+  rect(13,22,2,3,feature);rect(22,22,2,3,feature);
+ }
+ // Actors are on grass beside walkways, never on portal or main path cells.
+ for(const [x,y,line] of plan.actors){
+  put(x,y,T.grass);
+  npc(x,y,[line],'site-attendant',area+'-attendant-'+x);
+ }
+ return true;
+}
 function populateExpansionArea(area){
  const d=REGIONAL_EXPANSION[area];if(!d)return;
  const open=(x,y)=>x>=2&&y>=2&&x<W-2&&y<H-2&&[T.grass,T.path,T.stone,T.tall,T.flower].includes(tiles[y]?.[x])&&!npcs.some(p=>p.x===x&&p.y===y)&&!settlementPublicProps(area).some(o=>yardContains(o,x,y))&&!settlementLots(area).some(b=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h+2);
@@ -3978,7 +4017,7 @@ function populateExpansionArea(area){
   return;
  }
  const trainers=Object.entries(EXPANSION_TRAINERS).filter(([id,p])=>p.area===area);
- if(!trainers.length)return; // Keep special story sites unpopulated until phase 5.
+ if(!trainers.length){buildSpecialStorySite(area);return;}
  // Two deliberately separate encounter positions, away from the central portal junction.
  for(const [i,[id,t]] of trainers.entries()){
   const candidates=i===0?[[8,13],[10,13],[8,21]]:[[23,21],[25,13],[20,21]];
@@ -5033,7 +5072,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.52</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.53</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
