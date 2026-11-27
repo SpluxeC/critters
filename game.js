@@ -4402,7 +4402,7 @@ function region(area,x,y,textLine='',forceFade=false){
  const origin=outdoorOrigin(previous);
  const beginX=old?origin.x+visual.x:null,beginY=old?origin.y+visual.y:null;
  const change=()=>{
-  doorTransition=null;s.area=area;s.x=x;s.y=y;ensureMapDiscovery();build();save();
+  doorTransition=null;s.area=area;s.x=x;s.y=y;if(forceFade)s.face='up';ensureMapDiscovery();build();save();
   if(old&&next&&!forceFade){
    const targetOrigin=outdoorOrigin(area);
    const endX=targetOrigin.x+x,endY=targetOrigin.y+y;
@@ -5012,20 +5012,26 @@ const REGION_MAP_INTERIORS=[
  {id:'ruins',name:'Forgotten Ruins',parent:'forest'},
  {id:'cavern',name:'Crystal Cavern',parent:'cave'}
 ];
+// Shared destination resolver: only authored Center interiors are eligible.
+function centerArrival(id){
+ const parent=TOWN_ROOMS[id]?.kind==='center'?TOWN_ROOMS[id].parent:id;
+ const entry=Object.entries(TOWN_ROOMS).find(([room,d])=>d.parent===parent&&d.kind==='center');
+ if(!entry)return null;
+ const [room]=entry,[x,y]=roomExit(room);
+ return {parent,room,x,y:y-2};
+}
 function ensureMapDiscovery(){
  if(!s)return;
  if(!s.discoveredAreas||typeof s.discoveredAreas!=='object'||Array.isArray(s.discoveredAreas))s.discoveredAreas={};
  if(!s.discoveredCenters||typeof s.discoveredCenters!=='object'||Array.isArray(s.discoveredCenters))s.discoveredCenters={};
- if(s.area)s.discoveredAreas[s.area]=true;
+ if(s.area){s.discoveredAreas[s.area]=true;const parent=TOWN_ROOMS[s.area]?.parent||REGION_MAP_INTERIORS.find(p=>p.id===s.area)?.parent;if(parent)s.discoveredAreas[parent]=true;}
  // Existing saves record the most recently used Critter Center.
- if(s.lastCenter&&REGION_MAP_PLACES.some(p=>p.kind==='center'&&p.id===s.lastCenter)){
-  s.discoveredAreas[s.lastCenter]=true;s.discoveredCenters[s.lastCenter]=true;
- }
+ const last=centerArrival(s.lastCenter);if(last){s.lastCenter=last.parent;s.discoveredAreas[last.parent]=true;s.discoveredCenters[last.parent]=true;}
 }
 function mapCanFastTravel(id){
- if(battle||screen!=='game'||!s)return false;
+ if(battle||screen!=='game'||!s||worldTransitionBusy||doorTransition||trainerApproachLocked())return false;
  if(id==='homestead')return !!s.homestead?.owned&&s.area!=='homestead'&&s.area!=='homesteadHome';
- return !!s.discoveredCenters?.[id]&&REGION_MAP_PLACES.some(p=>p.id===id&&p.kind==='center'&&p.spawn);
+ const target=centerArrival(id);return !!target&&id===target.parent&&s.area!==target.room&&!!s.discoveredCenters?.[id]&&REGION_MAP_PLACES.some(p=>p.id===id&&p.kind==='center'&&p.spawn);
 }
 function regionalPlaceName(p){return p.id==='homestead'&&s?.homestead?.owned?'Personal Home':p.name}
 function regionalPlaceUnlocked(p){return p.id==='homestead'?!!s.homestead?.owned:p.kind==='center'&&!!s.discoveredCenters?.[p.id]}
@@ -5035,7 +5041,7 @@ function indexRegionMap(){
  const destination=REGION_MAP_PLACES.find(p=>p.id===mapTravelSelection);
  const nodes=REGION_MAP_PLACES.map(p=>{
   const seen=!!s.discoveredAreas[p.id],unlocked=regionalPlaceUnlocked(p);
-  const selected=p.id===mapTravelSelection,here=p.id===s.area;
+  const selected=p.id===mapTravelSelection,here=p.id===s.area||p.id===(TOWN_ROOMS[s.area]?.parent||REGION_MAP_INTERIORS.find(q=>q.id===s.area)?.parent);
   return '<button type="button" class="regionMapPin '+(seen?'discovered ':'fogged ')+(unlocked?'unlocked ':'')+(here?'here ':'')+(selected?'picked':'')+'"'
    +' data-map-place="'+p.id+'" aria-pressed="'+selected+'" aria-label="'+escapeHtml(seen?regionalPlaceName(p):'Undiscovered location')+'"'
    +' style="left:'+p.x+'%;top:'+p.y+'%"><span class="regionMapPinSymbol">'+(p.kind==='center'?'✚':p.kind==='town'?'⌂':p.kind==='route'?'◆':'▲')+'</span>'
@@ -5052,8 +5058,8 @@ function indexRegionMap(){
   +'<img class="regionMapArt" src="assets/region-map-expanded.svg?v=1" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
   +nodes+'</div></div>'
   +'<div class="regionMapLegend"><span>◆ Route</span><span>⌂ Town</span><span>▲ Landmark</span><span>✚ Center</span><span>● You</span></div>'
-  +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(regionalPlaceName(destination))+'</strong>'
-    +'<p>'+(destination.id==='homestead'?(s.homestead?.owned?(canTravel?'Fast Travel home?':'You are already home.'):'Western grounds.'):destination.kind!=='center'?'Not a fast travel destination.':canTravel?'Fast Travel to this Critter Center?':'Find and speak to the Critter Center technician to unlock Fast Travel.')+'</p>'
+  +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(s.discoveredAreas[destination.id]?regionalPlaceName(destination):'Undiscovered location')+'</strong>'
+    +'<p>'+(!s.discoveredAreas[destination.id]?'Explore this area to reveal it.':destination.id==='homestead'?(s.homestead?.owned?(canTravel?'Fast Travel home?':'You are already home.'):'Western grounds.'):destination.kind!=='center'?'Not a fast travel destination.':canTravel?'Fast Travel to this Critter Center?':'Find and speak to the Critter Center technician to unlock Fast Travel.')+'</p>'
     +(canTravel?'<button type="button" class="btn primary" id="regionMapConfirm">Confirm Fast Travel</button>':'')
     +'<button type="button" class="btn" id="regionMapCancel">Cancel</button></div>':'')
   +'<div class="watchSectionTitle">Discovered locations</div><div class="regionMapLocationList">'
@@ -5065,14 +5071,14 @@ function fastTravelToCenter(id){
  const [x,y]=place.spawn;
  mapTravelSelection=null;
  close(); // Remove watch modal before using the existing region transition.
- const room=id==='town'?'townCenter':id==='garden'?'gardenCenter':id==='homestead'?'homesteadHome':SETTLEMENT_PLANS[id]?id+'Center':null;
- const spawn=room?[roomExit(room)[0],roomExit(room)[1]-2]:[x,y];region(room||id,...spawn,'',true);indexNotice('Fast Travel complete — '+regionalPlaceName(place)+'.');
- s.face='up';save();
+ const target=centerArrival(id),room=id==='homestead'?'homesteadHome':target?.room;
+ const spawn=target?[target.x,target.y]:room?[roomExit(room)[0],roomExit(room)[1]-2]:[x,y];
+ region(room||id,...spawn,'',true);
  return true;
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.53</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.54</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -5937,7 +5943,7 @@ function battleEnvironmentClass(){
  const env=battle?.environment||{area:'route1',terrain:'field',phase:'Day'};
  const art=BATTLE_SCENE_ART[env.area];
  return 'arena-'+env.area+' terrain-'+env.terrain+' phase-'+env.phase.toLowerCase()
-  +(art?' scene-image scene-'+art:'');
+  +(art?' scene-image scene-'+art:'')+(typeof REGIONAL_EXPANSION!=='undefined'&&REGIONAL_EXPANSION[env.area]?' biome-'+REGIONAL_EXPANSION[env.area].biome:'');
 }
 function battleHeader(moveOverlay=''){
  const ally=battle.allySlots.map((i,slot)=>hpCard(s.party[i],'ally',battle.phase==='choose'&&slot===battle.acting)).join('');
@@ -6757,7 +6763,7 @@ function endBattle(won,message,defeated){
 function blackout(){
  const wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
  if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});
- if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>{if(!isEgg(p))refillMovePP(p)})}else{s.area=s.lastCenter||'village';s.x=s.area==='garden'?14:17;s.y=s.area==='garden'?14:s.area==='town'?15:16}build();save();
+ if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>{if(!isEgg(p))refillMovePP(p)})}else{const target=centerArrival(s.lastCenter);s.area=target?.room||'village';s.x=target?.x??17;s.y=target?.y??16;s.face='up'}build();resetOutdoorCamera();save();
  open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
