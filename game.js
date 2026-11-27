@@ -820,7 +820,13 @@ const GYM_CHALLENGES=Object.freeze([
  {id:'harbor-g2',name:'Tide Keeper',x:22,y:17,award:125,team:[{speciesId:'cr-072-miasmoth',level:18},{speciesId:'cr-175-marshling',level:19}],dialogue:['A steady team can weather any tide.']},
  {id:'harbor-g3',name:'Harbor Navigator',x:15,y:12,award:140,team:[{speciesId:'cr-168-astralkip',level:19},{speciesId:'cr-069-streamink',level:20}],dialogue:['Keep your balance and plan your next move.']}
  ],leader:{id:'water-leader',name:'Harbor Gym Leader',x:15,y:6,award:260,team:[{speciesId:'cr-069-streamink',level:21},{speciesId:'cr-175-marshling',level:22},{speciesId:'cr-163-thundrill',level:23}],dialogue:['A strong trainer adapts like water.']}},
- ...['marshTown','canyonTown','volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+3,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
+ {id:'marshTown',room:'marshTownGym',town:'marshTown',number:3,type:'Venom',active:true,badgeName:'Reed Badge',trainerIds:['marsh-g1','marsh-g2','marsh-g3'],leaderId:'marsh-leader',puzzle:'reed-bridges',
+ trainers:[
+ {id:'marsh-g1',name:'Wetland Ranger',x:7,y:19,award:150,team:[{speciesId:'cr-053-poisonip',level:22},{speciesId:'cr-079-plumehop',level:23}],dialogue:['Watch your footing on the boardwalk.']},
+ {id:'marsh-g2',name:'Reed Keeper',x:22,y:14,award:165,team:[{speciesId:'cr-054-corrofin',level:23},{speciesId:'cr-072-miasmoth',level:24}],dialogue:['A good strategy can weather the marsh.']},
+ {id:'marsh-g3',name:'Marsh Naturalist',x:7,y:10,award:180,team:[{speciesId:'cr-048-dusklet',level:24},{speciesId:'cr-166-acidillo',level:25}],dialogue:['The most direct route is not always the best.']}
+ ],leader:{id:'marsh-leader',name:'Marsh Gym Leader',x:15,y:6,award:320,team:[{speciesId:'cr-054-corrofin',level:26},{speciesId:'cr-166-acidillo',level:27},{speciesId:'cr-201-sporefang',level:28}],dialogue:['Patience and adaptability are the strengths of the wetlands.']}},
+ ...['canyonTown','volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+4,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
 ]);
 function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
 function gymTrainerDefinition(id){
@@ -973,6 +979,7 @@ function furnishExpansionRoom(area,add){
 }
 function furnishExpansionGym(area,add){
  if(area==='harborTownGym'){furnishHarborGym(add);return;}
+ if(area==='marshTownGym'){furnishMarshGym(add);return;}
  const theme=expansionInteriorTheme(area),gym=theme.gym;
  // Practice hall fixtures are deliberately non-battling, with unobstructed
  // entrance, middle aisle, arena and attendant access.
@@ -1009,6 +1016,37 @@ function operateHarborValve(id){
  s.gymProgress.harborSequence=[...seq,id];
  if(seq.length===2){completeGymPuzzle(g);s.gymProgress.harborSequence=[];build();save();return notifyWorld('The tide gates open. The Gym Leader is now accessible!');}
  save();return notifyWorld('Valve activated. '+(seq.length+1)+'/3.');
+}
+// Marsh challenge: successive drawbridges connect three islands and the leader deck.
+function furnishMarshGym(add){
+ const board=add('reedNotice',13,4,4,1,'board','Boardwalk Instructions','Defeat each island trainer to unlock its bridge control. Follow the connected decks to the leader.');board.art='wall-banner';
+ for(const [id,x,y] of [['west',9,19],['east',24,14],['north',9,10]]){
+  const o=add('bridge-'+id,x,y,1,1,'terminal','Bridge Control — '+id,'Lower the next boardwalk section.','marsh-bridge-'+id);o.art='critter-center-diagnostic-terminal-015';
+ }
+}
+function marshGymGeometry(state=s){
+ const bridges=state.gymProgress?.marshBridges||{},done=state.gymProgress?.puzzles?.marshTown||gymEarned(gymChallenge('marshTown'),state);
+ // Full interior flooded except the arrival deck, isolated islands and finished bridges.
+ rect(1,4,W-2,H-5,T.water);
+ rect(12,20,6,3,T.path);rect(5,17,7,5,T.path);rect(10,20,3,2,T.path);
+ rect(19,12,8,5,T.path);rect(5,8,7,5,T.path);rect(12,4,7,4,T.path);
+ if(done||bridges.west){rect(11,18,12,2,T.path);rect(20,16,3,3,T.path);}
+ if(done||bridges.east){rect(10,13,11,2,T.path);rect(8,12,3,3,T.path);}
+ if(done||bridges.north){rect(10,8,6,2,T.path);rect(13,7,3,2,T.path);}
+}
+function operateMarshBridge(id){
+ const g=gymChallenge('marshTown'),index=['west','east','north'].indexOf(id);
+ if(index<0)return;
+ if(gymEarned(g)||s.gymProgress?.puzzles?.marshTown)return notifyWorld('All boardwalks are open.');
+ if(!gymEarned(gymChallenge('harborTown')))return notifyWorld('Earn the Tide Badge first.');
+ if(!s.defeated?.[g.trainerIds[index]])return notifyWorld('Defeat the trainer on this island first.');
+ normalizeGymProgress(s);
+ const bridges=s.gymProgress.marshBridges||(s.gymProgress.marshBridges={});
+ if(index>0&&!bridges[['west','east','north'][index-1]])return notifyWorld('Open the preceding bridge first.');
+ if(bridges[id])return notifyWorld('This bridge is already lowered.');
+ bridges[id]=true;
+ if(index===2)completeGymPuzzle(g);
+ build();save();return notifyWorld(index===2?'The final boardwalk is open. Challenge the Gym Leader!':'The boardwalk lowers, revealing the next island.');
 }
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
@@ -1115,6 +1153,7 @@ function furnishInterior(area){
 function inspectInterior(o){
  startPropAnimation(o.id,interactivePropBase(o));
  if(o.action?.startsWith('harbor-valve-'))return operateHarborValve(o.action.slice(13));
+ if(o.action?.startsWith('marsh-bridge-'))return operateMarshBridge(o.action.slice(13));
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -2122,7 +2161,7 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();populateGymChallenge(s.area);}
+  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();populateGymChallenge(s.area);}
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -3547,10 +3586,11 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  ctx.strokeRect(X(9),Y(9),12*S,8*S);
  ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
  ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
- if(s.area==='harborTownGym'){
+ if(s.area==='harborTownGym'||s.area==='marshTownGym'){
+  const marsh=s.area==='marshTownGym';
   for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
-   if(tiles[y][x]===T.water){box(x,y,1,1,'#367c91');box(x+.12,y+.22,.7,.06,'#8dc5c8');}
-   else if(tiles[y][x]===T.path){box(x,y,1,1,'#b5a17d');for(let k=0;k<4;k++)box(x,y+k*.25,1,.035,'#78664c');}
+   if(tiles[y][x]===T.water){box(x,y,1,1,marsh?'#547d68':'#367c91');box(x+.12,y+.22,.7,.06,marsh?'#a2bd8b':'#8dc5c8');if(marsh&&naturalSeed(x,y)%5===0){box(x+.2,y+.58,.28,.12,'#78994e');box(x+.24,y+.54,.15,.09,'#b7b89a');}}
+   else if(tiles[y][x]===T.path){box(x,y,1,1,marsh?'#a59572':'#b5a17d');for(let k=0;k<4;k++)box(x,y+k*.25,1,.035,'#78664c');}
   }
  }
  connectedInteriorWalls(ox,oy,theme.wall,theme.trim,roomExit(s.area)[0]);
@@ -5984,7 +6024,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.71</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.72</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
