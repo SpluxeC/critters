@@ -2552,7 +2552,8 @@ function drawMarshWaterPlants(x,y,a,b,now){
  ctx.restore();
 }
 function drawMarshDeck(x,y,a,b){
- const vertical=marshDeckCell(s.area,a,b-1)&&marshDeckCell(s.area,a,b+1);
+ const deck=(x,y)=>marshDeckCell(s.area,x,y)||sanctuaryDeckCell(s.area,x,y);
+ const vertical=deck(a,b-1)&&deck(a,b+1);
  ctx.fillStyle='#6b614b';ctx.fillRect(x,y,S,S);
  for(let k=0;k<4;k++){
   ctx.fillStyle=k%2?'#a59572':'#b6a681';
@@ -2562,8 +2563,8 @@ function drawMarshDeck(x,y,a,b){
  for(const xx of [3,S-4])for(const yy of [5,21])ctx.fillRect(x+xx,y+yy,2,2);
  // Only edge trim: the walkable deck remains full width.
  ctx.fillStyle='#76684e';
- if(!marshDeckCell(s.area,a-1,b)&&vertical)ctx.fillRect(x,y,2,S);
- if(!marshDeckCell(s.area,a+1,b)&&vertical)ctx.fillRect(x+S-2,y,2,S);
+ if(!deck(a-1,b)&&vertical)ctx.fillRect(x,y,2,S);
+ if(!deck(a+1,b)&&vertical)ctx.fillRect(x+S-2,y,2,S);
 }
 function drawContinuousWater(x,y,a,b){
  const water=(dx,dy)=>terrainNeighbor(a,b,dx,dy)===T.water;
