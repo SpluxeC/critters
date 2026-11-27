@@ -288,7 +288,9 @@ function npcActivityKind(task){
  if(task==='Resting'||task==='Relaxing')return 'rest';
  if(task==='Tending rice'||task==='Checking fields'||task==='Finishing work')return 'farm';
  if(task==='Researching'||task==='Reviewing notes'||task==='Checking equipment')return 'research';
- if(task==='Organizing supplies'||task==='Working')return 'work';
+ if(['Organizing supplies','Working','Checking harbor supplies','Inspecting ruins','Clearing snow','Checking springs','Maintaining boardwalks','Inspecting terraces','Running errands'].includes(task))return 'work';
+ if(task==='Tending garden')return 'farm';
+ if(task==='Sightseeing'||task==='Sheltering'||task==='Stretching')return 'observe';
  if(task==='Preparing breakfast'||task==='Housework')return 'home';
  if(task==='Observing')return 'observe';
  return null;
@@ -1631,10 +1633,54 @@ const NPC_PATROLS={rt2:[[24,13],[28,13]],rt3:[[12,13],[8,13]]};
 const NPC_STATIONARY=new Set(['leader','switch','property-sign','gymtrainer','rival','site-attendant']);
 // Living world: keep essential staff and story actors available throughout the day.
 function shopIsOpen(hour=worldHour()){return hour>=7&&hour<20}
+// Phase 10: deterministic local personalities, staggered schedules and distinct route shapes.
+const NPC_LIFESTYLES=['stroller','gardener','observer','errands','restful','explorer'];
+function npcRoutineSeed(area,p){
+ let n=2166136261;for(const ch of area+':'+(p.id||'')+':'+p.homeX+','+p.homeY)n=Math.imul(n^ch.charCodeAt(0),16777619);
+ return n>>>0;
+}
+function assignNpcLifestyles(area,actors){
+ const assigned=[];
+ for(const p of actors){
+  const seed=npcRoutineSeed(area,p);
+  const close=assigned.filter(q=>Math.abs(q.homeX-p.homeX)+Math.abs(q.homeY-p.homeY)<=8);
+  const preferred=p.kind==='groundskeeper'?1:p.kind==='guide'?2:p.id?.includes('traveler')?5:seed%NPC_LIFESTYLES.length;
+  let style=preferred;
+  for(let i=0;i<NPC_LIFESTYLES.length;i++){const k=(preferred+i)%NPC_LIFESTYLES.length;if(!close.some(q=>q.lifestyle===NPC_LIFESTYLES[k])){style=k;break}}
+  p.lifestyle=NPC_LIFESTYLES[style];p.routineSeed=seed;
+  p.scheduleOffset=(seed%91-45)/60;
+  p.routineDelay=650+style*370+seed%540;
+  p.walkPace=360+style*35+seed%80;
+  p.nextRoutine=performance.now()+150+style*310+seed%650;
+  if(!NPC_STATIONARY.has(p.kind)&&p.kind!=='routetrainer'&&!p.patrol)assigned.push(p);
+ }
+}
+function npcLocalHour(p,hour){return (hour+(p.scheduleOffset||0)+24)%24}
+function npcLifestylePlan(area,p,hour,weather='clear'){
+ const x=p.homeX,y=p.homeY,seed=p.routineSeed??npcRoutineSeed(area,p);
+ const style=p.lifestyle||NPC_LIFESTYLES[seed%NPC_LIFESTYLES.length];
+ const h=npcLocalHour(p,hour),night=h<5||h>=20;
+ const turn=seed%4,flip=seed%2?1:-1;
+ const offset=(a,b)=>{for(let i=0;i<turn;i++)[a,b]=[-b,a];return [x+a*flip,y+b]};
+ const points=(...pairs)=>[[x,y],...pairs.map(([a,b])=>offset(a,b))];
+ if(night)return {task:'Resting',points:[[x,y]],radius:5};
+ if(weather==='storm'||weather==='rain'&&style!=='gardener'||weather==='snow'&&style==='restful')return {task:'Sheltering',points:[[x,y]],radius:5};
+ const morning=h<9,evening=h>=17;
+ switch(style){
+  case 'gardener':return {task:evening?'Finishing work':'Tending garden',points:points([1,0],[1,1],[0,1]),radius:3};
+  case 'observer':return {task:'Sightseeing',points:points([0,2]),radius:3};
+  case 'errands':return {task:evening?'Returning home':'Running errands',points:points([2,0],[2,1],[-1,1]),radius:4};
+  case 'restful':return {task:morning?'Stretching':'Relaxing',points:morning?points([1,0]):[[x,y]],radius:3};
+  case 'explorer':return {task:'Exploring',points:points([0,3],[2,2],[2,0]),radius:5};
+  default:return {task:evening?'Relaxing':'Walking',points:evening?points([-1,0]):points([1,0],[2,0],[2,-1]),radius:4};
+ }
+}
 function npcRoutineDialogue(p){
- const task=npcRoutinePlan(s.area,p,worldHour(),s.starter)?.task;
+ const task=p.task||npcRoutinePlan(s.area,p,worldHour(),s.starter)?.task;
  const lines={'Resting':'It is late. I am resting until morning.','Preparing breakfast':'Good morning! I am getting ready for the day.','Housework':'I am taking care of things around the house.','Relaxing':'It is nice to unwind after a long day.','Walking':'I am enjoying a little walk.','Checking fields':'I am checking the fields before work.','Tending rice':'The rice needs tending today.','Finishing work':'I am finishing up before nightfall.','Working':'There is plenty of work to do today.','Reviewing notes':'I am reviewing the research notes tonight.'};
- return lines[task]?[lines[task],...p.text]:p.text;
+ const extra={'Tending garden':'I am looking after the plants today.','Sightseeing':'I like to stop and enjoy the view.','Running errands':'I have a few things to take care of.','Exploring':'I am taking a different route today.','Stretching':'A little exercise is a good way to start the day.','Sheltering':'I am staying close by until the weather improves.','Returning home':'I am heading home for the day.','Checking harbor supplies':'I am checking the supplies by the harbor.','Inspecting ruins':'I am looking after the old stonework.','Clearing snow':'I am keeping the winter paths clear.','Checking springs':'I am checking the paths near the springs.','Maintaining boardwalks':'I am checking the wooden walkways.','Inspecting terraces':'I am looking after the terraces.'};
+ const progress=p.kind==='guide'&&s.badges>0?'You have earned '+s.badges+' '+(s.badges===1?'badge':'badges')+'. Keep exploring at your own pace.':null;
+ return [...(lines[task]||extra[task]?[lines[task]||extra[task]]:[]),...p.text,...(progress?[progress]:[])];
 }
 // Residential schedules only apply to ambient residents with known building entrances.
 // Story, quest and service NPCs never leave their assigned area.
@@ -1646,6 +1692,9 @@ function npcResidence(area,p){
  return null;
 }
 function npcNight(hour=worldHour()){return hour<5||hour>=20}
+function npcResidenceRest(p,hour=worldHour(),weather=regionalWeather()){
+ const h=npcLocalHour(p,hour);return h<5||h>=20||weather==='storm'||(weather==='rain'&&p.lifestyle==='restful');
+}
 function npcEnterResidence(p,home,now){
  p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting';
  p.nextRoutine=now+500;
@@ -1654,18 +1703,18 @@ function npcEnterResidence(p,home,now){
 let npcResidenceDoor=null;
 function tickNpcResidence(p,now){
  const home=npcResidence(s.area,p);if(!home)return false;
- if(npcNight()){
+ if(npcResidenceRest(p)){
   if(p.indoors)return true;
   p.task='Returning home';
   if(p.x===home.x&&p.y===home.y){npcEnterResidence(p,home,now);return true}
   const step=npcFindStep(p,home.x,home.y,W+H,true,true);
   if(step)npcBeginWalk(p,step,now);
-  p.nextRoutine=now+(step?500:1200);return true;
+  p.nextRoutine=now+(step?(p.walkPace||420)+100:1200+(p.routineSeed||0)%500);return true;
  }
  if(p.indoors){
   if(!npcStepAllowed(p,home.x,home.y,true,true)){p.nextRoutine=now+500;return true}
   p.indoors=false;p.x=home.x;p.y=home.y;p.face='down';npcFinishWalk(p);
-  p.returningToPost=true;p.nextRoutine=now+500;
+  p.returningToPost=true;p.nextRoutine=now+500+(p.routineSeed||0)%700;
   if(s.area==='village')npcResidenceDoor={x:home.x,y:home.doorY,until:now+320};
   return true;
  }
@@ -1682,7 +1731,7 @@ function npcRoutinePlan(area,p,hour,starter){
  const x=p.homeX,y=p.homeY;
  if(p.patrol||NPC_PATROLS[p.id])return {task:'Patrolling',points:p.patrol||NPC_PATROLS[p.id],patrol:true};
  if(p.kind==='center'||p.kind==='shop'||p.kind==='gym-attendant')return {task:p.kind==='center'?'Checking equipment':p.kind==='shop'?'Organizing supplies':'Observing',points:[[x,y]],radius:1};
- if(p.workPoints)return {task:hour<5||hour>=20?'Observing':'Working',points:hour<5||hour>=20?[[x,y]]:p.workPoints,radius:5};
+ if(p.workPoints){const h=npcLocalHour(p,hour),rest=h<5||h>=20||regionalWeather(area)==='storm';return {task:rest?'Observing':p.workTask||'Working',points:rest?[[x,y]]:p.workPoints,radius:5};}
  if(NPC_STATIONARY.has(p.kind)||p.kind==='routetrainer'||(p.kind==='researcher'&&!starter))return null;
  if(area==='garden'&&x===25&&y===11)return null;
  const night=hour<5||hour>=20,morning=hour<8,evening=hour>=17;
@@ -1693,7 +1742,7 @@ function npcRoutinePlan(area,p,hour,starter){
  if(p.id==='farmer-fieldwork')return {task:night?'Observing':morning?'Checking fields':evening?'Finishing work':'Tending rice',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y-1]],radius:3};
  if(p.kind==='sidequest')return {task:'Observing',points:[[x,y],[x+1,y]],radius:1};
  if(area==='home'||area==='neighbor')return {task:night?'Resting':morning?'Preparing breakfast':evening?'Relaxing':'Housework',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y+2]],radius:3};
- return {task:night?(isInterior(area)?'Resting':'Observing'):morning?'Walking':evening?'Relaxing':'Walking',points:night?[[x,y]]:evening?[[x,y],[x-1,y]]:morning?[[x,y],[x,y+2]]:[[x,y],[x+2,y],[x,y+2],[x-1,y]],radius:3};
+ return npcLifestylePlan(area,p,hour,regionalWeather(area));
 }
 function npcReservedCell(area,x,y,w,h){
  if(x<2||y<2||x>=w-2||y>=h-2)return true;
@@ -1740,7 +1789,7 @@ function npcVisualPosition(p,now=performance.now()){
 }
 function npcFinishWalk(p){p.walking=false;p.fromX=p.x;p.fromY=p.y}
 function npcBeginWalk(p,step,now){
- p.face=npcFaceToward(p,step.x,step.y);p.fromX=p.x;p.fromY=p.y;p.x=step.x;p.y=step.y;p.walking=true;p.walkStart=now;p.walkDuration=420;
+ p.face=npcFaceToward(p,step.x,step.y);p.fromX=p.x;p.fromY=p.y;p.x=step.x;p.y=step.y;p.walking=true;p.walkStart=now;p.walkDuration=p.kind==='routetrainer'||p.patrol?420:p.walkPace||420;
 }
 function trainerSeesPlayer(p,px,py,range,blocked){
  const d=dirs[p.face];if(!d)return false;
@@ -1815,13 +1864,13 @@ function tickNpcRoutines(now=performance.now()){
   p.task=plan.task;
   const points=plan.points,radius=plan.patrol?8:plan.radius||3;
   const scheduleKey=plan.task+':'+JSON.stringify(points);
-  if(p.routineTask!==scheduleKey){p.routineTask=scheduleKey;p.routineIndex=0}
-  if(points.length===1&&p.x===points[0][0]&&p.y===points[0][1]){p.nextRoutine=now+3500;continue}
+  if(p.routineTask!==scheduleKey){p.routineTask=scheduleKey;p.routineIndex=plan.patrol?0:(p.routineSeed||0)%points.length}
+  if(points.length===1&&p.x===points[0][0]&&p.y===points[0][1]){p.nextRoutine=now+2800+(p.routineSeed||0)%1800;continue}
   let i=(p.routineIndex||0)%points.length;
-  if(p.x===points[i][0]&&p.y===points[i][1]){i=(i+1)%points.length;p.routineIndex=i;p.nextRoutine=now+(plan.patrol?850:2200);continue}
+  if(p.x===points[i][0]&&p.y===points[i][1]){i=(i+1)%points.length;p.routineIndex=i;p.nextRoutine=now+(plan.patrol?850:p.routineDelay||2200);continue}
   const step=npcFindStep(p,points[i][0],points[i][1],radius,!!plan.patrol);
-  if(step){npcBeginWalk(p,step,now);p.nextRoutine=now+500}
-  else{p.routineIndex=(i+1)%points.length;p.nextRoutine=now+1200}
+  if(step){npcBeginWalk(p,step,now);p.nextRoutine=now+(plan.patrol?500:p.walkDuration+100+(p.routineSeed||0)%170)}
+  else{p.routineIndex=(i+1)%points.length;p.nextRoutine=now+900+(p.routineSeed||0)%900}
  }
  checkTrainerSight();
 }
@@ -2127,7 +2176,8 @@ function build(preview=false){
   for(let xx=dx-1;xx<=dx+1;xx++)for(let yy=dy+1;yy<=dy+2;yy++)if(tiles[yy]?.[xx]!==T.roof&&tiles[yy]?.[xx]!==T.wall)put(xx,yy,T.path);
  }
  // Reconstruct overnight occupancy from saved time, including preview chunks.
- if(npcNight())for(const p of npcs){if(npcResidence(s.area,p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
+ assignNpcLifestyles(s.area,npcs);
+ for(const p of npcs){if(npcResidence(s.area,p)&&npcResidenceRest(p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
  if(!preview&&TOWN_ROOMS[s.area]&&(s.x<1||s.x>=W-1||s.y<1||s.y>=H-1)){const [ex,ey]=roomExit(s.area);s.x=ex;s.y=ey-2}
  if(!preview&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y&&!p.indoors))){
   const originX=s.x,originY=s.y;
@@ -4681,7 +4731,7 @@ function populateExpansionArea(area){
    for(const [x,y] of points)if(add(x,y,['I live nearby. The local paths are lovely in the morning.'],'',area+'-resident-'+i,{residence:home}))break;
   }
   const [px,py]=SETTLEMENT_PLANS[area].public;
-  for(const [x,y] of [[px-6,py],[px+6,py],[px-2,py-3]])if(add(x,y,['I help look after the public gardens. Please leave the paths clear.'],'groundskeeper',area+'-keeper',{workPoints:[[x,y],[x,y-1],[x+1,y]]}))break;
+  for(const [x,y] of [[px-6,py],[px+6,py],[px-2,py-3]])if(add(x,y,['I help look after the public gardens. Please leave the paths clear.'],'groundskeeper',area+'-keeper',{workTask:({harborTown:'Checking harbor supplies',marshTown:'Maintaining boardwalks',canyonTown:'Inspecting terraces',volcanicTown:'Checking springs',snowTown:'Clearing snow',highlandTown:'Inspecting terraces',ancientTown:'Inspecting ruins'})[area],workPoints:[[x,y],[x,y-1],[x+1,y]]}))break;
   for(const [x,y] of [[15,10],[21,16],[15,23]])if(add(x,y,['The Critter Center is available for healing and Index maintenance.'],'guide',area+'-guide'))break;
   for(const [x,y] of [[21,10],[15,18],[21,23]])if(add(x,y,['I am traveling through the region. There is always another route to discover.'],'',area+'-traveler'))break;
   return;
@@ -5758,7 +5808,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.67</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.68</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
