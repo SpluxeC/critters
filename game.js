@@ -811,6 +811,58 @@ const TOWN_ROOMS=Object.freeze({
 const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)||Object.hasOwn(TOWN_ROOMS,area);
 function reservedGymAt(x,y){return settlementLots(s.area).find(b=>b.kind==='gym'&&b.door===x&&b.y+b.h+1===y)}
 function townDoorAt(x,y){return Object.entries(TOWN_ROOMS).find(([id,d])=>d.parent===s.area&&d.door[0]===x&&d.door[1]===y)?.[0]||null}
+// Phase 12.1: shared challenge registry. Only approved, fully authored gyms activate.
+const GYM_CHALLENGES=Object.freeze([
+ {id:'grass',room:'gym',town:'garden',number:1,type:'Grass',active:true,trainerIds:['g1','g2','g3'],leaderId:'leader',puzzle:'gate'},
+ ...['harborTown','marshTown','canyonTown','volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+2,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
+]);
+function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
+function gymTrainerDefinition(id){
+ for(const g of GYM_CHALLENGES)if(g.active&&g.number>1){
+  const t=g.trainers?.find(t=>t.id===id)||(g.leader?.id===id?g.leader:null);
+  if(t)return {gym:g,trainer:t,leader:t.id===g.leaderId};
+ }
+ return null;
+}
+function normalizeGymProgress(state){
+ const old=state.gymProgress&&typeof state.gymProgress==='object'&&!Array.isArray(state.gymProgress)?state.gymProgress:{};
+ const earned=old.earned&&typeof old.earned==='object'&&!Array.isArray(old.earned)?old.earned:{};
+ // Preserve legacy numeric badge counts, including any existing later progress.
+ const legacy=Math.max(0,Math.min(8,Math.floor(Number(state.badges)||0)));
+ for(const g of GYM_CHALLENGES)if(g.number<=legacy)earned[g.id]=true;
+ if(state.defeated?.leader)earned.grass=true;
+ state.gymProgress={...old,earned,puzzles:old.puzzles&&typeof old.puzzles==='object'&&!Array.isArray(old.puzzles)?old.puzzles:{}};
+ state.badges=GYM_CHALLENGES.filter(g=>earned[g.id]===true).length;state.cut=state.badges>=1;
+ return state.gymProgress;
+}
+function gymEarned(g,state=s){return !!g&&(state.gymProgress?.earned?.[g.id]===true||(g.number===1&&state.badges>=1))}
+function gymRequirements(g,state=s){
+ if(!g||!g.active)return {ready:false,reason:'Official challenge not available yet.'};
+ if(gymEarned(g,state))return {ready:false,reason:'You have already earned this badge.'};
+ if(GYM_CHALLENGES.some(q=>q.number<g.number&&!gymEarned(q,state)))return {ready:false,reason:'Earn the previous regional badges first.'};
+ if(g.trainerIds.some(id=>!state.defeated?.[id]))return {ready:false,reason:'Defeat all Gym trainers first.'};
+ if(g.puzzle&&!(g.number===1?state.puzzles?.gate:state.gymProgress?.puzzles?.[g.id]))return {ready:false,reason:'Complete the Gym challenge mechanism first.'};
+ return {ready:true,reason:''};
+}
+function completeGymPuzzle(g,state=s){
+ if(!g?.active||gymEarned(g,state)||GYM_CHALLENGES.some(q=>q.number<g.number&&!gymEarned(q,state))||g.trainerIds.some(id=>!state.defeated?.[id]))return false;
+ normalizeGymProgress(state);
+ if(g.number===1){state.puzzles=state.puzzles||{};state.puzzles.gate=true;}
+ else state.gymProgress.puzzles[g.id]=true;
+ return true;
+}
+function awardGymBadge(g,state=s){
+ if(!gymRequirements(g,state).ready)return false;
+ normalizeGymProgress(state);state.gymProgress.earned[g.id]=true;
+ state.badges=GYM_CHALLENGES.filter(q=>state.gymProgress.earned[q.id]===true).length;state.cut=state.badges>=1;
+ return true;
+}
+function gymProgressPanel(){
+ return '<div class="watchSectionTitle">Regional Gyms · '+s.badges+'/8 badges</div>'+GYM_CHALLENGES.map(g=>{
+  const earned=gymEarned(g),status=earned?'Badge earned':!g.active?'Challenge pending':GYM_CHALLENGES.some(q=>q.number<g.number&&!gymEarned(q))?'Locked': 'Available';
+  return '<div class="watchRow"><span><b>'+g.number+'. '+escapeHtml(g.number===1?'Grass Gym':TOWN_ROOMS[g.room]?.name||g.town)+'</b><small> · '+g.trainerIds.filter(id=>s.defeated?.[id]).length+'/'+g.trainerIds.length+' trainers</small></span><span>'+status+'</span></div>';
+ }).join('');
+}
 function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:kind==='gym'?{w:30,h:24}:{w:34,h:26}}
 function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
 function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;if(room.kind==='gym'){recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
@@ -1653,7 +1705,7 @@ function migrate(){
  s.regionalWildEncounters=s.regionalWildEncounters&&typeof s.regionalWildEncounters==='object'&&!Array.isArray(s.regionalWildEncounters)?s.regionalWildEncounters:{};
  s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];collectionData();s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
- s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};s.badges=s.badges||0;s.cut=s.badges>=1;
+ s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};normalizeGymProgress(s);
  migrateHomestead();
  s.rivalPassed=!!s.rivalPassed;s.introComplete=!!s.introComplete;
  s.worldMinutes=Number.isFinite(s.worldMinutes)?((s.worldMinutes%1440)+1440)%1440:8*60;
@@ -5310,8 +5362,8 @@ function interact(){
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
  if(p.kind==='gymtrainer'||p.kind==='routetrainer')return s.defeated[p.id]?say(['Trainer: Good match! Want a rematch?'],()=>rematchMenu(p.id)):say(p.text,()=>startTrainer(p.id));
- if(p.kind==='leader')return s.badges?say(['Gym Leader: Your first badge is well earned.']):!s.defeated.g1||!s.defeated.g2||!s.defeated.g3||!s.puzzles.gate?say(['Gym Leader: Defeat all three trainers and open the garden mechanism first.']):startTrainer('leader');
- if(p.kind==='switch'){if(s.defeated.g1&&s.defeated.g2&&s.defeated.g3){s.puzzles.gate=true;build();save();return notifyWorld(['You activate the garden mechanism. The roots withdraw!'])}return say(['The mechanism is tangled in roots. Defeat all three Gym trainers first.'])}
+ if(p.kind==='leader'){const g=gymChallenge(s.area),check=gymRequirements(g);return check.ready?startTrainer(g.leaderId):say([check.reason]);}
+ if(p.kind==='switch'){const g=gymChallenge(s.area);if(completeGymPuzzle(g)){build();save();return notifyWorld([g.number===1?'You activate the garden mechanism. The roots withdraw!':'The Gym mechanism is complete.'])}return say([gymEarned(g)?'The challenge is already complete.':'Defeat all Gym trainers and earn any previous badges first.'])}
  return say(npcRoutineDialogue(p))}
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return region('homesteadHome',17,23);
  if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
@@ -5886,7 +5938,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.69</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.70</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -6635,13 +6687,17 @@ function rivalPartnerAtLevel(level){
  return critter(id,level);
 }
 function startTrainer(id){
+ const gymBattle=gymTrainerDefinition(id),leaderGym=GYM_CHALLENGES.find(g=>g.leaderId===id&&g.active);
+ if(leaderGym&&!gymRequirements(leaderGym).ready)return notifyWorld(gymRequirements(leaderGym).reason);
+ if(gymBattle&&GYM_CHALLENGES.some(g=>g.number<gymBattle.gym.number&&!gymEarned(g)))return notifyWorld('Earn the previous regional badges first.');
  if(firstAlive()<0)return blackout();
  const expansion=EXPANSION_TRAINERS[id];
- const area=expansion?.area||(id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden');
+ const area=gymBattle?.gym.town||expansion?.area||(id.startsWith('rt')?({rt1:'route1',rt2:'route2',rt3:'route3'}[id]||'route2'):'garden');
  const used=new Set();
  const make=(t,l)=>trainerSpecies(t,l,area,id,used.size,used);
  let enemies,name,award,kind='trainer';
- if(expansion){const up=s.defeated[id]?2:0;enemies=expansion.levels.map((l,i)=>make(expansion.types[i%expansion.types.length],l+up));name=expansion.name;award=expansion.award;}
+ if(gymBattle){const t=gymBattle.trainer;enemies=t.team.map((member,i)=>member.speciesId?critter(member.speciesId,member.level):make(member.type,member.level));name=t.name;award=t.award||0;}
+ else if(expansion){const up=s.defeated[id]?2:0;enemies=expansion.levels.map((l,i)=>make(expansion.types[i%expansion.types.length],l+up));name=expansion.name;award=expansion.award;}
  else if(id==='tutorial'){enemies=[rivalPartnerAtLevel(5)];name='Childhood Rival';award=0;kind='tutorial'}
  else if(id==='rival'){enemies=[rivalPartnerAtLevel(12),make('Fighting',10),make('Flying',14)];name='Childhood Rival';award=65}
  else if(id==='quest-garden'){if(s.sideQuests?.['garden-challenge']?.status!=='active'||s.sideQuests['garden-challenge'].won)return;enemies=[make('Grass',10),make('Water',11)];name='Garden Caretaker';award=0}
@@ -7559,7 +7615,8 @@ function endBattle(won,message,defeated){
  if(b.kind==='trainer'&&won&&defeated)s.trainerProgress.wins++;else if(!won&&b.kind!=='tutorial')s.trainerProgress.losses++;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)})}
  else if(defeated&&won){s.money+=b.award||0;if(b.id==='quest-garden'&&s.sideQuests?.['garden-challenge']?.status==='active')s.sideQuests['garden-challenge'].won=true;else if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
-  if(b.id==='leader'&&!s.badges){s.badges=1;s.cut=true;message+=' You earned your first badge! The Critter Index vegetation cutter is now unlocked.'}
+  const g=GYM_CHALLENGES.find(g=>g.active&&g.leaderId===b.id);
+  if(g&&awardGymBadge(g)){message+=g.number===1?' You earned your first badge! The Critter Index vegetation cutter is now unlocked.':' You earned regional badge '+g.number+'!';}
  }
  else if(!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});s.area='town';s.x=17;s.y=15;build()}
  const evolveMessages=evolutionNotification();
