@@ -852,6 +852,7 @@ function furnishExpansionRoom(area,add){
   const guest=area.endsWith('B'),flip=guest?!mirror:mirror;
   const x=(a,w)=>flip?W-a-w:a;
   if(room.parent==='harborTown')item('harborNotes',x(2,3),3,3,1,'board','Coastal Chart','A chart of the local shoreline and harbor.','wall-landscape');
+  if(room.parent==='marshTown')item('wetlandNotes',x(2,3),3,3,1,'board','Wetland Landscape','A landscape of the reed beds and raised walking paths.','wall-landscape');
   item('bed',x(2,3),4,3,3,'bed','Bed','A comfortable place to rest.',theme.bed);
   item('table',x(10,4),7,4,3,'table','Dining Area','A place to share a meal.',theme.table);
   item('shelf',x(2,3),9,3,3,'bookshelf','Bookshelf','Local field guides and books.','bookshelf-front');
@@ -2303,6 +2304,7 @@ function drawNaturalTile(t,x,y,a,b){
 function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
+ if(area==='marshRoute'||area==='marshTown')return seed%37===0?'outdoor-shrub-3-037':seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:null;
  if(area==='coastRoute'||area==='harborTown')return seed%29===0?OUTDOOR_SCENERY.flowers[seed%3]:seed%43===0?'outdoor-shrub-3-037':null;
  if(nearTree&&(area==='forest'||area==='route2')){
   if(seed%59===0)return 'outdoor-log-1-069';
@@ -2499,6 +2501,20 @@ function drawCoastalDeck(x,y,a,b){
  ctx.fillStyle='#68513c';
  for(const xx of [3,S-4])for(const yy of [5,21])ctx.fillRect(x+xx,y+yy,1,2);
 }
+function drawMarshDeck(x,y,a,b){
+ const vertical=marshDeckCell(s.area,a,b-1)&&marshDeckCell(s.area,a,b+1);
+ ctx.fillStyle='#6b614b';ctx.fillRect(x,y,S,S);
+ for(let k=0;k<4;k++){
+  ctx.fillStyle=k%2?'#a59572':'#b6a681';
+  if(vertical)ctx.fillRect(x,y+k*8+1,S,7);else ctx.fillRect(x+k*8+1,y,7,S);
+ }
+ ctx.fillStyle='#615442';
+ for(const xx of [3,S-4])for(const yy of [5,21])ctx.fillRect(x+xx,y+yy,2,2);
+ // Only edge trim: the walkable deck remains full width.
+ ctx.fillStyle='#76684e';
+ if(!marshDeckCell(s.area,a-1,b)&&vertical)ctx.fillRect(x,y,2,S);
+ if(!marshDeckCell(s.area,a+1,b)&&vertical)ctx.fillRect(x+S-2,y,2,S);
+}
 function drawContinuousWater(x,y,a,b){
  const water=(dx,dy)=>terrainNeighbor(a,b,dx,dy)===T.water;
  const n=water(0,-1),e=water(1,0),south=water(0,1),w=water(-1,0);
@@ -2509,12 +2525,12 @@ function drawContinuousWater(x,y,a,b){
  ctx.beginPath();ctx.moveTo(x+tl,y);ctx.lineTo(x+S-tr,y);ctx.quadraticCurveTo(x+S,y,x+S,y+tr);
  ctx.lineTo(x+S,y+S-br);ctx.quadraticCurveTo(x+S,y+S,x+S-br,y+S);
  ctx.lineTo(x+bl,y+S);ctx.quadraticCurveTo(x,y+S,x,y+S-bl);ctx.lineTo(x,y+tl);ctx.quadraticCurveTo(x,y,x+tl,y);ctx.closePath();
- const coastal=s.area==='coastRoute'||s.area==='harborTown';ctx.fillStyle=coastal?'#417f91':'#548f9b';ctx.fill();ctx.clip();
+ const coastal=s.area==='coastRoute'||s.area==='harborTown',marsh=s.area==='marshRoute'||s.area==='marshTown';ctx.fillStyle=coastal?'#417f91':marsh?'#52796c':'#548f9b';ctx.fill();ctx.clip();
  const edges=[[!n,0,0,0,7],[!e,S,0,S-7,0],[!south,0,S,0,S-7],[!w,0,0,7,0]];
  for(const [on,x0,y0,x1,y1] of edges){
   if(!on)continue;
   const g=ctx.createLinearGradient(x+x0,y+y0,x+x1,y+y1);
-  g.addColorStop(0,coastal?'#dfd5af':'#9abda0');g.addColorStop(.35,coastal?'#8ec5bc':'#80b4b1');g.addColorStop(1,'rgba(128,180,177,0)');
+  g.addColorStop(0,coastal?'#dfd5af':marsh?'#a6a77c':'#9abda0');g.addColorStop(.35,coastal?'#8ec5bc':marsh?'#83a58b':'#80b4b1');g.addColorStop(1,'rgba(128,180,177,0)');
   ctx.fillStyle=g;if(x0===x1)ctx.fillRect(x,y+Math.min(y0,y1),S,7);else ctx.fillRect(x+Math.min(x0,x1),y,7,S);
  }
  ctx.restore();
@@ -2524,6 +2540,7 @@ function seamlessGround(t,x,y,a,b){
  const color=(t===T.grass||t===T.tall||t===T.flower||t===T.path)?expansionGroundColor(s.area,t)||colors[t]:colors[t];if(!color)return false;
  if(t===T.water){drawContinuousWater(x,y,a,b);return true;}
  if(t===T.path&&coastalDeckCell(s.area,a,b)){drawCoastalDeck(x,y,a,b);return true;}
+ if(t===T.path&&marshDeckCell(s.area,a,b)){drawMarshDeck(x,y,a,b);return true;}
  if(s.area==='coastRoute'&&t===T.grass&&b>=coastalShoreline(a)-3){ctx.fillStyle='#d9c69c';ctx.fillRect(x,y,S,S);ctx.fillStyle='#a58d6430';for(let k=0;k<4;k++){const h=naturalSeed(a*7+k,b*11+k);ctx.fillRect(x+h%30,y+(h>>>8)%30,2,1)}return true;}
  ctx.fillStyle=color;ctx.fillRect(x,y,S,S);
  const n=naturalSeed(a,b);
@@ -3993,6 +4010,7 @@ function buildExpansionArea(area){
  }
  if(SETTLEMENT_PLANS[area])buildSettlement(area);
  if(area==='coastRoute'||area==='harborTown')buildCoastalLandscape(area);
+ if(area==='marshRoute'||area==='marshTown')buildMarshLandscape(area);
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
@@ -4022,6 +4040,41 @@ function buildCoastalLandscape(area){
   rect(3,31,13,7,T.water);rect(8,27,3,11,T.path);rect(5,32,11,2,T.path);
   rect(3,29,13,2,T.stone);rect(8,29,3,2,T.path);
   rect(3,27,4,2,T.grass);rect(12,27,4,2,T.grass);
+ }
+}
+// Phase 9.2: interconnected pools, raised walkways and reed-covered islands.
+// Geometry is authored before NPC population, and never touches building lots.
+function marshDeckCell(area,x,y){
+ if(area==='marshRoute')return (x>=8&&x<=10&&y>=16&&y<=29)||(x>=8&&x<=32&&y>=27&&y<=29)||(x>=30&&x<=32&&y>=16&&y<=29)||(x>=17&&x<=19&&y>=16&&y<=29);
+ if(area==='marshTown')return (x>=8&&x<=10&&y>=28&&y<=36)||(x>=5&&x<=14&&y>=33&&y<=35);
+ return false;
+}
+function buildMarshLandscape(area){
+ if(area==='marshRoute'){
+  // Irregular shallow basins separated by walkable wet meadows.
+  for(let y=17;y<H-2;y++)for(let x=2;x<W-2;x++){
+   const wobble=.13*Math.sin(x*.74+y*.35);
+   const west=(x-8)**2/39+(y-26)**2/92;
+   const east=(x-31)**2/52+(y-26)**2/91;
+   const south=(x-20)**2/36+(y-34)**2/18;
+   if(Math.min(west,east,south)<1+wobble)put(x,y,T.water);
+   else if(tiles[y]?.[x]===T.grass&&Math.min(west,east,south)<1.75&&naturalSeed(x,y)%4!==0)put(x,y,T.tall);
+  }
+  // Three approaches from the main east-west trail and a connecting loop.
+  rect(8,14,3,16,T.path);rect(17,14,3,16,T.path);rect(30,14,3,16,T.path);rect(8,27,25,3,T.path);
+  // Dry islands and habitat patches stay away from the bridge deck.
+  for(const [x,y,w,h] of [[4,5,7,5],[25,5,8,5],[13,20,3,5],[23,20,4,5]]){
+   for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(tiles[yy]?.[xx]===T.grass&&naturalSeed(xx,yy)%5!==0)put(xx,yy,T.tall);
+  }
+ }else if(area==='marshTown'){
+  // Public wetland garden, entirely south of the Gym and west of the sanctuary road.
+  for(let y=30;y<=37;y++)for(let x=3;x<=15;x++){
+   const r=(x-9)**2/45+(y-34)**2/16;
+   put(x,y,r<1.1?T.water:r<1.5?T.tall:T.grass);
+  }
+  rect(8,26,3,11,T.path);rect(5,33,10,3,T.path);
+  // Approach from the existing street; all residences and services retain their doors.
+  rect(4,28,4,2,T.grass);rect(11,28,5,2,T.grass);
  }
 }
 function buildSpecialStorySite(area){
@@ -4106,7 +4159,8 @@ function settlementPublicProps(area){
  const [x,rawY]=p.public,y=rawY;
  const center=p.feature==='court'?'outdoor-rock-3-073':'outdoor-fountain-1-141';
  const harbor=area==='harborTown'?[{x:3,y:27,w:2,h:2,name:'outdoor-market-stall-2-167'},{x:6,y:27,w:1,h:1,name:'outdoor-crate-1-151'},{x:12,y:27,w:2,h:2,name:'outdoor-market-stall-2-167'},{x:15,y:27,w:1,h:1,name:'outdoor-barrel-1-144'}]:[];
- return [...harbor,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
+ const wetland=area==='marshTown'?[{x:4,y:28,w:2,h:1,name:'outdoor-bench-2-148'},{x:12,y:28,w:1,h:1,name:'outdoor-planter-1-161'},{x:14,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'}]:[];
+ return [...harbor,...wetland,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
 }
 function buildSettlement(area){
  const p=SETTLEMENT_PLANS[area],lots=settlementLots(area),[px,py]=p.public;
@@ -5142,7 +5196,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.57</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.58</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
