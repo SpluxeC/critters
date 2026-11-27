@@ -67,7 +67,12 @@ function pickNpcSprite(x,y,kind='',id=''){
  return arr[Math.abs((x*17+y*29+area.length*13))%arr.length];
 }
 // Uploaded artwork is loaded lazily and always retains a procedural fallback.
-const uploadedArtCache=new Map(),cleanArtCache=new WeakMap();
+const uploadedArtCache=new Map(),cleanArtCache=new WeakMap(),failedUploadedArt=new Set();
+const ART_CACHE_LIMIT=180;
+function trimArtworkCache(){
+ if(uploadedArtCache.size<=ART_CACHE_LIMIT)return;
+ for(const [name,im] of uploadedArtCache){if(uploadedArtCache.size<=ART_CACHE_LIMIT)break;if(im.complete)uploadedArtCache.delete(name)}
+}
 // Only scenery objects are cleaned; terrain textures, NPC sheets and Critter art
 // are not chroma-keyed. Remove contiguous border matte, never interior green pixels.
 function cleanSceneryArt(im,name){
@@ -115,6 +120,7 @@ function cleanSceneryArt(im,name){
 }
 const artWidth=im=>im.naturalWidth||im.width,artHeight=im=>im.naturalHeight||im.height;
 let sceneryForeground=null,sceneryPlayer=null,solarCasters=null;
+const frameSunByArea=new Map();
 const sceneryOpacity=new Map();
 function solarShadowAt(hour,weather='clear'){
  if(hour<=6||hour>=18)return null;
@@ -123,10 +129,11 @@ function solarShadowAt(hour,weather='clear'){
  const opacity=.24*Math.min(1,altitude*3)*({rain:.35,storm:.2,fog:.3,snow:.65,cloudy:.55}[weather]??1);
  return {dx:-Math.cos(Math.PI*phase)*length,dy:-.32*length,opacity};
 }
-function startSceneryLayer(x,y){sceneryForeground=[];solarCasters=[];sceneryPlayer={x,y,now:performance.now()}}
+function startSceneryLayer(x,y){sceneryForeground=[];solarCasters=[];frameSunByArea.clear();sceneryPlayer={x,y,now:performance.now()}}
 function queueSolarShadow(x,y,w,h,kind='tree'){
  if(!solarCasters||!OUTDOOR_GRID[s.area])return;
- const sun=solarShadowAt(worldHour(),regionalWeather());if(!sun)return;
+ if(!frameSunByArea.has(s.area))frameSunByArea.set(s.area,solarShadowAt(worldHour(),regionalWeather()));
+ const sun=frameSunByArea.get(s.area);if(!sun)return;
  solarCasters.push({x,y,w,h,kind,sun});
 }
 function drawSolarShadows(){
@@ -180,8 +187,11 @@ function uploadedArtPath(name){
  return 'assets/'+name+'.png';
 }
 function uploadedArt(name){
- if(!uploadedArtCache.has(name)){const im=new Image();im.src=uploadedArtPath(name);uploadedArtCache.set(name,im)}
- const im=uploadedArtCache.get(name);return im.complete&&im.naturalWidth>0&&im.naturalHeight>0?im:null;
+ if(failedUploadedArt.has(name))return null;
+ let im=uploadedArtCache.get(name);
+ if(!im){im=new Image();im.decoding='async';im.onerror=()=>{failedUploadedArt.add(name);if(uploadedArtCache.get(name)===im)uploadedArtCache.delete(name)};uploadedArtCache.set(name,im);im.src=uploadedArtPath(name)}
+ else{uploadedArtCache.delete(name);uploadedArtCache.set(name,im)}
+ return im.complete&&im.naturalWidth>0&&im.naturalHeight>0?im:null;
 }
 function drawUploadedArt(name,x,y,w,h){
  const im=uploadedArt(name);if(!im)return false;
@@ -1239,7 +1249,7 @@ function solidAt(x,y){
  if(isInterior(s.area)&&(interiorBlocked.has(key(x,y))||y<4))return true;
  if(s.area==='route1'&&route1Blocked.has(key(x,y)))return true;
  if(explorationBlocked(s.area,x,y))return true;
- if(buildingYardLayout(s.area).some(o=>o.solid&&yardContains(o,x,y)))return true;
+ if(yardFootprint(s.area).solid.has(key(x,y)))return true;
  return [T.tree,T.roof,T.wall,T.desk,T.rock,T.water,T.hedge,T.gate].includes(tiles[y][x]);
 }
 // Visual-only movement: collision, saves, encounters, and interactions remain on the existing grid.
@@ -2326,7 +2336,15 @@ const YARD_MODULES=Object.freeze({
   side:[['outdoor-planter-3-227',1,1,1],['outdoor-rock-3-073',1,1,1],['outdoor-trellis-1-169',1,1,2],['outdoor-flowers-grass-2-076',0,1,1]]
  }
 });
-const yardCache=new WeakMap();
+const yardCache=new WeakMap(),yardFootprintCache=new WeakMap();
+function yardFootprint(area){
+ if(!yardFootprintCache.has(tiles)){
+  const occupied=new Set(),solid=new Set();
+  for(const o of buildingYardLayout(area))for(let y=o.y;y<o.y+o.h;y++)for(let x=o.x;x<o.x+o.w;x++){const k=key(x,y);occupied.add(k);if(o.solid)solid.add(k)}
+  yardFootprintCache.set(tiles,{occupied,solid});
+ }
+ return yardFootprintCache.get(tiles);
+}
 function yardBuildings(area){
  if(area==='village')return VILLAGE_HOUSES.map(h=>({...h,style:h.kind==='lab'?'lab':'home'}));
  return (TOWN_EXTERIORS[area]||[]).map(h=>({...h,style:h.style|| (h.label==='GRASS GYM'?'gym':h.label==='CRITTER CENTER'?'center':h.art?.startsWith('shop-')?'shop':'home'),door:h.door??(h.label==='GRASS GYM'?24:Object.values(TOWN_ROOMS).find(r=>r.parent===area&&r.door[0]>=h.x&&r.door[0]<h.x+h.w&&r.door[1]===h.y+h.h+1)?.door[0]??h.x+Math.floor(h.w/2))}));
@@ -2425,10 +2443,11 @@ function drawNaturalDetails(ox,oy,w,h){
  if(!OUTDOOR_GRID[s.area]||s.area==='homestead')return;
  const x0=Math.max(1,Math.floor(ox/S)),x1=Math.min(W-1,Math.ceil((ox+w)/S));
  const y0=Math.max(1,Math.floor(oy/S)),y1=Math.min(H-1,Math.ceil((oy+h)/S));
+ const yard=yardFootprint(s.area).occupied,publicProps=settlementPublicProps(s.area),actors=new Set(npcs.filter(p=>!p.indoors).map(p=>key(p.x,p.y)));
  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y)||buildingYardLayout(s.area).some(o=>yardContains(o,x,y))||settlementPublicProps(s.area).some(o=>yardContains(o,x,y)))continue;
+  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y)||yard.has(key(x,y))||publicProps.some(o=>yardContains(o,x,y)))continue;
   // Avoid actor positions, doors, roads and named sites; small ground details are walkable.
-  if(npcs.some(p=>p.x===x&&p.y===y))continue;
+  if(actors.has(key(x,y)))continue;
   if(s.area==='village'&&villageObstacles.has(key(x,y)))continue;
   if(s.area==='route1'&&route1Blocked.has(key(x,y)))continue;
   const neighbors=[tiles[y-1]?.[x],tiles[y+1]?.[x],tiles[y]?.[x-1],tiles[y]?.[x+1]];
@@ -3393,7 +3412,9 @@ function draw(){
  drawRegionAtmosphere(ox,oy,viewportWidth,viewportHeight,performance.now());
  for(const p of npcs){
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&s.defeated[p.id]){ /* Trainer remains visible for rematches. */ }
+ if(p.indoors)continue;
  const pos=npcVisualPosition(p),x=pos.x*S+16-ox,y=pos.y*S+32-oy;
+ if(x< -40||x>viewportWidth+40||y< -70||y>viewportHeight+40)continue;
  queueWorldActor(y,()=>{drawNpc(p,x,y);drawNpcActivity(p,x,y);});
  if((p.kind==='gymtrainer'||p.kind==='routetrainer')&&!s.defeated[p.id]&&!(p.alertUntil>performance.now())&&trainerApproach?.p!==p){
   ctx.fillStyle='#fff1a0';ctx.font='bold 14px monospace';ctx.fillText('!',x-4,y-43);
@@ -5082,7 +5103,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.55</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.56</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -6978,7 +6999,16 @@ window.addEventListener('resize',()=>{canvasSizeDirty=true;releaseMovement()});
 if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{canvasSizeDirty=true}).observe(C);
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{canvasSizeDirty=true});
 if(read()?.name)$('continue').hidden=false;
-function loop(){tickAmbient();if(screen==='game'&&!document.hidden){tickStoryScenes();finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}if(!battle)draw();else atmospherePreviousFrame=0}requestAnimationFrame(loop)}
+// Adaptive presentation pacing only; input and NPC simulation remain on every animation callback.
+let lastWorldRender=-Infinity,renderCostAverage=0,renderInterval=1000/60;
+function renderWorldFrame(now){
+ if(!canvasSizeDirty&&now-lastWorldRender<renderInterval-1)return;
+ const start=performance.now();draw();trimArtworkCache();lastWorldRender=now;
+ renderCostAverage=renderCostAverage*.92+(performance.now()-start)*.08;
+ if(renderCostAverage>19)renderInterval=1000/30;
+ else if(renderCostAverage<10)renderInterval=1000/60;
+}
+function loop(now=performance.now()){tickAmbient();if(screen==='game'&&!document.hidden){tickStoryScenes();finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}if(!battle)renderWorldFrame(now);else{atmospherePreviousFrame=0;lastWorldRender=-Infinity}}else{atmospherePreviousFrame=0;lastWorldRender=-Infinity}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
