@@ -616,7 +616,7 @@ test('expanded world has unique coordinates, reciprocal portals and reachable di
  assert.equal(Object.keys(world.grid).length,30);
  assert.equal(Object.keys(world.expansion).length,20);
  assert.equal(new Set(Object.values(world.grid).map(p=>p.join(','))).size,30);
- assert.deepEqual(Object.values(world.expansion).filter(p=>p.gym).map(p=>p.gym).sort((a,b)=>a-b),[2,3,4,5,6,7,8]);
+ assert.equal(Object.values(world.expansion).filter(p=>p.gym).map(p=>p.gym).sort((a,b)=>a-b).join(','),'2,3,4,5,6,7,8');
  const delta={left:[-1,0],right:[1,0],up:[0,-1],down:[0,1]},opposite={left:'right',right:'left',up:'down',down:'up'};
  for(const [id,links] of Object.entries(world.links))for(const [dir,[to,a,b]] of Object.entries(links)){
   if(!world.grid[to])continue;
@@ -633,6 +633,9 @@ test('every expanded district has a continuous path between all its portals',()=
  const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7};
  const context={T,TOWN_ROOMS:{},naturalSeed:(x,y)=>Math.abs((x*73856093^y*19349663)>>>0),W:0,H:0,tiles:[]};
  const sandbox=extract('const REGIONAL_EXPANSION=','const outdoorChunks=',context);
+ const planStart=game.indexOf('const SETTLEMENT_PLANS='),planEnd=game.indexOf('const TOWN_ROOMS=',planStart);
+ vm.runInContext(game.slice(planStart,planEnd),sandbox);
+ T.roof=8;T.wall=9;T.door=10;
  const start=game.indexOf('function buildExpansionArea('),end=game.indexOf('function outdoorChunk(',start);
  vm.runInContext(game.slice(start,end),sandbox);
  vm.runInContext(`
@@ -650,5 +653,18 @@ test('every expanded district has a continuous path between all its portals',()=
    const x=side==='left'?0:side==='right'?W-1:n,y=side==='up'?0:side==='down'?H-1:n;
    assert.ok(seen.has(x+','+y),id+' disconnected from '+dest+' at '+x+','+y);
   }
+ }
+});
+
+test('new settlement plans have 35 nonoverlapping lots and 28 usable service/residential rooms',()=>{
+ const ctx=extract('const SETTLEMENT_PLANS=','const TOWN_ROOMS=',{});
+ const result=vm.runInContext('({plans:Object.keys(SETTLEMENT_PLANS),lots:Object.keys(SETTLEMENT_PLANS).flatMap(settlementLots),rooms:settlementRoomDefinitions()})',ctx);
+ assert.equal(result.plans.length,7);assert.equal(result.lots.length,35);assert.equal(Object.keys(result.rooms).length,28);
+ for(const area of result.plans){
+  const lots=ctx.settlementLots(area);
+  assert.equal(lots.filter(b=>b.kind==='gym').length,1);
+  assert.equal(lots.filter(b=>b.kind==='center').length,1);
+  assert.equal(lots.filter(b=>b.kind==='shop').length,1);
+  for(const a of lots)for(const b of lots)if(a!==b)assert.ok(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h+2<=b.y||b.y+b.h+2<=a.y,area+' overlapping lots');
  }
 });
