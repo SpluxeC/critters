@@ -18,9 +18,24 @@ function treeVariant(x,y){
  // Stable across reloads, with greater tall-tree variety on wooded routes.
  return ((x*17+y*31+(x*y)%11)%3+3)%3;
 }
+function drawSnowEvergreen(x,y,a,b,now){
+ const seed=naturalSeed(a,b),height=48+seed%13,width=28+seed%5;
+ queueSolarShadow(x,y,width,height);
+ sceneryLayer(s.area+':winter-tree:'+a+','+b,x-width/2,y-height,width,height,y,()=>{
+  ctx.save();ctx.translate(x,y);ctx.rotate(reducedWorldMotion()?0:Math.sin(now*.001+a)*.008);
+  ctx.fillStyle='#675d50';ctx.fillRect(-3,-12,6,12);
+  for(let k=2;k>=0;k--){
+   const top=-height+k*13,half=width*(.28+k*.1);
+   ctx.fillStyle='#345b55';ctx.beginPath();ctx.moveTo(0,top);ctx.lineTo(-half,top+24);ctx.lineTo(half,top+24);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#dce9e6';ctx.beginPath();ctx.moveTo(0,top+2);ctx.lineTo(-half*.78,top+18);ctx.lineTo(0,top+15);ctx.lineTo(half*.78,top+18);ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+ });
+}
 function drawCinematicTrees(ox,oy,w,h,now){
  for(let y=Math.max(0,Math.floor(oy/S)-1);y<Math.min(H,Math.ceil((oy+h)/S)+4);y++)for(let x=Math.max(0,Math.floor(ox/S)-2);x<Math.min(W,Math.ceil((ox+w)/S)+2);x++){
   if(tiles[y]?.[x]!==T.tree||buildingSceneryReserved(s.area,x,y))continue;
+  if(isSnowDistrict(s.area)){drawSnowEvergreen(x*S+S*.5-ox,(y+1)*S-oy,x,y,now);continue;}
   const type=treeVariant(x,y),custom=uploadedArt(naturalTreeName(s.area,naturalSeed(x,y))),img=custom||treeArt[type];
   if(!img?.complete||!img.naturalWidth)continue;
   const rootX=x*S+S*.5-ox,rootY=(y+1)*S-oy;
@@ -853,6 +868,7 @@ function furnishExpansionRoom(area,add){
   const x=(a,w)=>flip?W-a-w:a;
   if(room.parent==='harborTown')item('harborNotes',x(2,3),3,3,1,'board','Coastal Chart','A chart of the local shoreline and harbor.','wall-landscape');
   if(room.parent==='marshTown')item('wetlandNotes',x(2,3),3,3,1,'board','Wetland Landscape','A landscape of the reed beds and raised walking paths.','wall-landscape');
+  if(room.parent==='snowTown')item('winterNotes',x(2,3),3,3,1,'board','Winter Landscape','A painting of snow-covered peaks and frozen lakes.','wall-landscape');
   if(room.parent==='volcanicTown')item('thermalNotes',x(2,3),3,3,1,'board','Mineral Springs','A painting of the local mineral springs and dark ridges.','wall-landscape');
   if(room.parent==='canyonTown')item('canyonNotes',x(2,3),3,3,1,'board','Mountain Landscape','A painting of the layered sandstone ridges.','wall-landscape');
   item('bed',x(2,3),4,3,3,'bed','Bed','A comfortable place to rest.',theme.bed);
@@ -2306,6 +2322,7 @@ function drawNaturalTile(t,x,y,a,b){
 function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
+ if(isSnowDistrict(area))return null;
  if(area==='ashPass')return seed%89===0?'outdoor-stump-1-075':null;
  if(isVolcanicDistrict(area))return seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='canyonRoute'||area==='canyonTown')return seed%41===0?'outdoor-shrub-3-037':seed%67===0?'outdoor-flowers-grass-2-076':null;
@@ -2551,6 +2568,25 @@ function drawContinuousWater(x,y,a,b){
  }
  ctx.restore();
 }
+function drawSnowGround(t,x,y,a,b){
+ const seed=naturalSeed(a,b);
+ ctx.fillStyle='#dce7e6';ctx.fillRect(x,y,S,S);
+ ctx.fillStyle='#bcced344';for(let k=0;k<4;k++)ctx.fillRect(x+(seed+k*13)%28,y+((seed>>>7)+k*9)%29,3+k%3,1);
+ if(t===T.tall||t===T.flower){
+  ctx.strokeStyle='#7f9290';ctx.lineWidth=1.3;
+  for(let k=0;k<4;k++){const px=x+5+k*7,py=y+27-k%2*3;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+2,py-9);ctx.lineTo(px+5,py-12);ctx.stroke()}
+ }
+}
+function drawFrozenLake(x,y,a,b){
+ const seed=naturalSeed(a,b);
+ ctx.fillStyle='#dce7e6';ctx.fillRect(x,y,S,S);
+ ctx.save();ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
+ const n=terrainNeighbor(a,b,0,-1)===T.water,e=terrainNeighbor(a,b,1,0)===T.water,so=terrainNeighbor(a,b,0,1)===T.water,w=terrainNeighbor(a,b,-1,0)===T.water;
+ ctx.fillStyle='#9ebdc9';ctx.fillRect(x+(w?0:3),y+(n?0:3),S-(w?0:3)-(e?0:3),S-(n?0:3)-(so?0:3));
+ ctx.strokeStyle='#e2f0ee88';ctx.lineWidth=1;
+ ctx.beginPath();ctx.moveTo(x+5,y+7+seed%9);ctx.lineTo(x+16,y+15);ctx.lineTo(x+25,y+12);ctx.stroke();
+ ctx.restore();
+}
 function drawAshGround(t,x,y,a,b){
  const seed=naturalSeed(a,b),drift=Math.sin(a*.29+b*.41)+Math.cos(a*.17-b*.32);
  ctx.fillStyle=drift>.6?'#96918e':drift<-.6?'#736f70':'#817d7d';ctx.fillRect(x,y,S,S);
@@ -2564,7 +2600,8 @@ function drawAshGround(t,x,y,a,b){
 function seamlessGround(t,x,y,a,b){
  const colors={[T.grass]:'#75a65e',[T.path]:'#c6ae82',[T.stone]:'#aaa899',[T.water]:'#629fa5',[T.rice]:'#829d68',[T.tall]:'#75a65e',[T.flower]:'#75a65e'};
  const color=(t===T.grass||t===T.tall||t===T.flower||t===T.path)?expansionGroundColor(s.area,t)||colors[t]:colors[t];if(!color)return false;
- if(t===T.water){drawContinuousWater(x,y,a,b);return true;}
+ if(t===T.water){if(isSnowDistrict(s.area))drawFrozenLake(x,y,a,b);else drawContinuousWater(x,y,a,b);return true;}
+ if(isSnowDistrict(s.area)&&(t===T.grass||t===T.tall||t===T.flower)){drawSnowGround(t,x,y,a,b);return true;}
  if(t===T.path&&coastalDeckCell(s.area,a,b)){drawCoastalDeck(x,y,a,b);return true;}
  if(t===T.path&&marshDeckCell(s.area,a,b)){drawMarshDeck(x,y,a,b);return true;}
  if(s.area==='ashPass'&&(t===T.grass||t===T.tall)){drawAshGround(t,x,y,a,b);return true;}
@@ -2678,6 +2715,8 @@ function drawAshRidge(x,y,a,b){
  ctx.fillStyle='#bdb7af55';for(let k=0;k<4;k++)ctx.fillRect(x+3+(seed+k*11)%24,y+8+((seed>>>5)+k*7)%12,3,1);
 }
 function drawTile(t,x,y,a,b){
+ if(isSnowDistrict(s.area)&&t===T.tree){drawSnowGround(T.grass,x,y,a,b);return;}
+ if(isSnowDistrict(s.area)&&t===T.rock){drawSnowGround(T.grass,x,y,a,b);ctx.fillStyle='#778a91';ctx.fillRect(x+2,y+9,S-4,S-11);ctx.fillStyle='#f2f6f2';ctx.fillRect(x+3,y+4,S-6,12);queueSolarShadow(x+S/2,y+S,S,16);return;}
  if(t===T.rock&&s.area==='ashPass'&&ashRidgeCell(a,b,W,H)){drawAshRidge(x,y,a,b);return;}
  if(t===T.rock&&isVolcanicDistrict(s.area)&&volcanicRidgeCell(s.area,a,b,W,H)){drawBasaltRidge(x,y,a,b);return;}
  if(t===T.rock&&(s.area==='canyonRoute'||s.area==='canyonTown')&&canyonCliffCell(s.area,a,b,W,H)){drawCanyonCliff(x,y,a,b);return;}
@@ -3413,6 +3452,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
    ctx.beginPath();ctx.moveTo(sx+2+ripple*.3,sy+29);ctx.lineTo(sx+8+ripple*.3,sy+29);ctx.stroke();
    if(!naturalTileReady(T.rice,x,y))drawRiceClump(sx,sy,x,y,now);
   }else if(t===T.water){
+   if(isSnowDistrict(s.area))continue;
    // Synchronized flowing highlights, clipped to the water cell and away from shorelines.
    const east=terrainNeighbor(x,y,1,0)===T.water,west=terrainNeighbor(x,y,-1,0)===T.water;
    const north=terrainNeighbor(x,y,0,-1)===T.water,south=terrainNeighbor(x,y,0,1)===T.water;
@@ -3429,7 +3469,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
    if((s.area==='coastRoute'||s.area==='harborTown')&&!north){ctx.strokeStyle='rgba(244,248,223,.42)';ctx.beginPath();ctx.moveTo(sx+6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.lineTo(sx+S-6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.stroke()}
    ctx.restore();
   }else if(t===T.tall){
-   if(s.area==='ashPass'||naturalTileReady(T.tall,x,y))continue;
+   if(isSnowDistrict(s.area)||s.area==='ashPass'||naturalTileReady(T.tall,x,y))continue;
    for(let k=0;k<4;k++){
     const rootX=sx+5+k*7,rootY=sy+26-k%2*3;
     ctx.strokeStyle=k%2?'#9ac76b':'#66994f';ctx.lineWidth=1.4;
@@ -4117,6 +4157,7 @@ function buildExpansionArea(area){
  if(area==='canyonRoute'||area==='canyonTown')buildCanyonLandscape(area);
  if(isVolcanicDistrict(area))buildVolcanicLandscape(area);
  if(area==='ashPass')buildAshPassLandscape();
+ if(isSnowDistrict(area))buildSnowLandscape(area);
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
@@ -4282,6 +4323,37 @@ function buildAshPassLandscape(){
   for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(tiles[yy]?.[xx]===T.grass&&naturalSeed(xx,yy)%4!==0)put(xx,yy,T.tall);
  }
 }
+// Phase 9.6: frozen alpine lakes, evergreen stands and cleared winter roads.
+function isSnowDistrict(area){return area==='snowRoute'||area==='snowTown'}
+function snowLakeCell(area,x,y){
+ if(area==='snowRoute')return ((x-27)/7)**2+((y-25)/5)**2<1+.09*Math.sin(x+y);
+ return area==='snowTown'&&((x-9)/5)**2+((y-30)/3)**2<1+.08*Math.cos(x-y);
+}
+function buildSnowLandscape(area){
+ if(area==='snowRoute'){
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+   if(tiles[y][x]===T.path)continue;
+   const seed=naturalSeed(x,y),north=4+Math.round(Math.sin(x*.31)*2),south=H-4+Math.round(Math.cos(x*.4));
+   const grove=((x-8)/6)**2+((y-7)/4)**2<1||((x-30)/7)**2+((y-7)/4)**2<1||((x-6)/4)**2+((y-24)/6)**2<1;
+   if(snowLakeCell(area,x,y))put(x,y,T.water);
+   else if(y<=north||y>=south)put(x,y,T.rock);
+   else if(grove&&seed%5<3)put(x,y,T.tree);
+   else put(x,y,T.grass);
+  }
+  // Lake overlook loop, with no walking on frozen water.
+  rect(18,14,3,14,T.path);rect(18,17,18,3,T.path);rect(34,14,3,10,T.path);
+  rect(18,27,3,2,T.stone);
+  for(const [x,y,w,h] of [[11,6,5,4],[22,7,5,4],[12,25,5,4],[31,29,5,3]]){
+   for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(tiles[yy]?.[xx]===T.grass&&naturalSeed(xx,yy)%4!==0)put(xx,yy,T.tall);
+  }
+ }else{
+  // South garden sits beyond the house frontage and outside all building lots.
+  for(let y=28;y<H-1;y++)for(let x=3;x<=15;x++)if(snowLakeCell(area,x,y)&&tiles[y]?.[x]!==T.path)put(x,y,T.water);
+  rect(14,26,3,6,T.path);rect(12,27,3,1,T.stone);
+  for(const [x,y] of [[3,29],[4,32],[16,30],[21,31],[37,28],[40,30]])if(tiles[y]?.[x]===T.grass)put(x,y,T.tree);
+  for(const o of settlementPublicProps(area))if(o.x<17&&o.y>=28)rect(o.x,o.y,o.w,o.h,T.grass);
+ }
+}
 function buildSpecialStorySite(area){
  const plans={
   leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
@@ -4367,7 +4439,8 @@ function settlementPublicProps(area){
  const wetland=area==='marshTown'?[{x:4,y:28,w:2,h:1,name:'outdoor-bench-2-148'},{x:12,y:28,w:1,h:1,name:'outdoor-planter-1-161'},{x:14,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'}]:[];
  const canyon=area==='canyonTown'?[{x:5,y:29,w:2,h:1,name:'outdoor-bench-2-148'},{x:12,y:29,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:5,y:33,w:1,h:1,name:'outdoor-planter-1-161'}]:[];
  const thermal=area==='volcanicTown'?[{x:4,y:29,w:2,h:1,name:'outdoor-bench-2-148'},{x:11,y:29,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:4,y:36,w:1,h:1,name:'outdoor-rock-3-073'}]:[];
- return [...harbor,...wetland,...canyon,...thermal,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
+ const winter=area==='snowTown'?[{x:12,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:4,y:28,w:2,h:1,name:'outdoor-bench-2-148'}]:[];
+ return [...harbor,...wetland,...canyon,...thermal,...winter,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
 }
 function buildSettlement(area){
  const p=SETTLEMENT_PLANS[area],lots=settlementLots(area),[px,py]=p.public;
@@ -4419,6 +4492,7 @@ function drawSettlementGym(b,ox,oy){
 }
 function expansionGroundColor(area,t){
  const biome=REGIONAL_EXPANSION[area]?.biome;
+ if(isSnowDistrict(area))return t===T.path?'#bbc9cd':'#dce7e6';
  if(area==='ashPass')return t===T.path?'#b1a9a1':'#817d7d';
  if(isVolcanicDistrict(area))return t===T.path?'#aca398':'#66635f';
  if(!biome)return null;
@@ -5406,7 +5480,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.61</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.62</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
