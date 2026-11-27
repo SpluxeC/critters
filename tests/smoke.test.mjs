@@ -880,3 +880,21 @@ test('Phase 9.7 Highland Town terraces preserve roads and connect both stairways
  assert.equal(tiles[32][5],T.rock);assert.equal(tiles[32][24],T.rock);
  for(let y=28;y<=32;y++)for(const x of [8,9,10,17,18,19])assert.equal(tiles[y][x],T.path);
 });
+
+test('Phase 9.8 ancient ruins preserve roads and courtyard access',()=>{
+ const T={grass:0,path:1,rock:2,stone:3,tall:4};
+ const ctx=extract('function ancientRuinKind(','function buildSpecialStorySite(',{T,W:44,H:34,tiles:[],naturalSeed:(x,y)=>x*31+y*17,settlementPublicProps:()=>[]});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ for(const area of ['ancientRoute','ancientTown']){
+  ctx.area=area;ctx.W=area==='ancientRoute'?44:42;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,W,3,T.path);rect(17,1,3,H-2,T.path);rect(2,26,W-4,2,T.path);buildAncientLandscape(area);return tiles})()`,ctx);
+  const seen=new Set(['18,13']),queue=[[18,13]];
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+  assert.ok(seen.has('0,13'));assert.ok(seen.has((ctx.W-1)+',13'));
+  if(area==='ancientRoute'){assert.equal(tiles[5][8],T.rock);assert.equal(tiles[9][7],T.rock);assert.ok(seen.has('30,25'));}
+  else{assert.equal(tiles[29][4],T.rock);assert.ok(seen.has('9,32'));assert.ok(seen.has('15,31'));}
+ }
+});
