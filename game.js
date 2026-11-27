@@ -2332,7 +2332,7 @@ function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
  if(isSnowDistrict(area))return null;
- if(sanctuaryKind(area)||area==='eclipseSite')return null;
+ if(sanctuaryKind(area)||area==='eclipseSite'||area==='leagueGrounds')return null;
  if(area==='ancientRoute'||area==='ancientTown')return seed%43===0?'outdoor-shrub-3-037':seed%59===0?'outdoor-flowers-grass-2-076':null;
  if(area==='highlandTown')return seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='ashPass')return seed%89===0?'outdoor-stump-1-075':null;
@@ -2622,6 +2622,7 @@ function seamlessGround(t,x,y,a,b){
  if(isSnowDistrict(s.area)&&(t===T.grass||t===T.tall||t===T.flower)){drawSnowGround(t,x,y,a,b);return true;}
  if(t===T.path&&coastalDeckCell(s.area,a,b)){drawCoastalDeck(x,y,a,b);return true;}
  if(t===T.path&&(marshDeckCell(s.area,a,b)||sanctuaryDeckCell(s.area,a,b))){drawMarshDeck(x,y,a,b);return true;}
+ if(s.area==='leagueGrounds'&&t===T.path&&leagueStairCell(a,b)){drawHighlandSteps(x,y);return true;}
  if(s.area==='highlandTown'&&t===T.path&&highlandStepCell(a,b)){drawHighlandSteps(x,y);return true;}
  if(s.area==='ashPass'&&(t===T.grass||t===T.tall)){drawAshGround(t,x,y,a,b);return true;}
  if(s.area==='coastRoute'&&t===T.grass&&b>=coastalShoreline(a)-3){ctx.fillStyle='#d9c69c';ctx.fillRect(x,y,S,S);ctx.fillStyle='#a58d6430';for(let k=0;k<4;k++){const h=naturalSeed(a*7+k,b*11+k);ctx.fillRect(x+h%30,y+(h>>>8)%30,2,1)}return true;}
@@ -2803,7 +2804,32 @@ function drawEclipseGround(x,y,a,b,kind){
  }
  queueSolarShadow(x+S/2,y+S,24,20);
 }
+function drawLeagueFeature(x,y,a,b,kind){
+ if(kind==='palace'){
+  // Connected monumental facade: layered roof, stone columns and central closed doors.
+  const center=a>=17&&a<=24,front=b>=8;
+  ctx.fillStyle=front?'#e0d6bf':'#475e63';ctx.fillRect(x,y,S,S);
+  if(!front){
+   ctx.fillStyle='#657d7c';ctx.fillRect(x,y+2,S,4);
+   ctx.fillStyle='#354b52';ctx.fillRect(x,y+24,S,5);
+   if(b===3||b===6){ctx.fillStyle='#b6a57b';ctx.fillRect(x,y+1,S,3);}
+  }else{
+   ctx.fillStyle='#a7a18e';ctx.fillRect(x,y+S-4,S,4);
+   if(center&&b>=9){ctx.fillStyle='#554a40';ctx.fillRect(x+1,y,S-2,S);ctx.fillStyle='#bca778';ctx.fillRect(x+S-3,y,2,S);}
+   else{ctx.fillStyle='#f3e7ce';ctx.fillRect(x+3,y,7,S);ctx.fillStyle='#66777b';ctx.fillRect(x+14,y+3,14,S-7);}
+   if(b===10)queueSolarShadow(x+S/2,y+S,S,35);
+  }
+  return;
+ }
+ ctx.fillStyle='#8da779';ctx.fillRect(x,y,S,S);
+ ctx.fillStyle='#8b8f80';ctx.fillRect(x+3,y+23,S-6,8);
+ if(kind==='pillar'){ctx.fillStyle='#ddd1b6';ctx.fillRect(x+9,y+3,14,24);ctx.fillStyle='#a79b80';ctx.fillRect(x+5,y+2,22,5);}
+ else{ctx.fillStyle='#b4b2a0';ctx.fillRect(x,y+9,S,20);ctx.fillStyle='#ddd1b6';ctx.fillRect(x,y+6,S,5);}
+ queueSolarShadow(x+S/2,y+S,S,kind==='pillar'?28:15);
+}
 function drawTile(t,x,y,a,b){
+ if(s.area==='leagueGrounds'&&(t===T.roof||t===T.rock)){const feature=leagueFeature(a,b);if(feature){drawLeagueFeature(x,y,a,b,feature);return;}}
+ if(s.area==='victoryRoad'&&t===T.rock&&victoryRidgeCell(a,b,W,H)){drawCanyonCliff(x,y,a,b);return;}
  if(s.area==='eclipseSite'&&(t===T.rock||t===T.roof)){const kind=eclipseGroundKind(a,b);if(kind){drawEclipseGround(x,y,a,b,kind);return;}}
  if(t===T.rock&&sanctuaryMonumentCell(s.area,a,b)){drawSanctuaryMonument(x,y,a,b);return;}
  if(t===T.rock&&(s.area==='ancientRoute'||s.area==='ancientTown')){
@@ -4257,6 +4283,7 @@ function buildExpansionArea(area){
  if(isSnowDistrict(area))buildSnowLandscape(area);
  if(area==='highlandTown')buildHighlandLandscape();
  if(area==='ancientRoute'||area==='ancientTown')buildAncientLandscape(area);
+ if(area==='victoryRoad')buildVictoryLandscape();
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
@@ -4579,6 +4606,42 @@ function buildEclipseLandscape(){
  // Public access stops at closed building facades; no doors or story triggers.
  rect(11,17,3,2,T.grass);
 }
+// Phase 9.11: the final mountain approach and closed regional League.
+function victoryRidgeCell(x,y,w,h){
+ const ridge=(cx,cy,rx,ry)=>((x-cx)/rx)**2+((y-cy)/ry)**2<1+.12*Math.sin(x*.7+y*.4);
+ return y<=4+Math.round(2*Math.sin(x*.3))||y>=h-4+Math.round(Math.cos(x*.4))||ridge(8,8,5,4)||ridge(29,7,8,4)||ridge(5,23,4,7)||ridge(35,24,5,7);
+}
+function buildVictoryLandscape(){
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+  if(tiles[y][x]===T.path||tiles[y][x]===T.stone)continue;
+  if(victoryRidgeCell(x,y,W,H))put(x,y,T.rock);
+  else if(tiles[y][x]===T.rock)put(x,y,T.grass);
+ }
+ rect(8,14,3,13,T.path);rect(18,14,3,13,T.path);rect(28,14,3,13,T.path);
+ rect(8,24,23,3,T.stone);rect(12,27,5,2,T.stone);rect(23,27,5,2,T.stone);
+ for(const [x,y] of [[12,8],[14,9],[23,9],[33,10],[12,29],[31,29]])if(tiles[y]?.[x]===T.grass)put(x,y,T.tree);
+}
+function leagueFeature(x,y){
+ if(x>=8&&x<=33&&y>=3&&y<=10)return 'palace';
+ if(y===17&&(x===8||x===33))return 'pillar';
+ if(y===25&&(x===10||x===31))return 'pillar';
+ if(y===26&&((x>=6&&x<=9)||(x>=32&&x<=35)))return 'wall';
+ if((x===7||x===34)&&y>=20&&y<=23)return 'wall';
+ return null;
+}
+function leagueStairCell(x,y){return x>=16&&x<=25&&y>=11&&y<=14}
+function buildLeagueLandscape(){
+ // Leave the original east portal connected to the entire grand court.
+ for(let y=2;y<H-1;y++)for(let x=2;x<W-2;x++)if(tiles[y][x]!==T.path)put(x,y,T.grass);
+ rect(8,3,26,8,T.roof);
+ rect(14,11,14,5,T.stone);rect(16,11,10,4,T.path);
+ rect(12,15,18,14,T.stone);rect(18,15,6,15,T.path);
+ rect(18,12,W-18,3,T.path);rect(9,19,24,3,T.path);
+ rect(9,24,24,2,T.stone);
+ for(let y=16;y<=26;y++)for(let x=6;x<=35;x++)if(leagueFeature(x,y))put(x,y,T.rock);
+ for(const [x,y] of [[5,17],[36,17],[5,28],[36,28],[9,29],[32,29]])if(tiles[y]?.[x]===T.grass)put(x,y,T.tree);
+ for(const [x,y] of [[10,16],[30,16],[10,22],[30,22],[13,30],[28,30]])if(tiles[y]?.[x]===T.grass)rect(x,y,2,1,T.flower);
+}
 function buildSpecialStorySite(area){
  const plans={
   leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
@@ -4592,16 +4655,7 @@ function buildSpecialStorySite(area){
  if(plan.kind==='facility'){
   buildEclipseLandscape();
  }else if(plan.kind==='league'){
-  rect(8,4,9,5,T.roof);rect(8,9,9,2,T.wall);
-  rect(22,4,9,5,T.roof);rect(22,9,9,2,T.wall);
-  rect(9,18,23,10,T.grass);
-  rect(16,16,5,13,T.path);
-  rect(10,20,6,6,T.stone);rect(21,20,10,6,T.stone);
-  if(plan.kind==='league'){
-   rect(12,22,2,2,T.flower);rect(27,22,2,2,T.flower);
-  }else{
-   rect(11,23,3,2,T.rock);rect(27,23,3,2,T.rock);
-  }
+  buildLeagueLandscape();
  }else{
   buildSanctuaryLandscape(area);
  }
@@ -5704,7 +5758,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.66</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.67</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
