@@ -2468,7 +2468,7 @@ function drawNaturalDetails(ox,oy,w,h){
 function drawContinuousPath(t,x,y,a,b){
  const road=v=>v===T.path||v===T.stone;
  const n=road(terrainNeighbor(a,b,0,-1)),e=road(terrainNeighbor(a,b,1,0)),south=road(terrainNeighbor(a,b,0,1)),w=road(terrainNeighbor(a,b,-1,0));
- const stone=t===T.stone,fill=stone?'#aaa899':expansionGroundColor(s.area,T.path)||'#c6ae82';
+ const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
  const seed=naturalSeed(a,b);
  ctx.save();
  ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
@@ -2813,6 +2813,7 @@ function drawTownExteriors(ox,oy,w,h){
   // Never draw a legacy building under a ready full-size replacement.
   if(base&&drawAnimatedBuilding(base,b,dx,dy,ox,oy))continue;
   if(b.art)drawBuildingExterior(b.art,b,ox,oy,true);
+  else if(s.area==='canyonTown'&&b.kind==='home'&&drawBuildingExterior('house-slate',b,ox,oy,true))continue;
   else if(b.label)drawServiceExterior(b,ox,oy);
  }
 }
@@ -4142,6 +4143,7 @@ function buildCanyonLandscape(area){
   // A stone terrace and public overlook south of the service street.
   // Do not move lots, doors, or the original public square.
   rect(5,29,10,5,T.stone);rect(9,26,3,4,T.path);rect(14,30,5,3,T.path);
+  for(const o of settlementPublicProps(area))if(o.x<16&&o.y>=29)rect(o.x,o.y,o.w,o.h,T.grass);
   for(let y=H-4;y<H-1;y++)for(let x=3;x<W-3;x++)if(tiles[y][x]===T.grass&&canyonCliffCell(area,x,y,W,H))put(x,y,T.rock);
   for(const [x,y] of [[3,30],[4,32],[15,33],[21,34],[35,33],[37,30]])if(tiles[y]?.[x]===T.grass)put(x,y,T.rock);
  }
