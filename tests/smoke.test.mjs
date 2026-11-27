@@ -918,3 +918,19 @@ test('Phase 9.9 sanctuary courts, monuments and north entrances remain accessibl
   if(area==='legendaryReserveA')assert.equal(tiles[36][20],T.water);
  }
 });
+
+test('Phase 9.10 Eclipse compound preserves public access and closed facility collision',()=>{
+ const T={grass:0,path:1,rock:2,stone:3,roof:4};
+ const ctx=extract('function eclipseGroundKind(','function buildSpecialStorySite(',{T,W:42,H:38,tiles:[]});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(17,0,3,15,T.path);buildEclipseLandscape();return tiles})()`,ctx);
+ const seen=new Set(['18,0']),queue=[[18,0]];
+ for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone,T.grass].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+ for(const point of ['17,0','19,0','18,13','12,17','18,30','29,28'])assert.ok(seen.has(point),point);
+ assert.equal(tiles[3][8],T.rock);assert.equal(tiles[7][12],T.roof);assert.equal(tiles[7][27],T.roof);
+ assert.equal(tiles[21][8],T.rock);assert.equal(tiles[24][28],T.rock);
+ for(const y of [3,11])for(const x of [17,18,19])assert.equal(tiles[y][x],T.path);
+});
