@@ -535,8 +535,8 @@ test('v82 outer route graph has two loops and a cave fade',()=>{
 test('v83 region sections have distinct dimensions, asymmetric borders, area HUD and longer fade',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const atlas=readFileSync(new URL('../assets/region-map.svg',import.meta.url),'utf8');
- assert.match(game,/const OUTDOOR_COL_WIDTHS=\[36,40,44,51,44,46\]/);
- assert.match(game,/OUTDOOR_ROW_HEIGHTS=\[34,40\]/);
+ assert.match(game,/const OUTDOOR_COL_WIDTHS=\[36,40,44,51,44,46,42,44,42,44,42,44,42,44\]/);
+ assert.match(game,/OUTDOOR_ROW_HEIGHTS=\[34,40,38\]/);
  assert.match(game,/function outdoorSize\(area\)/);
  assert.match(game,/function outdoorOrigin\(area\)/);
  assert.match(game,/function decorateExpandedOutdoor\(\)/);
@@ -656,10 +656,10 @@ test('every expanded district has a continuous path between all its portals',()=
  }
 });
 
-test('new settlement plans have 35 nonoverlapping lots and 28 usable service/residential rooms',()=>{
+test('new settlement plans have 35 nonoverlapping lots and 35 accessible rooms',()=>{
  const ctx=extract('const SETTLEMENT_PLANS=','const TOWN_ROOMS=',{});
  const result=vm.runInContext('({plans:Object.keys(SETTLEMENT_PLANS),lots:Object.keys(SETTLEMENT_PLANS).flatMap(settlementLots),rooms:settlementRoomDefinitions()})',ctx);
- assert.equal(result.plans.length,7);assert.equal(result.lots.length,35);assert.equal(Object.keys(result.rooms).length,28);
+ assert.equal(result.plans.length,7);assert.equal(result.lots.length,35);assert.equal(Object.keys(result.rooms).length,35);
  for(const area of result.plans){
   const lots=ctx.settlementLots(area);
   assert.equal(lots.filter(b=>b.kind==='gym').length,1);
@@ -667,4 +667,9 @@ test('new settlement plans have 35 nonoverlapping lots and 28 usable service/res
   assert.equal(lots.filter(b=>b.kind==='shop').length,1);
   for(const a of lots)for(const b of lots)if(a!==b)assert.ok(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h+2<=b.y||b.y+b.h+2<=a.y,area+' overlapping lots');
  }
+});
+
+test('expansion route habitats preserve original roster and exclude starters and legendary types',()=>{
+ const routes=['coastRoute','marshRoute','canyonRoute','volcanicRoute','ashPass','snowRoute','ancientRoute','victoryRoad'];
+ for(const area of routes){const pool=species.filter(p=>p.habitats.some(h=>h.areaId===area));assert.ok(pool.length>=10,area);assert.ok(pool.every(p=>!p.starterFamily&&!p.types.some(t=>['Dragon','Primordial','Beast'].includes(t))&&p.habitats.filter(h=>h.areaId===area).every(h=>h.rarity!=='legendary')));}
 });
