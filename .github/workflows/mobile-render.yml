@@ -19,7 +19,7 @@ jobs:
       - name: Wait for live build
         run: |
           for i in $(seq 1 30); do
-            if curl -fsSL 'https://spluxec.github.io/critters/?qa='$(date +%s) | grep -q 'game.js?v=1.50'; then exit 0; fi
+            if curl -fsSL 'https://spluxec.github.io/critters/?qa='$(date +%s) | grep -q 'game.js?v=1.52'; then exit 0; fi
             sleep 5
           done
           exit 1
