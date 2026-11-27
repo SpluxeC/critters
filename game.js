@@ -189,6 +189,7 @@ function finishSceneryLayer(){
 
 const RESIDENTIAL_ART=new Set(["armchair-front-alt","armchair-front","bamboo-screen","bed-east","bed-north","bed-south","bed-west","bonsai-blue-pot","bonsai-red-pot","book-table","bookshelf-front","bookshelf-side-a","bookshelf-side-b","ceramic-jar","chair-front-alt","chair-front","chair-side-a","chair-side-b","clock-front","clock-side","crate-a","crate-b","cushion-blue","cushion-green","cushion-purple","cushion-red","desk-front-alt","desk-front","dining-table-horizontal-a","dining-table-horizontal-b","dining-table-vertical-a","dining-table-vertical-b","dresser-front-alt","dresser-front","floor-lantern","flowering-plant","folding-screen-a","folding-screen-b","folding-screen-c","fridge-front-alt","fridge-front","futon-east","futon-north","futon-south","futon-west","hide-rug","hutch-front-narrow","hutch-front","hutch-side","low-table-seats-a","low-table-seats-b","low-table-seats-c","low-table-seats-d","nightstand-front","nightstand-variant-2","nightstand-variant-3","nightstand-variant-4","plant-brown-pot","plant-tall-a","plant-tall-b","prep-counter-front","prep-counter-narrow","round-rug-blue","round-rug-cream","round-tea-table-a","round-tea-table-b","round-tea-table-c","round-tea-table-d","rug-blue","rug-red","sink-front-alt","sink-front","sink-side-a","sink-side-b","small-chest","small-flower-pot","sofa-front-alt","sofa-front","sofa-side-a","sofa-side-b","square-lantern","storage-chest","stove-front-alt","stove-front","stove-side-a","stove-side-b","table-horizontal-a","table-horizontal-b","table-vertical-a","table-vertical-b","tatami-mat","vanity-back","vanity-front","vanity-side","vase-flowers","wall-banner","wall-family-portrait","wall-floral-picture","wall-herb-rack","wall-landscape","wall-scroll-a","wall-scroll-b","wardrobe-front-alt","wardrobe-front","wardrobe-side","wooden-bucket","woven-basket"]);
 function uploadedArtPath(name){
+ if(/^assets\\/critters\\/[a-z0-9/_-]+\\.png$/.test(name))return name;
  if(RESIDENTIAL_ART.has(name))return 'assets/residential-furniture/'+name+'.png';
  if(name.startsWith('outdoor-'))return 'assets/outdoor-scenery/'+name+'.png';
  if(/^(family-home|neighbor-house|research-laboratory|critter-center|critter-shop|grass-gym)-(closed|ajar|half-open|open)$/.test(name))return 'assets2/interactive-animated/building-doors/'+name+'.png';
@@ -371,7 +372,7 @@ function beginDoorAnimation(base,x,y,complete){
 function buildingAnimationArt(base,x,y){
  const frames=doorArtFrames(base);warmFrames(frames);
  const t=doorTransition?.area===s.area&&doorTransition.x===x&&doorTransition.y===y?Math.min(3,Math.floor((performance.now()-doorTransition.start)/90)):
- s.area==='village'&&npcResidenceDoor?.x===x&&npcResidenceDoor.y===y&&npcResidenceDoor.until>performance.now()?2:0;
+ npcResidenceDoor?.x===x&&npcResidenceDoor.y===y&&npcResidenceDoor.until>performance.now()?2:0;
  return uploadedArt(frames[t])?frames[t]:frames[0];
 }
 function drawWinterEaves(x,y,w,h){
@@ -1698,7 +1699,7 @@ function npcResidenceRest(p,hour=worldHour(),weather=regionalWeather()){
 function npcEnterResidence(p,home,now){
  p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting';
  p.nextRoutine=now+500;
- if(s.area==='village')npcResidenceDoor={x:home.x,y:home.doorY,until:now+320};
+ npcResidenceDoor={x:home.x,y:home.doorY,until:now+320};
 }
 let npcResidenceDoor=null;
 function tickNpcResidence(p,now){
@@ -1715,7 +1716,7 @@ function tickNpcResidence(p,now){
   if(!npcStepAllowed(p,home.x,home.y,true,true)){p.nextRoutine=now+500;return true}
   p.indoors=false;p.x=home.x;p.y=home.y;p.face='down';npcFinishWalk(p);
   p.returningToPost=true;p.nextRoutine=now+500+(p.routineSeed||0)%700;
-  if(s.area==='village')npcResidenceDoor={x:home.x,y:home.doorY,until:now+320};
+  npcResidenceDoor={x:home.x,y:home.doorY,until:now+320};
   return true;
  }
  if(p.returningToPost){
@@ -1730,18 +1731,16 @@ function tickNpcResidence(p,now){
 function npcRoutinePlan(area,p,hour,starter){
  const x=p.homeX,y=p.homeY;
  if(p.patrol||NPC_PATROLS[p.id])return {task:'Patrolling',points:p.patrol||NPC_PATROLS[p.id],patrol:true};
- if(p.kind==='center'||p.kind==='shop'||p.kind==='gym-attendant')return {task:p.kind==='center'?'Checking equipment':p.kind==='shop'?'Organizing supplies':'Observing',points:[[x,y]],radius:1};
+ if(p.kind==='center'||p.kind==='shop'||p.kind==='gym-attendant')return {task:p.kind==='center'?'Checking equipment':p.kind==='shop'?(shopIsOpen(hour)?'Organizing supplies':'Reviewing inventory'):'Observing',points:[[x,y]],radius:1};
  if(p.workPoints){const h=npcLocalHour(p,hour),rest=h<5||h>=20||regionalWeather(area)==='storm';return {task:rest?'Observing':p.workTask||'Working',points:rest?[[x,y]]:p.workPoints,radius:5};}
  if(NPC_STATIONARY.has(p.kind)||p.kind==='routetrainer'||(p.kind==='researcher'&&!starter))return null;
  if(area==='garden'&&x===25&&y===11)return null;
  const night=hour<5||hour>=20,morning=hour<8,evening=hour>=17;
- if(p.kind==='center')return {task:'Checking equipment',points:[[x,y],[x+1,y],[x,y]],radius:1};
- if(p.kind==='shop')return shopIsOpen(hour)?{task:'Organizing supplies',points:[[x,y],[x+1,y],[x,y]],radius:1}:{task:'Resting',points:[[x,y]],radius:1};
- if(p.kind==='researcher'||p.kind==='labassistant')return {task:night?'Reviewing notes':'Researching',points:[[x,y],[x-2,y],[x,y+2]],radius:3};
- if(p.kind==='construction-worker')return night?{task:'Observing',points:[[x,y]]}:{task:'Working',points:[[x,y],[x+1,y],[x,y+1]],radius:2};
+ if(p.kind==='researcher'||p.kind==='labassistant')return {task:night?'Reviewing notes':'Researching',points:p.kind==='researcher'?[[x,y],[x-2,y]]:[[x,y],[x,y+2],[x+1,y+1]],radius:3};
+ if(p.kind==='construction-worker'){const plan=npcLifestylePlan(area,p,hour,regionalWeather(area));return {...plan,task:night?'Observing':plan.task==='Sheltering'?'Sheltering':'Working'};}
  if(p.id==='farmer-fieldwork')return {task:night?'Observing':morning?'Checking fields':evening?'Finishing work':'Tending rice',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y-1]],radius:3};
  if(p.kind==='sidequest')return {task:'Observing',points:[[x,y],[x+1,y]],radius:1};
- if(area==='home'||area==='neighbor')return {task:night?'Resting':morning?'Preparing breakfast':evening?'Relaxing':'Housework',points:night?[[x,y]]:[[x,y],[x+2,y],[x,y+2]],radius:3};
+ if(area==='home'||area==='neighbor'){const plan=npcLifestylePlan(area,p,hour,'sheltered');return {...plan,task:night?'Resting':morning?'Preparing breakfast':evening?'Relaxing':'Housework'};}
  return npcLifestylePlan(area,p,hour,regionalWeather(area));
 }
 function npcReservedCell(area,x,y,w,h){
@@ -5063,6 +5062,33 @@ function drawHomesteadConstruction(ox,oy){
   box(5.8,4.7,6.8,.12,'#ad8553');
  }
 }
+const ambientWildlifeCache=new WeakMap();
+function ambientWildlife(area){
+ if(!wildEncounterChance(area)||!speciesDataReady)return [];
+ const period=(s.worldDay||1)+':'+Math.floor((s.worldMinutes||0)/60)+':'+regionalWeather(area);
+ const old=ambientWildlifeCache.get(tiles);if(old?.period===period)return old.actors;
+ const pool=encounterSpeciesFor(area).filter(sp=>!breedingLegendary(sp)&&critterSpritePath(sp));
+ const actors=[];
+ if(pool.length){
+  for(let y=3;y<H-3&&actors.length<3;y++)for(let x=3;x<W-3&&actors.length<3;x++){
+   if(tiles[y][x]!==T.tall||tiles[y][x+1]!==T.tall||naturalSeed(x,y)%23!==0||actors.some(a=>Math.abs(a.x-x)+Math.abs(a.y-y)<8))continue;
+   const seed=naturalSeed(x,y),sp=pool[seed%pool.length];actors.push({x,y,seed,path:critterSpritePath(sp)});
+  }
+ }
+ ambientWildlifeCache.set(tiles,{period,actors});return actors;
+}
+function drawAmbientWildlife(ox,oy,w,h,now){
+ for(const a of ambientWildlife(s.area)){
+  const phase=reducedWorldMotion()?0:(now/1000+a.seed%13)%12;
+  const dx=phase<3?phase/3:phase<7?1:phase<10?1-(phase-7)/3:0;
+  const x=(a.x+.5+dx)*S-ox,y=(a.y+.88)*S-oy;
+  if(x< -32||x>w+32||y< -32||y>h+32||npcs.some(p=>!p.indoors&&p.y===a.y&&(p.x===a.x||p.x===a.x+1)))continue;
+  if(Math.abs(s.x-a.x)<=1&&Math.abs(s.y-a.y)<=1)continue;
+  const im=uploadedArt(a.path);if(!im)continue;
+  const k=26/Math.max(im.naturalWidth,im.naturalHeight),iw=im.naturalWidth*k,ih=im.naturalHeight*k;
+  sceneryLayer(s.area+':wildlife:'+a.x+','+a.y,x-iw/2,y-ih,iw,ih,y,()=>{ctx.drawImage(im,x-iw/2,y-ih,iw,ih)});
+ }
+}
 function drawOutdoorWorld(){
  const zoom=Math.max(.85,Math.min(2.25,Math.min(C.width/600,C.height/440)));
  const vw=C.width/zoom,vh=C.height/zoom;
@@ -5096,6 +5122,7 @@ function drawOutdoorWorld(){
   if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY);drawHomesteadBuildingExteriors(localOX,localOY)}
   drawBuildingYards(localOX,localOY,vw,vh);
   drawNaturalDetails(localOX,localOY,vw,vh);
+  drawAmbientWildlife(localOX,localOY,vw,vh,performance.now());
   drawCinematicTrees(localOX,localOY,vw,vh,performance.now());
   drawEnvironmentalDetails(localOX,localOY,vw,vh);
   drawExplorationSites(localOX,localOY);
