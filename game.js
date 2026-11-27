@@ -2306,6 +2306,7 @@ function drawNaturalTile(t,x,y,a,b){
 function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
+ if(area==='ashPass')return seed%89===0?'outdoor-stump-1-075':null;
  if(isVolcanicDistrict(area))return seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='canyonRoute'||area==='canyonTown')return seed%41===0?'outdoor-shrub-3-037':seed%67===0?'outdoor-flowers-grass-2-076':null;
  if(area==='marshRoute'||area==='marshTown')return seed%37===0?'outdoor-shrub-3-037':seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:null;
@@ -2550,12 +2551,23 @@ function drawContinuousWater(x,y,a,b){
  }
  ctx.restore();
 }
+function drawAshGround(t,x,y,a,b){
+ const seed=naturalSeed(a,b),drift=Math.sin(a*.29+b*.41)+Math.cos(a*.17-b*.32);
+ ctx.fillStyle=drift>.6?'#96918e':drift<-.6?'#736f70':'#817d7d';ctx.fillRect(x,y,S,S);
+ ctx.fillStyle='#c1b9b04a';
+ for(let k=0;k<5;k++)ctx.fillRect(x+(seed+k*13)%29,y+((seed>>>7)+k*9)%29,3+k%3,1);
+ if(t===T.tall){
+  ctx.strokeStyle='#59534d';ctx.lineWidth=1.4;
+  for(let k=0;k<4;k++){const px=x+5+k*7,py=y+27-k%2*3;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+2,py-11);ctx.lineTo(px+5,py-15);ctx.moveTo(px+1,py-7);ctx.lineTo(px-3,py-10);ctx.stroke()}
+ }
+}
 function seamlessGround(t,x,y,a,b){
  const colors={[T.grass]:'#75a65e',[T.path]:'#c6ae82',[T.stone]:'#aaa899',[T.water]:'#629fa5',[T.rice]:'#829d68',[T.tall]:'#75a65e',[T.flower]:'#75a65e'};
  const color=(t===T.grass||t===T.tall||t===T.flower||t===T.path)?expansionGroundColor(s.area,t)||colors[t]:colors[t];if(!color)return false;
  if(t===T.water){drawContinuousWater(x,y,a,b);return true;}
  if(t===T.path&&coastalDeckCell(s.area,a,b)){drawCoastalDeck(x,y,a,b);return true;}
  if(t===T.path&&marshDeckCell(s.area,a,b)){drawMarshDeck(x,y,a,b);return true;}
+ if(s.area==='ashPass'&&(t===T.grass||t===T.tall)){drawAshGround(t,x,y,a,b);return true;}
  if(s.area==='coastRoute'&&t===T.grass&&b>=coastalShoreline(a)-3){ctx.fillStyle='#d9c69c';ctx.fillRect(x,y,S,S);ctx.fillStyle='#a58d6430';for(let k=0;k<4;k++){const h=naturalSeed(a*7+k,b*11+k);ctx.fillRect(x+h%30,y+(h>>>8)%30,2,1)}return true;}
  ctx.fillStyle=color;ctx.fillRect(x,y,S,S);
  const n=naturalSeed(a,b);
@@ -2653,7 +2665,20 @@ function drawBasaltRidge(x,y,a,b){
  }
  if(!south)queueSolarShadow(x+S/2,y+S,S,22);
 }
+// Eroded ash ridges are entirely contained within solid terrain cells.
+function drawAshRidge(x,y,a,b){
+ const seed=naturalSeed(a,b),south=terrainNeighbor(a,b,0,1)===T.rock;
+ const west=terrainNeighbor(a,b,-1,0)===T.rock,east=terrainNeighbor(a,b,1,0)===T.rock;
+ ctx.fillStyle='#777473';ctx.fillRect(x,y,S,S);
+ const l=west?0:2,r=east?S:S-2;
+ ctx.fillStyle='#494649';ctx.fillRect(x+l,y+2,r-l,S-2);
+ ctx.fillStyle='#777377';ctx.beginPath();ctx.moveTo(x+l,y+4);ctx.lineTo(x+l+(seed%5),y+1);ctx.lineTo(x+r-3,y+2);ctx.lineTo(x+r,y+7);ctx.lineTo(x+r,y+(south?S:20));ctx.lineTo(x+l,y+(south?S:23));ctx.closePath();ctx.fill();
+ ctx.fillStyle='#a7a29e';ctx.fillRect(x+l+2,y+5,Math.max(2,r-l-4),3);
+ if(!south){ctx.fillStyle='#5c5657';ctx.fillRect(x+l,y+24,r-l,3);queueSolarShadow(x+S/2,y+S,S,19)}
+ ctx.fillStyle='#bdb7af55';for(let k=0;k<4;k++)ctx.fillRect(x+3+(seed+k*11)%24,y+8+((seed>>>5)+k*7)%12,3,1);
+}
 function drawTile(t,x,y,a,b){
+ if(t===T.rock&&s.area==='ashPass'&&ashRidgeCell(a,b,W,H)){drawAshRidge(x,y,a,b);return;}
  if(t===T.rock&&isVolcanicDistrict(s.area)&&volcanicRidgeCell(s.area,a,b,W,H)){drawBasaltRidge(x,y,a,b);return;}
  if(t===T.rock&&(s.area==='canyonRoute'||s.area==='canyonTown')&&canyonCliffCell(s.area,a,b,W,H)){drawCanyonCliff(x,y,a,b);return;}
  if(s.area==='gym')return drawGymTile(t,x,y,a,b);
@@ -3364,6 +3389,16 @@ function drawGeothermalSteam(ox,oy,w,h,now){
   ctx.restore();
  }
 }
+function drawAshDrift(ox,oy,w,h,now){
+ const clock=reducedWorldMotion()?0:now,wind=weatherWind();
+ const count=Math.min(40,Math.max(12,Math.ceil(w*h/11000)));
+ for(let i=0;i<count;i++){
+  const wx=((i*173.13+clock*.035*wind)%(W*S)+W*S)%(W*S),wy=((i*89.7+clock*.012+Math.sin(i+clock*.001)*13)%(H*S)+H*S)%(H*S);
+  const x=wx-ox,y=wy-oy;
+  if(x<0||y<0||x>w||y>h)continue;
+  ctx.fillStyle=i%3?'#c9c2b675':'#e2d8c88c';ctx.fillRect(x,y,i%4===0?3:1.5,1);
+ }
+}
 function drawAtmosphericMotion(ox,oy,w,h,now){
  if(atmosphericIndoor())return;
  const lowX=Math.max(0,Math.floor(ox/S)-1),hiX=Math.min(W,Math.ceil((ox+w)/S)+1);
@@ -3394,7 +3429,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
    if((s.area==='coastRoute'||s.area==='harborTown')&&!north){ctx.strokeStyle='rgba(244,248,223,.42)';ctx.beginPath();ctx.moveTo(sx+6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.lineTo(sx+S-6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.stroke()}
    ctx.restore();
   }else if(t===T.tall){
-   if(naturalTileReady(T.tall,x,y))continue;
+   if(s.area==='ashPass'||naturalTileReady(T.tall,x,y))continue;
    for(let k=0;k<4;k++){
     const rootX=sx+5+k*7,rootY=sy+26-k%2*3;
     ctx.strokeStyle=k%2?'#9ac76b':'#66994f';ctx.lineWidth=1.4;
@@ -3407,6 +3442,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
   }
  }
  drawGeothermalSteam(ox,oy,w,h,now);
+ if(s.area==='ashPass'){drawAshDrift(ox,oy,w,h,now);return;}
  const motes=Math.min(23,Math.ceil(w*h/23000));
  for(let i=0;i<motes;i++){
   const mx=((i*173.1+Math.sin(i*33)*135+now/160*(i%3+1))%(W*S)+W*S)%(W*S)-ox;
@@ -4080,6 +4116,7 @@ function buildExpansionArea(area){
  if(area==='marshRoute'||area==='marshTown')buildMarshLandscape(area);
  if(area==='canyonRoute'||area==='canyonTown')buildCanyonLandscape(area);
  if(isVolcanicDistrict(area))buildVolcanicLandscape(area);
+ if(area==='ashPass')buildAshPassLandscape();
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
@@ -4223,6 +4260,28 @@ function buildVolcanicLandscape(area){
   for(let y=H-4;y<H-1;y++)for(let x=3;x<W-3;x++)if(tiles[y][x]===T.grass&&volcanicRidgeCell(area,x,y,W,H))put(x,y,T.rock);
  }
 }
+// Phase 9.5: Ashen Pass, a dry eroded saddle distinct from the mineral springs.
+function ashRidgeCell(x,y,w,h){
+ const ridge=(cx,cy,rx,ry)=>((x-cx)/rx)**2+((y-cy)/ry)**2<1+.14*Math.sin(x*.53+y*.77);
+ return y<=4+Math.round(1.8*Math.sin(x*.33))||x>=w-4+Math.round(Math.sin(y*.3))||
+ ridge(8,7,5,4)||ridge(24,7,8,4)||ridge(34,17,6,9)||ridge(6,25,4,6)||ridge(28,28,5,4);
+}
+function buildAshPassLandscape(){
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+  if(tiles[y][x]===T.path)continue;
+  put(x,y,ashRidgeCell(x,y,W,H)?T.rock:T.grass);
+ }
+ // Keep west and south portals at their established positions.
+ // A secondary loop climbs around the eastern escarpment and rejoins the main trail.
+ rect(17,12,3,H-12,T.path);
+ rect(19,12,11,3,T.path);rect(27,14,3,9,T.path);
+ rect(19,21,11,3,T.path);
+ rect(8,14,3,9,T.path);rect(8,20,10,3,T.path);
+ // Dry scrub habitat pockets, with no additional encounter rules.
+ for(const [x,y,w,h] of [[12,6,5,5],[21,16,5,4],[11,26,5,4],[31,25,5,4]]){
+  for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(tiles[yy]?.[xx]===T.grass&&naturalSeed(xx,yy)%4!==0)put(xx,yy,T.tall);
+ }
+}
 function buildSpecialStorySite(area){
  const plans={
   leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
@@ -4360,6 +4419,7 @@ function drawSettlementGym(b,ox,oy){
 }
 function expansionGroundColor(area,t){
  const biome=REGIONAL_EXPANSION[area]?.biome;
+ if(area==='ashPass')return t===T.path?'#b1a9a1':'#817d7d';
  if(isVolcanicDistrict(area))return t===T.path?'#aca398':'#66635f';
  if(!biome)return null;
  const colors={coast:['#b6b98a','#cdb892'],marsh:['#779b71','#b5a787'],canyon:['#b49a70','#cbb58d'],volcanic:['#777772','#aaa394'],snow:['#d5e1dc','#b8c7c9'],highland:['#8da779','#c4b596'],ancient:['#8a9c75','#b6aa92']};
@@ -5346,7 +5406,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.60</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.61</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
