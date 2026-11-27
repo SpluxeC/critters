@@ -863,6 +863,13 @@ function gymProgressPanel(){
   return '<div class="watchRow"><span><b>'+g.number+'. '+escapeHtml(g.number===1?'Grass Gym':TOWN_ROOMS[g.room]?.name||g.town)+'</b><small> · '+g.trainerIds.filter(id=>s.defeated?.[id]).length+'/'+g.trainerIds.length+' trainers</small></span><span>'+status+'</span></div>';
  }).join('');
 }
+function populateGymChallenge(area){
+ const g=gymChallenge(area);
+ if(!g?.active){npc(15,6,['This Gym is open for exploration and practice. Official challenges are not yet available.'],'gym-attendant');return;}
+ for(const t of g.trainers||[])npc(t.x,t.y,t.dialogue||['Ready for your Gym challenge?'],'gymtrainer',t.id);
+ if(g.leader)npc(g.leader.x,g.leader.y,g.leader.dialogue||['Welcome to the Gym.'],'leader',g.leader.id);
+ if(g.mechanism)npc(g.mechanism.x,g.mechanism.y,['Complete the Gym mechanism.'],'switch',g.id+'-mechanism');
+}
 function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:kind==='gym'?{w:30,h:24}:{w:34,h:26}}
 function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
 function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;if(room.kind==='gym'){recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
@@ -2082,7 +2089,7 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym')npc(15,6,['This Gym is open for exploration and practice. Official challenges are not yet available.'],'gym-attendant');
+  if(room.kind==='gym')populateGymChallenge(s.area);
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -5806,7 +5813,7 @@ function normalizeTrainerProgress(){
 function trainerMetrics(){return {captures:s.captureCount||0,unique:collectionCounts().captured,finds:allExplorationFinds().filter(o=>s.discoveries?.[o.id]).length,badges:s.badges||0,steps:s.steps||0,quests:SIDE_QUESTS.filter(q=>s.sideQuests?.[q.id]?.status==='complete').length,wins:s.trainerProgress.wins,estate:s.homestead?.owned?1:0}}
 function trainerProfile(){
  const m=trainerMetrics(),p=s.trainerProgress;
- return '<div class="watchSectionTitle">Trainer profile · '+escapeHtml(s.name)+'</div><div class="watchMetrics">'+[['Steps',m.steps],['Trainer wins',m.wins],['Battle losses',p.losses],['Quests',m.quests],['Badges',m.badges],['Discoveries',m.finds]].map(([k,v])=>'<div><strong>'+v.toLocaleString()+'</strong><span>'+k+'</span></div>').join('')+'</div><div class="watchSectionTitle">Achievements</div>'+TRAINER_ACHIEVEMENTS.map(a=>'<div class="watchToolCard"><strong>'+a.name+'</strong><p>'+Math.min(a.goal,m[a.metric])+' / '+a.goal+' · '+a.metric+' · Reward '+a.credits+' money'+(a.outfit?' + outfit':a.decor?' + home decoration':'')+'</p>'+(p.claimed.includes(a.id)?'<span>Claimed</span>':'<button class="btn" data-achievement="'+a.id+'" '+(m[a.metric]<a.goal?'disabled':'')+'>Claim reward</button>')+'</div>').join('');
+ return '<div class="watchSectionTitle">Trainer profile · '+escapeHtml(s.name)+'</div><div class="watchMetrics">'+[['Steps',m.steps],['Trainer wins',m.wins],['Battle losses',p.losses],['Quests',m.quests],['Badges',m.badges],['Discoveries',m.finds]].map(([k,v])=>'<div><strong>'+v.toLocaleString()+'</strong><span>'+k+'</span></div>').join('')+'</div>'+gymProgressPanel()+'<div class="watchSectionTitle">Achievements</div>'+TRAINER_ACHIEVEMENTS.map(a=>'<div class="watchToolCard"><strong>'+a.name+'</strong><p>'+Math.min(a.goal,m[a.metric])+' / '+a.goal+' · '+a.metric+' · Reward '+a.credits+' money'+(a.outfit?' + outfit':a.decor?' + home decoration':'')+'</p>'+(p.claimed.includes(a.id)?'<span>Claimed</span>':'<button class="btn" data-achievement="'+a.id+'" '+(m[a.metric]<a.goal?'disabled':'')+'>Claim reward</button>')+'</div>').join('');
 }
 function claimTrainerAchievement(id){
  const a=TRAINER_ACHIEVEMENTS.find(a=>a.id===id),p=s.trainerProgress;
@@ -6689,6 +6696,7 @@ function rivalPartnerAtLevel(level){
 function startTrainer(id){
  const gymBattle=gymTrainerDefinition(id),leaderGym=GYM_CHALLENGES.find(g=>g.leaderId===id&&g.active);
  if(leaderGym&&!gymRequirements(leaderGym).ready)return notifyWorld(gymRequirements(leaderGym).reason);
+ if(gymBattle&&s.area!==gymBattle.gym.room)return notifyWorld('Visit the Gym to challenge its trainers.');
  if(gymBattle&&GYM_CHALLENGES.some(g=>g.number<gymBattle.gym.number&&!gymEarned(g)))return notifyWorld('Earn the previous regional badges first.');
  if(firstAlive()<0)return blackout();
  const expansion=EXPANSION_TRAINERS[id];
@@ -6713,7 +6721,7 @@ function startTrainer(id){
 const BATTLE_AREAS=['village','route1','town','route2','forest','route3','cave','garden','gym','lab','home','neighbor'];
 const BATTLE_AREA_LABELS={village:'Starting Village',route1:'Rice Fields',town:'First Town',route2:'Bamboo Trail',forest:'Hidden Forest',route3:'Mountain Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home'};
 function battleEnvironment(){
- const sourceArea=SECRET_AREAS[s.area]?.parent||s.area;
+ const sourceArea=TOWN_ROOMS[s.area]?.kind==='gym'?TOWN_ROOMS[s.area].parent:SECRET_AREAS[s.area]?.parent||s.area;
  const area=BATTLE_AREAS.includes(sourceArea)||REGIONAL_EXPANSION[sourceArea]?sourceArea:'route1';
  const tile=tiles?.[s.y]?.[s.x];
  const terrain=tile===T.rice?'rice':tile===T.tall?'grass':tile===T.stone?'stone':tile===T.flower?'flowers':tile===T.path?'path':tile===T.water?'water':'field';
