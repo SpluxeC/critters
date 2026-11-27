@@ -789,3 +789,25 @@ test('Phase 9.2 wetland boardwalks connect to roads while pools remain impassabl
   for(let y=0;y<40;y++)for(let x=0;x<44;x++)if(ctx.marshDeckCell(area,x,y))assert.equal(tiles[y][x],T.path,area+' '+x+','+y);
  }
 });
+
+test('Phase 9.3 canyon cliffs preserve regional roads and scenic trail connectivity',()=>{
+ const T={grass:0,path:1,rock:2,tall:3,stone:4};
+ const ctx=extract('function canyonCliffCell(','function buildSpecialStorySite(',{T,W:42,H:40,tiles:[],naturalSeed:(x,y)=>x*31+y*17,settlementPublicProps:()=>[]});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ for(const area of ['canyonRoute','canyonTown']){
+  ctx.area=area;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,W,3,T.path);rect(17,13,3,H-13,T.path);rect(2,26,W-4,2,T.path);buildCanyonLandscape(area);return tiles})()`,ctx);
+  for(let x=0;x<42;x++)assert.equal(tiles[13][x],T.path);
+  for(let y=13;y<40;y++)assert.equal(tiles[y][18],T.path);
+  if(area==='canyonRoute'){
+   assert.equal(tiles[3][10],T.rock);assert.equal(tiles[8][30],T.rock);
+   assert.equal(tiles[24][15],T.path);assert.equal(tiles[24][28],T.path);
+   const seen=new Set(['18,13']),queue=[[18,13]];
+   for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(tiles[ny]?.[nx]!==T.path||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+   assert.ok(seen.has('10,21'));assert.ok(seen.has('28,25'));
+  }else{assert.equal(tiles[31][7],T.stone);assert.equal(tiles[28][10],T.path);}
+ }
+});
