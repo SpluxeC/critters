@@ -952,3 +952,18 @@ test('Phase 9.11 Victory Road and League court retain their crossings and closed
   else{assert.ok(seen.has('20,11'));assert.ok(seen.has('20,28'));assert.equal(tiles[10][20],T.roof);assert.equal(tiles[17][8],T.rock);}
  }
 });
+
+test('Phase 10 nearby ambient NPCs receive distinct lifestyles and staggered routines',()=>{
+ const ctx=extract('const NPC_LIFESTYLES=','function npcRoutineDialogue(',{NPC_STATIONARY:new Set(['leader','gymtrainer']),performance:{now:()=>1000}});
+ const actors=Array.from({length:6},(_,i)=>({homeX:10+i,homeY:12,id:'resident-'+i,kind:''}));
+ ctx.assignNpcLifestyles('town',actors);
+ assert.equal(new Set(actors.map(p=>p.lifestyle)).size,6);
+ assert.equal(new Set(actors.map(p=>p.nextRoutine)).size,6);
+ assert.ok(new Set(actors.map(p=>p.walkPace)).size>3);
+ assert.ok(new Set(actors.map(p=>ctx.npcLifestylePlan('town',p,12).task)).size>=5);
+ for(const p of actors){
+  const plan=ctx.npcLifestylePlan('town',p,12,'storm');
+  assert.equal(plan.task,'Sheltering');assert.equal(plan.points.length,1);
+  assert.equal(ctx.npcLifestylePlan('town',p,1).task,'Resting');
+ }
+});
