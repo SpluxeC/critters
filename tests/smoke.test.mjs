@@ -990,3 +990,19 @@ test('Phase 11 regional secret rooms have open exits and accessible supply chest
   assert.ok(seen.has('17,25'),area);assert.ok(seen.has('23,8'),area);
  }
 });
+
+test('Phase 12.2 Harbor Gym requires Grass badge, all trainers and tide puzzle',()=>{
+ const ctx=extract('const GYM_CHALLENGES=','function roomSize(',{});
+ const state={badges:1,defeated:{},puzzles:{}};
+ ctx.normalizeGymProgress(state);
+ const g=ctx.gymChallenge('harborTown');
+ assert.equal(g.type,'Water');assert.equal(g.trainers.length,3);
+ assert.equal(ctx.gymRequirements(g,state).ready,false);
+ for(const id of g.trainerIds)state.defeated[id]=true;
+ assert.equal(ctx.gymRequirements(g,state).ready,false);
+ assert.equal(ctx.completeGymPuzzle(g,state),true);
+ assert.equal(ctx.awardGymBadge(g,state),true);
+ assert.equal(state.badges,2);
+ assert.equal(ctx.awardGymBadge(g,state),false);
+ assert.equal(state.badges,2);
+});
