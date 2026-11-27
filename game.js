@@ -2388,7 +2388,7 @@ function yardBuildings(area){
 }
 function yardCellAllowed(area,x,y,buildings){
  if(x<2||y<2||x>=W-2||y>=H-2||tiles[y]?.[x]!==T.grass||buildingSceneryReserved(area,x,y))return false;
- if(area==='highlandTown'&&y>=28&&x>=3&&x<=21)return false;
+ if((area==='highlandTown'||area==='ancientTown')&&y>=28&&x>=3&&x<=21)return false;
  if(buildings.some(h=>Math.abs(x-h.door)<=1&&y>=h.y+h.h&&y<=h.y+h.h+4))return false;
  if(villageObstacles.has(key(x,y))||route1Blocked.has(key(x,y))||settlementPublicProps(area).some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return false;
  if(npcs.some(p=>Math.abs((p.homeX??p.x)-x)+Math.abs((p.homeY??p.y)-y)<=1))return false;
@@ -2524,6 +2524,10 @@ function drawContinuousPath(t,x,y,a,b){
   ctx.fillStyle=gradient;
   if(x0===x1)ctx.fillRect(x,y+Math.min(y0,y1),S,5);
   else ctx.fillRect(x+Math.min(x0,x1),y,5,S);
+ }
+ if(stone&&(s.area==='ancientRoute'||s.area==='ancientTown')){
+  ctx.strokeStyle='#626e5945';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y+16);ctx.lineTo(x+S,y+16);ctx.moveTo(x+12,y);ctx.lineTo(x+12,y+16);ctx.moveTo(x+23,y+16);ctx.lineTo(x+23,y+S);ctx.stroke();
+  if(seed%3===0){ctx.fillStyle='#6f895b55';ctx.fillRect(x+2,y+3,8,3);ctx.fillRect(x+3,y+6,4,3);}
  }
  ctx.fillStyle=stone?'rgba(76,77,66,.11)':'rgba(107,81,45,.10)';
  for(let k=0;k<5;k++){const h=naturalSeed(a*7+k,b*13+k);ctx.fillRect(x+(h%30),y+((h>>>9)%30),1+h%3,1)}
@@ -4454,7 +4458,7 @@ function buildAncientLandscape(area){
   }
  }else{
   rect(3,28,13,5,T.grass);rect(8,26,3,7,T.path);rect(5,30,9,2,T.stone);
-  rect(8,30,3,3,T.path);rect(11,30,7,2,T.stone);
+  rect(8,30,3,3,T.path);rect(11,30,6,2,T.stone);
   for(let y=28;y<H-1;y++)for(let x=3;x<=15;x++)if(ancientRuinKind(area,x,y)&&tiles[y][x]===T.grass)put(x,y,T.rock);
   for(const o of settlementPublicProps(area))if(o.x<17&&o.y>=28)rect(o.x,o.y,o.w,o.h,T.grass);
  }
