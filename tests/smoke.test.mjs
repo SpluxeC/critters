@@ -631,7 +631,7 @@ test('expanded world has unique coordinates, reciprocal portals and reachable di
 });
 test('every expanded district has a continuous path between all its portals',()=>{
  const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7};
- const context={T,TOWN_ROOMS:{},naturalSeed:(x,y)=>Math.abs((x*73856093^y*19349663)>>>0),W:0,H:0,tiles:[]};
+ const context={T,TOWN_ROOMS:{},npcs:[],EXPANSION_TRAINERS:{},naturalSeed:(x,y)=>Math.abs((x*73856093^y*19349663)>>>0),W:0,H:0,tiles:[]};
  const sandbox=extract('const REGIONAL_EXPANSION=','const outdoorChunks=',context);
  const planStart=game.indexOf('const SETTLEMENT_PLANS='),planEnd=game.indexOf('const TOWN_ROOMS=',planStart);
  vm.runInContext(game.slice(planStart,planEnd),sandbox);
@@ -642,11 +642,13 @@ test('every expanded district has a continuous path between all its portals',()=
  function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
  function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
  function borders(t){rect(0,0,W,1,t);rect(0,H-1,W,1,t);rect(0,0,1,H,t);rect(W-1,0,1,H,t)}
+ function npc(x,y,text,kind,id){npcs.push({x,y,text,kind,id})}
+ function yardContains(o,x,y){return x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h}
  `,sandbox);
  const ids=vm.runInContext('Object.keys(REGIONAL_EXPANSION)',sandbox);
  for(const id of ids){
   sandbox.area=id;
-  const data=vm.runInContext(`(()=>{const size=outdoorSize(area);W=size.w;H=size.h;tiles=Array.from({length:H},()=>Array(W).fill(T.grass));buildExpansionArea(area);return {tiles,W,H,links:OUTDOOR_LINKS[area]}})()`,sandbox);
+  const data=vm.runInContext(`(()=>{const size=outdoorSize(area);W=size.w;H=size.h;npcs=[];tiles=Array.from({length:H},()=>Array(W).fill(T.grass));buildExpansionArea(area);return {tiles,W,H,links:OUTDOOR_LINKS[area]}})()`,sandbox);
   const {tiles,W,H,links}=data,queue=[[18,13]],seen=new Set(['18,13']);
   for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,key=nx+','+ny;if(tiles[ny]?.[nx]!==T.path||seen.has(key))continue;seen.add(key);queue.push([nx,ny])}}
   for(const [side,[dest,a,b]] of Object.entries(links))for(let n=a;n<=b;n++){
@@ -672,4 +674,26 @@ test('new settlement plans have 35 nonoverlapping lots and 35 accessible rooms',
 test('expansion route habitats preserve original roster and exclude starters and legendary types',()=>{
  const routes=['coastRoute','marshRoute','canyonRoute','volcanicRoute','ashPass','snowRoute','ancientRoute','victoryRoad'];
  for(const area of routes){const pool=species.filter(p=>p.habitats.some(h=>h.areaId===area));assert.ok(pool.length>=10,area);assert.ok(pool.every(p=>!p.starterFamily&&!p.types.some(t=>['Dragon','Primordial','Beast'].includes(t))&&p.habitats.filter(h=>h.areaId===area).every(h=>h.rarity!=='legendary')));}
+});
+
+test('Phase 5 special sites have accessible stationary attendants and no battle or capture triggers',()=>{
+ const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7,roof:8,wall:9};
+ const context={T,W:42,H:38,tiles:[],npcs:[]};
+ const ctx=extract('function buildSpecialStorySite(','function populateExpansionArea(',context);
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ function npc(x,y,text,kind,id){npcs.push({x,y,text,kind,id})}
+ `,ctx);
+ for(const area of ['leagueGrounds','eclipseSite','legendaryReserveA','legendaryReserveB','legendaryReserveC']){
+  ctx.area=area;
+  const {tiles,npcs}=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));npcs=[];rect(17,0,3,15,T.path);rect(17,12,W-17,3,T.path);if(!buildSpecialStorySite(area))throw Error(area);return {tiles,npcs}})()`,ctx);
+  assert.ok(npcs.length>0,area);
+  const blocked=new Set([T.rock,T.water,T.roof,T.wall,T.tree]);
+  const occupied=new Set(npcs.map(p=>p.x+','+p.y));
+  const seen=new Set(['18,13']),queue=[[18,13]];
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(tiles[ny]?.[nx]===undefined||blocked.has(tiles[ny][nx])||occupied.has(k)||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+  for(const p of npcs){assert.equal(p.kind,'site-attendant');assert.equal(tiles[p.y][p.x],T.grass);assert.ok([[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>seen.has((p.x+dx)+','+(p.y+dy))),p.id);}
+  assert.ok(seen.has('18,0'));assert.ok(seen.has('41,13'));
+ }
 });
