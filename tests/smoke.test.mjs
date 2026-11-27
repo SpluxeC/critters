@@ -732,3 +732,25 @@ test('Phase 7 blocked trainer approach cancels instead of initiating a distant b
  assert.equal(ctx.tickTrainerApproach(1000),true);assert.equal(cancelled,1);assert.equal(finished,0);
  p.x=7;assert.equal(ctx.tickTrainerApproach(1000),true);assert.equal(finished,1);
 });
+
+test('Phase 8 artwork cache evicts least recently used completed images and keeps loading images',()=>{
+ const cache=new Map([['loading',{complete:false}],['old',{complete:true}],['new',{complete:true}]]);
+ const ctx=extract('function trimArtworkCache(','// Only scenery objects',{uploadedArtCache:cache,ART_CACHE_LIMIT:2});
+ ctx.trimArtworkCache();assert.deepEqual([...cache.keys()],['loading','new']);
+});
+test('Phase 8 yard footprint caches both solid and decorative cells per geometry',()=>{
+ let calls=0;
+ const ctx=extract('function yardFootprint(','function yardBuildings(',{tiles:[],yardFootprintCache:new WeakMap(),key:(x,y)=>x+','+y,buildingYardLayout:()=>{calls++;return [{x:2,y:3,w:2,h:1,solid:true},{x:4,y:3,w:1,h:1,solid:false}]}});
+ const first=ctx.yardFootprint('town');assert.ok(first.solid.has('3,3'));assert.ok(first.occupied.has('4,3'));assert.ok(!first.solid.has('4,3'));
+ assert.equal(ctx.yardFootprint('town'),first);assert.equal(calls,1);
+ ctx.tiles=[];ctx.yardFootprint('town');assert.equal(calls,2);
+});
+test('Phase 8 presentation pacing skips excess draws but forces resize frames',()=>{
+ let draws=0,clock=0,cost=25;
+ const ctx=extract('let lastWorldRender=','function loop(now=',{canvasSizeDirty:false,draw:()=>{draws++;clock+=cost},trimArtworkCache:()=>{},performance:{now:()=>clock}});
+ ctx.renderWorldFrame(0);ctx.renderWorldFrame(5);assert.equal(draws,1);
+ ctx.canvasSizeDirty=true;ctx.renderWorldFrame(5);assert.equal(draws,2);
+ ctx.canvasSizeDirty=false;
+ for(let i=1;i<=50;i++)ctx.renderWorldFrame(i*40);
+ const before=draws;ctx.renderWorldFrame(2017);assert.equal(draws,before);
+});
