@@ -2746,8 +2746,9 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-two-designs/skyfin-front.png",
+        "rearSpritePath": "assets/critters/route-two-designs/skyfin-back.png"
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "legacySpeciesId": "cr-117-skyfin",
@@ -3099,8 +3100,9 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-two-designs/owl-stage-2-front.png",
+        "rearSpritePath": "assets/critters/route-two-designs/owl-stage-2-back.png"
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "legacySpeciesId": "cr-127-sablefin",
@@ -4218,8 +4220,9 @@
         }
       ],
       "art": {
-        "status": "awaiting-upload",
-        "spritePath": null
+        "status": "ready",
+        "spritePath": "assets/critters/route-two-designs/willowink-front.png",
+        "rearSpritePath": "assets/critters/route-two-designs/willowink-back.png"
       },
       "notes": "Draft species: Cody and Kyle may replace name, design, stats, habitats, and moves.",
       "legacySpeciesId": "cr-010-willowink",
