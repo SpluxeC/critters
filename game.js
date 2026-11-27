@@ -759,8 +759,7 @@ function settlementLots(area){
 function settlementRoomDefinitions(){
  const entries=[];
  for(const [area,p] of Object.entries(SETTLEMENT_PLANS))for(const b of settlementLots(area)){
-  if(b.kind==='gym')continue; // Gym facilities are reserved for phase 3.
-  entries.push([b.id,{parent:area,name:p.district+' '+(b.kind==='center'?'Critter Center':b.kind==='shop'?'Critter Shop':b.id.endsWith('A')?'Residence':'Guest House'),kind:b.kind,door:[b.door,b.y+b.h+1]}]);
+  entries.push([b.id,{parent:area,name:p.district+' '+(b.kind==='center'?'Critter Center':b.kind==='shop'?'Critter Shop':b.kind==='gym'?'Gym':b.id.endsWith('A')?'Residence':'Guest House'),kind:b.kind,door:[b.door,b.y+b.h+1]}]);
  }
  return Object.fromEntries(entries);
 }
@@ -777,9 +776,9 @@ const TOWN_ROOMS=Object.freeze({
 const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)||Object.hasOwn(TOWN_ROOMS,area);
 function reservedGymAt(x,y){return settlementLots(s.area).find(b=>b.kind==='gym'&&b.door===x&&b.y+b.h+1===y)}
 function townDoorAt(x,y){return Object.entries(TOWN_ROOMS).find(([id,d])=>d.parent===s.area&&d.door[0]===x&&d.door[1]===y)?.[0]||null}
-function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:{w:34,h:26}}
+function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:kind==='gym'?{w:30,h:24}:{w:34,h:26}}
 function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
-function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
+function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;if(room.kind==='gym'){recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
 function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
 function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
 
@@ -821,12 +820,73 @@ function addInteriorObject(id,x,y,w,h,kind,title,description,action=''){
  for(let yy=b.y;yy<b.y+b.h;yy++)for(let xx=b.x;xx<b.x+b.w;xx++)interiorBlocked.add(key(xx,yy));
  return o;
 }
+// Each district receives an interior identity without assigning a Gym battle type.
+const EXPANSION_INTERIOR_THEMES=Object.freeze({
+ harborTown:{floor:'#b8c7bd',wall:'#557b80',trim:'#d2c6a3',rug:'rug-blue',bed:'bed-south',table:'round-tea-table-a',centerFloor:'076',shopFloor:'063',gym:'court'},
+ marshTown:{floor:'#c4c0a0',wall:'#657b5e',trim:'#d5c5a0',rug:'tatami-mat',bed:'futon-south',table:'low-table-seats-b',centerFloor:'077',shopFloor:'064',gym:'ring'},
+ canyonTown:{floor:'#c7ae8b',wall:'#926b54',trim:'#e1c5a0',rug:'rug-red',bed:'bed-east',table:'table-horizontal-a',centerFloor:'078',shopFloor:'069',gym:'terrace'},
+ volcanicTown:{floor:'#a8a39a',wall:'#665d59',trim:'#b58c73',rug:'hide-rug',bed:'bed-south',table:'dining-table-horizontal-a',centerFloor:'079',shopFloor:'070',gym:'split'},
+ snowTown:{floor:'#c9d5d5',wall:'#70878e',trim:'#e3e7dd',rug:'round-rug-blue',bed:'bed-north',table:'round-tea-table-c',centerFloor:'080',shopFloor:'071',gym:'gallery'},
+ highlandTown:{floor:'#c5b69b',wall:'#68785d',trim:'#d6c6a4',rug:'round-rug-cream',bed:'futon-west',table:'low-table-seats-a',centerFloor:'081',shopFloor:'062',gym:'lanes'},
+ ancientTown:{floor:'#b9b5a1',wall:'#777267',trim:'#d7cbb2',rug:'rug-red',bed:'bed-west',table:'table-horizontal-b',centerFloor:'082',shopFloor:'063',gym:'pillars'}
+});
+function expansionInteriorTheme(area){return EXPANSION_INTERIOR_THEMES[TOWN_ROOMS[area]?.parent]||null}
+function furnishExpansionRoom(area,add){
+ const room=TOWN_ROOMS[area],theme=expansionInteriorTheme(area),index=Object.keys(EXPANSION_INTERIOR_THEMES).indexOf(room.parent);
+ const mirror=index%2===1,swap=(x,w)=>mirror?W-x-w:x;
+ const item=(id,x,y,w,h,kind,title,desc,art,action='')=>{
+  const o=add(id,x,y,w,h,kind,title,desc,action);
+  o.art=art;return o;
+ };
+ if(room.kind==='home'){
+  const guest=area.endsWith('B'),flip=guest?!mirror:mirror;
+  const x=(a,w)=>flip?W-a-w:a;
+  item('bed',x(2,3),4,3,3,'bed','Bed','A comfortable place to rest.',theme.bed);
+  item('table',x(10,4),7,4,3,'table','Dining Area','A place to share a meal.',theme.table);
+  item('shelf',x(2,3),9,3,3,'bookshelf','Bookshelf','Local field guides and books.','bookshelf-front');
+  item('cabinet',x(11,3),4,3,2,'chest','Storage Cabinet','Household supplies.','wardrobe-front');
+  item('plant',x(12,2),11,2,2,'display','Houseplant','A carefully tended plant.',guest?'bonsai-blue-pot':'plant-tall-a');
+  item('desk',x(5,2),4,2,2,'desk','Writing Desk','Notes from everyday life.','desk-front');
+ }else if(room.kind==='center'){
+  item('reception',8,5,8,3,'counter','Reception Counter','Heal your party and maintain your Index.','critter-center-reception-counter-002','center');
+  item('diagnostics',swap(2,3),4,3,3,'terminal','Diagnostic Station','Critter health diagnostics.','critter-center-diagnostic-terminal-015');
+  item('monitor',swap(19,3),4,3,3,'counter','Treatment Station','Medical equipment.','critter-center-treatment-counter-027');
+  item('shelf',swap(2,3),10,3,3,'bookshelf','Reference Shelf','Guides to Critter care.','critter-center-supply-shelf-005');
+  item('storage',swap(19,3),10,3,3,'chest','Supply Cabinet','Emergency supplies.','critter-center-supply-shelf-013');
+  item('waiting',swap(5,4),12,4,2,'table','Waiting Bench','A place to wait comfortably.','critter-center-bench-047');
+  item('plant',swap(17,2),13,2,2,'display','Plant','A maintained indoor plant.','critter-center-plant-052');
+ }else{
+  item('checkout',6,5,8,3,'counter','Checkout Counter','Shop for supplies and Index upgrades.','critter-shop-checkout-counter-001','shop');
+  item('stock1',swap(2,3),4,3,4,'bookshelf','Healing Supplies','Potions and Revives.','critter-shop-potion-shelf-010');
+  item('stock2',swap(15,3),4,3,4,'bookshelf','Index Accessories','Index supplies and upgrades.','critter-shop-accessory-display-004');
+  item('display',swap(2,3),10,3,2,'display','Evolution Stones','A merchandise display.','critter-shop-merchandise-display-003');
+  item('stockroom',swap(15,3),10,3,2,'chest','Stock Crates','Sealed merchandise.','critter-shop-crate-033');
+  item('feature',swap(5,3),9,3,2,'table','Featured Supplies','A selection of supplies.',index%2?'critter-shop-food-table-020':'critter-shop-treat-table-018');
+ }
+}
+function furnishExpansionGym(area,add){
+ const theme=expansionInteriorTheme(area),gym=theme.gym;
+ // Practice hall fixtures are deliberately non-battling, with unobstructed
+ // entrance, middle aisle, arena and attendant access.
+ const item=(id,x,y,w,h,kind,title,art)=>{
+  const o=add(id,x,y,w,h,kind,title,'This practice facility is open. Official Gym challenges will be added later.');o.art=art;return o;
+ };
+ for(const x of [3,24])item('bench'+x,x,19,3,2,'table','Training Bench','gym-bench-01');
+ for(const x of [2,26])item('plant'+x,x,5,2,2,'display','Planter','gym-potted-plant-01');
+ const layout={court:[[4,11],[24,11]],ring:[[5,9],[23,9],[5,15],[23,15]],terrace:[[4,8],[24,8],[7,15],[21,15]],split:[[4,10],[24,10],[4,14],[24,14]],gallery:[[3,8],[25,8],[3,13],[25,13]],lanes:[[7,8],[21,8],[7,15],[21,15]],pillars:[[5,8],[23,8],[5,13],[23,13],[5,17],[23,17]]};
+ for(const [i,[x,y]] of layout[gym].entries())item('fixture'+i,x,y,2,2,'display','Practice Marker','critter-center-wall-column-060');
+ item('notice',13,4,4,1,'board','Practice Hall Notice','wall-banner');
+}
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
  // Always maintain a free central aisle and unobstructed exit at (17,25).
  if(TOWN_ROOMS[area]){
   const room=TOWN_ROOMS[area],add=(id,x,y,w,h,kind,title,desc,action='')=>addInteriorObject(area+'-'+id,x,y,w,h,kind,title,[desc],action);
-  if(room.kind==='center'){
+  if(room.kind==='gym'){
+   furnishExpansionGym(area,add);
+  }else if(SETTLEMENT_PLANS[room.parent]){
+   furnishExpansionRoom(area,add);
+  }else if(room.kind==='center'){
    add('reception',7,5,10,2,'counter','Reception Counter','Heal your party and maintain your Index.','center');
    add('diagnostics',2,4,3,3,'terminal','Diagnostic Station','Critter health diagnostics.');
    add('monitor',19,4,3,3,'counter','Treatment Station','Medical equipment.');
@@ -1822,7 +1882,8 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
+  if(room.kind==='gym')npc(15,6,['This Gym is open for exploration and practice. Official challenges are not yet available.'],'gym-attendant');
+  else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
  }
@@ -2886,6 +2947,7 @@ const SHOP_INTERIOR_ART=Object.freeze({
 });
 function shopInterior(area){return TOWN_ROOMS[area]?.kind==='shop'}
 function interiorArtPlan(area,o){
+ if(o.art)return [o.art];
  const prop=interactivePropBase(o);if(prop)return [interactivePropArt(o.id,prop,!!s.discoveries?.[o.id])];
  if(shopInterior(area)){
   const art=SHOP_INTERIOR_ART[o.id.slice(area.length+1)];
@@ -2943,20 +3005,20 @@ function connectedInteriorWalls(ox,oy,color,trim,exitX){
 }
 // Dedicated clinical renderer: no legacy image fallback in either room.
 function drawClinicalInterior(ox,oy,viewW,viewH){
- const lab=s.area==='lab', X=x=>x*S-ox,Y=y=>y*S-oy;
+ const lab=s.area==='lab',theme=expansionInteriorTheme(s.area), X=x=>x*S-ox,Y=y=>y*S-oy;
  const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(X(x),Y(y),w*S,h*S)};
  const fit=(n,x,y,w,h)=>drawUploadedFit(n,X(x),Y(y),w*S,h*S);
  ctx.save();
  ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
  box(0,0,W,H,lab?'#b9c9cc':'#d7e3df');
- if(lab||!interiorTexture('critter-center-floor-tile-075',0,0,W,H,ox,oy,viewW,viewH)){
+ if(lab||!interiorTexture('critter-center-floor-tile-'+(theme?.centerFloor||'075'),0,0,W,H,ox,oy,viewW,viewH)){
   for(let y=Math.max(0,Math.floor(oy/S));y<Math.min(H,Math.ceil((oy+viewH)/S));y++)for(let x=Math.max(0,Math.floor(ox/S));x<Math.min(W,Math.ceil((ox+viewW)/S));x++){
    if((x+y)%2===0)box(x,y,1,1,lab?'#c3d1d3':'#dfe9e5');
    box(x,y,1,.025,'#829a9d');box(x,y,.025,1,'#829a9d');
   }
  }
  const exitX=lab?17:roomExit(s.area)[0];
- connectedInteriorWalls(ox,oy,lab?'#586b76':'#a2bbb9','#526d75',exitX);
+ connectedInteriorWalls(ox,oy,lab?'#586b76':theme?.wall||'#a2bbb9',theme?.trim||'#526d75',exitX);
  if(lab){
   for(let x=3;x<W-3;x+=7)fit('lab-laboratory-light-087',x,1.1,2,1.1);
   fit('lab-wall-monitor-112',4,1.1,4,2);
@@ -2974,16 +3036,16 @@ function drawClinicalInterior(ox,oy,viewW,viewH){
 }
 // Shop-specific artwork, with neutral drawn placeholders while images load.
 function drawShopInterior(ox,oy,viewW,viewH){
- const X=x=>x*S-ox,Y=y=>y*S-oy;
+ const theme=expansionInteriorTheme(s.area),X=x=>x*S-ox,Y=y=>y*S-oy;
  const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(X(x),Y(y),w*S,h*S)};
  const fit=(n,x,y,w,h)=>drawUploadedFit('critter-shop-'+n,X(x),Y(y),w*S,h*S);
  ctx.save();ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
  box(0,0,W,H,'#c5a67f');
- if(!interiorTexture('critter-shop-floor-tile-062',0,0,W,H,ox,oy,viewW,viewH)){
+ if(!interiorTexture('critter-shop-floor-tile-'+(theme?.shopFloor||'062'),0,0,W,H,ox,oy,viewW,viewH)){
   for(let y=0;y<H;y++){box(0,y,W,.035,'#9a7f60');for(let x=y%2;x<W;x+=2)box(x,y,.035,1,'#9a7f60')}
  }
  const exitX=roomExit(s.area)[0];
- connectedInteriorWalls(ox,oy,'#705747','#b69b77',exitX);
+ connectedInteriorWalls(ox,oy,theme?.wall||'#705747',theme?.trim||'#b69b77',exitX);
  interiorWallPanels('critter-shop-wall-panel-072',ox,oy);
  for(const x of [1,W-2])fit('wall-column-080',x,0,1,3.5);
  for(const x of [3,W-7])fit('window-076',x,.6,3,2.2);
@@ -2995,23 +3057,41 @@ function drawShopInterior(ox,oy,viewW,viewH){
  for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
  ctx.restore();
 }
+function drawExpansionGym(ox,oy,viewW,viewH){
+ const theme=expansionInteriorTheme(s.area),X=x=>x*S-ox,Y=y=>y*S-oy;
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(X(x),Y(y),w*S,h*S)};
+ ctx.save();ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
+ box(0,0,W,H,theme.floor);
+ // Continuous practice court with type-neutral markings and an open center aisle.
+ box(8,8,14,10,'#a5b2b0');box(8.15,8.15,13.7,9.7,'#c7d0c8');
+ ctx.strokeStyle='#f4f1e5';ctx.lineWidth=3;
+ ctx.strokeRect(X(9),Y(9),12*S,8*S);
+ ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
+ connectedInteriorWalls(ox,oy,theme.wall,theme.trim,roomExit(s.area)[0]);
+ for(const x of [3,W-7])drawUploadedFit('critter-center-window-wall-061',X(x),Y(.5),4*S,2.4*S);
+ for(const x of [9,W-11])drawUploadedFit('wall-banner',X(x),Y(.5),2*S,2*S);
+ for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
+ ctx.restore();
+}
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(!isInterior(s.area))return;
+ if(TOWN_ROOMS[s.area]?.kind==='gym')return drawExpansionGym(ox,oy,viewW,viewH);
  if(shopInterior(s.area))return drawShopInterior(ox,oy,viewW,viewH);
  if(clinicalInterior(s.area))return drawClinicalInterior(ox,oy,viewW,viewH);
- const X=x=>x*S-ox,Y=y=>y*S-oy,estate=s.area==='homesteadHome';
+ const X=x=>x*S-ox,Y=y=>y*S-oy,estate=s.area==='homesteadHome',theme=expansionInteriorTheme(s.area);
  const color=(slot,fallback)=>estate?cosmeticColor(slot,fallback):fallback;
  const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(X(x),Y(y),w*S,h*S)};
  ctx.save();ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();
- box(0,0,W,H,color('floor','#ae9474'));
+ box(0,0,W,H,color('floor',theme?.floor||'#ae9474'));
  for(let y=0;y<H;y+=.75)box(0,y,W,.025,'#795d4333');
  const exitX=TOWN_ROOMS[s.area]?roomExit(s.area)[0]:17;
- connectedInteriorWalls(ox,oy,color('wall','#77614e'),'#493d33',exitX);
+ connectedInteriorWalls(ox,oy,color('wall',theme?.wall||'#77614e'),theme?.trim||'#493d33',exitX);
  const picture=s.area==='home'?'wall-family-portrait':s.area==='neighbor'?'wall-scroll-a':'wall-floral-picture';
  drawUploadedFit(picture,X(W/2-1),Y(.4),2*S,2*S);
  for(const x of [3,W-5])drawUploadedFit('wall-scroll-b',X(x),Y(.4),2*S,2*S);
  for(const x of [W/3,W*2/3])drawUploadedFit('square-lantern',X(x-.5),Y(2),S,S);
- if(!(estate&&activeCosmetic('rug')))drawUploadedFit(s.area==='home'?'round-rug-cream':'round-rug-blue',X(W/2-2),Y(H-7),4*S,3*S);
+ if(!(estate&&activeCosmetic('rug')))drawUploadedFit(theme?.rug||(s.area==='home'?'round-rug-cream':'round-rug-blue'),X(W/2-2),Y(H-7),4*S,3*S);
  if(estate)drawInteriorDecor(ox,oy);
  for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
  ctx.restore();
@@ -3921,7 +4001,7 @@ function drawSettlementGym(b,ox,oy){
   ctx.fillStyle='#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
   for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
   const door=(b.door-b.x+.5)/b.w;box(door-.07,.67,.14,.33,'#384950');box(door-.055,.69,.11,.31,'#81949b');
-  box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM SITE',x+w/2,y+h*.45);ctx.textAlign='left';
+  box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM',x+w/2,y+h*.45);ctx.textAlign='left';
  });
 }
 function expansionGroundColor(area,t){
@@ -4261,7 +4341,6 @@ function move(d){
  if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking()||trainerApproachLocked())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
- if(reservedGymAt(x,y))return notifyWorld('This Gym facility is reserved for the next development phase.');
  const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
  if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return exitTownRoom();
  if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned){recordWalkingStep();return region('homesteadHome',17,23)}
@@ -4343,7 +4422,6 @@ function interact(){
  return say(npcRoutineDialogue(p))}
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return region('homesteadHome',17,23);
  if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
- if(reservedGymAt(x,y))return notifyWorld('This Gym facility is reserved for the next development phase.');
  const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
  if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return exitTownRoom();
  const door=villageDoorAt(x,y);
@@ -4909,7 +4987,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.50</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.51</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
