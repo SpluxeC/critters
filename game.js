@@ -1099,6 +1099,38 @@ EXPLORATION_OBJECTS.push(
  {id:'quest-delivery',area:'town',x:22,y:13,kind:'quest',title:'Supply Delivery Desk',quest:'farm-delivery',text:'The delivery desk accepts the sealed farm supplies.'},
  {id:'quest-repair',area:'route2',x:12,y:10,kind:'quest',title:'Damaged Trail Marker',quest:'trail-repair',text:'You straighten the marker and secure it with the provided repair kit.'}
 );
+// Phase 11: optional regional expeditions, independent of the main story.
+const REGIONAL_EXPEDITIONS=[
+ ['coastRoute','harborTown','Coastal Survey','Harbor Surveyor','Tidepool Lookout',11,24,'Potion',120],
+ ['marshRoute','marshTown','Wetland Survey','Wetland Surveyor','Reedbed Lookout',19,25,'PP Potion',140],
+ ['canyonRoute','canyonTown','Canyon Survey','Mountain Surveyor','Sandstone Overlook',16,23,'Revive',160],
+ ['volcanicRoute','volcanicTown','Spring Survey','Spring Surveyor','Mineral Spring Overlook',13,23,'Potion',180],
+ ['ashPass','volcanicTown','Ash Pass Survey','Spring Surveyor','Ashen Trail Marker',28,21,'PP Potion',180],
+ ['snowRoute','snowTown','Winter Survey','Winter Surveyor','Frozen Lake Overlook',19,26,'Revive',200],
+ ['ancientRoute','ancientTown','Ruins Survey','Ruins Surveyor','Old Stone Courtyard',19,25,'PP Potion',220],
+ ['victoryRoad','highlandTown','Mountain Survey','Highland Surveyor','High Mountain Overlook',19,25,'Revive',240]
+];
+for(const [route,town,title,giver,landmark,x,y,item,credits] of REGIONAL_EXPEDITIONS){
+ EXPLORATION_SITES.push({id:'regional-'+route,area:route,x,y,title:landmark,text:'You record the landscape in your Critter Index.',credits:Math.floor(credits/2)});
+}
+Object.assign(SECRET_AREAS,{
+ coastalNook:{name:'Sheltered Coastal Nook',parent:'coastRoute',entrance:[7,21],returnAt:[8,22],spawn:[17,22],badge:0},
+ marshHideaway:{name:'Reedbed Hideaway',parent:'marshRoute',entrance:[16,26],returnAt:[17,26],spawn:[17,22],badge:0},
+ mountainAlcove:{name:'Mountain Alcove',parent:'canyonRoute',entrance:[16,23],returnAt:[15,24],spawn:[17,22],badge:0},
+ springCavern:{name:'Mineral Spring Cavern',parent:'volcanicRoute',entrance:[11,23],returnAt:[12,24],spawn:[17,22],badge:0},
+ snowShelter:{name:'Snowfield Shelter',parent:'snowRoute',entrance:[21,16],returnAt:[20,17],spawn:[17,22],badge:0},
+ oldArchive:{name:'Old Stone Archive',parent:'ancientRoute',entrance:[12,23],returnAt:[11,24],spawn:[17,22],badge:0}
+});
+// Regional secrets use the parent habitat and existing save/exit machinery.
+for(const id of ['coastalNook','marshHideaway','mountainAlcove','springCavern','snowShelter','oldArchive']){
+ EXPLORATION_OBJECTS.push({id:id+'-cache',area:id,x:24,y:8,kind:'chest',title:'Explorer Supply Chest',text:'A protected supply chest contains useful travel supplies.',reward:'Revive',quantity:1,credits:120});
+}
+EXPLORATION_OBJECTS.push(
+ {id:'regional-harbor-marker',area:'coastRoute',x:10,y:21,kind:'quest',title:'Weathered Trail Marker',quest:'regional-harbor-repair',text:'You secure the loose marker.'},
+ {id:'regional-marsh-marker',area:'marshRoute',x:12,y:26,kind:'quest',title:'Boardwalk Marker',quest:'regional-marsh-repair',text:'You replace the faded trail marker.'},
+ {id:'regional-archive-clue',area:'oldArchive',x:17,y:18,kind:'sign',title:'Stone Inscription',text:'Trace the path of the water, then stone, then sun.'},
+ ...['water','stone','sun'].map((rune,i)=>({id:'archive-'+rune,area:'oldArchive',x:9+i*8,y:15,kind:'archive-rune',rune,title:rune+' Rune'}))
+);
 const PUZZLE_RUNES=['sun','water','stone'];
 function secretEntranceAt(area,x,y){
  return Object.entries(SECRET_AREAS).find(([id,d])=>d.parent===area&&d.entrance[0]===x&&d.entrance[1]===y);
@@ -1106,7 +1138,7 @@ function secretEntranceAt(area,x,y){
 function explorationObjectAt(area,x,y){return EXPLORATION_OBJECTS.find(o=>o.area===area&&o.x===x&&o.y===y)}
 function explorationBlocked(area,x,y){
  const o=explorationObjectAt(area,x,y);
- return !!(o&&(o.id!=='quest-lost-critter'||s.sideQuests?.[o.quest]?.status==='active'&&!s.sideQuests[o.quest].objectDone))||!!secretEntranceAt(area,x,y)||(area==='ruins'&&y===11&&x>=15&&x<=19&&!s?.puzzles?.ruinsOpened);
+ return !!(o&&(o.id!=='quest-lost-critter'||s.sideQuests?.[o.quest]?.status==='active'&&!s.sideQuests[o.quest].objectDone))||!!secretEntranceAt(area,x,y)||(area==='ruins'&&y===11&&x>=15&&x<=19&&!s?.puzzles?.ruinsOpened)||(area==='oldArchive'&&y===11&&x>=15&&x<=19&&!s?.puzzles?.archiveOpened);
 }
 function inspectExplorationObject(o){
  if(o.kind==='chest'&&!s.discoveries?.[o.id])startPropAnimation(o.id,'wooden-chest');
@@ -1117,6 +1149,13 @@ function inspectExplorationObject(o){
   state.objectDone=true;save();return notifyWorld([o.text,'Objective complete. Return to '+sideQuest(o.quest).giver+'.']);
  }
  if(o.kind==='sign')return notifyWorld(o.text);
+ if(o.kind==='archive-rune'){
+  if(s.puzzles.archiveOpened)return notifyWorld('The archive passage is open.');
+  const seq=Array.isArray(s.puzzles.archiveSequence)?s.puzzles.archiveSequence:[];
+  if(o.rune!==['water','stone','sun'][seq.length]){s.puzzles.archiveSequence=[];save();return notifyWorld('The sequence resets. Read the inscription again.')}
+  s.puzzles.archiveSequence=[...seq,o.rune];if(seq.length===2){s.puzzles.archiveOpened=true;s.puzzles.archiveSequence=[];save();return notifyWorld('The archive barrier opens!')}
+  save();return notifyWorld('The rune lights up.');
+ }
  if(o.kind==='rune'){
   if(s.puzzles.ruinsOpened)return notifyWorld('The rune glows steadily. The chamber is already open.');
   let seq=Array.isArray(s.puzzles.ruinsSequence)?s.puzzles.ruinsSequence:[];
@@ -1146,6 +1185,9 @@ function buildSecretArea(area){
   rect(15,12,5,10,T.path);rect(15,3,5,8,T.path);
  }
  if(area==='cavern'){rect(7,8,5,7,T.water);rect(21,14,5,4,T.rock);rect(15,4,5,18,T.path)}
+ if(['coastalNook','marshHideaway','springCavern','snowShelter'].includes(area)){rect(5,5,8,7,T.water);rect(15,4,5,19,T.path);rect(19,7,6,3,T.path);if(area==='marshHideaway')rect(22,12,6,7,T.tall);}
+ if(area==='mountainAlcove'){rect(7,6,5,6,T.rock);rect(21,14,5,4,T.rock);rect(15,4,5,19,T.path);}
+ if(area==='oldArchive'){rect(4,11,26,1,T.rock);rect(15,11,5,1,T.path);rect(15,12,5,10,T.path);}
 }
 function prepareExplorationGeometry(){
  for(const d of Object.values(SECRET_AREAS))if(d.parent===s.area){
@@ -1169,8 +1211,8 @@ function drawExtraExploration(ox,oy){
    ctx.fillStyle='#d8b77b';ctx.beginPath();ctx.ellipse(x+16,y+16,9,10,0,0,Math.PI*2);ctx.fill();
    ctx.fillStyle='#4b3835';ctx.fillRect(x+11,y+13,2,3);ctx.fillRect(x+19,y+13,2,3);continue;
   }
-  if(o.kind==='rune'){
-   const lit=s.puzzles?.ruinsOpened||s.puzzles?.ruinsSequence?.includes(o.rune);
+  if(o.kind==='rune'||o.kind==='archive-rune'){
+   const lit=o.kind==='archive-rune'?(s.puzzles?.archiveOpened||s.puzzles?.archiveSequence?.includes(o.rune)):s.puzzles?.ruinsOpened||s.puzzles?.ruinsSequence?.includes(o.rune);
    ctx.fillStyle=lit?'#c8ba70':'#53605a';ctx.fillRect(x+6,y+6,20,22);
    ctx.fillStyle=lit?'#fff3a6':'#b5c3ae';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText({sun:'Sun',water:'≈',stone:'◇'}[o.rune],x+16,y+22);ctx.textAlign='left';
   }else{
@@ -1179,7 +1221,7 @@ function drawExtraExploration(ox,oy){
    if(o.kind==='chest'&&!s.discoveries?.[o.id]){ctx.fillStyle='#e7cb78';ctx.fillRect(x+14,y+15,4,4)}
   }
  }
- if(s.area==='ruins'&&!s.puzzles?.ruinsOpened)for(let x=15;x<=19;x++){ctx.fillStyle='#6b756b';ctx.fillRect(x*S-ox,11*S-oy,S,S);ctx.strokeStyle='#3c4a42';ctx.strokeRect(x*S-ox+1,11*S-oy+1,S-2,S-2)}
+ if((s.area==='ruins'&&!s.puzzles?.ruinsOpened)||(s.area==='oldArchive'&&!s.puzzles?.archiveOpened))for(let x=15;x<=19;x++){ctx.fillStyle='#6b756b';ctx.fillRect(x*S-ox,11*S-oy,S,S);ctx.strokeStyle='#3c4a42';ctx.strokeRect(x*S-ox+1,11*S-oy+1,S-2,S-2)}
 }
 function explorationSiteAt(area,x,y){return EXPLORATION_SITES.find(o=>o.area===area&&o.x===x&&o.y===y)}
 function discoverExplorationSite(o){
@@ -1597,7 +1639,7 @@ function migrate(){
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
- s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern','route4','ridge','willowHollow'].includes(s.area)&&!TOWN_ROOMS[s.area]&&!OUTDOOR_GRID[s.area])s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern','route4','ridge','willowHollow'].includes(s.area)&&!SECRET_AREAS[s.area]&&!TOWN_ROOMS[s.area]&&!OUTDOOR_GRID[s.area])s.area='village';
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=['up','down','left','right'].includes(s.face)?s.face:'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
@@ -1909,12 +1951,19 @@ const SIDE_QUESTS=[
  {id:'garden-challenge',hub:'garden-memorial',title:'A Friendly Challenge',giver:'Garden Caretaker',area:'garden',kind:'trainer',description:'Win an optional friendly battle with the caretaker. Speak again to collect your reward.',reward:{credits:160,item:'Revive'}},
  {id:'cavern-research',hub:'garden-memorial',requires:'garden-challenge',title:'Beyond the Crystal Alcove',giver:'Garden Caretaker',area:'garden',kind:'landmark',landmark:'secret-cavern',description:'After earning your first badge, discover Crystal Cavern and report back.',reward:{credits:200,item:'PP Potion',quantity:2}}
 ];
+for(const [route,town,title,giver,landmark,x,y,item,credits] of REGIONAL_EXPEDITIONS){
+ const hub='regional-hub-'+town;
+ SIDE_QUESTS.push({id:'survey-'+route,hub,title,giver,area:town,kind:'landmark',landmark:'regional-'+route,description:'Discover '+landmark+' on the nearby route and report back.',reward:{credits,item}});
+}
+for(const [id,town,giver,title] of [['regional-harbor-repair','harborTown','Harbor Surveyor','Repair the Coastal Marker'],['regional-marsh-repair','marshTown','Wetland Surveyor','Repair the Boardwalk Marker']])SIDE_QUESTS.push({id,hub:'regional-hub-'+town,title,giver,area:town,kind:'object',description:'Inspect and repair the marked trail fixture on the neighboring route.',reward:{credits:150,item:'Potion',quantity:2}});
+SIDE_QUESTS.push({id:'regional-archive-study',hub:'regional-hub-ancientTown',title:'Archive Field Study',giver:'Ruins Surveyor',area:'ancientTown',kind:'archive-puzzle',description:'Find the Old Stone Archive and solve its inscription puzzle.',reward:{credits:300,item:'Revive',quantity:2}});
 function sideQuest(id){return SIDE_QUESTS.find(q=>q.id===id)||null}
 function sideQuestProgress(q){
  const saved=s.sideQuests?.[q.id];if(!saved)return 0;
  if(q.kind==='landmark')return s.discoveries?.[q.landmark]?1:0;
  if(q.kind==='object')return saved.objectDone?1:0;
  if(q.kind==='puzzle')return s.puzzles?.ruinsOpened?1:0;
+ if(q.kind==='archive-puzzle')return s.puzzles?.archiveOpened?1:0;
  if(q.kind==='trainer')return saved.won?1:0;
  return Math.max(0,(s.questCaptureCounts?.[q.captureArea]||0)-(saved.baseline||0));
 }
@@ -1985,7 +2034,7 @@ function build(preview=false){
   else npc(8,7,['Welcome to our home.']);
  }
  else switch(s.area){
- case 'grotto':case 'ruins':case 'cavern':case 'willowHollow':buildSecretArea(s.area);break;
+ case 'coastalNook':case 'marshHideaway':case 'mountainAlcove':case 'springCavern':case 'snowShelter':case 'oldArchive':case 'grotto':case 'ruins':case 'cavern':case 'willowHollow':buildSecretArea(s.area);break;
  case 'homestead':{
  const stage=homesteadConstructionStage(),owned=!!s.homestead?.owned;
  borders();rect(15,12,W-16,3,T.path);rect(15,10,3,4,T.path);
@@ -4719,7 +4768,7 @@ function populateExpansionArea(area){
  const d=REGIONAL_EXPANSION[area];if(!d)return;
  const open=(x,y)=>x>=2&&y>=2&&x<W-2&&y<H-2&&[T.grass,T.path,T.stone,T.tall,T.flower].includes(tiles[y]?.[x])&&!npcs.some(p=>p.x===x&&p.y===y)&&!settlementPublicProps(area).some(o=>yardContains(o,x,y))&&!settlementLots(area).some(b=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h+2);
  function add(x,y,lines,kind,id,extra={}){
-  if(!open(x,y)||npcReservedCell(area,x,y,W,H))return null;
+  if(!open(x,y)||npcReservedCell(area,x,y,W,H)||explorationSiteAt(area,x,y)||explorationObjectAt(area,x,y)||secretEntranceAt(area,x,y))return null;
   npc(x,y,lines,kind,id);const p=npcs[npcs.length-1];Object.assign(p,extra);return p;
  }
  if(SETTLEMENT_PLANS[area]){
@@ -4731,7 +4780,7 @@ function populateExpansionArea(area){
   }
   const [px,py]=SETTLEMENT_PLANS[area].public;
   for(const [x,y] of [[px-6,py],[px+6,py],[px-2,py-3]])if(add(x,y,['I help look after the public gardens. Please leave the paths clear.'],'groundskeeper',area+'-keeper',{workTask:({harborTown:'Checking harbor supplies',marshTown:'Maintaining boardwalks',canyonTown:'Inspecting terraces',volcanicTown:'Checking springs',snowTown:'Clearing snow',highlandTown:'Inspecting terraces',ancientTown:'Inspecting ruins'})[area],workPoints:[[x,y],[x,y-1],[x+1,y]]}))break;
-  for(const [x,y] of [[15,10],[21,16],[15,23]])if(add(x,y,['The Critter Center is available for healing and Index maintenance.'],'guide',area+'-guide'))break;
+  for(const [x,y] of [[15,10],[21,16],[15,23]])if(add(x,y,['I coordinate optional regional surveys.'],'sidequest','regional-hub-'+area))break;
   for(const [x,y] of [[21,10],[15,18],[21,23]])if(add(x,y,['I am traveling through the region. There is always another route to discover.'],'',area+'-traveler'))break;
   return;
  }
@@ -5835,7 +5884,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.68</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.69</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
