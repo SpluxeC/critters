@@ -770,3 +770,22 @@ test('Phase 9.1 coastal quays remain connected and shoreline remains water',()=>
   else{for(let y=27;y<=37;y++)assert.equal(tiles[y][9],T.path);assert.equal(tiles[32][5],T.path);assert.equal(tiles[36][13],T.water);assert.equal(tiles[39][18],T.path);}
  }
 });
+
+test('Phase 9.2 wetland boardwalks connect to roads while pools remain impassable',()=>{
+ const T={grass:0,path:1,water:2,stone:3,rock:4,tall:5};
+ const ctx=extract('function marshDeckCell(','function buildSpecialStorySite(',{T,W:44,H:40,tiles:[],naturalSeed:(x,y)=>x*31+y*17});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ for(const area of ['marshRoute','marshTown']){
+  ctx.area=area;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,W,3,T.path);rect(17,13,3,H-13,T.path);rect(2,26,W-4,2,T.path);buildMarshLandscape(area);return tiles})()`,ctx);
+  assert.equal(tiles[13][18],T.path);
+  const seen=new Set(['18,13']),queue=[[18,13]];
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(tiles[ny]?.[nx]!==T.path||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+  if(area==='marshRoute'){assert.ok(seen.has('9,28'));assert.ok(seen.has('31,28'));assert.equal(tiles[24][5],T.water);assert.equal(tiles[24][34],T.water);}
+  else{assert.ok(seen.has('9,34'));assert.ok(seen.has('14,34'));assert.equal(tiles[32][12],T.water);assert.ok(seen.has('18,39'));}
+  for(let y=0;y<40;y++)for(let x=0;x<44;x++)if(ctx.marshDeckCell(area,x,y))assert.equal(tiles[y][x],T.path,area+' '+x+','+y);
+ }
+});
