@@ -832,3 +832,18 @@ test('Phase 9.4 volcanic pools and ridges preserve roads and thermal overlooks',
  assert.equal(ctx.isVolcanicDistrict('ashPass'),false);
  assert.equal(ctx.isVolcanicDistrict('legendaryReserveC'),false);
 });
+
+test('Phase 9.5 Ash Pass preserves actual west and south crossings and the scenic loop',()=>{
+ const T={grass:0,path:1,rock:2,tall:3};
+ const ctx=extract('function ashRidgeCell(','function buildSpecialStorySite(',{T,W:44,H:34,tiles:[],naturalSeed:(x,y)=>x*31+y*17});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,20,3,T.path);rect(17,12,3,H-12,T.path);buildAshPassLandscape();return tiles})()`,ctx);
+ const seen=new Set(['18,13']),queue=[[18,13]];
+ for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(tiles[ny]?.[nx]!==T.path||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+ for(const point of ['0,12','0,13','0,14','17,33','18,33','19,33','28,22','9,21'])assert.ok(seen.has(point),point);
+ assert.equal(tiles[7][24],T.rock);assert.equal(tiles[17][34],T.rock);
+ assert.ok(tiles.flat().filter(t=>t===T.tall).length>20);
+});
