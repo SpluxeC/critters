@@ -1006,3 +1006,16 @@ test('Phase 12.2 Harbor Gym requires Grass badge, all trainers and tide puzzle',
  assert.equal(ctx.awardGymBadge(g,state),false);
  assert.equal(state.badges,2);
 });
+
+test('Phase 12.3 marsh boardwalks connect each island in order',()=>{
+ const T={grass:0,path:1,water:2,wall:3};
+ const ctx=extract('function marshGymGeometry(','function operateMarshBridge(',{T,W:30,H:24,tiles:[],gymChallenge:()=>({}),gymEarned:()=>false});
+ vm.runInContext(`function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)tiles[yy][xx]=t}`,ctx);
+ for(let stage=0;stage<=3;stage++){
+  ctx.state={gymProgress:{marshBridges:{west:stage>=1,east:stage>=2,north:stage>=3}}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));marshGymGeometry(state);return tiles})()`,ctx);
+  const seen=new Set(['15,21']),q=[[15,21]];
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(tiles[ny]?.[nx]!==T.path||seen.has(k))continue;seen.add(k);q.push([nx,ny])}}
+  assert.ok(seen.has('7,19'));assert.equal(seen.has('22,14'),stage>=1);assert.equal(seen.has('7,10'),stage>=2);assert.equal(seen.has('15,6'),stage>=3);
+ }
+});
