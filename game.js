@@ -2386,6 +2386,7 @@ function yardBuildings(area){
 }
 function yardCellAllowed(area,x,y,buildings){
  if(x<2||y<2||x>=W-2||y>=H-2||tiles[y]?.[x]!==T.grass||buildingSceneryReserved(area,x,y))return false;
+ if(area==='highlandTown'&&y>=28&&x>=3&&x<=21)return false;
  if(buildings.some(h=>Math.abs(x-h.door)<=1&&y>=h.y+h.h&&y<=h.y+h.h+4))return false;
  if(villageObstacles.has(key(x,y))||route1Blocked.has(key(x,y))||settlementPublicProps(area).some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return false;
  if(npcs.some(p=>Math.abs((p.homeX??p.x)-x)+Math.abs((p.homeY??p.y)-y)<=1))return false;
@@ -2497,7 +2498,7 @@ function drawNaturalDetails(ox,oy,w,h){
 function drawContinuousPath(t,x,y,a,b){
  const road=v=>v===T.path||v===T.stone;
  const n=road(terrainNeighbor(a,b,0,-1)),e=road(terrainNeighbor(a,b,1,0)),south=road(terrainNeighbor(a,b,0,1)),w=road(terrainNeighbor(a,b,-1,0));
- const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(isSnowDistrict(s.area)?'#a6b6bd':isVolcanicDistrict(s.area)?'#797775':canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
+ const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(s.area==='highlandTown'?'#b0ad96':isSnowDistrict(s.area)?'#a6b6bd':isVolcanicDistrict(s.area)?'#797775':canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
  const seed=naturalSeed(a,b);
  ctx.save();
  ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
@@ -4394,6 +4395,7 @@ function buildHighlandLandscape(){
  rect(3,28,13,5,T.grass);rect(6,29,6,2,T.stone);
  rect(8,26,3,7,T.path);rect(17,27,3,6,T.path);
  rect(11,30,7,2,T.stone);rect(19,31,3,2,T.stone);
+ rect(6,28,2,1,T.stone);rect(11,28,1,1,T.stone);
  for(let y=28;y<H-1;y++)for(let x=2;x<W-2;x++){
   if(highlandWallCell(x,y)&&tiles[y][x]===T.grass)put(x,y,T.rock);
  }
