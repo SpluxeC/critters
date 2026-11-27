@@ -865,3 +865,18 @@ test('Phase 9.6 winter lakes remain solid and snowy routes retain east-west cros
   else{assert.equal(tiles[30][9],T.water);assert.ok(seen.has('15,31'));assert.ok(seen.has('12,27'));}
  }
 });
+
+test('Phase 9.7 Highland Town terraces preserve roads and connect both stairways',()=>{
+ const T={grass:0,path:1,rock:2,stone:3,flower:4};
+ const ctx=extract('function highlandWallCell(','function buildSpecialStorySite(',{T,W:42,H:34,tiles:[],settlementPublicProps:()=>[]});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,W,3,T.path);rect(17,1,3,H-2,T.path);rect(2,26,W-4,2,T.path);buildHighlandLandscape();return tiles})()`,ctx);
+ const seen=new Set(['18,13']),queue=[[18,13]];
+ for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+ for(const point of ['0,13','41,13','9,32','18,32','14,31','20,31'])assert.ok(seen.has(point),point);
+ assert.equal(tiles[32][5],T.rock);assert.equal(tiles[32][24],T.rock);
+ for(let y=28;y<=32;y++)for(const x of [8,9,10,17,18,19])assert.equal(tiles[y][x],T.path);
+});
