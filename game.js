@@ -5447,6 +5447,7 @@ function interact(){
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
+ if(p.kind==='gymtrainer'&&gymTrainerDefinition(p.id)&&s.defeated[p.id])return say(['Well battled! Continue with the Gym challenge.']);
  if(p.kind==='gymtrainer'||p.kind==='routetrainer')return s.defeated[p.id]?say(['Trainer: Good match! Want a rematch?'],()=>rematchMenu(p.id)):say(p.text,()=>startTrainer(p.id));
  if(p.kind==='leader'){const g=gymChallenge(s.area),check=gymRequirements(g);return check.ready?startTrainer(g.leaderId):say([check.reason]);}
  if(p.kind==='switch'){const g=gymChallenge(s.area);if(completeGymPuzzle(g)){build();save();return notifyWorld([g.number===1?'You activate the garden mechanism. The roots withdraw!':'The Gym mechanism is complete.'])}return say([gymEarned(g)?'The challenge is already complete.':'Defeat all Gym trainers and earn any previous badges first.'])}
