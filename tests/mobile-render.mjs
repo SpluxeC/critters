@@ -4,11 +4,11 @@ import { mkdir } from 'node:fs/promises';
 
 const url=process.env.CRITTERS_URL||'https://spluxec.github.io/critters/';
 const output='qa-screenshots';
-const expected=process.env.CRITTERS_BUILD||'1.49';
+const expected=process.env.CRITTERS_BUILD||'1.50';
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true});
 const errors=[];
-const areas=[['home',17,14],['neighbor',17,13],['lab',17,10],['townCenter',12,9],['gardenCenter',12,9],['townShop',10,9],['gardenShop',10,9],['gym',17,19],['village-home-exterior',7,10],['village-lab-exterior',24,11],['village',17,16],['town-center-exterior',25,12],['town-shop-exterior',8,23],['garden-gym-exterior',24,11],['route1',17,12],['route2',17,12],['forest',17,12],['garden',14,13],['coastRoute',18,13],['harborTown',18,13],['marshRoute',18,13],['canyonRoute',18,13],['volcanicRoute',18,13],['snowRoute',18,13],['ancientTown',18,13],['victoryRoad',18,13],['leagueGrounds',18,13],['eclipseSite',18,13],['legendaryReserveA',18,13],['legendaryReserveB',18,13],['legendaryReserveC',18,13]];
+const areas=[['home',17,14],['neighbor',17,13],['lab',17,10],['townCenter',12,9],['gardenCenter',12,9],['townShop',10,9],['gardenShop',10,9],['gym',17,19],['village-home-exterior',7,10],['village-lab-exterior',24,11],['village',17,16],['town-center-exterior',25,12],['town-shop-exterior',8,23],['garden-gym-exterior',24,11],['route1',17,12],['route2',17,12],['forest',17,12],['garden',14,13],['coastRoute',18,13],['harborTown',18,13],['marshTown',18,13],['canyonTown',18,13],['volcanicTown',18,13],['snowTown',18,13],['highlandTown',18,13],['harborTownCenter',12,9],['marshTownShop',10,9],['snowTownHouseA',8,10],['marshRoute',18,13],['canyonRoute',18,13],['volcanicRoute',18,13],['snowRoute',18,13],['ancientTown',18,13],['victoryRoad',18,13],['leagueGrounds',18,13],['eclipseSite',18,13],['legendaryReserveA',18,13],['legendaryReserveB',18,13],['legendaryReserveC',18,13]];
 try{
  for(const [label,profile] of [['portrait',devices['iPhone 13']],['landscape',{...devices['iPhone 13'],viewport:{width:844,height:390},screen:{width:844,height:390}}]]){
   const context=await browser.newContext(profile);
