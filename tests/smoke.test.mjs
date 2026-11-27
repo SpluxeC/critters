@@ -847,3 +847,21 @@ test('Phase 9.5 Ash Pass preserves actual west and south crossings and the sceni
  assert.equal(tiles[7][24],T.rock);assert.equal(tiles[17][34],T.rock);
  assert.ok(tiles.flat().filter(t=>t===T.tall).length>20);
 });
+
+test('Phase 9.6 winter lakes remain solid and snowy routes retain east-west crossings',()=>{
+ const T={grass:0,path:1,rock:2,tall:3,stone:4,water:5,tree:6,flower:7};
+ const ctx=extract('function isSnowDistrict(','function buildSpecialStorySite(',{T,W:44,H:34,tiles:[],naturalSeed:(x,y)=>x*31+y*17,settlementPublicProps:()=>[]});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ for(const area of ['snowRoute','snowTown']){
+  ctx.area=area;ctx.W=area==='snowRoute'?44:42;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,W,3,T.path);rect(17,1,3,H-2,T.path);rect(2,26,W-4,2,T.path);buildSnowLandscape(area);return tiles})()`,ctx);
+  for(let x=0;x<ctx.W;x++)assert.equal(tiles[13][x],T.path);
+  const seen=new Set(['18,13']),queue=[[18,13]];
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+  if(area==='snowRoute'){assert.equal(tiles[25][27],T.water);assert.ok(seen.has('19,27'));assert.ok(seen.has('35,23'));assert.ok(tiles.flat().includes(T.tree));}
+  else{assert.equal(tiles[30][9],T.water);assert.ok(seen.has('15,31'));assert.ok(seen.has('12,27'));}
+ }
+});
