@@ -353,7 +353,7 @@ function drawAnimatedBuilding(base,h,doorX,doorY,ox,oy){
  // Frames contain the whole facade. Match the full footprint, anchor the
  // central doorway to the real entrance, and allow the roof to rise above it.
  const w=h.w*S,footH=(h.h+2)*S,ratio=im.naturalHeight/im.naturalWidth;
- const height=Math.max(footH,w*ratio),center=(doorX+.5)*S-ox;
+ const height=SETTLEMENT_PLANS[s.area]?w*ratio:Math.max(footH,w*ratio),center=(doorX+.5)*S-ox;
  const x=center-w/2,y=(h.y+h.h+2)*S-oy-height,baseY=y+height;
  for(let yy=h.y;yy<h.y+h.h+2;yy++)for(let xx=h.x;xx<h.x+h.w;xx++)
   seamlessGround(T.grass,xx*S-ox,yy*S-oy,xx,yy);
@@ -430,6 +430,340 @@ function buildVillageColliders(){
 // Phase 1: curated indoor scenes. Objects share one definition for rendering,
 // inspection and solid footprints. No party swapping/module work outside Centers.
 let interiorObjects=[],interiorBlocked=new Set();
+// Phase 2 authored settlement plans. All future Gym types remain unassigned.
+const SETTLEMENT_PLANS=Object.freeze({
+ "harborTown": {
+  "district": "Harbor",
+  "lots": [
+   [
+    4,
+    3,
+    9,
+    5,
+    "home"
+   ],
+   [
+    23,
+    3,
+    10,
+    5,
+    "center"
+   ],
+   [
+    4,
+    18,
+    9,
+    5,
+    "shop"
+   ],
+   [
+    23,
+    18,
+    11,
+    6,
+    "gym"
+   ],
+   [
+    34,
+    4,
+    6,
+    4,
+    "home"
+   ]
+  ],
+  "feature": "harbor",
+  "public": [
+   27,
+   31
+  ]
+ },
+ "marshTown": {
+  "district": "Wetlands",
+  "lots": [
+   [
+    4,
+    3,
+    8,
+    5,
+    "center"
+   ],
+   [
+    23,
+    3,
+    9,
+    5,
+    "home"
+   ],
+   [
+    4,
+    18,
+    9,
+    5,
+    "gym"
+   ],
+   [
+    23,
+    18,
+    9,
+    5,
+    "shop"
+   ],
+   [
+    34,
+    19,
+    6,
+    4,
+    "home"
+   ]
+  ],
+  "feature": "pond",
+  "public": [
+   29,
+   31
+  ]
+ },
+ "canyonTown": {
+  "district": "Canyon",
+  "lots": [
+   [
+    4,
+    3,
+    9,
+    5,
+    "shop"
+   ],
+   [
+    23,
+    3,
+    11,
+    5,
+    "gym"
+   ],
+   [
+    4,
+    18,
+    10,
+    5,
+    "center"
+   ],
+   [
+    23,
+    18,
+    9,
+    5,
+    "home"
+   ],
+   [
+    34,
+    18,
+    6,
+    4,
+    "home"
+   ]
+  ],
+  "feature": "court",
+  "public": [
+   27,
+   31
+  ]
+ },
+ "volcanicTown": {
+  "district": "Volcanic",
+  "lots": [
+   [
+    4,
+    3,
+    10,
+    5,
+    "gym"
+   ],
+   [
+    23,
+    3,
+    9,
+    5,
+    "center"
+   ],
+   [
+    4,
+    18,
+    9,
+    5,
+    "home"
+   ],
+   [
+    23,
+    18,
+    10,
+    5,
+    "shop"
+   ],
+   [
+    34,
+    3,
+    6,
+    4,
+    "home"
+   ]
+  ],
+  "feature": "court",
+  "public": [
+   27,
+   31
+  ]
+ },
+ "snowTown": {
+  "district": "Snowfield",
+  "lots": [
+   [
+    4,
+    3,
+    9,
+    5,
+    "center"
+   ],
+   [
+    23,
+    3,
+    9,
+    5,
+    "shop"
+   ],
+   [
+    4,
+    18,
+    9,
+    5,
+    "home"
+   ],
+   [
+    23,
+    18,
+    11,
+    5,
+    "gym"
+   ],
+   [
+    34,
+    3,
+    6,
+    4,
+    "home"
+   ]
+  ],
+  "feature": "garden",
+  "public": [
+   27,
+   29
+  ]
+ },
+ "highlandTown": {
+  "district": "Highland",
+  "lots": [
+   [
+    4,
+    3,
+    9,
+    5,
+    "home"
+   ],
+   [
+    23,
+    3,
+    10,
+    5,
+    "gym"
+   ],
+   [
+    4,
+    18,
+    9,
+    5,
+    "shop"
+   ],
+   [
+    23,
+    18,
+    10,
+    5,
+    "center"
+   ],
+   [
+    34,
+    18,
+    6,
+    4,
+    "home"
+   ]
+  ],
+  "feature": "garden",
+  "public": [
+   27,
+   29
+  ]
+ },
+ "ancientTown": {
+  "district": "Ruins",
+  "lots": [
+   [
+    4,
+    3,
+    10,
+    5,
+    "gym"
+   ],
+   [
+    23,
+    3,
+    9,
+    5,
+    "home"
+   ],
+   [
+    4,
+    18,
+    9,
+    5,
+    "center"
+   ],
+   [
+    23,
+    18,
+    9,
+    5,
+    "shop"
+   ],
+   [
+    34,
+    3,
+    6,
+    4,
+    "home"
+   ]
+  ],
+  "feature": "court",
+  "public": [
+   27,
+   29
+  ]
+ }
+});
+function settlementLots(area){
+ const p=SETTLEMENT_PLANS[area];if(!p)return [];
+ let homes=0;
+ return p.lots.map(([x,y,w,h,kind])=>{
+  const suffix=kind==='home'?'House'+(++homes===1?'A':'B'):kind==='center'?'Center':kind==='shop'?'Shop':'Gym';
+  return {x,y,w,h,kind,door:x+Math.floor(w/2),id:area+suffix,label:kind==='gym'?'GYM':kind==='center'?'CRITTER CENTER':kind==='shop'?'CRITTER SHOP':'RESIDENCE',style:kind};
+ });
+}
+function settlementRoomDefinitions(){
+ const entries=[];
+ for(const [area,p] of Object.entries(SETTLEMENT_PLANS))for(const b of settlementLots(area)){
+  if(b.kind==='gym')continue; // Gym facilities are reserved for phase 3.
+  entries.push([b.id,{parent:area,name:p.district+' '+(b.kind==='center'?'Critter Center':b.kind==='shop'?'Critter Shop':b.id.endsWith('A')?'Residence':'Guest House'),kind:b.kind,door:[b.door,b.y+b.h+1]}]);
+ }
+ return Object.fromEntries(entries);
+}
 const TOWN_ROOMS=Object.freeze({
  townHouseA:{parent:'town',name:'Small Town Residence',kind:'home',door:[8,11]},
  townCenter:{parent:'town',name:'Small Town Critter Center',kind:'center',door:[25,11]},
@@ -437,9 +771,11 @@ const TOWN_ROOMS=Object.freeze({
  townHouseB:{parent:'town',name:'Small Town Guest House',kind:'home',door:[25,22]},
  gardenCenter:{parent:'garden',name:'Garden Town Critter Center',kind:'center',door:[6,8]},
  gardenHouse:{parent:'garden',name:'Garden Residence',kind:'home',door:[7,23]},
- gardenShop:{parent:'garden',name:'Garden Town Critter Shop',kind:'shop',door:[25,23]}
+ gardenShop:{parent:'garden',name:'Garden Town Critter Shop',kind:'shop',door:[25,23]},
+ ...settlementRoomDefinitions()
 });
 const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)||Object.hasOwn(TOWN_ROOMS,area);
+function reservedGymAt(x,y){return settlementLots(s.area).find(b=>b.kind==='gym'&&b.door===x&&b.y+b.h+1===y)}
 function townDoorAt(x,y){return Object.entries(TOWN_ROOMS).find(([id,d])=>d.parent===s.area&&d.door[0]===x&&d.door[1]===y)?.[0]||null}
 function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:{w:34,h:26}}
 function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
@@ -816,7 +1152,7 @@ function buildingSceneryReserved(area,x,y){
  return buildings.some(h=>x>=h.x-1&&x<h.x+h.w+1&&y>=h.y-3&&y<h.y+h.h+2);
 }
 function clearBuildingScenery(){
- if(!['village','town','garden'].includes(s.area))return;
+ if(!['village','town','garden'].includes(s.area)&&!SETTLEMENT_PLANS[s.area])return;
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
   if(!buildingSceneryReserved(s.area,x,y))continue;
   villageObstacles.delete(key(x,y));
@@ -826,6 +1162,7 @@ function clearBuildingScenery(){
  }
 }
 function buildingBlocksTile(h,x,y,area){
+ if(SETTLEMENT_PLANS[area])return x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2&&!(x===h.door&&y===h.y+h.h+1);
  const b=h.art||area==='village'?exteriorRect(h):{x:h.x,y:h.y,w:h.w,h:h.h+2,door:h.door??h.x+Math.floor(h.w/2)};
  const center=x+.5;
  if(center<b.x||center>=b.x+b.w||y<=h.y)return false;
@@ -835,6 +1172,7 @@ function buildingBlocksTile(h,x,y,area){
 function solidAt(x,y){
  if(x<0||y<0||x>=W||y>=H)return true;
  const buildings=s.area==='village'?VILLAGE_HOUSES:TOWN_EXTERIORS[s.area]||[];
+ if(SETTLEMENT_PLANS[s.area]&&settlementPublicProps(s.area).some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return true;
  const house=buildings.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h+2);
  if(house)return buildingBlocksTile(house,x,y,s.area);
  if(s.area==='village'&&villageObstacles.has(key(x,y)))return true;
@@ -1260,6 +1598,7 @@ function npcReservedCell(area,x,y,w,h){
  if(['home','neighbor','lab','homesteadHome','gym'].includes(area)&&x>=15&&x<=19&&y>=22)return true;
  if(area==='garden'&&x>=23&&x<=26&&y>=9&&y<=12)return true;
  if(area==='homestead'&&((x>=8&&x<=10&&y>=9&&y<=11)||y>=16))return true;
+ if(SETTLEMENT_PLANS[area]&&settlementLots(area).some(b=>Math.abs(x-b.door)<=1&&y>=b.y+b.h&&y<=b.y+b.h+4))return true;
  if(area==='village'&&VILLAGE_HOUSES.some(b=>Math.abs(x-b.door)<=1&&y>=b.y+b.h&&y<=b.y+b.h+3))return true;
  // Avoid main road crossings and regional portals; patrols get separate explicit permission.
  return false;
@@ -1480,6 +1819,13 @@ function build(preview=false){
  if(!preview){cancelTrainerApproach();npcResidenceDoor=null;migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  if(REGIONAL_EXPANSION[s.area])buildExpansionArea(s.area);
+ else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
+  borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
+  const room=TOWN_ROOMS[s.area];
+  if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
+  else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
+  else npc(8,7,['Welcome to our home.']);
+ }
  else switch(s.area){
  case 'grotto':case 'ruins':case 'cavern':case 'willowHollow':buildSecretArea(s.area);break;
  case 'homestead':{
@@ -1912,19 +2258,19 @@ const YARD_MODULES=Object.freeze({
 const yardCache=new WeakMap();
 function yardBuildings(area){
  if(area==='village')return VILLAGE_HOUSES.map(h=>({...h,style:h.kind==='lab'?'lab':'home'}));
- return (TOWN_EXTERIORS[area]||[]).map(h=>({...h,style:h.label==='GRASS GYM'?'gym':h.label==='CRITTER CENTER'?'center':h.art?.startsWith('shop-')?'shop':'home',door:h.label==='GRASS GYM'?24:Object.values(TOWN_ROOMS).find(r=>r.parent===area&&r.door[0]>=h.x&&r.door[0]<h.x+h.w&&r.door[1]===h.y+h.h+1)?.door[0]??h.x+Math.floor(h.w/2)}));
+ return (TOWN_EXTERIORS[area]||[]).map(h=>({...h,style:h.style|| (h.label==='GRASS GYM'?'gym':h.label==='CRITTER CENTER'?'center':h.art?.startsWith('shop-')?'shop':'home'),door:h.door??(h.label==='GRASS GYM'?24:Object.values(TOWN_ROOMS).find(r=>r.parent===area&&r.door[0]>=h.x&&r.door[0]<h.x+h.w&&r.door[1]===h.y+h.h+1)?.door[0]??h.x+Math.floor(h.w/2))}));
 }
 function yardCellAllowed(area,x,y,buildings){
  if(x<2||y<2||x>=W-2||y>=H-2||tiles[y]?.[x]!==T.grass||buildingSceneryReserved(area,x,y))return false;
  if(buildings.some(h=>Math.abs(x-h.door)<=1&&y>=h.y+h.h&&y<=h.y+h.h+4))return false;
- if(villageObstacles.has(key(x,y))||route1Blocked.has(key(x,y)))return false;
+ if(villageObstacles.has(key(x,y))||route1Blocked.has(key(x,y))||settlementPublicProps(area).some(o=>x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h))return false;
  if(npcs.some(p=>Math.abs((p.homeX??p.x)-x)+Math.abs((p.homeY??p.y)-y)<=1))return false;
  if(explorationSiteAt(area,x,y)||explorationObjectAt(area,x,y)||secretEntranceAt(area,x,y))return false;
  return true;
 }
 function yardContains(o,x,y){return x>=o.x&&x<o.x+o.w&&y>=o.y&&y<o.y+o.h}
 function buildingYardLayout(area){
- if(!['village','town','garden'].includes(area))return [];
+ if(!['village','town','garden'].includes(area)&&!SETTLEMENT_PLANS[area])return [];
  if(yardCache.has(tiles))return yardCache.get(tiles);
  const buildings=yardBuildings(area),used=new Set(),out=[];
  const road=(x,y)=>[T.path,T.stone,T.door].includes(tiles[y]?.[x]);
@@ -2009,7 +2355,7 @@ function drawNaturalDetails(ox,oy,w,h){
  const x0=Math.max(1,Math.floor(ox/S)),x1=Math.min(W-1,Math.ceil((ox+w)/S));
  const y0=Math.max(1,Math.floor(oy/S)),y1=Math.min(H-1,Math.ceil((oy+h)/S));
  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y)||buildingYardLayout(s.area).some(o=>yardContains(o,x,y)))continue;
+  const t=tiles[y]?.[x];if(t!==T.grass&&t!==T.water||buildingSceneryReserved(s.area,x,y)||buildingYardLayout(s.area).some(o=>yardContains(o,x,y))||settlementPublicProps(s.area).some(o=>yardContains(o,x,y)))continue;
   // Avoid actor positions, doors, roads and named sites; small ground details are walkable.
   if(npcs.some(p=>p.x===x&&p.y===y))continue;
   if(s.area==='village'&&villageObstacles.has(key(x,y)))continue;
@@ -2238,6 +2584,7 @@ function drawTile(t,x,y,a,b){
 // Exterior artwork is tied to existing footprints, not new doors or services.
 // Town service buildings are visual landmarks; their NPC interactions are unchanged.
 const TOWN_EXTERIORS={
+ ...Object.fromEntries(Object.keys(SETTLEMENT_PLANS).map(id=>[id,settlementLots(id)])),
  town:[
   {x:4,y:5,w:8,h:5,art:'house-terracotta'},
   {x:21,y:5,w:9,h:5,label:'CRITTER CENTER'},
@@ -2313,6 +2660,7 @@ function drawTownExteriors(ox,oy,w,h){
   if(b.x*S-ox>w+S||(b.x+b.w)*S-ox<-S||b.y*S-oy>h+S*4||(b.y+b.h+2)*S-oy<0)continue;
   const room=Object.values(TOWN_ROOMS).find(d=>d.parent===s.area&&d.door[0]>=b.x&&d.door[0]<b.x+b.w&&d.door[1]===b.y+b.h+1);
   const gym=b.label==='GRASS GYM',base=gym?'grass-gym':room?roomDoorBase(room):null;
+  if(b.kind==='gym'){drawSettlementGym(b,ox,oy);continue;}
   const dx=gym?24:room?.door[0],dy=gym?10:room?.door[1];
   // Never draw a legacy building under a ready full-size replacement.
   if(base&&drawAnimatedBuilding(base,b,dx,dy,ox,oy))continue;
@@ -3521,6 +3869,60 @@ function buildExpansionArea(area){
   if(side==='up')rect(a,0,b-a+1,cy+2,T.path);
   if(side==='down')rect(a,cy-1,b-a+1,H-cy+1,T.path);
  }
+ if(SETTLEMENT_PLANS[area])buildSettlement(area);
+}
+function settlementPublicProps(area){
+ const p=SETTLEMENT_PLANS[area];if(!p)return [];
+ const [x,y]=p.public;
+ const center=p.feature==='court'?'outdoor-rock-3-073':'outdoor-fountain-1-141';
+ return [{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y-1,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y:y-1,w:1,h:1,name:'outdoor-planter-2-154'}];
+}
+function buildSettlement(area){
+ const p=SETTLEMENT_PLANS[area],lots=settlementLots(area),[px,py]=p.public;
+ // Reset the block geometry, then build actual perimeter streets and two sidewalk rows.
+ rect(2,2,W-4,H-4,T.grass);
+ rect(1,12,W-2,3,T.path);rect(17,1,3,H-2,T.path);
+ rect(2,15,W-4,2,T.path);rect(2,26,W-4,2,T.path);
+ for(const b of lots){
+  rect(b.x,b.y,b.w,b.h,T.roof);rect(b.x,b.y+b.h,b.w,2,T.wall);
+  put(b.door,b.y+b.h+1,T.door);
+  const roadY=b.y<12?12:26;
+  rect(b.door-1,b.y+b.h+2,3,Math.max(1,roadY-b.y-b.h-1),T.path);
+ }
+ // A landscaped public square, with the main spine linking to its paved approach.
+ rect(px-5,py-2,12,5,T.stone);rect(19,py,Math.max(1,px-23),2,T.path);
+ for(const o of settlementPublicProps(area))rect(o.x,o.y,o.w,o.h,T.grass);
+ if(p.feature==='harbor'){rect(3,H-9,11,7,T.water);rect(8,H-9,2,7,T.path);rect(8,27,2,Math.max(1,H-34),T.path)}
+ else if(p.feature==='pond'){rect(3,H-8,11,6,T.water);rect(8,H-8,2,6,T.path)}
+ else {for(let x=3;x<15;x+=3)for(let y=H-8;y<H-3;y+=2)if(tiles[y]?.[x]===T.grass)put(x,y,T.flower)}
+ // Preserve every original boundary crossing and connect it to the main street.
+ for(const [side,[dest,a,b]] of Object.entries(OUTDOOR_LINKS[area]||{})){
+  if(side==='left')rect(0,a,20,b-a+1,T.path);
+  if(side==='right')rect(18,a,W-18,b-a+1,T.path);
+  if(side==='up')rect(a,0,b-a+1,14,T.path);
+  if(side==='down')rect(a,13,b-a+1,H-13,T.path);
+ }
+}
+function drawSettlementPublicSpace(ox,oy,w,h){
+ for(const o of settlementPublicProps(s.area)){
+  const x=o.x*S-ox,y=o.y*S-oy,ww=o.w*S,hh=o.h*S;
+  if(x+ww<0||y+hh<0||x>w||y>h)continue;
+  queueSolarShadow(x+ww/2,y+hh,ww*.7,Math.min(hh,40));
+  sceneryLayer(s.area+':public:'+o.x+','+o.y,x,y,ww,hh,y+hh,()=>drawUploadedFit(o.name,x+2,y+2,ww-4,hh-4));
+ }
+}
+function drawSettlementGym(b,ox,oy){
+ // Neutral architectural placeholder, not a type-specific design.
+ const x=b.x*S-ox,y=b.y*S-oy,w=b.w*S,h=(b.h+2)*S,base=y+h;
+ queueSolarShadow(x+w/2,base,w,h,'building');
+ sceneryLayer(s.area+':gym-site',x,y,w,h,base,()=>{
+  const box=(a,c,d,e,col)=>{ctx.fillStyle=col;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
+  box(.035,.25,.93,.75,'#c6c2b7');box(.035,.90,.93,.10,'#72797a');
+  ctx.fillStyle='#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
+  for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
+  box(.43,.67,.14,.33,'#384950');box(.445,.69,.11,.31,'#81949b');
+  box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM SITE',x+w/2,y+h*.45);ctx.textAlign='left';
+ });
 }
 function expansionGroundColor(area,t){
  const biome=REGIONAL_EXPANSION[area]?.biome;
@@ -3792,7 +4194,8 @@ function drawOutdoorWorld(){
   for(let y=y1;y<y2;y++)for(let x=x1;x<x2;x++)drawTile(tiles[y][x],x*S-localOX,y*S-localOY,x,y);
   if(area==='village')drawVillageDetails(localOX,localOY,vw,vh);
   if(area==='route1')drawRoute1Details(localOX,localOY,vw,vh);
-  if(area==='town'||area==='garden')drawTownExteriors(localOX,localOY,vw,vh);
+  if(TOWN_EXTERIORS[area])drawTownExteriors(localOX,localOY,vw,vh);
+  if(SETTLEMENT_PLANS[area])drawSettlementPublicSpace(localOX,localOY,vw,vh);
   if(area==='homestead'){drawHomesteadConstruction(localOX,localOY);drawFarmGrounds(localOX,localOY);drawEstateExterior(localOX,localOY);drawHomesteadBuildingExteriors(localOX,localOY)}
   drawBuildingYards(localOX,localOY,vw,vh);
   drawNaturalDetails(localOX,localOY,vw,vh);
@@ -3858,6 +4261,7 @@ function move(d){
  if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking()||trainerApproachLocked())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
+ if(reservedGymAt(x,y))return notifyWorld('This Gym facility is reserved for the next development phase.');
  const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
  if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return exitTownRoom();
  if(s.area==='homestead'&&x===9&&y===9&&s.homestead?.owned){recordWalkingStep();return region('homesteadHome',17,23)}
@@ -3903,7 +4307,7 @@ function canInteractAhead(){
  if(pastureGateAt(x,y)>=0)return true;
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return true;
  if(s.area==='homesteadHome'&&x===17&&y===25)return true;
- if(villageDoorAt(x,y)||townDoorAt(x,y))return true;
+ if(villageDoorAt(x,y)||townDoorAt(x,y)||reservedGymAt(x,y))return true;
  if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return true;
  if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25)return true;
  if(isInterior(s.area)&&interiorObjectAt(x,y))return true;
@@ -3939,6 +4343,7 @@ function interact(){
  return say(npcRoutineDialogue(p))}
  if(s.area==='homestead'&&s.homestead?.owned&&x===9&&y===9)return region('homesteadHome',17,23);
  if(s.area==='homesteadHome'&&x===17&&y===25)return region('homestead',9,10);
+ if(reservedGymAt(x,y))return notifyWorld('This Gym facility is reserved for the next development phase.');
  const townRoom=townDoorAt(x,y);if(townRoom)return enterTownRoom(townRoom);
  if(TOWN_ROOMS[s.area]&&x===roomExit(s.area)[0]&&y===roomExit(s.area)[1])return exitTownRoom();
  const door=villageDoorAt(x,y);
@@ -4428,7 +4833,7 @@ const REGION_MAP_PLACES=[
  {id:'route4',name:'Route 4 · Willow River Trail',x:64,y:73,kind:'route'},
  {id:'ridge',name:'Ridge Trail',x:62,y:39,kind:'route'},
  {id:'garden',name:'Garden Town',x:84,y:73,kind:'center',spawn:[14,14]},
- ...Object.entries(REGIONAL_EXPANSION).map(([id,d])=>({id,name:d.name,kind:d.kind==='town'?'town':d.kind==='route'?'route':'wild'}))
+ ...Object.entries(REGIONAL_EXPANSION).map(([id,d])=>({id,name:d.name,kind:d.kind==='town'?'center':d.kind==='route'?'route':'wild',...(d.kind==='town'?{spawn:[18,13]}:{})}))
 ];
 // Map positions follow actual chunk geography, including the original valley.
 for(const p of REGION_MAP_PLACES){const g=OUTDOOR_GRID[p.id]||[5,0];p.x=3.8+g[0]*6.9;p.y=17+g[1]*32;if(p.id==='cave'){p.x-=2.2;p.y-=10}}
@@ -4497,14 +4902,14 @@ function fastTravelToCenter(id){
  const [x,y]=place.spawn;
  mapTravelSelection=null;
  close(); // Remove watch modal before using the existing region transition.
- const room=id==='town'?'townCenter':id==='garden'?'gardenCenter':id==='homestead'?'homesteadHome':null;
+ const room=id==='town'?'townCenter':id==='garden'?'gardenCenter':id==='homestead'?'homesteadHome':SETTLEMENT_PLANS[id]?id+'Center':null;
  const spawn=room?[roomExit(room)[0],roomExit(room)[1]-2]:[x,y];region(room||id,...spawn,'',true);indexNotice('Fast Travel complete — '+regionalPlaceName(place)+'.');
  s.face='up';save();
  return true;
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.49</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.50</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
