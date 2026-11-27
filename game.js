@@ -1157,7 +1157,7 @@ function migrate(){
  // A returning player may click Continue after the catalogs already loaded.
  // Migrate before normalizing party metadata in either loading order.
  if(speciesRegistry.size)migrateSpeciesIds();
- s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern','route4','ridge','willowHollow'].includes(s.area)&&!TOWN_ROOMS[s.area])s.area='village';
+ s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern','route4','ridge','willowHollow'].includes(s.area)&&!TOWN_ROOMS[s.area]&&!OUTDOOR_GRID[s.area])s.area='village';
  ensureMapDiscovery();
  s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
@@ -1479,7 +1479,8 @@ function sideQuestIndex(){
 function build(preview=false){
  if(!preview){cancelTrainerApproach();npcResidenceDoor=null;migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
- switch(s.area){
+ if(REGIONAL_EXPANSION[s.area])buildExpansionArea(s.area);
+ else switch(s.area){
  case 'grotto':case 'ruins':case 'cavern':case 'willowHollow':buildSecretArea(s.area);break;
  case 'homestead':{
  const stage=homesteadConstructionStage(),owned=!!s.homestead?.owned;
@@ -2025,7 +2026,7 @@ function drawNaturalDetails(ox,oy,w,h){
 function drawContinuousPath(t,x,y,a,b){
  const road=v=>v===T.path||v===T.stone;
  const n=road(terrainNeighbor(a,b,0,-1)),e=road(terrainNeighbor(a,b,1,0)),south=road(terrainNeighbor(a,b,0,1)),w=road(terrainNeighbor(a,b,-1,0));
- const stone=t===T.stone,fill=stone?'#aaa899':'#c6ae82';
+ const stone=t===T.stone,fill=stone?'#aaa899':expansionGroundColor(s.area,T.path)||'#c6ae82';
  const seed=naturalSeed(a,b);
  ctx.save();
  ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
@@ -2033,7 +2034,7 @@ function drawContinuousPath(t,x,y,a,b){
  const r=5;
  const wet=(dx,dy)=>terrainNeighbor(a,b,dx,dy)===T.water;
  const tl=!n&&!w&&!wet(0,-1)&&!wet(-1,0)?r:0,tr=!n&&!e&&!wet(0,-1)&&!wet(1,0)?r:0,br=!south&&!e&&!wet(0,1)&&!wet(1,0)?r:0,bl=!south&&!w&&!wet(0,1)&&!wet(-1,0)?r:0;
- ctx.fillStyle='#75a65e';ctx.fillRect(x,y,S,S);
+ ctx.fillStyle=expansionGroundColor(s.area,T.grass)||'#75a65e';ctx.fillRect(x,y,S,S);
  ctx.beginPath();ctx.moveTo(x+tl,y);ctx.lineTo(x+S-tr,y);ctx.quadraticCurveTo(x+S,y,x+S,y+tr);
  ctx.lineTo(x+S,y+S-br);ctx.quadraticCurveTo(x+S,y+S,x+S-br,y+S);
  ctx.lineTo(x+bl,y+S);ctx.quadraticCurveTo(x,y+S,x,y+S-bl);
@@ -2044,7 +2045,8 @@ function drawContinuousPath(t,x,y,a,b){
  for(const [on,x0,y0,x1,y1] of edges){
   if(!on)continue;
   const gradient=ctx.createLinearGradient(x+x0,y+y0,x+x1,y+y1);
-  gradient.addColorStop(0,'rgba(117,166,94,.60)');gradient.addColorStop(1,'rgba(117,166,94,0)');
+  const shoulder=expansionGroundColor(s.area,T.grass)||'#75a65e';
+  gradient.addColorStop(0,shoulder+'99');gradient.addColorStop(1,shoulder+'00');
   ctx.fillStyle=gradient;
   if(x0===x1)ctx.fillRect(x,y+Math.min(y0,y1),S,5);
   else ctx.fillRect(x+Math.min(x0,x1),y,5,S);
@@ -2056,7 +2058,7 @@ function drawContinuousPath(t,x,y,a,b){
 function drawContinuousWater(x,y,a,b){
  const water=(dx,dy)=>terrainNeighbor(a,b,dx,dy)===T.water;
  const n=water(0,-1),e=water(1,0),south=water(0,1),w=water(-1,0);
- const land='#75a65e',r=5;
+ const land=expansionGroundColor(s.area,T.grass)||'#75a65e',r=5;
  const tl=!n&&!w?r:0,tr=!n&&!e?r:0,br=!south&&!e?r:0,bl=!south&&!w?r:0;
  ctx.save();ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
  ctx.fillStyle=land;ctx.fillRect(x,y,S,S);
@@ -2075,7 +2077,7 @@ function drawContinuousWater(x,y,a,b){
 }
 function seamlessGround(t,x,y,a,b){
  const colors={[T.grass]:'#75a65e',[T.path]:'#c6ae82',[T.stone]:'#aaa899',[T.water]:'#629fa5',[T.rice]:'#829d68',[T.tall]:'#75a65e',[T.flower]:'#75a65e'};
- const color=colors[t];if(!color)return false;
+ const color=(t===T.grass||t===T.tall||t===T.flower||t===T.path)?expansionGroundColor(s.area,t)||colors[t]:colors[t];if(!color)return false;
  if(t===T.water){drawContinuousWater(x,y,a,b);return true;}
  ctx.fillStyle=color;ctx.fillRect(x,y,S,S);
  const n=naturalSeed(a,b);
@@ -2687,7 +2689,8 @@ function worldHour(){return ((s?.worldMinutes??480)%1440)/60}
 const WEATHER_PROFILES={
  village:[65,22,5,8,0],town:[65,23,5,7,0],garden:[60,25,5,10,0],
  route1:[60,26,5,9,0],route2:[48,26,8,18,0],forest:[40,27,8,25,0],
- route3:[43,13,8,13,23],route4:[58,27,5,10,0],ridge:[53,17,7,16,7],homestead:[65,22,5,8,0]
+ route3:[43,13,8,13,23],route4:[58,27,5,10,0],ridge:[53,17,7,16,7],homestead:[65,22,5,8,0],
+ coastRoute:[60,22,5,13,0],harborTown:[60,22,5,13,0],marshRoute:[42,30,8,20,0],marshTown:[42,30,8,20,0],canyonRoute:[78,8,3,11,0],canyonTown:[78,8,3,11,0],volcanicRoute:[78,8,3,11,0],volcanicTown:[78,8,3,11,0],ashPass:[78,8,3,11,0],snowTown:[25,3,2,15,55],snowRoute:[25,3,2,15,55],highlandTown:[60,22,5,13,0],ancientRoute:[60,22,5,13,0],ancientTown:[60,22,5,13,0],victoryRoad:[60,22,5,13,0],leagueGrounds:[60,22,5,13,0],legendaryReserveA:[60,22,5,13,0],legendaryReserveB:[42,30,8,20,0],eclipseSite:[78,8,3,11,0],legendaryReserveC:[78,8,3,11,0]
 };
 const WEATHER_NAMES=['clear','rain','storm','fog','snow'];
 const WEATHER_LABELS={clear:'Clear',rain:'Rain',storm:'Thunderstorm',fog:'Fog',snow:'Snow',sheltered:'Sheltered'};
@@ -2969,15 +2972,410 @@ function draw(){
 
 /* Two interconnected loops: forest/rice/town/bamboo and town/bamboo/foothills/garden.
    Outdoor maps are separate simulation chunks but share one continuous camera. */
+// Phase 1 expansion: geographical placeholders only; Gym types and story gates remain undecided.
+const REGIONAL_EXPANSION=Object.freeze({
+ "coastRoute": {
+  "name": "Route 5 · Coastal Trail",
+  "col": 6,
+  "row": 1,
+  "biome": "coast",
+  "kind": "route"
+ },
+ "harborTown": {
+  "name": "Harbor Settlement",
+  "col": 7,
+  "row": 1,
+  "biome": "coast",
+  "kind": "town",
+  "gym": 2
+ },
+ "marshRoute": {
+  "name": "Route 6 · Wetlands",
+  "col": 8,
+  "row": 1,
+  "biome": "marsh",
+  "kind": "route"
+ },
+ "marshTown": {
+  "name": "Wetland Settlement",
+  "col": 9,
+  "row": 1,
+  "biome": "marsh",
+  "kind": "town",
+  "gym": 3
+ },
+ "canyonRoute": {
+  "name": "Route 7 · Canyon Pass",
+  "col": 10,
+  "row": 1,
+  "biome": "canyon",
+  "kind": "route"
+ },
+ "canyonTown": {
+  "name": "Canyon Settlement",
+  "col": 11,
+  "row": 1,
+  "biome": "canyon",
+  "kind": "town",
+  "gym": 4
+ },
+ "volcanicRoute": {
+  "name": "Route 8 · Volcanic Trail",
+  "col": 12,
+  "row": 1,
+  "biome": "volcanic",
+  "kind": "route"
+ },
+ "volcanicTown": {
+  "name": "Volcanic Settlement",
+  "col": 13,
+  "row": 1,
+  "biome": "volcanic",
+  "kind": "town",
+  "gym": 5
+ },
+ "ashPass": {
+  "name": "Route 9 · Ashen Pass",
+  "col": 13,
+  "row": 0,
+  "biome": "volcanic",
+  "kind": "route"
+ },
+ "snowTown": {
+  "name": "Snowfield Settlement",
+  "col": 12,
+  "row": 0,
+  "biome": "snow",
+  "kind": "town",
+  "gym": 6
+ },
+ "snowRoute": {
+  "name": "Route 10 · Snowfields",
+  "col": 11,
+  "row": 0,
+  "biome": "snow",
+  "kind": "route"
+ },
+ "highlandTown": {
+  "name": "Highland Settlement",
+  "col": 10,
+  "row": 0,
+  "biome": "highland",
+  "kind": "town",
+  "gym": 7
+ },
+ "ancientRoute": {
+  "name": "Route 11 · Ancient Trail",
+  "col": 9,
+  "row": 0,
+  "biome": "ancient",
+  "kind": "route"
+ },
+ "ancientTown": {
+  "name": "Ruins Settlement",
+  "col": 8,
+  "row": 0,
+  "biome": "ancient",
+  "kind": "town",
+  "gym": 8
+ },
+ "victoryRoad": {
+  "name": "Victory Road",
+  "col": 7,
+  "row": 0,
+  "biome": "highland",
+  "kind": "route"
+ },
+ "leagueGrounds": {
+  "name": "Regional League Grounds",
+  "col": 6,
+  "row": 0,
+  "biome": "highland",
+  "kind": "landmark"
+ },
+ "legendaryReserveA": {
+  "name": "Remote Coastal Sanctuary",
+  "col": 7,
+  "row": 2,
+  "biome": "coast",
+  "kind": "reserve"
+ },
+ "legendaryReserveB": {
+  "name": "Secluded Wetland Sanctuary",
+  "col": 9,
+  "row": 2,
+  "biome": "marsh",
+  "kind": "reserve"
+ },
+ "eclipseSite": {
+  "name": "Secluded Facility Grounds",
+  "col": 10,
+  "row": 2,
+  "biome": "canyon",
+  "kind": "landmark"
+ },
+ "legendaryReserveC": {
+  "name": "Remote Volcanic Sanctuary",
+  "col": 13,
+  "row": 2,
+  "biome": "volcanic",
+  "kind": "reserve"
+ }
+});
+const EXPANSION_LINKS=Object.freeze({
+ "garden": {
+  "right": [
+   "coastRoute",
+   12,
+   14
+  ]
+ },
+ "coastRoute": {
+  "left": [
+   "garden",
+   12,
+   14
+  ],
+  "right": [
+   "harborTown",
+   12,
+   14
+  ]
+ },
+ "harborTown": {
+  "left": [
+   "coastRoute",
+   12,
+   14
+  ],
+  "right": [
+   "marshRoute",
+   12,
+   14
+  ],
+  "down": [
+   "legendaryReserveA",
+   17,
+   19
+  ]
+ },
+ "marshRoute": {
+  "left": [
+   "harborTown",
+   12,
+   14
+  ],
+  "right": [
+   "marshTown",
+   12,
+   14
+  ]
+ },
+ "marshTown": {
+  "left": [
+   "marshRoute",
+   12,
+   14
+  ],
+  "right": [
+   "canyonRoute",
+   12,
+   14
+  ],
+  "down": [
+   "legendaryReserveB",
+   17,
+   19
+  ]
+ },
+ "canyonRoute": {
+  "left": [
+   "marshTown",
+   12,
+   14
+  ],
+  "right": [
+   "canyonTown",
+   12,
+   14
+  ],
+  "down": [
+   "eclipseSite",
+   17,
+   19
+  ]
+ },
+ "canyonTown": {
+  "left": [
+   "canyonRoute",
+   12,
+   14
+  ],
+  "right": [
+   "volcanicRoute",
+   12,
+   14
+  ]
+ },
+ "volcanicRoute": {
+  "left": [
+   "canyonTown",
+   12,
+   14
+  ],
+  "right": [
+   "volcanicTown",
+   12,
+   14
+  ]
+ },
+ "volcanicTown": {
+  "left": [
+   "volcanicRoute",
+   12,
+   14
+  ],
+  "up": [
+   "ashPass",
+   17,
+   19
+  ],
+  "down": [
+   "legendaryReserveC",
+   17,
+   19
+  ]
+ },
+ "ashPass": {
+  "down": [
+   "volcanicTown",
+   17,
+   19
+  ],
+  "left": [
+   "snowTown",
+   12,
+   14
+  ]
+ },
+ "snowTown": {
+  "right": [
+   "ashPass",
+   12,
+   14
+  ],
+  "left": [
+   "snowRoute",
+   12,
+   14
+  ]
+ },
+ "snowRoute": {
+  "right": [
+   "snowTown",
+   12,
+   14
+  ],
+  "left": [
+   "highlandTown",
+   12,
+   14
+  ]
+ },
+ "highlandTown": {
+  "right": [
+   "snowRoute",
+   12,
+   14
+  ],
+  "left": [
+   "ancientRoute",
+   12,
+   14
+  ]
+ },
+ "ancientRoute": {
+  "right": [
+   "highlandTown",
+   12,
+   14
+  ],
+  "left": [
+   "ancientTown",
+   12,
+   14
+  ]
+ },
+ "ancientTown": {
+  "right": [
+   "ancientRoute",
+   12,
+   14
+  ],
+  "left": [
+   "victoryRoad",
+   12,
+   14
+  ]
+ },
+ "victoryRoad": {
+  "right": [
+   "ancientTown",
+   12,
+   14
+  ],
+  "left": [
+   "leagueGrounds",
+   12,
+   14
+  ]
+ },
+ "leagueGrounds": {
+  "right": [
+   "victoryRoad",
+   12,
+   14
+  ]
+ },
+ "legendaryReserveA": {
+  "up": [
+   "harborTown",
+   17,
+   19
+  ]
+ },
+ "legendaryReserveB": {
+  "up": [
+   "marshTown",
+   17,
+   19
+  ]
+ },
+ "eclipseSite": {
+  "up": [
+   "canyonRoute",
+   17,
+   19
+  ]
+ },
+ "legendaryReserveC": {
+  "up": [
+   "volcanicTown",
+   17,
+   19
+  ]
+ }
+});
 const OUTDOOR_GRID=Object.freeze({
  homestead:[0,1],village:[1,1],route1:[2,1],town:[3,1],route4:[4,1],garden:[5,1],
- forest:[2,0],route2:[3,0],route3:[5,0],ridge:[4,0]
+ forest:[2,0],route2:[3,0],route3:[5,0],ridge:[4,0],
+ ...Object.fromEntries(Object.entries(REGIONAL_EXPANSION).map(([id,d])=>[id,[d.col,d.row]]))
 });
 const INTERIOR_REGION_IDS=new Set(['home','neighbor','lab','gym','cave','homesteadHome','grotto','ruins','cavern','willowHollow',...Object.keys(TOWN_ROOMS)]);
 
 /* Per-column widths and per-row heights keep outdoor sections edge-aligned
    while giving the seven areas substantially different playable footprints. */
-const OUTDOOR_COL_WIDTHS=[36,40,44,51,44,46],OUTDOOR_ROW_HEIGHTS=[34,40];
+const OUTDOOR_COL_WIDTHS=[36,40,44,51,44,46,42,44,42,44,42,44,42,44],OUTDOOR_ROW_HEIGHTS=[34,40,38];
 function outdoorSize(area){
  const grid=OUTDOOR_GRID[area];
  return grid?{w:OUTDOOR_COL_WIDTHS[grid[0]],h:OUTDOOR_ROW_HEIGHTS[grid[1]]}:roomSize(area);
@@ -3000,7 +3398,7 @@ function applyAreaSize(area){
 function decorateExpandedOutdoor(){
  if(!OUTDOOR_GRID[s.area])return;
  const area=s.area;
- if(area==='homestead')return;
+ if(area==='homestead'||REGIONAL_EXPANSION[area])return;
  const forest=area==='forest'||area==='route2';
  const rocky=area==='route3';
  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
@@ -3036,7 +3434,8 @@ const OUTDOOR_LINKS={
  route2:{left:['forest',12,14],right:['ridge',12,14],down:['town',16,18]},
  ridge:{left:['route2',12,14],right:['route3',12,14]},
  route3:{left:['ridge',12,14],down:['garden',17,19],up:['cave',19,21]},
- garden:{left:['route4',12,14],up:['route3',17,19]}
+ garden:{left:['route4',12,14],up:['route3',17,19],...EXPANSION_LINKS.garden},
+ ...Object.fromEntries(Object.entries(EXPANSION_LINKS).filter(([id])=>id!=='garden'))
 };
 const outdoorChunks=new Map();
 let worldTransitionBusy=false,worldFadeTimer=null;
@@ -3081,8 +3480,53 @@ function prepareOutdoorPortals(){
  if(s.area==='town')vertical(16,18,0,14);
  if(s.area==='route2')vertical(16,18,12,H-1);
  if(s.area==='route3')vertical(17,19,12,H-1);
- if(s.area==='garden')vertical(17,19,0,14);
+ if(s.area==='garden'){vertical(17,19,0,14);horizontal(25,W-1,12,14);}
  if(s.area==='route4'||s.area==='ridge')horizontal(0,W-1,12,14);
+}
+function buildExpansionArea(area){
+ const d=REGIONAL_EXPANSION[area],biome=d.biome,urban=d.kind==='town'||area==='leagueGrounds'||area==='eclipseSite';
+ const cx=18,cy=13;
+ borders(['canyon','volcanic','snow','highland','ancient'].includes(biome)?T.rock:T.tree);
+ // Coast, wetland pools, rocky escarpments and vegetation occupy coherent bands,
+ // not randomly stamped sprites. Settlement plots are kept clear for phase 2.
+ if(!urban){
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+   const seed=naturalSeed(x+d.col*101,y+d.row*103);
+   const edge=Math.sin(x*.31+d.col)*2+Math.cos(y*.28)*2;
+   if(biome==='coast'&&y>H-10+edge)put(x,y,T.water);
+   else if(biome==='marsh'&&((x-8)**2/32+(y-24)**2/65<1||(x-W+9)**2/45+(y-25)**2/60<1))put(x,y,T.water);
+   else if(['canyon','volcanic','snow','highland','ancient'].includes(biome)&&(y<5+edge||y>H-6+edge||x<4+edge||x>W-5+edge))put(x,y,T.rock);
+   else if((biome==='marsh'||biome==='coast')&&seed%31<4)put(x,y,T.tall);
+   else if((biome==='highland'||biome==='snow')&&seed%39<3)put(x,y,T.tree);
+   else if((biome==='canyon'||biome==='volcanic'||biome==='ancient')&&seed%47<3)put(x,y,T.rock);
+   else if(seed%53<3)put(x,y,T.flower);
+  }
+ }else{
+  // Two facing street blocks, a central plaza and open future building lots.
+  rect(5,4,W-10,6,T.grass);rect(5,18,W-10,8,T.grass);
+  rect(12,10,13,8,T.stone);
+  rect(5,11,W-10,5,T.path);rect(17,3,3,H-6,T.path);
+  for(let x=6;x<W-5;x+=9){rect(x,9,3,3,T.path);rect(x,16,3,3,T.path)}
+  for(let x=4;x<W-3;x+=5)for(const y of [3,H-4])if(tiles[y]?.[x]===T.grass)put(x,y,biome==='volcanic'||biome==='canyon'?T.rock:T.tree);
+ }
+ // Each route has an optional scenic spur; reserve sites have a distinct open clearing.
+ if(!urban){rect(8,cy,3,Math.min(12,H-cy-3),T.path);rect(8,cy+8,13,3,T.path);rect(18,cy,3,11,T.path)}
+ if(d.kind==='reserve'){rect(11,18,15,10,T.grass);rect(16,13,5,13,T.path)}
+ if(area==='victoryRoad'){rect(7,18,3,9,T.stone);rect(7,24,24,3,T.stone);rect(28,16,3,11,T.stone)}
+ // Main junction and every edge opening form a continuous three-cell-wide path.
+ rect(cx-1,cy-1,3,3,T.path);
+ for(const [side,[dest,a,b]] of Object.entries(OUTDOOR_LINKS[area]||{})){
+  if(side==='left')rect(0,a,cx+2,b-a+1,T.path);
+  if(side==='right')rect(cx-1,a,W-cx+1,b-a+1,T.path);
+  if(side==='up')rect(a,0,b-a+1,cy+2,T.path);
+  if(side==='down')rect(a,cy-1,b-a+1,H-cy+1,T.path);
+ }
+}
+function expansionGroundColor(area,t){
+ const biome=REGIONAL_EXPANSION[area]?.biome;
+ if(!biome)return null;
+ const colors={coast:['#b6b98a','#cdb892'],marsh:['#779b71','#b5a787'],canyon:['#b49a70','#cbb58d'],volcanic:['#777772','#aaa394'],snow:['#d5e1dc','#b8c7c9'],highland:['#8da779','#c4b596'],ancient:['#8a9c75','#b6aa92']};
+ const c=colors[biome];return t===T.path?c[1]:c[0];
 }
 function outdoorChunk(area){
  if(area==='homestead'&&outdoorChunks.get(area)?.constructionKey!==homesteadGeometryKey())outdoorChunks.delete(area);
@@ -3106,6 +3550,9 @@ function tryOutdoorExit(d,x,y){
  if(!dest)return true;
  const cross=d==='left'||d==='right'?y:x;
  if(cross<start||cross>end)return true;
+ if(s.area==='garden'&&dest==='coastRoute'&&!(s.badges>=1)){
+  notifyWorld(['Earn the first Gym badge before continuing beyond Garden Town.']);return true;
+ }
  if(s.area==='village'&&!s.introComplete){
   say(['Complete the laboratory tutorial before exploring the region.']);return true;
  }
@@ -3980,8 +4427,11 @@ const REGION_MAP_PLACES=[
  {id:'cave',name:'Mountain Cave',x:89,y:20,kind:'wild'},
  {id:'route4',name:'Route 4 · Willow River Trail',x:64,y:73,kind:'route'},
  {id:'ridge',name:'Ridge Trail',x:62,y:39,kind:'route'},
- {id:'garden',name:'Garden Town',x:84,y:73,kind:'center',spawn:[14,14]}
+ {id:'garden',name:'Garden Town',x:84,y:73,kind:'center',spawn:[14,14]},
+ ...Object.entries(REGIONAL_EXPANSION).map(([id,d])=>({id,name:d.name,kind:d.kind==='town'?'town':d.kind==='route'?'route':'wild'}))
 ];
+// Map positions follow actual chunk geography, including the original valley.
+for(const p of REGION_MAP_PLACES){const g=OUTDOOR_GRID[p.id]||[5,0];p.x=3.8+g[0]*6.9;p.y=17+g[1]*32;if(p.id==='cave'){p.x-=2.2;p.y-=10}}
 const REGION_MAP_INTERIORS=[
  ...Object.entries(TOWN_ROOMS).map(([id,d])=>({id,name:d.name,parent:d.parent})),
  {id:'home',name:'Family Home',parent:'village'},
@@ -4030,9 +4480,9 @@ function indexRegionMap(){
   '<div class="regionMapLocation"><strong>'+escapeHtml(p.name)+'</strong><small>'+escapeHtml(REGION_MAP_PLACES.find(a=>a.id===p.parent)?.name||'Location')+'</small></div>').join('');
  const canTravel=destination&&mapCanFastTravel(destination.id);
  return '<div class="regionMapIntro"><strong>THE VALLEY REGION</strong><span>Locations appear as you explore · Centers unlock when visited</span></div>'
-  +'<div class="regionMapBoard" role="group" aria-label="Top-down regional map with locations and Critter Centers">'
-  +'<img class="regionMapArt" src="assets/region-map.svg?v=83-varied-districts" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
-  +nodes+'</div>'
+  +'<div class="regionMapScroll"><div class="regionMapBoard expandedRegionMap" role="group" aria-label="Top-down regional map with locations and Critter Centers">'
+  +'<img class="regionMapArt" src="assets/region-map-expanded.svg?v=1" alt="Illustrated top-down map of the valley, rice paddies, forests, river, mountain cave, trails and towns">'
+  +nodes+'</div></div>'
   +'<div class="regionMapLegend"><span>◆ Route</span><span>⌂ Town</span><span>▲ Landmark</span><span>✚ Center</span><span>● You</span></div>'
   +(destination?'<div class="regionMapTravel" role="status"><strong>'+escapeHtml(regionalPlaceName(destination))+'</strong>'
     +'<p>'+(destination.id==='homestead'?(s.homestead?.owned?(canTravel?'Fast Travel home?':'You are already home.'):'Western grounds.'):destination.kind!=='center'?'Not a fast travel destination.':canTravel?'Fast Travel to this Critter Center?':'Find and speak to the Critter Center technician to unlock Fast Travel.')+'</p>'
@@ -4054,7 +4504,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.48</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.49</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
