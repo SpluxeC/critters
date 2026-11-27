@@ -934,3 +934,21 @@ test('Phase 9.10 Eclipse compound preserves public access and closed facility co
  assert.equal(tiles[21][8],T.rock);assert.equal(tiles[24][28],T.rock);
  for(const y of [3,11])for(const x of [17,18,19])assert.equal(tiles[y][x],T.path);
 });
+
+test('Phase 9.11 Victory Road and League court retain their crossings and closed palace',()=>{
+ const T={grass:0,path:1,rock:2,stone:3,roof:4,tree:5,flower:6};
+ const ctx=extract('function victoryRidgeCell(','function buildSpecialStorySite(',{T,W:44,H:34,tiles:[]});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ for(const area of ['victoryRoad','leagueGrounds']){
+  ctx.area=area;ctx.W=area==='victoryRoad'?44:42;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,W,3,T.path);if(area==='victoryRoad')buildVictoryLandscape();else buildLeagueLandscape();return tiles})()`,ctx);
+  const seen=new Set(['18,13']),queue=[[18,13]];
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+  assert.ok(seen.has((ctx.W-1)+',13'));
+  if(area==='victoryRoad'){assert.ok(seen.has('0,13'));assert.ok(seen.has('29,25'));assert.equal(tiles[7][29],T.rock);}
+  else{assert.ok(seen.has('20,11'));assert.ok(seen.has('20,28'));assert.equal(tiles[10][20],T.roof);assert.equal(tiles[17][8],T.rock);}
+ }
+});
