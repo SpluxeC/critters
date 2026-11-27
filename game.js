@@ -372,8 +372,15 @@ function buildingAnimationArt(base,x,y){
  s.area==='village'&&npcResidenceDoor?.x===x&&npcResidenceDoor.y===y&&npcResidenceDoor.until>performance.now()?2:0;
  return uploadedArt(frames[t])?frames[t]:frames[0];
 }
+function drawWinterEaves(x,y,w,h){
+ ctx.save();ctx.fillStyle='#eaf2ef';
+ ctx.beginPath();ctx.moveTo(x+w*.12,y+h*.18);ctx.lineTo(x+w*.88,y+h*.18);ctx.lineTo(x+w*.94,y+h*.23);ctx.lineTo(x+w*.06,y+h*.23);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#b9d5df';
+ for(let i=0;i<6;i++){const xx=x+w*(.15+i*.13);ctx.beginPath();ctx.moveTo(xx,y+h*.23);ctx.lineTo(xx+3,y+h*.23);ctx.lineTo(xx+1,y+h*.23+5+i%3*2);ctx.closePath();ctx.fill()}
+ ctx.restore();
+}
 function drawAnimatedBuilding(base,h,doorX,doorY,ox,oy){
- const name=buildingAnimationArt(base,doorX,doorY),im=uploadedArt(name);
+ const winter=s.area==='snowTown',name=buildingAnimationArt(base,doorX,doorY),im=uploadedArt(name);
  if(!im)return false;
  // Frames contain the whole facade. Match the full footprint, anchor the
  // central doorway to the real entrance, and allow the roof to rise above it.
@@ -384,7 +391,7 @@ function drawAnimatedBuilding(base,h,doorX,doorY,ox,oy){
   seamlessGround(T.grass,xx*S-ox,yy*S-oy,xx,yy);
  queueSolarShadow(x+w/2,baseY,w,height,'building');
  sceneryLayer(s.area+':building:'+h.x+','+h.y,x,y,w,height,baseY,()=>{
-  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,w,height);ctx.restore();
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,w,height);if(winter)drawWinterEaves(x,y,w,height);ctx.restore();
  });
  return true;
 }
@@ -2488,7 +2495,7 @@ function drawNaturalDetails(ox,oy,w,h){
 function drawContinuousPath(t,x,y,a,b){
  const road=v=>v===T.path||v===T.stone;
  const n=road(terrainNeighbor(a,b,0,-1)),e=road(terrainNeighbor(a,b,1,0)),south=road(terrainNeighbor(a,b,0,1)),w=road(terrainNeighbor(a,b,-1,0));
- const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(isVolcanicDistrict(s.area)?'#797775':canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
+ const stone=t===T.stone,canyon=s.area==='canyonTown'||s.area==='canyonRoute',fill=stone?(isSnowDistrict(s.area)?'#a6b6bd':isVolcanicDistrict(s.area)?'#797775':canyon?'#b7a38a':'#aaa899'):expansionGroundColor(s.area,T.path)||'#c6ae82';
  const seed=naturalSeed(a,b);
  ctx.save();
  ctx.beginPath();ctx.rect(x,y,S,S);ctx.clip();
@@ -3303,6 +3310,7 @@ function regionalWeather(area=s?.area,day=s?.worldDay||1,minutes=s?.worldMinutes
 function weatherWind(){const weather=regionalWeather();return weather==='storm'?2.8:weather==='rain'?1.7:weather==='snow'?1.2:1}
 function drawWeather(w,h,now=performance.now()){
  const weather=regionalWeather();if(weather==='clear'||weather==='sheltered')return;
+ if(reducedWorldMotion())now=0;
  ctx.save();
  if(weather==='fog'){
   ctx.fillStyle='rgba(194,214,215,.14)';ctx.fillRect(0,0,w,h);
@@ -3476,13 +3484,14 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
     ctx.beginPath();ctx.moveTo(rootX,rootY);
     ctx.quadraticCurveTo(rootX+gust*2,rootY-8,rootX+gust*5,rootY-15);ctx.stroke();
    }
-  }else if(t===T.tree&&s.area!=='village'&&!treeArtReady()){
+  }else if(t===T.tree&&!isSnowDistrict(s.area)&&s.area!=='village'&&!treeArtReady()){
    ctx.strokeStyle='rgba(162,206,123,.34)';ctx.lineWidth=2;
    ctx.beginPath();ctx.arc(sx+14+gust*1.2,sy+12,11,3.45,5.5);ctx.stroke();
   }
  }
  drawGeothermalSteam(ox,oy,w,h,now);
  if(s.area==='ashPass'){drawAshDrift(ox,oy,w,h,now);return;}
+ if(isSnowDistrict(s.area))return; // Weather pass supplies snowfall; no summer motes.
  const motes=Math.min(23,Math.ceil(w*h/23000));
  for(let i=0;i<motes;i++){
   const mx=((i*173.1+Math.sin(i*33)*135+now/160*(i%3+1))%(W*S)+W*S)%(W*S)-ox;
@@ -4482,12 +4491,12 @@ function drawSettlementGym(b,ox,oy){
  queueSolarShadow(x+w/2,base,w,h,'building');
  sceneryLayer(s.area+':gym-site',x,y,w,h,base,()=>{
   const box=(a,c,d,e,col)=>{ctx.fillStyle=col;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
-  const wetland=s.area==='marshTown',canyon=s.area==='canyonTown',volcanic=s.area==='volcanicTown';
-  box(.035,.25,.93,.75,volcanic?'#9d9185':canyon?'#c9aa87':wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,volcanic?'#514d4b':canyon?'#886b55':wetland?'#776c52':'#72797a');
-  ctx.fillStyle=volcanic?'#50413e':canyon?'#795848':wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
+  const winter=s.area==='snowTown',wetland=s.area==='marshTown',canyon=s.area==='canyonTown',volcanic=s.area==='volcanicTown';
+  box(.035,.25,.93,.75,winter?'#c3d4d6':volcanic?'#9d9185':canyon?'#c9aa87':wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,volcanic?'#514d4b':canyon?'#886b55':wetland?'#776c52':'#72797a');
+  ctx.fillStyle=winter?'#edf3ef':volcanic?'#50413e':canyon?'#795848':wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
   for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
   const door=(b.door-b.x+.5)/b.w;box(door-.07,.67,.14,.33,'#384950');box(door-.055,.69,.11,.31,'#81949b');
-  box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM',x+w/2,y+h*.45);ctx.textAlign='left';
+  box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM',x+w/2,y+h*.45);ctx.textAlign='left';if(winter)drawWinterEaves(x,y,w,h);
  });
 }
 function expansionGroundColor(area,t){
