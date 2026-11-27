@@ -851,6 +851,7 @@ function furnishExpansionRoom(area,add){
  if(room.kind==='home'){
   const guest=area.endsWith('B'),flip=guest?!mirror:mirror;
   const x=(a,w)=>flip?W-a-w:a;
+  if(room.parent==='harborTown')item('harborNotes',x(2,3),3,3,1,'board','Coastal Chart','A chart of the local shoreline and harbor.','wall-landscape');
   item('bed',x(2,3),4,3,3,'bed','Bed','A comfortable place to rest.',theme.bed);
   item('table',x(10,4),7,4,3,'table','Dining Area','A place to share a meal.',theme.table);
   item('shelf',x(2,3),9,3,3,'bookshelf','Bookshelf','Local field guides and books.','bookshelf-front');
@@ -871,7 +872,7 @@ function furnishExpansionRoom(area,add){
   item('stock2',swap(15,3),4,3,4,'bookshelf','Index Accessories','Index supplies and upgrades.','critter-shop-accessory-display-004');
   item('display',swap(2,3),10,3,2,'display','Evolution Stones','A merchandise display.','critter-shop-merchandise-display-003');
   item('stockroom',swap(15,3),10,3,2,'chest','Stock Crates','Sealed merchandise.','critter-shop-crate-033');
-  item('feature',swap(5,3),9,3,2,'table','Featured Supplies','A selection of supplies.',index%2?'critter-shop-food-table-020':'critter-shop-treat-table-018');
+  item('feature',swap(5,3),9,3,2,'table',room.parent==='harborTown'?'Travel Supplies':'Featured Supplies',room.parent==='harborTown'?'Supplies for travelers along the coast.':'A selection of supplies.',index%2?'critter-shop-food-table-020':'critter-shop-treat-table-018');
  }
 }
 function furnishExpansionGym(area,add){
@@ -3307,6 +3308,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
     const xx=sx+5+(vertical?k*12:ripple),yy=sy+7+(vertical?ripple:k*12);
     ctx.beginPath();ctx.moveTo(xx,yy);ctx.quadraticCurveTo(xx+3,yy-1,xx+(vertical?5:9),yy+(vertical?5:0));ctx.stroke();
    }
+   if((s.area==='coastRoute'||s.area==='harborTown')&&!north){ctx.strokeStyle='rgba(244,248,223,.42)';ctx.beginPath();ctx.moveTo(sx+6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.lineTo(sx+S-6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.stroke()}
    ctx.restore();
   }else if(t===T.tall){
    if(naturalTileReady(T.tall,x,y))continue;
@@ -4018,7 +4020,7 @@ function buildCoastalLandscape(area){
  }else{
   // A sheltered harbor basin and two connected wooden quays, separate from the sanctuary road.
   rect(3,31,13,7,T.water);rect(8,27,3,11,T.path);rect(5,32,11,2,T.path);
-  rect(3,29,13,2,T.stone);
+  rect(3,29,13,2,T.stone);rect(8,29,3,2,T.path);
   rect(3,27,4,2,T.grass);rect(12,27,4,2,T.grass);
  }
 }
