@@ -2501,6 +2501,17 @@ function drawCoastalDeck(x,y,a,b){
  ctx.fillStyle='#68513c';
  for(const xx of [3,S-4])for(const yy of [5,21])ctx.fillRect(x+xx,y+yy,1,2);
 }
+function drawMarshWaterPlants(x,y,a,b,now){
+ const seed=naturalSeed(a,b);
+ const edge=[[0,-1],[1,0],[0,1],[-1,0]].some(([dx,dy])=>terrainNeighbor(a,b,dx,dy)===T.grass||terrainNeighbor(a,b,dx,dy)===T.tall);
+ if(!edge||seed%4!==0)return;
+ ctx.save();ctx.beginPath();ctx.rect(x+5,y+5,S-10,S-10);ctx.clip();
+ const drift=reducedWorldMotion()?0:Math.sin(now*.0012+a+b)*.8;
+ ctx.fillStyle='#708f58';
+ for(let k=0;k<3;k++){const px=x+8+(seed+k*7)%15,py=y+9+((seed>>>5)+k*11)%14;ctx.beginPath();ctx.ellipse(px+drift,py,4+k%2,3,0,.35,Math.PI*2-.3);ctx.lineTo(px+drift,py);ctx.fill();}
+ if(seed%3===0){ctx.fillStyle='#d6c4b5';ctx.beginPath();ctx.arc(x+16+drift,y+14,2.2,0,Math.PI*2);ctx.fill();}
+ ctx.restore();
+}
 function drawMarshDeck(x,y,a,b){
  const vertical=marshDeckCell(s.area,a,b-1)&&marshDeckCell(s.area,a,b+1);
  ctx.fillStyle='#6b614b';ctx.fillRect(x,y,S,S);
@@ -3325,6 +3336,7 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
     const xx=sx+5+(vertical?k*12:ripple),yy=sy+7+(vertical?ripple:k*12);
     ctx.beginPath();ctx.moveTo(xx,yy);ctx.quadraticCurveTo(xx+3,yy-1,xx+(vertical?5:9),yy+(vertical?5:0));ctx.stroke();
    }
+   if(s.area==='marshRoute'||s.area==='marshTown')drawMarshWaterPlants(sx,sy,x,y,now);
    if((s.area==='coastRoute'||s.area==='harborTown')&&!north){ctx.strokeStyle='rgba(244,248,223,.42)';ctx.beginPath();ctx.moveTo(sx+6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.lineTo(sx+S-6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.stroke()}
    ctx.restore();
   }else if(t===T.tall){
@@ -4202,8 +4214,9 @@ function drawSettlementGym(b,ox,oy){
  queueSolarShadow(x+w/2,base,w,h,'building');
  sceneryLayer(s.area+':gym-site',x,y,w,h,base,()=>{
   const box=(a,c,d,e,col)=>{ctx.fillStyle=col;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
-  box(.035,.25,.93,.75,'#c6c2b7');box(.035,.90,.93,.10,'#72797a');
-  ctx.fillStyle='#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
+  const wetland=s.area==='marshTown';
+  box(.035,.25,.93,.75,wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,wetland?'#776c52':'#72797a');
+  ctx.fillStyle=wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
   for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
   const door=(b.door-b.x+.5)/b.w;box(door-.07,.67,.14,.33,'#384950');box(door-.055,.69,.11,.31,'#81949b');
   box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM',x+w/2,y+h*.45);ctx.textAlign='left';
