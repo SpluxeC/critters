@@ -126,7 +126,7 @@ test('battle environments use the actual map area, nearby tile and time',()=>{
  assert.ok(start>=0&&end>start);
  const s={area:'route1',x:8,y:9},T={rice:6,tall:11,stone:16,flower:7,path:1,water:13};
  const tiles=Array.from({length:26},()=>Array(34).fill(0));tiles[9][8]=T.rice;
- const ctx=vm.createContext({s,tiles,T,SECRET_AREAS:{},worldPhase:()=> 'Dusk'});
+ const ctx=vm.createContext({s,tiles,T,SECRET_AREAS:{},REGIONAL_EXPANSION:{},worldPhase:()=> 'Dusk'});
  vm.runInContext(game.slice(start,end),ctx);
  const first=ctx.battleEnvironment();
  assert.equal(first.area,'route1');assert.equal(first.terrain,'rice');assert.equal(first.phase,'Dusk');
@@ -636,6 +636,8 @@ test('every expanded district has a continuous path between all its portals',()=
  const planStart=game.indexOf('const SETTLEMENT_PLANS='),planEnd=game.indexOf('const TOWN_ROOMS=',planStart);
  vm.runInContext(game.slice(planStart,planEnd),sandbox);
  T.roof=8;T.wall=9;T.door=10;
+ const reserveStart=game.indexOf('function npcReservedCell('),reserveEnd=game.indexOf('function npcStepAllowed(',reserveStart);
+ vm.runInContext(game.slice(reserveStart,reserveEnd),sandbox);
  const start=game.indexOf('function buildExpansionArea('),end=game.indexOf('function outdoorChunk(',start);
  vm.runInContext(game.slice(start,end),sandbox);
  vm.runInContext(`
@@ -713,4 +715,20 @@ test('Phase 6 Center destination resolver accepts real centers and rejects unkno
 test('Phase 6 battle placeholders cover all expanded biomes',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  for(const biome of ['coast','marsh','canyon','volcanic','snow','ancient','highland'])assert.ok(html.includes('.combatArena.biome-'+biome),biome);
+});
+
+test('Phase 7 NPCs avoid authored doorways and regional portal approaches',()=>{
+ const TOWN_ROOMS={townCenter:{parent:'town',door:[25,11]},harborTownCenter:{parent:'harborTown',door:[9,10]}};
+ const OUTDOOR_LINKS={town:{right:['route4',12,14]},harborTown:{up:['route',17,19]}};
+ const ctx=extract('function npcReservedCell(','function npcStepAllowed(',{TOWN_ROOMS,OUTDOOR_LINKS,VILLAGE_HOUSES:[],roomExit:()=>[12,16]});
+ for(const [area,x,y] of [['town',25,12],['town',24,14],['town',40,13],['harborTown',18,3],['harborTown',9,13]])assert.equal(ctx.npcReservedCell(area,x,y,44,40),true,area+':'+x+','+y);
+ assert.equal(ctx.npcReservedCell('town',10,20,44,40),false);
+ assert.equal(ctx.npcReservedCell('townCenter',12,14,24,17),true);
+});
+test('Phase 7 blocked trainer approach cancels instead of initiating a distant battle',()=>{
+ const p={x:5,y:5,walking:false},s={area:'route1',x:8,y:5,defeated:{}};
+ let finished=0,cancelled=0;
+ const ctx=extract('function tickTrainerApproach(','function checkTrainerSight(',{trainerApproach:{p,area:s.area,x:s.x,y:s.y,until:0,deadline:4000},s,npcs:[p],battle:null,screen:'game',document:{hidden:false},modal:false,worldTransitionBusy:false,doorTransition:null,narratorBlocking:()=>false,trainerApproachStep:()=>({x:6,y:5}),npcStepAllowed:()=>false,finishTrainerApproach:()=>finished++,cancelTrainerApproach:()=>cancelled++});
+ assert.equal(ctx.tickTrainerApproach(1000),true);assert.equal(cancelled,1);assert.equal(finished,0);
+ p.x=7;assert.equal(ctx.tickTrainerApproach(1000),true);assert.equal(finished,1);
 });
