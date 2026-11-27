@@ -2332,7 +2332,7 @@ function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
  if(isSnowDistrict(area))return null;
- if(sanctuaryKind(area))return null;
+ if(sanctuaryKind(area)||area==='eclipseSite')return null;
  if(area==='ancientRoute'||area==='ancientTown')return seed%43===0?'outdoor-shrub-3-037':seed%59===0?'outdoor-flowers-grass-2-076':null;
  if(area==='highlandTown')return seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='ashPass')return seed%89===0?'outdoor-stump-1-075':null;
@@ -2772,7 +2772,39 @@ function drawSanctuaryMonument(x,y,a,b){
  else{ctx.fillRect(x+9,y+4,14,23);ctx.fillStyle=colors[1];ctx.fillRect(x+6,y+2,20,5);ctx.fillRect(x+11,y+10,3,13);ctx.fillRect(x+7,y+24,18,3);}
  queueSolarShadow(x+S/2,y+S,S-4,b===32?16:28);
 }
+function drawEclipseGround(x,y,a,b,kind){
+ const metal='#737c80',dark='#394348';
+ ctx.fillStyle='#a39e8e';ctx.fillRect(x,y,S,S);
+ if(kind==='fenceH'||kind==='fenceV'){
+  ctx.fillStyle=dark;
+  if(kind==='fenceH'){
+   ctx.fillRect(x,y+11,S,3);ctx.fillRect(x,y+24,S,3);
+   for(let k=2;k<S;k+=7)ctx.fillRect(x+k,y+7,2,22);
+  }else{
+   ctx.fillRect(x+13,y,3,S);ctx.fillRect(x+20,y,2,S);
+   for(let k=2;k<S;k+=7)ctx.fillRect(x+11,y+k,13,2);
+  }
+  queueSolarShadow(x+S/2,y+S,kind==='fenceH'?S:12,20);return;
+ }
+ if(kind==='lab'||kind==='warehouse'){
+  const front=b===9;ctx.fillStyle=kind==='lab'?'#8d999b':'#656f73';ctx.fillRect(x,y,S,S);
+  ctx.fillStyle=front?'#4c5659':'#a4abad';ctx.fillRect(x,y+3,S,3);
+  if(front){ctx.fillStyle='#3c464a';ctx.fillRect(x+4,y+9,24,18);ctx.fillStyle=kind==='lab'?'#749097':'#596469';ctx.fillRect(x+6,y+11,20,14);queueSolarShadow(x+S/2,y+S,S,32);}
+  else{ctx.fillStyle='#596367';ctx.fillRect(x+3,y+1,2,S-2);ctx.fillStyle='#bac0bb';ctx.fillRect(x+6,y+6,23,1);}
+  return;
+ }
+ if(kind==='cargo'){
+  if(!drawUploadedFit('outdoor-crate-1-151',x+2,y+3,S-4,S-5)){ctx.fillStyle='#897354';ctx.fillRect(x+4,y+6,24,24);ctx.fillStyle='#514b40';ctx.fillRect(x+4,y+14,24,3);}
+ }else if(kind==='equipment'){
+  ctx.fillStyle=dark;ctx.fillRect(x+3,y+6,26,25);ctx.fillStyle=metal;ctx.fillRect(x+5,y+8,22,18);
+  ctx.fillStyle='#3a4747';for(let i=0;i<4;i++)ctx.fillRect(x+8,y+11+i*3,16,1);
+ }else{
+  ctx.fillStyle=dark;ctx.fillRect(x+14,y+14,4,16);ctx.fillStyle='#d4c69d';ctx.fillRect(x+3,y+4,26,14);ctx.fillStyle='#68654f';ctx.fillRect(x+6,y+8,20,2);ctx.fillRect(x+6,y+12,14,2);
+ }
+ queueSolarShadow(x+S/2,y+S,24,20);
+}
 function drawTile(t,x,y,a,b){
+ if(s.area==='eclipseSite'&&(t===T.rock||t===T.roof)){const kind=eclipseGroundKind(a,b);if(kind){drawEclipseGround(x,y,a,b,kind);return;}}
  if(t===T.rock&&sanctuaryMonumentCell(s.area,a,b)){drawSanctuaryMonument(x,y,a,b);return;}
  if(t===T.rock&&(s.area==='ancientRoute'||s.area==='ancientTown')){
   const ruin=ancientRuinKind(s.area,a,b);if(ruin){drawAncientMasonry(x,y,a,b,ruin);return;}
@@ -4518,6 +4550,35 @@ function buildSanctuaryLandscape(area){
  for(let y=28;y<=32;y++)for(let x=12;x<=26;x++)if(sanctuaryMonumentCell(area,x,y))put(x,y,T.rock);
  rect(11,17,3,2,T.grass);
 }
+// Phase 9.10: closed research compound, environmental only.
+function eclipseGroundKind(x,y){
+ if((y===3||y===11)&&x>=5&&x<=36)return 'fenceH';
+ if((x===5||x===36)&&y>=4&&y<=10)return 'fenceV';
+ if(x>=8&&x<=16&&y>=5&&y<=9)return 'lab';
+ if(x>=22&&x<=32&&y>=5&&y<=9)return 'warehouse';
+ if(y===21&&x>=7&&x<=10)return 'cargo';
+ if(y===24&&x>=27&&x<=30)return 'equipment';
+ if((x===14||x===23)&&y===16)return 'sign';
+ return null;
+}
+function buildEclipseLandscape(){
+ // North entrance remains open through the center of the secured perimeter.
+ for(let y=2;y<H-1;y++)for(let x=2;x<W-2;x++){
+  if(tiles[y][x]===T.path)continue;
+  put(x,y,T.grass);
+ }
+ rect(7,4,28,7,T.stone);rect(7,12,28,5,T.stone);
+ rect(7,19,9,7,T.stone);rect(22,19,12,8,T.stone);
+ rect(17,0,3,32,T.path);rect(9,13,25,3,T.path);
+ rect(14,19,3,10,T.path);rect(19,27,11,3,T.path);
+ for(let y=3;y<=24;y++)for(let x=5;x<=36;x++){
+  const kind=eclipseGroundKind(x,y);if(!kind)continue;
+  if((kind==='fenceH'||kind==='fenceV')&&x>=17&&x<=19)continue;
+  put(x,y,kind==='lab'||kind==='warehouse'?T.roof:T.rock);
+ }
+ // Public access stops at closed building facades; no doors or story triggers.
+ rect(11,17,3,2,T.grass);
+}
 function buildSpecialStorySite(area){
  const plans={
   leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
@@ -4528,7 +4589,9 @@ function buildSpecialStorySite(area){
  };
  const plan=plans[area];if(!plan)return false;
  // Keep the main junction, all map portals and their three-wide corridors intact.
- if(plan.kind==='league'||plan.kind==='facility'){
+ if(plan.kind==='facility'){
+  buildEclipseLandscape();
+ }else if(plan.kind==='league'){
   rect(8,4,9,5,T.roof);rect(8,9,9,2,T.wall);
   rect(22,4,9,5,T.roof);rect(22,9,9,2,T.wall);
   rect(9,18,23,10,T.grass);
@@ -4652,6 +4715,7 @@ function drawSettlementGym(b,ox,oy){
 }
 function expansionGroundColor(area,t){
  const biome=REGIONAL_EXPANSION[area]?.biome;
+ if(area==='eclipseSite')return t===T.path?'#a8a69b':'#8d907b';
  if(isSnowDistrict(area))return t===T.path?'#bbc9cd':'#dce7e6';
  if(area==='ashPass')return t===T.path?'#b1a9a1':'#817d7d';
  if(isVolcanicDistrict(area))return t===T.path?'#aca398':'#66635f';
@@ -5640,7 +5704,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.65</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.66</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
