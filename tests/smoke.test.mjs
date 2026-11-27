@@ -967,3 +967,26 @@ test('Phase 10 nearby ambient NPCs receive distinct lifestyles and staggered rou
   assert.equal(ctx.npcLifestylePlan('town',p,1).task,'Resting');
  }
 });
+
+test('Phase 11 archive progress is independent from original ruins puzzle',()=>{
+ const s={sideQuests:{archive:{status:'active'},ruins:{status:'active'}},puzzles:{archiveOpened:true,ruinsOpened:false}};
+ const ctx=extract('function sideQuestProgress(','function sideQuestRewardLabel(',{s});
+ assert.equal(ctx.sideQuestProgress({id:'archive',kind:'archive-puzzle'}),1);
+ assert.equal(ctx.sideQuestProgress({id:'ruins',kind:'puzzle'}),0);
+});
+test('Phase 11 regional secret rooms have open exits and accessible supply chests',()=>{
+ const T={rock:0,grass:1,stone:2,path:3,door:4,tall:5,water:6,flower:7,tree:8};
+ const ctx=extract('function buildSecretArea(','function prepareExplorationGeometry(',{T,W:34,H:26,tiles:[]});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ function borders(t){rect(0,0,W,1,t);rect(0,H-1,W,1,t);rect(0,0,1,H,t);rect(W-1,0,1,H,t)}
+ `,ctx);
+ for(const area of ['coastalNook','marshHideaway','mountainAlcove','springCavern','snowShelter','oldArchive']){
+  ctx.area=area;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.rock));buildSecretArea(area);return tiles})()`,ctx);
+  const seen=new Set(['17,22']),queue=[[17,22]];
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.grass,T.stone,T.path,T.door,T.tall,T.flower].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+  assert.ok(seen.has('17,25'),area);assert.ok(seen.has('23,8'),area);
+ }
+});
