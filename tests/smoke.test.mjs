@@ -697,3 +697,20 @@ test('Phase 5 special sites have accessible stationary attendants and no battle 
   assert.ok(seen.has('18,0'));assert.ok(seen.has('41,13'));
  }
 });
+
+test('Phase 6 Center destination resolver accepts real centers and rejects unknown areas',()=>{
+ const TOWN_ROOMS={townCenter:{parent:'town',kind:'center'},harborTownCenter:{parent:'harborTown',kind:'center'},harborTownShop:{parent:'harborTown',kind:'shop'}};
+ const ctx=extract('function centerArrival(','function ensureMapDiscovery(',{TOWN_ROOMS,roomExit:()=>[12,16]});
+ for(const id of ['town','harborTown','harborTownCenter']){
+  const result=ctx.centerArrival(id);
+  assert.equal(result.x,12);assert.equal(result.y,14);
+  assert.equal(result.room,id==='town'?'townCenter':'harborTownCenter');
+ }
+ assert.equal(ctx.centerArrival('unknown'),null);
+ assert.equal(ctx.centerArrival('harborTownShop'),null);
+ assert.match(game,/const target=centerArrival\(s.lastCenter\)/);
+});
+test('Phase 6 battle placeholders cover all expanded biomes',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ for(const biome of ['coast','marsh','canyon','volcanic','snow','ancient','highland'])assert.ok(html.includes('.combatArena.biome-'+biome),biome);
+});
