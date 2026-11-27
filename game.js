@@ -875,6 +875,7 @@ function furnishExpansionRoom(area,add){
   const x=(a,w)=>flip?W-a-w:a;
   if(room.parent==='harborTown')item('harborNotes',x(2,3),3,3,1,'board','Coastal Chart','A chart of the local shoreline and harbor.','wall-landscape');
   if(room.parent==='marshTown')item('wetlandNotes',x(2,3),3,3,1,'board','Wetland Landscape','A landscape of the reed beds and raised walking paths.','wall-landscape');
+  if(room.parent==='highlandTown')item('highlandNotes',x(2,3),3,3,1,'board','Highland Landscape','A painting of hillside gardens and distant mountain ridges.','wall-landscape');
   if(room.parent==='snowTown')item('winterNotes',x(2,3),3,3,1,'board','Winter Landscape','A painting of snow-covered peaks and frozen lakes.','wall-landscape');
   if(room.parent==='volcanicTown')item('thermalNotes',x(2,3),3,3,1,'board','Mineral Springs','A painting of the local mineral springs and dark ridges.','wall-landscape');
   if(room.parent==='canyonTown')item('canyonNotes',x(2,3),3,3,1,'board','Mountain Landscape','A painting of the layered sandstone ridges.','wall-landscape');
@@ -2330,6 +2331,7 @@ function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
  if(isSnowDistrict(area))return null;
+ if(area==='highlandTown')return seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='ashPass')return seed%89===0?'outdoor-stump-1-075':null;
  if(isVolcanicDistrict(area))return seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='canyonRoute'||area==='canyonTown')return seed%41===0?'outdoor-shrub-3-037':seed%67===0?'outdoor-flowers-grass-2-076':null;
@@ -2611,6 +2613,7 @@ function seamlessGround(t,x,y,a,b){
  if(isSnowDistrict(s.area)&&(t===T.grass||t===T.tall||t===T.flower)){drawSnowGround(t,x,y,a,b);return true;}
  if(t===T.path&&coastalDeckCell(s.area,a,b)){drawCoastalDeck(x,y,a,b);return true;}
  if(t===T.path&&marshDeckCell(s.area,a,b)){drawMarshDeck(x,y,a,b);return true;}
+ if(s.area==='highlandTown'&&t===T.path&&highlandStepCell(a,b)){drawHighlandSteps(x,y);return true;}
  if(s.area==='ashPass'&&(t===T.grass||t===T.tall)){drawAshGround(t,x,y,a,b);return true;}
  if(s.area==='coastRoute'&&t===T.grass&&b>=coastalShoreline(a)-3){ctx.fillStyle='#d9c69c';ctx.fillRect(x,y,S,S);ctx.fillStyle='#a58d6430';for(let k=0;k<4;k++){const h=naturalSeed(a*7+k,b*11+k);ctx.fillRect(x+h%30,y+(h>>>8)%30,2,1)}return true;}
  ctx.fillStyle=color;ctx.fillRect(x,y,S,S);
@@ -2721,7 +2724,22 @@ function drawAshRidge(x,y,a,b){
  if(!south){ctx.fillStyle='#5c5657';ctx.fillRect(x+l,y+24,r-l,3);queueSolarShadow(x+S/2,y+S,S,19)}
  ctx.fillStyle='#bdb7af55';for(let k=0;k<4;k++)ctx.fillRect(x+3+(seed+k*11)%24,y+8+((seed>>>5)+k*7)%12,3,1);
 }
+function drawHighlandWall(x,y,a,b){
+ ctx.fillStyle='#8da779';ctx.fillRect(x,y,S,S);
+ ctx.fillStyle='#5f6b5d';ctx.fillRect(x,y+8,S,24);
+ for(let row=0;row<3;row++)for(let k=-1;k<3;k++){
+  const left=Math.max(0,k*16+(row%2)*8),right=Math.min(S,k*16+(row%2)*8+15);
+  if(right>left){ctx.fillStyle=(a+b+k+row)%2?'#99988a':'#858b7d';ctx.fillRect(x+left,y+9+row*7,right-left,6)}
+ }
+ ctx.fillStyle='#a6b397';ctx.fillRect(x,y+4,S,6);
+ queueSolarShadow(x+S/2,y+S,S,13);
+}
+function drawHighlandSteps(x,y){
+ ctx.fillStyle='#a49f8b';ctx.fillRect(x,y,S,S);
+ for(let k=0;k<4;k++){ctx.fillStyle='#c3bda4';ctx.fillRect(x,y+k*8,S,5);ctx.fillStyle='#817d70';ctx.fillRect(x,y+k*8+5,S,2)}
+}
 function drawTile(t,x,y,a,b){
+ if(s.area==='highlandTown'&&t===T.rock&&highlandWallCell(a,b)){drawHighlandWall(x,y,a,b);return;}
  if(isSnowDistrict(s.area)&&t===T.tree){drawSnowGround(T.grass,x,y,a,b);return;}
  if(isSnowDistrict(s.area)&&t===T.rock){drawSnowGround(T.grass,x,y,a,b);ctx.fillStyle='#778a91';ctx.fillRect(x+2,y+9,S-4,S-11);ctx.fillStyle='#f2f6f2';ctx.fillRect(x+3,y+4,S-6,12);queueSolarShadow(x+S/2,y+S,S,16);return;}
  if(t===T.rock&&s.area==='ashPass'&&ashRidgeCell(a,b,W,H)){drawAshRidge(x,y,a,b);return;}
@@ -4167,6 +4185,7 @@ function buildExpansionArea(area){
  if(isVolcanicDistrict(area))buildVolcanicLandscape(area);
  if(area==='ashPass')buildAshPassLandscape();
  if(isSnowDistrict(area))buildSnowLandscape(area);
+ if(area==='highlandTown')buildHighlandLandscape();
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
@@ -4363,6 +4382,25 @@ function buildSnowLandscape(area){
   for(const o of settlementPublicProps(area))if(o.x<17&&o.y>=28)rect(o.x,o.y,o.w,o.h,T.grass);
  }
 }
+// Phase 9.7: terraced hillside gardens, connected by broad stone steps.
+// Elevation is visual only; solid retaining walls use the existing rock collision.
+function highlandWallCell(x,y){
+ return (y===32&&((x>=3&&x<=7)||(x>=11&&x<=15)||(x>=22&&x<=25)||(x>=31&&x<=38)))||
+ (y===28&&((x>=3&&x<=5)||(x>=12&&x<=15)));
+}
+function highlandStepCell(x,y){return (x>=8&&x<=10&&y>=28&&y<=32)||(x>=17&&x<=19&&y>=28&&y<=32);}
+function buildHighlandLandscape(){
+ // All new construction is below the southern building frontage.
+ rect(3,28,13,5,T.grass);rect(6,29,6,2,T.stone);
+ rect(8,26,3,7,T.path);rect(17,27,3,6,T.path);
+ rect(11,30,7,2,T.stone);rect(19,31,3,2,T.stone);
+ for(let y=28;y<H-1;y++)for(let x=2;x<W-2;x++){
+  if(highlandWallCell(x,y)&&tiles[y][x]===T.grass)put(x,y,T.rock);
+ }
+ for(const [x,y] of [[4,29],[5,30],[12,29],[13,29],[14,30],[3,31],[15,31],[36,28],[37,29]])if(tiles[y]?.[x]===T.grass)put(x,y,T.flower);
+ // Public furniture remains on reserved pockets, not stairways or retaining walls.
+ for(const o of settlementPublicProps('highlandTown'))if(o.x<17&&o.y>=28)rect(o.x,o.y,o.w,o.h,T.grass);
+}
 function buildSpecialStorySite(area){
  const plans={
   leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
@@ -4449,7 +4487,8 @@ function settlementPublicProps(area){
  const canyon=area==='canyonTown'?[{x:5,y:29,w:2,h:1,name:'outdoor-bench-2-148'},{x:12,y:29,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:5,y:33,w:1,h:1,name:'outdoor-planter-1-161'}]:[];
  const thermal=area==='volcanicTown'?[{x:4,y:29,w:2,h:1,name:'outdoor-bench-2-148'},{x:11,y:29,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:4,y:36,w:1,h:1,name:'outdoor-rock-3-073'}]:[];
  const winter=area==='snowTown'?[{x:12,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:4,y:28,w:2,h:1,name:'outdoor-bench-2-148'}]:[];
- return [...harbor,...wetland,...canyon,...thermal,...winter,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
+ const highland=area==='highlandTown'?[{x:4,y:30,w:2,h:1,name:'outdoor-bench-2-148'},{x:13,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:12,y:29,w:1,h:1,name:'outdoor-planter-1-161'}]:[];
+ return [...harbor,...wetland,...canyon,...thermal,...winter,...highland,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
 }
 function buildSettlement(area){
  const p=SETTLEMENT_PLANS[area],lots=settlementLots(area),[px,py]=p.public;
@@ -4491,9 +4530,9 @@ function drawSettlementGym(b,ox,oy){
  queueSolarShadow(x+w/2,base,w,h,'building');
  sceneryLayer(s.area+':gym-site',x,y,w,h,base,()=>{
   const box=(a,c,d,e,col)=>{ctx.fillStyle=col;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
-  const winter=s.area==='snowTown',wetland=s.area==='marshTown',canyon=s.area==='canyonTown',volcanic=s.area==='volcanicTown';
-  box(.035,.25,.93,.75,winter?'#c3d4d6':volcanic?'#9d9185':canyon?'#c9aa87':wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,volcanic?'#514d4b':canyon?'#886b55':wetland?'#776c52':'#72797a');
-  ctx.fillStyle=winter?'#edf3ef':volcanic?'#50413e':canyon?'#795848':wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
+  const highland=s.area==='highlandTown',winter=s.area==='snowTown',wetland=s.area==='marshTown',canyon=s.area==='canyonTown',volcanic=s.area==='volcanicTown';
+  box(.035,.25,.93,.75,highland?'#c4c4a3':winter?'#c3d4d6':volcanic?'#9d9185':canyon?'#c9aa87':wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,volcanic?'#514d4b':canyon?'#886b55':wetland?'#776c52':'#72797a');
+  ctx.fillStyle=highland?'#526c58':winter?'#edf3ef':volcanic?'#50413e':canyon?'#795848':wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
   for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
   const door=(b.door-b.x+.5)/b.w;box(door-.07,.67,.14,.33,'#384950');box(door-.055,.69,.11,.31,'#81949b');
   box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM',x+w/2,y+h*.45);ctx.textAlign='left';if(winter)drawWinterEaves(x,y,w,h);
@@ -5489,7 +5528,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.62</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.63</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
