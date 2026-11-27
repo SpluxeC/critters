@@ -3873,9 +3873,9 @@ function buildExpansionArea(area){
 }
 function settlementPublicProps(area){
  const p=SETTLEMENT_PLANS[area];if(!p)return [];
- const [x,y]=p.public;
+ const [x,rawY]=p.public,y=rawY;
  const center=p.feature==='court'?'outdoor-rock-3-073':'outdoor-fountain-1-141';
- return [{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y-1,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y:y-1,w:1,h:1,name:'outdoor-planter-2-154'}];
+ return [{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
 }
 function buildSettlement(area){
  const p=SETTLEMENT_PLANS[area],lots=settlementLots(area),[px,py]=p.public;
@@ -3920,7 +3920,7 @@ function drawSettlementGym(b,ox,oy){
   box(.035,.25,.93,.75,'#c6c2b7');box(.035,.90,.93,.10,'#72797a');
   ctx.fillStyle='#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
   for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
-  box(.43,.67,.14,.33,'#384950');box(.445,.69,.11,.31,'#81949b');
+  const door=(b.door-b.x+.5)/b.w;box(door-.07,.67,.14,.33,'#384950');box(door-.055,.69,.11,.31,'#81949b');
   box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM SITE',x+w/2,y+h*.45);ctx.textAlign='left';
  });
 }
