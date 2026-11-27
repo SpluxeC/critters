@@ -853,6 +853,7 @@ function furnishExpansionRoom(area,add){
   const x=(a,w)=>flip?W-a-w:a;
   if(room.parent==='harborTown')item('harborNotes',x(2,3),3,3,1,'board','Coastal Chart','A chart of the local shoreline and harbor.','wall-landscape');
   if(room.parent==='marshTown')item('wetlandNotes',x(2,3),3,3,1,'board','Wetland Landscape','A landscape of the reed beds and raised walking paths.','wall-landscape');
+  if(room.parent==='canyonTown')item('canyonNotes',x(2,3),3,3,1,'board','Mountain Landscape','A painting of the layered sandstone ridges.','wall-landscape');
   item('bed',x(2,3),4,3,3,'bed','Bed','A comfortable place to rest.',theme.bed);
   item('table',x(10,4),7,4,3,'table','Dining Area','A place to share a meal.',theme.table);
   item('shelf',x(2,3),9,3,3,'bookshelf','Bookshelf','Local field guides and books.','bookshelf-front');
@@ -2304,6 +2305,7 @@ function drawNaturalTile(t,x,y,a,b){
 function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
+ if(area==='canyonRoute'||area==='canyonTown')return seed%41===0?'outdoor-shrub-3-037':seed%67===0?'outdoor-flowers-grass-2-076':null;
  if(area==='marshRoute'||area==='marshTown')return seed%37===0?'outdoor-shrub-3-037':seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:null;
  if(area==='coastRoute'||area==='harborTown')return seed%29===0?OUTDOOR_SCENERY.flowers[seed%3]:seed%43===0?'outdoor-shrub-3-037':null;
  if(nearTree&&(area==='forest'||area==='route2')){
@@ -2621,7 +2623,25 @@ function drawGymDecor(ox,oy){
   ctx.fillStyle=s.puzzles.gate?'#a9e4a5':'#e4b56a';ctx.beginPath();ctx.arc((x+.5)*S-ox,(y+.8)*S-oy,3,0,Math.PI*2);ctx.fill();
  }
 }
+// Terrain-only cliff faces stay inside their solid tile; no scenery overlaps roads.
+function drawCanyonCliff(x,y,a,b){
+ const n=terrainNeighbor(a,b,0,-1)===T.rock,e=terrainNeighbor(a,b,1,0)===T.rock;
+ const south=terrainNeighbor(a,b,0,1)===T.rock,w=terrainNeighbor(a,b,-1,0)===T.rock;
+ const seed=naturalSeed(a,b),top=south?S:19;
+ ctx.fillStyle='#b49a70';ctx.fillRect(x,y,S,S);
+ ctx.fillStyle='#8c614b';ctx.fillRect(x+(w?0:2),y+(n?0:2),S-(w?0:2)-(e?0:2),S-(n?0:2));
+ ctx.fillStyle='#ba9270';ctx.fillRect(x+(w?0:3),y+(n?0:3),S-(w?0:3)-(e?0:3),top-(n?0:3));
+ ctx.fillStyle='#d2b28c';ctx.fillRect(x+(w?0:4),y+(n?0:4),S-(w?0:4)-(e?0:4),Math.max(2,top-9));
+ if(!south){
+  ctx.fillStyle='#a7795a';ctx.fillRect(x+2,y+21,S-4,3);
+  ctx.fillStyle='#6f4f42';ctx.fillRect(x+2,y+27,S-4,3);
+  queueSolarShadow(x+S/2,y+S,S,20);
+ }
+ ctx.fillStyle='#775b4533';
+ for(let k=0;k<3;k++)ctx.fillRect(x+4+(seed+k*13)%22,y+5+((seed>>>6)+k*7)%Math.max(4,top-6),3,1);
+}
 function drawTile(t,x,y,a,b){
+ if(t===T.rock&&(s.area==='canyonRoute'||s.area==='canyonTown')&&canyonCliffCell(s.area,a,b,W,H)){drawCanyonCliff(x,y,a,b);return;}
  if(s.area==='gym')return drawGymTile(t,x,y,a,b);
  if(!isInterior(s.area)&&s.area!=='gym'&&seamlessGround(t,x,y,a,b))return;
  // All natural terrain shares a single continuous grass surface. Tile cells now
@@ -4023,6 +4043,7 @@ function buildExpansionArea(area){
  if(SETTLEMENT_PLANS[area])buildSettlement(area);
  if(area==='coastRoute'||area==='harborTown')buildCoastalLandscape(area);
  if(area==='marshRoute'||area==='marshTown')buildMarshLandscape(area);
+ if(area==='canyonRoute'||area==='canyonTown')buildCanyonLandscape(area);
  if(typeof populateExpansionArea==='function')populateExpansionArea(area);
 }
 // Authored population is built before scenery so yards avoid NPC home cells.
@@ -4087,6 +4108,42 @@ function buildMarshLandscape(area){
   rect(8,26,3,11,T.path);rect(5,33,10,3,T.path);
   // Approach from the existing street; all residences and services retain their doors.
   rect(4,28,4,2,T.grass);rect(11,28,5,2,T.grass);
+ }
+}
+// Phase 9.3: coherent sandstone ridges and protected scenic trails.
+function canyonCliffCell(area,x,y,w,h){
+ if(area==='canyonRoute'){
+  const north=5+Math.round(2*Math.sin(x*.26)+Math.cos(x*.51));
+  const south=h-6+Math.round(Math.sin(x*.32)*2);
+  if(y<=north||y>=south)return true;
+  const ridge=(cx,cy,rx,ry)=>((x-cx)/rx)**2+((y-cy)/ry)**2<1+.12*Math.sin(x*.7+y*.4);
+  return ridge(10,8,5,4)||ridge(30,8,7,4)||ridge(5,24,4,7)||ridge(35,25,5,8)||ridge(14,31,5,3)||ridge(27,31,5,3);
+ }
+ if(area==='canyonTown')return y>=h-4&&x>=3&&x<w-3&&Math.abs(x-18)>2;
+ return false;
+}
+function buildCanyonLandscape(area){
+ if(area==='canyonRoute'){
+  // The existing three-wide east-west road and southward facility connection
+  // remain open. Cliff bands are placed only outside authored roads.
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+   if(tiles[y][x]===T.path)continue;
+   if(canyonCliffCell(area,x,y,W,H))put(x,y,T.rock);
+   else if(tiles[y][x]===T.rock)put(x,y,T.grass);
+  }
+  // A winding side trail connects the two overlooks to the main road.
+  rect(9,14,3,9,T.path);rect(9,20,8,3,T.path);
+  rect(14,20,3,7,T.path);rect(14,24,16,3,T.path);
+  rect(27,18,3,9,T.path);rect(27,18,7,3,T.path);rect(31,14,3,7,T.path);
+  for(const [x,y,w,h] of [[5,8,4,3],[21,8,5,3],[20,18,5,5],[7,28,4,3],[30,28,4,3]]){
+   for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(tiles[yy]?.[xx]===T.grass&&naturalSeed(xx,yy)%4!==0)put(xx,yy,T.tall);
+  }
+ }else if(area==='canyonTown'){
+  // A stone terrace and public overlook south of the service street.
+  // Do not move lots, doors, or the original public square.
+  rect(5,29,10,5,T.stone);rect(9,26,3,4,T.path);rect(14,30,5,3,T.path);
+  for(let y=H-4;y<H-1;y++)for(let x=3;x<W-3;x++)if(tiles[y][x]===T.grass&&canyonCliffCell(area,x,y,W,H))put(x,y,T.rock);
+  for(const [x,y] of [[3,30],[4,32],[15,33],[21,34],[35,33],[37,30]])if(tiles[y]?.[x]===T.grass)put(x,y,T.rock);
  }
 }
 function buildSpecialStorySite(area){
@@ -4172,7 +4229,8 @@ function settlementPublicProps(area){
  const center=p.feature==='court'?'outdoor-rock-3-073':'outdoor-fountain-1-141';
  const harbor=area==='harborTown'?[{x:3,y:27,w:2,h:2,name:'outdoor-market-stall-2-167'},{x:6,y:27,w:1,h:1,name:'outdoor-crate-1-151'},{x:12,y:27,w:2,h:2,name:'outdoor-market-stall-2-167'},{x:15,y:27,w:1,h:1,name:'outdoor-barrel-1-144'}]:[];
  const wetland=area==='marshTown'?[{x:4,y:28,w:2,h:1,name:'outdoor-bench-2-148'},{x:12,y:28,w:1,h:1,name:'outdoor-planter-1-161'},{x:14,y:28,w:1,h:1,name:'outdoor-noticeboard-2-143'}]:[];
- return [...harbor,...wetland,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
+ const canyon=area==='canyonTown'?[{x:5,y:29,w:2,h:1,name:'outdoor-bench-2-148'},{x:12,y:29,w:1,h:1,name:'outdoor-noticeboard-2-143'},{x:5,y:33,w:1,h:1,name:'outdoor-planter-1-161'}]:[];
+ return [...harbor,...wetland,...canyon,{x,y,w:2,h:2,name:center},{x:x-4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x+4,y:y+1,w:2,h:1,name:'outdoor-bench-2-148'},{x:x-3,y:y,w:1,h:1,name:'outdoor-planter-1-161'},{x:x+4,y,w:1,h:1,name:'outdoor-planter-2-154'}];
 }
 function buildSettlement(area){
  const p=SETTLEMENT_PLANS[area],lots=settlementLots(area),[px,py]=p.public;
@@ -4214,9 +4272,9 @@ function drawSettlementGym(b,ox,oy){
  queueSolarShadow(x+w/2,base,w,h,'building');
  sceneryLayer(s.area+':gym-site',x,y,w,h,base,()=>{
   const box=(a,c,d,e,col)=>{ctx.fillStyle=col;ctx.fillRect(x+a*w,y+c*h,d*w,e*h)};
-  const wetland=s.area==='marshTown';
-  box(.035,.25,.93,.75,wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,wetland?'#776c52':'#72797a');
-  ctx.fillStyle=wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
+  const wetland=s.area==='marshTown',canyon=s.area==='canyonTown';
+  box(.035,.25,.93,.75,canyon?'#c9aa87':wetland?'#b5b89a':'#c6c2b7');box(.035,.90,.93,.10,canyon?'#886b55':wetland?'#776c52':'#72797a');
+  ctx.fillStyle=canyon?'#795848':wetland?'#536b58':'#59666d';ctx.beginPath();ctx.moveTo(x,y+h*.28);ctx.lineTo(x+w*.14,y+h*.06);ctx.lineTo(x+w*.86,y+h*.06);ctx.lineTo(x+w,y+h*.28);ctx.closePath();ctx.fill();
   for(const a of [.13,.72]){box(a,.43,.15,.25,'#515c61');box(a+.015,.45,.12,.20,'#9bb6bd')}
   const door=(b.door-b.x+.5)/b.w;box(door-.07,.67,.14,.33,'#384950');box(door-.055,.69,.11,.31,'#81949b');
   box(.32,.34,.36,.15,'#4e5a60');ctx.fillStyle='#f4ede1';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText('GYM',x+w/2,y+h*.45);ctx.textAlign='left';
@@ -5209,7 +5267,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.58</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.59</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
