@@ -946,6 +946,13 @@
           "maxLevel": 5,
           "rarity": "common",
           "wildOnly": true
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -2709,6 +2716,13 @@
           "minLevel": 5,
           "maxLevel": 10,
           "rarity": "common"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 17,
+          "maxLevel": 23,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -2777,6 +2791,13 @@
           "areaName": "Route 2 — Bamboo Forest",
           "minLevel": 5,
           "maxLevel": 10,
+          "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
           "rarity": "common"
         }
       ],
@@ -3062,6 +3083,27 @@
           "minLevel": 5,
           "maxLevel": 10,
           "rarity": "common"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 17,
+          "maxLevel": 23,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -3129,6 +3171,13 @@
           "areaName": "Route 2 — Bamboo Forest",
           "minLevel": 5,
           "maxLevel": 10,
+          "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
           "rarity": "common"
         }
       ],
@@ -3198,6 +3247,13 @@
           "areaName": "Route 2 — Bamboo Forest",
           "minLevel": 5,
           "maxLevel": 10,
+          "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
           "rarity": "common"
         }
       ],
@@ -3409,6 +3465,13 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 21,
+          "maxLevel": 27,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -3486,6 +3549,13 @@
           "areaName": "Hidden Forest",
           "minLevel": 28,
           "maxLevel": 32,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 42,
+          "maxLevel": 47,
           "rarity": "rare"
         }
       ],
@@ -3762,6 +3832,27 @@
           "minLevel": 5,
           "maxLevel": 10,
           "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 36,
+          "maxLevel": 43,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -3829,6 +3920,13 @@
           "areaName": "Route 2 — Bamboo Forest",
           "minLevel": 5,
           "maxLevel": 10,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -3898,6 +3996,13 @@
           "areaName": "Route 2 — Bamboo Forest",
           "minLevel": 5,
           "maxLevel": 10,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
           "rarity": "common"
         }
       ],
@@ -4111,6 +4216,13 @@
           "minLevel": 18,
           "maxLevel": 20,
           "rarity": "rare"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 22,
+          "maxLevel": 27,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -4248,6 +4360,13 @@
           "areaName": "Route 2 — Bamboo Forest",
           "minLevel": 5,
           "maxLevel": 10,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 18,
+          "maxLevel": 23,
           "rarity": "uncommon"
         }
       ],
@@ -4387,6 +4506,13 @@
           "minLevel": 5,
           "maxLevel": 10,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -4455,6 +4581,20 @@
           "areaName": "Route 2 — Bamboo Forest",
           "minLevel": 5,
           "maxLevel": 10,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 18,
+          "maxLevel": 23,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 21,
+          "maxLevel": 27,
           "rarity": "uncommon"
         }
       ],
@@ -4662,6 +4802,13 @@
           "minLevel": 7,
           "maxLevel": 13,
           "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -4730,6 +4877,41 @@
           "areaName": "Hidden Forest",
           "minLevel": 7,
           "maxLevel": 13,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 36,
+          "maxLevel": 43,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -4869,6 +5051,20 @@
           "minLevel": 7,
           "maxLevel": 13,
           "rarity": "common"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 17,
+          "maxLevel": 23,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -4942,6 +5138,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 12,
           "maxLevel": 17,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 21,
+          "maxLevel": 27,
           "rarity": "uncommon"
         }
       ],
@@ -5021,6 +5224,20 @@
           "minLevel": 28,
           "maxLevel": 32,
           "rarity": "rare"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 19,
+          "maxLevel": 23,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 46,
+          "maxLevel": 52,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -5090,6 +5307,13 @@
           "minLevel": 7,
           "maxLevel": 13,
           "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -5157,6 +5381,13 @@
           "areaName": "Hidden Forest",
           "minLevel": 7,
           "maxLevel": 13,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
           "rarity": "common"
         }
       ],
@@ -5706,6 +5937,20 @@
           "minLevel": 7,
           "maxLevel": 13,
           "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -5846,6 +6091,13 @@
           "areaName": "Garden Town Outskirts",
           "minLevel": 18,
           "maxLevel": 20,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 41,
+          "maxLevel": 47,
           "rarity": "uncommon"
         }
       ],
@@ -5989,6 +6241,13 @@
           "areaName": "Mountain Cave",
           "minLevel": 23,
           "maxLevel": 25,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 41,
+          "maxLevel": 47,
           "rarity": "uncommon"
         }
       ],
@@ -6197,6 +6456,20 @@
           "minLevel": 7,
           "maxLevel": 13,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 21,
+          "maxLevel": 27,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 41,
+          "maxLevel": 47,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -6265,6 +6538,13 @@
           "areaName": "Hidden Forest",
           "minLevel": 7,
           "maxLevel": 13,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 33,
+          "maxLevel": 39,
           "rarity": "uncommon"
         }
       ],
@@ -6541,6 +6821,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -6612,6 +6899,13 @@
           "areaName": "Mountain Cave",
           "minLevel": 23,
           "maxLevel": 25,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 34,
+          "maxLevel": 39,
           "rarity": "rare"
         }
       ],
@@ -6751,6 +7045,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -6957,6 +7258,20 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -7025,6 +7340,27 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -7095,6 +7431,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -7163,6 +7506,20 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -7370,6 +7727,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -7507,6 +7871,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 36,
+          "maxLevel": 43,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -7579,6 +7950,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 12,
           "maxLevel": 17,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 37,
+          "maxLevel": 43,
           "rarity": "uncommon"
         }
       ],
@@ -7727,6 +8105,20 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 36,
+          "maxLevel": 43,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -7871,6 +8263,20 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
+          "rarity": "common"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 36,
+          "maxLevel": 43,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -7943,6 +8349,34 @@
           "areaName": "Hidden Forest",
           "minLevel": 23,
           "maxLevel": 25,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 25,
+          "maxLevel": 31,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 33,
+          "maxLevel": 39,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 37,
+          "maxLevel": 43,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
           "rarity": "uncommon"
         }
       ],
@@ -8088,6 +8522,13 @@
           "minLevel": 18,
           "maxLevel": 20,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 18,
+          "maxLevel": 23,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -8157,6 +8598,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 17,
+          "maxLevel": 23,
           "rarity": "common"
         }
       ],
@@ -8229,6 +8677,20 @@
           "areaName": "Hidden Forest",
           "minLevel": 23,
           "maxLevel": 25,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 18,
+          "maxLevel": 23,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
           "rarity": "uncommon"
         }
       ],
@@ -8442,6 +8904,13 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 41,
+          "maxLevel": 47,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -8518,6 +8987,13 @@
           "minLevel": 28,
           "maxLevel": 32,
           "rarity": "rare"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 42,
+          "maxLevel": 47,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -8586,6 +9062,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
           "rarity": "common"
         }
       ],
@@ -8729,6 +9212,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -8797,6 +9287,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
           "rarity": "common"
         }
       ],
@@ -9008,6 +9505,20 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 25,
+          "maxLevel": 31,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 33,
+          "maxLevel": 39,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -9082,6 +9593,13 @@
           "minLevel": 28,
           "maxLevel": 32,
           "rarity": "rare"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 46,
+          "maxLevel": 52,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -9150,6 +9668,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
           "rarity": "common"
         }
       ],
@@ -9225,6 +9750,27 @@
           "minLevel": 18,
           "maxLevel": 20,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 25,
+          "maxLevel": 31,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 29,
+          "maxLevel": 35,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -9294,6 +9840,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
           "rarity": "common"
         }
       ],
@@ -9367,6 +9920,20 @@
           "minLevel": 23,
           "maxLevel": 25,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 25,
+          "maxLevel": 31,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -9436,6 +10003,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -9504,6 +10078,34 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 25,
+          "maxLevel": 31,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 33,
+          "maxLevel": 39,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 37,
+          "maxLevel": 43,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
           "rarity": "uncommon"
         }
       ],
@@ -9711,6 +10313,27 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 29,
+          "maxLevel": 35,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 41,
+          "maxLevel": 47,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -9780,6 +10403,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "rare"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 30,
+          "maxLevel": 35,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -9848,6 +10478,34 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 26,
+          "maxLevel": 31,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 30,
+          "maxLevel": 35,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 42,
+          "maxLevel": 47,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 46,
+          "maxLevel": 52,
           "rarity": "rare"
         }
       ],
@@ -9985,6 +10643,13 @@
           "minLevel": 10,
           "maxLevel": 17,
           "rarity": "rare"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 34,
+          "maxLevel": 39,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -10053,6 +10718,13 @@
           "areaName": "Route 3 — Mountain Foothills",
           "minLevel": 10,
           "maxLevel": 17,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 26,
+          "maxLevel": 31,
           "rarity": "rare"
         }
       ],
@@ -10192,6 +10864,13 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -10264,6 +10943,13 @@
           "areaName": "Garden Town Outskirts",
           "minLevel": 23,
           "maxLevel": 25,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 21,
+          "maxLevel": 27,
           "rarity": "uncommon"
         }
       ],
@@ -10539,6 +11225,13 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -10676,6 +11369,20 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
+          "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -10743,6 +11450,13 @@
           "areaName": "Garden Town Outskirts",
           "minLevel": 12,
           "maxLevel": 19,
+          "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
           "rarity": "common"
         }
       ],
@@ -10813,6 +11527,20 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "common"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 17,
+          "maxLevel": 23,
+          "rarity": "common"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 20,
+          "maxLevel": 27,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -10882,6 +11610,13 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -10950,6 +11685,13 @@
           "areaName": "Garden Town Outskirts",
           "minLevel": 12,
           "maxLevel": 19,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -11028,6 +11770,34 @@
           "minLevel": 23,
           "maxLevel": 25,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 21,
+          "maxLevel": 27,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 25,
+          "maxLevel": 31,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 29,
+          "maxLevel": 35,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -11098,6 +11868,20 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -11167,6 +11951,20 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "common"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 17,
+          "maxLevel": 23,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -11234,6 +12032,13 @@
           "areaName": "Garden Town Outskirts",
           "minLevel": 12,
           "maxLevel": 19,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
           "rarity": "common"
         }
       ],
@@ -11586,6 +12391,13 @@
           "minLevel": 12,
           "maxLevel": 19,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 29,
+          "maxLevel": 35,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -11654,6 +12466,41 @@
           "areaName": "Garden Town Outskirts",
           "minLevel": 12,
           "maxLevel": 19,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "coastRoute",
+          "areaName": "Route 5 · Coastal Trail",
+          "minLevel": 19,
+          "maxLevel": 23,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 22,
+          "maxLevel": 27,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 26,
+          "maxLevel": 31,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 30,
+          "maxLevel": 35,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 46,
+          "maxLevel": 52,
           "rarity": "rare"
         }
       ],
@@ -11792,6 +12639,20 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -11864,6 +12725,13 @@
           "areaName": "Mountain Cave",
           "minLevel": 15,
           "maxLevel": 24,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 29,
+          "maxLevel": 35,
           "rarity": "uncommon"
         }
       ],
@@ -12011,6 +12879,13 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -12085,6 +12960,13 @@
           "minLevel": 18,
           "maxLevel": 24,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 33,
+          "maxLevel": 39,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -12155,6 +13037,13 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
+          "rarity": "common"
         }
       ],
       "levelUp": [
@@ -12223,6 +13112,27 @@
           "areaName": "Mountain Cave",
           "minLevel": 15,
           "maxLevel": 24,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -12366,6 +13276,13 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -12442,6 +13359,13 @@
           "minLevel": 28,
           "maxLevel": 32,
           "rarity": "rare"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 46,
+          "maxLevel": 52,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -12511,6 +13435,20 @@
           "areaName": "Mountain Cave",
           "minLevel": 15,
           "maxLevel": 24,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
           "rarity": "common"
         }
       ],
@@ -12585,6 +13523,34 @@
           "areaName": "Mountain Cave",
           "minLevel": 18,
           "maxLevel": 24,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 26,
+          "maxLevel": 31,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 34,
+          "maxLevel": 39,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 38,
+          "maxLevel": 43,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 46,
+          "maxLevel": 52,
           "rarity": "rare"
         }
       ],
@@ -12723,6 +13689,20 @@
           "areaName": "Mountain Cave",
           "minLevel": 15,
           "maxLevel": 24,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 36,
+          "maxLevel": 43,
           "rarity": "common"
         }
       ],
@@ -13003,6 +13983,13 @@
           "minLevel": 18,
           "maxLevel": 24,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 33,
+          "maxLevel": 39,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -13072,6 +14059,13 @@
           "areaName": "Mountain Cave",
           "minLevel": 15,
           "maxLevel": 24,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ashPass",
+          "areaName": "Route 9 · Ashen Pass",
+          "minLevel": 32,
+          "maxLevel": 39,
           "rarity": "common"
         }
       ],
@@ -13214,6 +14208,34 @@
           "areaName": "Mountain Cave",
           "minLevel": 15,
           "maxLevel": 24,
+          "rarity": "common"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 24,
+          "maxLevel": 31,
+          "rarity": "common"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 28,
+          "maxLevel": 35,
+          "rarity": "common"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 40,
+          "maxLevel": 47,
+          "rarity": "common"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 44,
+          "maxLevel": 52,
           "rarity": "common"
         }
       ],
@@ -13508,6 +14530,13 @@
           "minLevel": 28,
           "maxLevel": 32,
           "rarity": "rare"
+        },
+        {
+          "areaId": "marshRoute",
+          "areaName": "Route 6 · Wetlands",
+          "minLevel": 22,
+          "maxLevel": 27,
+          "rarity": "rare"
         }
       ],
       "levelUp": [
@@ -13788,6 +14817,13 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 37,
+          "maxLevel": 43,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -13926,6 +14962,34 @@
           "minLevel": 15,
           "maxLevel": 24,
           "rarity": "uncommon"
+        },
+        {
+          "areaId": "canyonRoute",
+          "areaName": "Route 7 · Canyon Pass",
+          "minLevel": 25,
+          "maxLevel": 31,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "volcanicRoute",
+          "areaName": "Route 8 · Volcanic Trail",
+          "minLevel": 29,
+          "maxLevel": 35,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "ancientRoute",
+          "areaName": "Route 11 · Ancient Trail",
+          "minLevel": 41,
+          "maxLevel": 47,
+          "rarity": "uncommon"
+        },
+        {
+          "areaId": "victoryRoad",
+          "areaName": "Victory Road",
+          "minLevel": 45,
+          "maxLevel": 52,
+          "rarity": "uncommon"
         }
       ],
       "levelUp": [
@@ -13993,6 +15057,13 @@
           "areaName": "Mountain Cave",
           "minLevel": 15,
           "maxLevel": 24,
+          "rarity": "rare"
+        },
+        {
+          "areaId": "snowRoute",
+          "areaName": "Route 10 · Snowfields",
+          "minLevel": 38,
+          "maxLevel": 43,
           "rarity": "rare"
         }
       ],
@@ -14110,5 +15181,5 @@
       }
     }
   ],
-  "encounterBalanceVersion": 2
+  "encounterBalanceVersion": 3
 }
