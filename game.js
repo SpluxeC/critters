@@ -4394,7 +4394,7 @@ function buildHighlandLandscape(){
  // All new construction is below the southern building frontage.
  rect(3,28,13,5,T.grass);rect(6,29,6,2,T.stone);
  rect(8,26,3,7,T.path);rect(17,27,3,6,T.path);
- rect(11,30,7,2,T.stone);rect(19,31,3,2,T.stone);
+ rect(11,30,6,2,T.stone);rect(20,31,2,2,T.stone);
  rect(6,28,2,1,T.stone);rect(11,28,1,1,T.stone);
  for(let y=28;y<H-1;y++)for(let x=2;x<W-2;x++){
   if(highlandWallCell(x,y)&&tiles[y][x]===T.grass)put(x,y,T.rock);
