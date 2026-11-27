@@ -754,3 +754,19 @@ test('Phase 8 presentation pacing skips excess draws but forces resize frames',(
  for(let i=1;i<=50;i++)ctx.renderWorldFrame(i*40);
  const before=draws;ctx.renderWorldFrame(2017);assert.equal(draws,before);
 });
+
+test('Phase 9.1 coastal quays remain connected and shoreline remains water',()=>{
+ const T={grass:0,path:1,water:2,stone:3,rock:4,tall:5};
+ const ctx=extract('function coastalShoreline(','function buildSpecialStorySite(',{T,W:44,H:40,tiles:[],naturalSeed:(x,y)=>x*31+y*17});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&x<W&&y>=0&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ for(const area of ['coastRoute','harborTown']){
+  ctx.area=area;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));rect(0,12,W,3,T.path);rect(17,13,3,H-13,T.path);buildCoastalLandscape(area);return tiles})()`,ctx);
+  assert.equal(tiles[13][18],T.path);
+  if(area==='coastRoute'){assert.equal(tiles[34][19],T.path);assert.equal(tiles[36][25],T.water);}
+  else{for(let y=27;y<=37;y++)assert.equal(tiles[y][9],T.path);assert.equal(tiles[32][5],T.path);assert.equal(tiles[36][13],T.water);assert.equal(tiles[39][18],T.path);}
+ }
+});
