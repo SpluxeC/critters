@@ -529,7 +529,7 @@ test('v82 outer route graph has two loops and a cave fade',()=>{
  assert.match(game,/region\('cave',17,23/);
  assert.match(game,/\['forest',15,18\]/);
  assert.match(game,/\['garden',12,14\]/);
- assert.match(game,/regionMapArt" src="assets\/region-map.svg\?v=83-varied-districts"/);
+ assert.match(game,/regionMapArt" src="assets\/region-map-expanded.svg\?v=1"/);
 });
 
 test('v83 region sections have distinct dimensions, asymmetric borders, area HUD and longer fade',()=>{
@@ -608,4 +608,47 @@ test('scenery and actors share stable ground-depth ordering',()=>{
  sandbox.sceneryLayer('north',0,0,20,20,20,()=>order.push('north'));
  sandbox.finishSceneryLayer();
  assert.deepEqual(order,['north','actor','south']);
+});
+
+test('expanded world has unique coordinates, reciprocal portals and reachable districts',()=>{
+ const sandbox=extract('const REGIONAL_EXPANSION=','const outdoorChunks=',{TOWN_ROOMS:{}});
+ const world=vm.runInContext('({grid:OUTDOOR_GRID,links:OUTDOOR_LINKS,expansion:REGIONAL_EXPANSION})',sandbox);
+ assert.equal(Object.keys(world.grid).length,30);
+ assert.equal(Object.keys(world.expansion).length,20);
+ assert.equal(new Set(Object.values(world.grid).map(p=>p.join(','))).size,30);
+ assert.deepEqual(Object.values(world.expansion).filter(p=>p.gym).map(p=>p.gym).sort((a,b)=>a-b),[2,3,4,5,6,7,8]);
+ const delta={left:[-1,0],right:[1,0],up:[0,-1],down:[0,1]},opposite={left:'right',right:'left',up:'down',down:'up'};
+ for(const [id,links] of Object.entries(world.links))for(const [dir,[to,a,b]] of Object.entries(links)){
+  if(!world.grid[to])continue;
+  const [dx,dy]=delta[dir];
+  assert.equal(world.grid[to][0],world.grid[id][0]+dx,id+' '+dir);
+  assert.equal(world.grid[to][1],world.grid[id][1]+dy,id+' '+dir);
+  assert.equal(world.links[to][opposite[dir]].join(','),[id,a,b].join(','));
+ }
+ const seen=new Set(['garden']),q=['garden'];
+ for(let i=0;i<q.length;i++)for(const [id] of Object.values(world.links[q[i]]||{}))if(world.grid[id]&&!seen.has(id)){seen.add(id);q.push(id)}
+ assert.equal(seen.size,30);
+});
+test('every expanded district has a continuous path between all its portals',()=>{
+ const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7};
+ const context={T,TOWN_ROOMS:{},naturalSeed:(x,y)=>Math.abs((x*73856093^y*19349663)>>>0),W:0,H:0,tiles:[]};
+ const sandbox=extract('const REGIONAL_EXPANSION=','const outdoorChunks=',context);
+ const start=game.indexOf('function buildExpansionArea('),end=game.indexOf('function outdoorChunk(',start);
+ vm.runInContext(game.slice(start,end),sandbox);
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ function borders(t){rect(0,0,W,1,t);rect(0,H-1,W,1,t);rect(0,0,1,H,t);rect(W-1,0,1,H,t)}
+ `,sandbox);
+ const ids=vm.runInContext('Object.keys(REGIONAL_EXPANSION)',sandbox);
+ for(const id of ids){
+  sandbox.area=id;
+  const data=vm.runInContext(`(()=>{const size=outdoorSize(area);W=size.w;H=size.h;tiles=Array.from({length:H},()=>Array(W).fill(T.grass));buildExpansionArea(area);return {tiles,W,H,links:OUTDOOR_LINKS[area]}})()`,sandbox);
+  const {tiles,W,H,links}=data,queue=[[18,13]],seen=new Set(['18,13']);
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,key=nx+','+ny;if(tiles[ny]?.[nx]!==T.path||seen.has(key))continue;seen.add(key);queue.push([nx,ny])}}
+  for(const [side,[dest,a,b]] of Object.entries(links))for(let n=a;n<=b;n++){
+   const x=side==='left'?0:side==='right'?W-1:n,y=side==='up'?0:side==='down'?H-1:n;
+   assert.ok(seen.has(x+','+y),id+' disconnected from '+dest+' at '+x+','+y);
+  }
+ }
 });
