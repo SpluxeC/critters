@@ -2332,6 +2332,7 @@ function naturalDecoration(area,seed,t,nearTree){
  if(t===T.water&&area==='garden'&&seed%13===0)return seed%2?'lily-pads':'lily-flowers';
  if(t!==T.grass)return null;
  if(isSnowDistrict(area))return null;
+ if(sanctuaryKind(area))return null;
  if(area==='ancientRoute'||area==='ancientTown')return seed%43===0?'outdoor-shrub-3-037':seed%59===0?'outdoor-flowers-grass-2-076':null;
  if(area==='highlandTown')return seed%31===0?OUTDOOR_SCENERY.flowers[seed%3]:seed%53===0?'outdoor-shrub-3-037':null;
  if(area==='ashPass')return seed%89===0?'outdoor-stump-1-075':null;
@@ -2574,7 +2575,7 @@ function drawContinuousWater(x,y,a,b){
  ctx.beginPath();ctx.moveTo(x+tl,y);ctx.lineTo(x+S-tr,y);ctx.quadraticCurveTo(x+S,y,x+S,y+tr);
  ctx.lineTo(x+S,y+S-br);ctx.quadraticCurveTo(x+S,y+S,x+S-br,y+S);
  ctx.lineTo(x+bl,y+S);ctx.quadraticCurveTo(x,y+S,x,y+S-bl);ctx.lineTo(x,y+tl);ctx.quadraticCurveTo(x,y,x+tl,y);ctx.closePath();
- const coastal=s.area==='coastRoute'||s.area==='harborTown',marsh=s.area==='marshRoute'||s.area==='marshTown',thermal=isVolcanicDistrict(s.area);ctx.fillStyle=thermal?'#508c86':coastal?'#417f91':marsh?'#52796c':'#548f9b';ctx.fill();ctx.clip();
+ const coastal=s.area==='coastRoute'||s.area==='harborTown'||s.area==='legendaryReserveA',marsh=s.area==='marshRoute'||s.area==='marshTown'||s.area==='legendaryReserveB',thermal=isVolcanicDistrict(s.area)||s.area==='legendaryReserveC';ctx.fillStyle=thermal?'#508c86':coastal?'#417f91':marsh?'#52796c':'#548f9b';ctx.fill();ctx.clip();
  const edges=[[!n,0,0,0,7],[!e,S,0,S-7,0],[!south,0,S,0,S-7],[!w,0,0,7,0]];
  for(const [on,x0,y0,x1,y1] of edges){
   if(!on)continue;
@@ -2619,7 +2620,7 @@ function seamlessGround(t,x,y,a,b){
  if(t===T.water){if(isSnowDistrict(s.area))drawFrozenLake(x,y,a,b);else drawContinuousWater(x,y,a,b);return true;}
  if(isSnowDistrict(s.area)&&(t===T.grass||t===T.tall||t===T.flower)){drawSnowGround(t,x,y,a,b);return true;}
  if(t===T.path&&coastalDeckCell(s.area,a,b)){drawCoastalDeck(x,y,a,b);return true;}
- if(t===T.path&&marshDeckCell(s.area,a,b)){drawMarshDeck(x,y,a,b);return true;}
+ if(t===T.path&&(marshDeckCell(s.area,a,b)||sanctuaryDeckCell(s.area,a,b))){drawMarshDeck(x,y,a,b);return true;}
  if(s.area==='highlandTown'&&t===T.path&&highlandStepCell(a,b)){drawHighlandSteps(x,y);return true;}
  if(s.area==='ashPass'&&(t===T.grass||t===T.tall)){drawAshGround(t,x,y,a,b);return true;}
  if(s.area==='coastRoute'&&t===T.grass&&b>=coastalShoreline(a)-3){ctx.fillStyle='#d9c69c';ctx.fillRect(x,y,S,S);ctx.fillStyle='#a58d6430';for(let k=0;k<4;k++){const h=naturalSeed(a*7+k,b*11+k);ctx.fillRect(x+h%30,y+(h>>>8)%30,2,1)}return true;}
@@ -2762,7 +2763,16 @@ function drawAncientMasonry(x,y,a,b,kind){
  }
  ctx.fillStyle='#647d4e';for(let k=0;k<4;k++)ctx.fillRect(x+6+(seed+k*7)%20,y+18+((seed>>>5)+k*3)%10,4,2);
 }
+function drawSanctuaryMonument(x,y,a,b){
+ const kind=sanctuaryKind(s.area),colors=kind==='coast'?['#8c9894','#c9c6ae']:kind==='marsh'?['#536e60','#9aa88b']:['#4b4849','#928478'];
+ ctx.fillStyle=expansionGroundColor(s.area,T.grass);ctx.fillRect(x,y,S,S);
+ ctx.fillStyle=colors[0];ctx.fillRect(x+3,y+25,S-6,6);
+ if(b===32){ctx.fillRect(x,y+8,S,19);ctx.fillStyle=colors[1];ctx.fillRect(x,y+5,S,6);ctx.fillStyle='#343a3940';ctx.fillRect(x+2,y+19,S-4,2);}
+ else{ctx.fillRect(x+9,y+4,14,23);ctx.fillStyle=colors[1];ctx.fillRect(x+6,y+2,20,5);ctx.fillRect(x+11,y+10,3,13);ctx.fillRect(x+7,y+24,18,3);}
+ queueSolarShadow(x+S/2,y+S,S-4,b===32?16:28);
+}
 function drawTile(t,x,y,a,b){
+ if(t===T.rock&&sanctuaryMonumentCell(s.area,a,b)){drawSanctuaryMonument(x,y,a,b);return;}
  if(t===T.rock&&(s.area==='ancientRoute'||s.area==='ancientTown')){
   const ruin=ancientRuinKind(s.area,a,b);if(ruin){drawAncientMasonry(x,y,a,b,ruin);return;}
  }
@@ -3464,8 +3474,8 @@ function drawRiceClump(sx,sy,x,y,now){
 }
 // Sparse steam plumes anchored to actual pool cells, clipped away from trails.
 function drawGeothermalSteam(ox,oy,w,h,now){
- if(!isVolcanicDistrict(s.area))return;
- const anchors=s.area==='volcanicRoute'?[[8,29],[29,29],[6,31],[31,30]]:[[9,33],[7,34],[10,35]];
+ if(!isVolcanicDistrict(s.area)&&s.area!=='legendaryReserveC')return;
+ const anchors=s.area==='legendaryReserveC'?[[7,25],[33,25],[6,28],[34,28]]:s.area==='volcanicRoute'?[[8,29],[29,29],[6,31],[31,30]]:[[9,33],[7,34],[10,35]];
  const still=reducedWorldMotion(),wind=weatherWind();
  for(const [a,b] of anchors){
   if(tiles[b]?.[a]!==T.water)continue;
@@ -3518,8 +3528,8 @@ function drawAtmosphericMotion(ox,oy,w,h,now){
     const xx=sx+5+(vertical?k*12:ripple),yy=sy+7+(vertical?ripple:k*12);
     ctx.beginPath();ctx.moveTo(xx,yy);ctx.quadraticCurveTo(xx+3,yy-1,xx+(vertical?5:9),yy+(vertical?5:0));ctx.stroke();
    }
-   if(s.area==='marshRoute'||s.area==='marshTown')drawMarshWaterPlants(sx,sy,x,y,now);
-   if((s.area==='coastRoute'||s.area==='harborTown')&&!north){ctx.strokeStyle='rgba(244,248,223,.42)';ctx.beginPath();ctx.moveTo(sx+6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.lineTo(sx+S-6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.stroke()}
+   if(s.area==='marshRoute'||s.area==='marshTown'||s.area==='legendaryReserveB')drawMarshWaterPlants(sx,sy,x,y,now);
+   if((s.area==='coastRoute'||s.area==='harborTown'||s.area==='legendaryReserveA')&&!north){ctx.strokeStyle='rgba(244,248,223,.42)';ctx.beginPath();ctx.moveTo(sx+6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.lineTo(sx+S-6,sy+7+Math.sin(clock*.09+x*.7)*2);ctx.stroke()}
    ctx.restore();
   }else if(t===T.tall){
    if(isSnowDistrict(s.area)||s.area==='ashPass'||naturalTileReady(T.tall,x,y))continue;
@@ -4463,6 +4473,50 @@ function buildAncientLandscape(area){
   for(const o of settlementPublicProps(area))if(o.x<17&&o.y>=28)rect(o.x,o.y,o.w,o.h,T.grass);
  }
 }
+// Phase 9.9: landscape only; legendary identities and capture rules remain untouched.
+function sanctuaryKind(area){return ({legendaryReserveA:'coast',legendaryReserveB:'marsh',legendaryReserveC:'volcanic'})[area]||null}
+function sanctuaryMonumentCell(area,x,y){
+ return !!sanctuaryKind(area)&&((y===29&&(x===13||x===25))||(y===32&&x>=16&&x<=22)||(y===31&&(x===16||x===22)));
+}
+function sanctuaryDeckCell(area,x,y){
+ return area==='legendaryReserveB'&&((x>=8&&x<=10&&y>=13&&y<=29)||(x>=28&&x<=30&&y>=13&&y<=29)||(y>=27&&y<=29&&x>=8&&x<=30));
+}
+function buildSanctuaryLandscape(area){
+ const kind=sanctuaryKind(area);if(!kind)return;
+ for(let y=2;y<H-1;y++)for(let x=2;x<W-2;x++){
+  if(tiles[y][x]===T.path&&y<=14)continue;
+  let t=T.grass;
+  if(kind==='coast'){
+   const shore=H-6+Math.round(Math.sin(x*.29)*2);
+   if(y>=shore)t=T.water;
+   else if((x<8||x>W-9)&&y>16&&naturalSeed(x,y)%5<2)t=T.rock;
+   else if(y<11&&Math.abs(x-18)>6&&naturalSeed(x,y)%5<2)t=T.tree;
+  }else if(kind==='marsh'){
+   const basin=Math.min(((x-8)/6)**2+((y-23)/9)**2,((x-32)/7)**2+((y-23)/9)**2);
+   if(basin<1+.1*Math.sin(x+y))t=T.water;
+   else if(basin<1.5)t=T.tall;
+   else if(y<11&&Math.abs(x-18)>6&&naturalSeed(x,y)%5<2)t=T.tree;
+  }else{
+   const basin=Math.min(((x-7)/4)**2+((y-25)/6)**2,((x-33)/5)**2+((y-25)/6)**2);
+   if(basin<1)t=T.water;
+   else if(x<5||x>W-6||y>H-4||((x-31)/7)**2+((y-8)/4)**2<1)t=T.rock;
+  }
+  put(x,y,t);
+ }
+ rect(17,0,3,32,T.path);rect(13,19,13,9,T.stone);rect(17,19,3,13,T.path);rect(15,28,9,3,T.stone);rect(17,28,3,4,T.path);
+ if(kind==='coast'){
+  rect(8,15,3,15,T.path);rect(8,15,25,3,T.path);rect(8,27,9,3,T.path);rect(30,15,3,15,T.path);rect(24,27,9,3,T.path);
+  for(const [x,y] of [[11,21],[12,24],[26,21],[27,24],[10,31],[28,31]])if(tiles[y]?.[x]===T.grass)put(x,y,T.flower);
+ }else if(kind==='marsh'){
+  rect(8,13,3,17,T.path);rect(8,13,23,2,T.path);rect(28,13,3,17,T.path);rect(8,27,23,3,T.path);
+  rect(15,21,2,4,T.water);rect(22,21,2,4,T.water);
+ }else{
+  rect(9,15,9,3,T.path);rect(9,15,3,12,T.path);rect(9,24,5,3,T.stone);
+  rect(19,15,11,3,T.path);rect(27,15,3,12,T.path);rect(25,24,5,3,T.stone);
+ }
+ for(let y=28;y<=32;y++)for(let x=12;x<=26;x++)if(sanctuaryMonumentCell(area,x,y))put(x,y,T.rock);
+ rect(11,17,3,2,T.grass);
+}
 function buildSpecialStorySite(area){
  const plans={
   leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
@@ -4485,13 +4539,7 @@ function buildSpecialStorySite(area){
    rect(11,23,3,2,T.rock);rect(27,23,3,2,T.rock);
   }
  }else{
-  rect(10,17,17,12,T.grass);
-  rect(16,13,5,15,T.path);
-  rect(11,19,15,2,T.path);rect(11,26,15,2,T.path);
-  rect(11,19,2,9,T.path);rect(24,19,2,9,T.path);
-  // A quiet central feature, with the central path and loop remaining open.
-  const feature=plan.kind==='volcanic'?T.rock:plan.kind==='marsh'?T.water:T.flower;
-  rect(13,22,2,3,feature);rect(22,22,2,3,feature);
+  buildSanctuaryLandscape(area);
  }
  // Actors are on grass beside walkways, never on portal or main path cells.
  for(const [x,y,line] of plan.actors){
@@ -5591,7 +5639,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.64</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.65</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
