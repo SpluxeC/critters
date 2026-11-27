@@ -1557,7 +1557,7 @@ function migrate(){
  if(speciesRegistry.size)migrateSpeciesIds();
  s.area=s.area||'village';if(!['village','lab','home','neighbor','route1','town','route2','forest','route3','cave','garden','gym','homestead','homesteadHome','grotto','ruins','cavern','route4','ridge','willowHollow'].includes(s.area)&&!TOWN_ROOMS[s.area]&&!OUTDOOR_GRID[s.area])s.area='village';
  ensureMapDiscovery();
- s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=s.face||'down';
+ s.x=Number.isFinite(s.x)?s.x:17;s.y=Number.isFinite(s.y)?s.y:16;s.face=['up','down','left','right'].includes(s.face)?s.face:'down';
  if(!Array.isArray(s.party))s.party=s.starter?[critter(starterSpeciesId(s.starter),5)]:[];
  s.party=s.party.map(p=>isEgg(p)?eggPartyEntry(p.egg):normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Rock',p.level||5),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp,maxHp:p.maxHp||36,hp:typeof p.hp==='number'?p.hp:36}))); 
  if(!Array.isArray(s.storage))s.storage=[];s.storage=s.storage.map(p=>normalizeMoves(refreshSpeciesMetadata({...critter(p.speciesId||p.type||'Grass',p.level||3),...p,level:Math.min(MAX_CRITTER_LEVEL,Math.max(1,Math.floor(Number(p.level)||1))),xp:Number(p.level)>=MAX_CRITTER_LEVEL?0:p.xp})));
@@ -1662,9 +1662,14 @@ function npcReservedCell(area,x,y,w,h){
  if(['home','neighbor','lab','homesteadHome','gym'].includes(area)&&x>=15&&x<=19&&y>=22)return true;
  if(area==='garden'&&x>=23&&x<=26&&y>=9&&y<=12)return true;
  if(area==='homestead'&&((x>=8&&x<=10&&y>=9&&y<=11)||y>=16))return true;
- if(SETTLEMENT_PLANS[area]&&settlementLots(area).some(b=>Math.abs(x-b.door)<=1&&y>=b.y+b.h&&y<=b.y+b.h+4))return true;
+ if(Object.values(TOWN_ROOMS).some(r=>r.parent===area&&Math.abs(x-r.door[0])<=1&&y>=r.door[1]&&y<=r.door[1]+3))return true;
  if(area==='village'&&VILLAGE_HOUSES.some(b=>Math.abs(x-b.door)<=1&&y>=b.y+b.h&&y<=b.y+b.h+3))return true;
- // Avoid main road crossings and regional portals; patrols get separate explicit permission.
+ // Protect all edge openings including their inner three-tile approach.
+ for(const [side,[,a,b]] of Object.entries(OUTDOOR_LINKS[area]||{})){
+  const cross=side==='left'||side==='right'?y:x;
+  const depth=side==='left'?x:side==='right'?w-1-x:side==='up'?y:h-1-y;
+  if(depth<=3&&cross>=a-1&&cross<=b+1)return true;
+ }
  return false;
 }
 function npcStepAllowed(p,x,y,patrol=false,residential=false){
@@ -1741,9 +1746,10 @@ function tickTrainerApproach(now){
  if(p.walking){if(now-p.walkStart<p.walkDuration)return true;npcFinishWalk(p)}
  if(now<e.until)return true;
  const step=trainerApproachStep(p,e.x,e.y);
+ if(Math.abs(p.x-e.x)+Math.abs(p.y-e.y)===1){finishTrainerApproach(now);return true}
  if(!step||now>=e.deadline||!npcStepAllowed(p,step.x,step.y,true)){
-  // If a route becomes obstructed, finish safely from the current location.
-  finishTrainerApproach(now);return true;
+  // Do not initiate a battle through an intervening obstacle or from a distance.
+  cancelTrainerApproach();p.pauseUntil=now+2200;return true;
  }
  e.phase='walk';npcBeginWalk(p,step,now);p.walkDuration=260;e.until=now+260;return true;
 }
@@ -2081,11 +2087,13 @@ function build(preview=false){
   const [dx,dy]=room.door;put(dx,dy,T.door);
   for(let xx=dx-1;xx<=dx+1;xx++)for(let yy=dy+1;yy<=dy+2;yy++)if(tiles[yy]?.[xx]!==T.roof&&tiles[yy]?.[xx]!==T.wall)put(xx,yy,T.path);
  }
+ // Reconstruct overnight occupancy from saved time, including preview chunks.
+ if(npcNight())for(const p of npcs){if(npcResidence(s.area,p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
  if(!preview&&TOWN_ROOMS[s.area]&&(s.x<1||s.x>=W-1||s.y<1||s.y>=H-1)){const [ex,ey]=roomExit(s.area);s.x=ex;s.y=ey-2}
  if(!preview&&(solidAt(s.x,s.y)||npcs.some(p=>p.x===s.x&&p.y===s.y&&!p.indoors))){
   const originX=s.x,originY=s.y;
   let found=false;
-  for(let radius=1;radius<Math.max(W,H)&&!found;radius++){
+  for(let radius=1;radius<W+H&&!found;radius++){
    for(let dy=-radius;dy<=radius&&!found;dy++)for(let dx=-radius;dx<=radius;dx++){
     if(Math.abs(dx)+Math.abs(dy)!==radius)continue;
     const nx=originX+dx,ny=originY+dy;
@@ -2095,8 +2103,6 @@ function build(preview=false){
   }
   if(!found){for(let yy=1;yy<H-1&&!found;yy++)for(let xx=1;xx<W-1;xx++)if(!solidAt(xx,yy)&&!npcs.some(p=>p.x===xx&&p.y===yy)){s.x=xx;s.y=yy;found=true;break}}
  }
- // Reconstruct overnight occupancy from saved time, including preview chunks.
- if(npcNight())for(const p of npcs){if(npcResidence(s.area,p)){p.indoors=true;p.x=-100;p.y=-100;npcFinishWalk(p);p.task='Resting'}}
  if(!preview){
   snapVisual();
   if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null});
@@ -4000,7 +4006,7 @@ function populateExpansionArea(area){
  const d=REGIONAL_EXPANSION[area];if(!d)return;
  const open=(x,y)=>x>=2&&y>=2&&x<W-2&&y<H-2&&[T.grass,T.path,T.stone,T.tall,T.flower].includes(tiles[y]?.[x])&&!npcs.some(p=>p.x===x&&p.y===y)&&!settlementPublicProps(area).some(o=>yardContains(o,x,y))&&!settlementLots(area).some(b=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h+2);
  function add(x,y,lines,kind,id,extra={}){
-  if(!open(x,y))return null;
+  if(!open(x,y)||npcReservedCell(area,x,y,W,H))return null;
   npc(x,y,lines,kind,id);const p=npcs[npcs.length-1];Object.assign(p,extra);return p;
  }
  if(SETTLEMENT_PLANS[area]){
@@ -4433,6 +4439,9 @@ function move(d){
  if(s.area==='garden'&&d==='up'&&x===24&&(y===10||y===9))return enterGym();
  if(s.area==='gym'&&d==='down'&&x===17&&y>=25){recordWalkingStep();return region('garden',24,12)}
  if(SECRET_AREAS[s.area]&&x===17&&y===25)return exitSecret();
+ if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
+  const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);if(h){recordWalkingStep();return region('village',h.door,h.y+h.h+2)}
+ }
  if(s.area==='cave'&&d==='down'&&y>=H-2&&x>=15&&x<=18){recordWalkingStep();return region('route3',20,2)}
  if(x<0||y<0||x>=W||y>=H)return;
  const door=villageDoorAt(x,y);
@@ -4440,11 +4449,6 @@ function move(d){
  if(npcs.some(p=>(p.x===x&&p.y===y)||(p.walking&&p.fromX===x&&p.fromY===y))||solidAt(x,y))return;
  const t=tiles[y][x];
  beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;recordWalkingStep();
- // Village doors use the shared door interaction and short opening animation.
- if(['lab','home','neighbor'].includes(s.area)&&x===17&&y===25){
-  const h=VILLAGE_HOUSES.find(b=>b.kind===s.area);
-  return region('village',h.door,h.y+h.h+2);
- }
  if(checkTrainerSight())return;
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3)return rivalGardenScene();
  
@@ -5078,7 +5082,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.54</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.55</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
