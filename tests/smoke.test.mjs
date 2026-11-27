@@ -680,8 +680,8 @@ test('expansion route habitats preserve original roster and exclude starters and
 
 test('Phase 5 special sites have accessible stationary attendants and no battle or capture triggers',()=>{
  const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7,roof:8,wall:9};
- const context={T,W:42,H:38,tiles:[],npcs:[]};
- const ctx=extract('function buildSpecialStorySite(','function populateExpansionArea(',context);
+ const context={T,W:42,H:38,tiles:[],npcs:[],naturalSeed:(x,y)=>x*31+y*17};
+ const ctx=extract('function sanctuaryKind(','function populateExpansionArea(',context);
  vm.runInContext(`
  function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
  function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
@@ -896,5 +896,25 @@ test('Phase 9.8 ancient ruins preserve roads and courtyard access',()=>{
   assert.ok(seen.has('0,13'));assert.ok(seen.has((ctx.W-1)+',13'));
   if(area==='ancientRoute'){assert.equal(tiles[5][8],T.rock);assert.equal(tiles[9][7],T.rock);assert.ok(seen.has('30,25'));}
   else{assert.equal(tiles[29][4],T.rock);assert.ok(seen.has('9,32'));assert.ok(seen.has('15,31'));}
+ }
+});
+
+test('Phase 9.9 sanctuary courts, monuments and north entrances remain accessible',()=>{
+ const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7};
+ const ctx=extract('function sanctuaryKind(','function buildSpecialStorySite(',{T,W:44,H:38,tiles:[],naturalSeed:(x,y)=>x*31+y*17});
+ vm.runInContext(`
+ function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
+ function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)put(xx,yy,t)}
+ `,ctx);
+ for(const area of ['legendaryReserveA','legendaryReserveB','legendaryReserveC']){
+  ctx.area=area;
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.grass));buildSanctuaryLandscape(area);return tiles})()`,ctx);
+  const seen=new Set(['18,0']),queue=[[18,0]];
+  for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone,T.grass,T.tall,T.flower].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
+  for(const point of ['17,0','19,0','18,24','18,31','12,17'])assert.ok(seen.has(point),area+' '+point);
+  assert.equal(tiles[32][18],T.rock);assert.equal(tiles[29][13],T.rock);
+  if(area==='legendaryReserveB'){assert.equal(tiles[23][15],T.water);assert.equal(tiles[28][9],T.path);}
+  if(area==='legendaryReserveC')assert.equal(tiles[25][33],T.water);
+  if(area==='legendaryReserveA')assert.equal(tiles[36][20],T.water);
  }
 });
