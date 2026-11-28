@@ -1470,3 +1470,28 @@ test('Phase 14.1 story scenes commit only after completion and reject stale call
  assert.equal(ctx.storyScene('grassCeremony',['test']),true);ctx.s={};callbacks.shift()();
  assert.equal(ctx.storyFlag('grassCeremony',ctx.s),false);
 });
+
+test('Phase 14.2 rival encounters unlock at two, four and six badges without gating the championship',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ for(const q of vm.runInContext('RIVAL_JOURNEY',ctx)){
+  for(let badges=0;badges<=8;badges++){
+   assert.equal(ctx.rivalEncounterAvailable(q.id,{introComplete:true,badges,starter:'Rock'}),badges>=q.badges);
+   assert.equal(ctx.rivalEncounterAvailable(q.id,{introComplete:false,badges,starter:'Rock'}),false);
+  }
+  assert.equal(ctx.rivalEncounterAvailable(q.id,{introComplete:true,badges:8,starter:'Rock',paragonProgress:{championDefeated:true}}),false);
+  for(const [id,level] of q.team){assert.ok(species.some(p=>p.speciesId===id));assert.ok(level<q.level);}
+  const state={introComplete:true,badges:q.badges,defeated:{[q.id]:true}};
+  ctx.normalizeStoryState(state);assert.equal(state.story.flags[q.id+'Won'],true);
+  assert.equal(ctx.normalizeStoryState(JSON.parse(JSON.stringify(state))).flags[q.id+'Won'],true);
+ }
+});
+test('Phase 14.2 rival retains the same starter family through evolution',()=>{
+ const registry=new Map(species.map(p=>[p.speciesId,p]));
+ for(const [rival,id] of [['Water','cr-001-starter-water-1'],['Rock','cr-004-starter-rock-1'],['Electric','cr-007-starter-electric-1']]){
+  const ctx=extract('function rivalPartnerAtLevel(','function startTrainer(',{s:{rival},starterSpeciesId:()=>id,speciesRegistry:registry,critter:(speciesId,level)=>({speciesId,level})});
+  const second=registry.get(id).evolvesTo.speciesId,third=registry.get(second).evolvesTo.speciesId;
+  assert.equal(ctx.rivalPartnerAtLevel(24).speciesId,second);
+  assert.equal(ctx.rivalPartnerAtLevel(42).speciesId,third);
+  assert.equal(ctx.rivalPartnerAtLevel(56).speciesId,third);
+ }
+});
