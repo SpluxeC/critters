@@ -1578,7 +1578,8 @@ test('Phase 14.5 history requires the first badge, both solved puzzles and both 
  assert.equal(ctx.storyChapterStatus('regionalHistory',reload),'complete');
  const before=saves;ctx.regionalHistoryDialogue('history-archive-tablet');assert.equal(saves,before);
  assert.equal(ctx.storyChapterStatus('legendaryDragon',state),'available');
- for(const id of ['legendaryPrimordial','legendaryBeast','eclipseFinale'])assert.equal(ctx.storyChapterStatus(id,state),'reserved');
+ assert.equal(ctx.storyChapterStatus('legendaryPrimordial',state),'available');
+ for(const id of ['legendaryBeast','eclipseFinale'])assert.equal(ctx.storyChapterStatus(id,state),'reserved');
 });
 test('Phase 14.5 previously solved puzzles do not auto-grant lore or duplicate caches',()=>{
  const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
@@ -1618,4 +1619,35 @@ test('Phase 14.6 encounter retries until captured and uses the wild battle path'
  assert.equal(starts.length,2);assert.equal(starts[0].kind,'wild');assert.equal(starts[0].enemies[0].speciesId,'cr-209-drakoryn');
  state.storage.push({speciesId:'cr-209-drakoryn'});
  ctx.startDragonEncounter();assert.equal(starts.length,2);
+});
+
+test('Phase 14.7 Eonolith unlocks independently and recognizes older captures',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const state={introComplete:true,badges:1,story:{flags:{regionalHistoryRevealed:true}},party:[],storage:[]};
+ assert.equal(ctx.primordialEncounterAvailable(state),true);
+ assert.equal(ctx.primordialEncounterAvailable({...state,badges:0}),false);
+ assert.equal(ctx.primordialEncounterAvailable({...state,story:{flags:{}}}),false);
+ assert.equal(ctx.setStoryFlag('primordialStoryComplete',state),false);
+ assert.equal(ctx.storyChapterStatus('legendaryPrimordial',state),'available');
+ for(const id of ['cr-101-eonolith','cr-199-eonolith']){
+  const old={...state,story:{flags:{regionalHistoryRevealed:true}},storage:[{speciesId:id}]};
+  assert.equal(ctx.primordialAlreadyCaptured(old),true);
+  assert.equal(ctx.primordialEncounterAvailable(old),false);
+  assert.equal(ctx.storyChapterStatus('legendaryPrimordial',old),'complete');
+  assert.equal(ctx.storyChapterStatus('legendaryPrimordial',JSON.parse(JSON.stringify(old))),'complete');
+  assert.equal(ctx.storyChapterStatus('legendaryDragon',old),'available');
+ }
+ const sp=species.find(p=>p.speciesId==='cr-101-eonolith');
+ assert.deepEqual(sp.types,['Primordial','Rock']);
+ assert.equal(sp.habitats[0].areaId,'legendaryReserveA');
+ assert.equal(sp.habitats[0].maxLevel,36);
+});
+test('Phase 14.7 Eonolith is retryable until capture and cannot spawn again afterward',()=>{
+ let starts=[];
+ const state={introComplete:true,badges:8,area:'legendaryReserveA',story:{flags:{regionalHistoryRevealed:true}},party:[],storage:[]};
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:state,battle:null,speciesDataReady:true,moveDataReady:true,speciesRegistry:new Map(species.map(p=>[p.speciesId,p])),firstAlive:()=>0,critter:(id,level)=>({speciesId:id,level}),startBattle:b=>starts.push(b)});
+ ctx.startPrimordialEncounter();ctx.startPrimordialEncounter();
+ assert.equal(starts.length,2);assert.equal(starts[0].kind,'wild');assert.equal(starts[0].enemies[0].speciesId,'cr-101-eonolith');
+ state.storage.push({speciesId:'cr-101-eonolith'});
+ ctx.startPrimordialEncounter();assert.equal(starts.length,2);
 });
