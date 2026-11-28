@@ -61,6 +61,7 @@ function pickNpcSprite(x,y,kind='',id=''){
  const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
  if(id==='paragon-1')return 21;
  if(id==='paragon-2')return 19;
+ if(id==='paragon-3')return 27;
  if(kind in special)return special[kind];
  if(kind==='construction-worker')return x%2?17:18;
  if(kind==='gymtrainer')return 20;
@@ -3930,6 +3931,10 @@ function drawChampionshipHall(ox,oy){
  box(offense.x+1,offense.y+1,offense.w-2,offense.h-2,'#795450');
  ctx.strokeStyle='#e6bf86';ctx.lineWidth=2;ctx.strokeRect(X(offense.x+1.3),Y(offense.y+1.3),(offense.w-2.6)*S,(offense.h-2.6)*S);
  for(const x of [offense.x+3,offense.x+8]){ctx.beginPath();ctx.moveTo(X(x),Y(offense.y+3));ctx.lineTo(X(x+1.5),Y(offense.y+4.5));ctx.lineTo(X(x),Y(offense.y+6));ctx.stroke();}
+ const control=CHAMPIONSHIP_ROOMS[2];
+ box(control.x+1,control.y+1,control.w-2,control.h-2,'#536c68');
+ ctx.strokeStyle='#b7d0b6';ctx.lineWidth=2;ctx.strokeRect(X(control.x+1.3),Y(control.y+1.3),(control.w-2.6)*S,(control.h-2.6)*S);
+ for(const radius of [1,1.8,2.6]){ctx.beginPath();ctx.arc(X(control.x+control.w/2),Y(control.y+control.h/2),radius*S,0,Math.PI*2);ctx.stroke();}
  for(const [i,r] of CHAMPIONSHIP_ROOMS.entries()){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name+(PARAGON_MEMBERS[i].active?' · '+PARAGON_MEMBERS[i].name:''),X(r.x+r.w/2),Y(r.y+.65));}
  box(18.85,11,.1,14,'#ad874b');box(20.05,11,.1,14,'#ad874b');
  ctx.fillStyle='#ead9ad';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('CHAMPION',X(19),Y(8));ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
@@ -5226,7 +5231,7 @@ const CHAMPIONSHIP_ROOMS=[{x:3,y:5,w:13,h:9,name:'Paragon Chamber I'},{x:22,y:5,
 const PARAGON_MEMBERS=Object.freeze([
  {id:'paragon-1',slot:0,active:true,name:'Warden Veyra',strategy:'Defensive Strategist',award:1100,dialogue:['A strong defense is not hesitation. It is preparation.','Show me how you break a carefully built defense.'],team:[{speciesId:'cr-046-flitwing',level:63,moves:['steel-iron-guard','metal-clang','gear-grind','restore-spark']},{speciesId:'cr-073-petaloor',level:63,moves:['bark-shelter','septic-sting','sunpetal','corrode-claw']},{speciesId:'cr-072-miasmoth',level:64,moves:['antidote-skin','drench-mark','breaker-fang','miasma-lance']},{speciesId:'cr-085-veiloo',level:65,moves:['graveglass-ward','moonlit-echo','veil-ripper','restore-spark']},{speciesId:'cr-017-barkwarden',level:65,moves:['battle-breath','breaker-kick','force-palm','feint-stare']},{speciesId:'cr-144-gemhorn',level:66,moves:['bedrock-brace','geode-burst','boulderfall','second-breath']}]},
  {id:'paragon-2',slot:1,active:true,name:'Marshal Kael',strategy:'Offensive Strategist',award:1250,dialogue:['Momentum wins battles. Every opening is an opportunity.','Show me whether your team can withstand relentless pressure.'],team:[{speciesId:'cr-012-falgrath',level:67,moves:['feather-jab','gale-whisper','updraft-poise','wingline-cut']},{speciesId:'cr-105-ignifawn',level:67,moves:['pyre-talon','flare-torrent','kindle-heart','cyclone-sweep']},{speciesId:'cr-184-zappet',level:68,moves:['thunderhook','skywire-flash','cyclone-sweep','tempest-conduit']},{speciesId:'cr-206-kickquill',level:68,moves:['comet-uppercut','focused-impact','hollow-star','victory-burst']},{speciesId:'cr-161-torchmink',level:69,moves:['pyre-talon','flare-torrent','breaker-fang','volcanic-rend']},{speciesId:'cr-174-psychelet',level:70,moves:['cerebral-crash','infinite-focus','volcanic-rend','kindle-heart']}]},
- {id:'paragon-3',slot:2,active:false,team:[]},
+ {id:'paragon-3',slot:2,active:true,name:'Sage Nyra',strategy:'Battlefield Control Strategist',award:1400,dialogue:['Power alone cannot decide the outcome of every battle.','Control the field, read the conditions, and make every turn count.'],team:[{speciesId:'cr-202-vialisk',level:71,moves:['septic-sting','corrode-claw','sporegas','poison-marsh']},{speciesId:'cr-112-chargill',level:71,moves:['nerve-jolt','ion-rush','plasma-needle','storm-net']},{speciesId:'cr-195-veilwhisk',level:72,moves:['dread-whisper','eclipse-slice','magma-whorl','long-shadow']},{speciesId:'cr-146-flurryfin',level:72,moves:['chillbind','sleet-slash','magma-whorl','whiteout']},{speciesId:'cr-158-dewfin',level:73,moves:['drench-mark','undertow-grip','rainneedle','floodplain']},{speciesId:'cr-061-synapip',level:74,moves:['confound','mindscythe','starlit-idea','dreamfield']}]},
  {id:'paragon-4',slot:3,active:false,team:[]}
 ]);
 function normalizeParagonProgress(state){
@@ -6456,7 +6461,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.82</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.83</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7877,6 +7882,7 @@ function predictedMoveDamage(foe,target,move,enemyIndex,allyIndex){
 function trainerTactics(){
  if(battle.id==='paragon-1')return {support:1.55,setup:1.4,noise:.55,conserve:2,defensive:true};
  if(battle.id==='paragon-2')return {support:1.05,setup:1.2,noise:.35,conserve:.6,aggressive:true};
+ if(battle.id==='paragon-3')return {support:1.45,setup:1.35,noise:.4,conserve:1.2,control:true};
  if(battle.id==='leader')return {support:1.65,setup:1.65,noise:.7,conserve:1};
  if(battle.id==='rival')return {support:1.1,setup:1.2,noise:1.3,conserve:.7};
  if(battle.mode===2)return {support:1.35,setup:1.2,noise:1,conserve:.8};
@@ -7933,6 +7939,23 @@ function trainerMoveScore(foe,move,enemyIndex,targetIndex,planned=[]){
    }else if(effect.id==='raise_stat'&&effect.stat==='speed')utility=0; // Existing 1v1 team turns are player-first.
    else utility*=.3;
   }
+ }
+ if(tactics.control){
+  const foeRatio=foe.hp/Math.max(1,foe.maxHp);
+  const opposing=offensive?target:(s.party[battle.allySlots?.[0]??0]||null);
+  if(effect.id==='ailment'){
+   const persistent=['poison','scorch','haunt','miasma','bleed','plague'].includes(effect.name);
+   utility=!target.status&&hpRatio>.24&&foeRatio>.18?(persistent?40:30):0;
+  }
+  if(effect.id==='lower_stat'){
+   const useful=['defense','special_defense','attack','special_attack','accuracy','evasion'].includes(effect.stat);
+   utility=useful&&stage>-2&&hpRatio>.3&&foeRatio>.25?(move.category==='status'?24:17):0;
+  }
+  if(effect.id==='terrain'){
+   const matching=foe.moves?.some(id=>{const m=validMove(id);return m?.type===foe.type&&m.power>0&&(foe.movePP?.[id]||0)>0;});
+   utility=matching&&foeRatio>.45&&opposing&&opposing.hp/opposing.maxHp>.35&&(!battle.terrain||battle.terrain.type!==foe.type||battle.terrain.turns<=1)?(battle.terrain&&battle.terrain.type!==foe.type?27:15):0;
+  }
+  if(offensive&&move.category!=='status'&&predictedMoveDamage(foe,target,move,enemyIndex,targetIndex)>=target.hp)score+=28;
  }
  score+=utility*chance*tactics.support;
  if(move.category==='status'&&utility<=0)score-=9;
