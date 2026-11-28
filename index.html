@@ -1364,6 +1364,32 @@ button:focus-visible{outline:2px solid #f6db91;outline-offset:2px}
 .combatArena[class*="biome-"] .sceneryCloud {opacity:.45}
 .combatArena.biome-canyon .sceneryTree,.combatArena.biome-volcanic .sceneryTree,.combatArena.biome-snow .sceneryTree {opacity:.15}
 .combatArena[class*="biome-"].phase-night {background-image:linear-gradient(#25354a99,#101c2c77),var(--regional-night-fallback,linear-gradient(#64798b,#414d4d))}
+
+/* v2.00: approved fantasy UI artwork, embedded for offline use; labels remain accessible text. */
+#game{--fantasy-frame:url("data:image/webp;base64,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")}
+#game #dialog.dialog{
+ background:linear-gradient(110deg,#f5e3b8,#e8c88e)!important;
+ border:12px solid #956132!important;
+ border-image:var(--fantasy-frame) 30 55 fill / 12px 22px stretch!important;
+ border-radius:16px!important;
+ color:#392414!important;text-shadow:none!important;
+ padding:3px 12px calc(3px + env(safe-area-inset-bottom))!important;
+ box-shadow:0 -2px 8px #0005!important;
+}
+#game #dialogText{color:#392414!important;font-weight:600;overflow-wrap:anywhere}
+#game #dialogHint{color:#594022!important;font-weight:700;text-shadow:none!important}
+#game .actions #index2,#game .actions #talk,#game .actions #talk.primary,#game .actions #talk.interactable,#game .actions #talk.interactable.primary{
+ background:var(--fantasy-frame) center / 100% 100% no-repeat!important;
+ border:0!important;border-radius:12px!important;
+ color:#422511!important;text-shadow:0 1px #f7e6be!important;
+ font-family:Georgia,serif;font-weight:800!important;
+ box-shadow:none!important;
+}
+#game .actions #talk,#game .actions #talk.primary{opacity:.58!important}
+#game .actions #index2,#game .actions #talk.interactable,#game .actions #talk.interactable.primary{opacity:1!important;filter:drop-shadow(0 2px 2px #0006)}
+#game .actions #index2:active,#game .actions #talk.interactable:active{filter:brightness(.9)}
+#game .actions #index2:focus-visible,#game .actions #talk:focus-visible{outline:2px solid #f9da83;outline-offset:2px}
+@media(max-height:500px){#game #dialog.dialog{border-width:9px!important;border-image-width:9px 18px!important;padding:2px 9px calc(2px + env(safe-area-inset-bottom))!important}}
 </style><script>
 // Suppress double-tap zoom on the game UI while preserving single-tap actions.
 document.addEventListener('dblclick',function(event){
@@ -1385,4 +1411,4 @@ document.addEventListener('dblclick',function(event){
   </div>
 </section>
 <div id="shade" class="shade"><div class="panel modal"><div class="modalHead"><h2 id="modalTitle"></h2><button class="btn" id="close">Close</button></div><div id="modalBody"></div></div></div>
-<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=1.99-gameplay-polish" defer></script></body></html>
+<div id="worldFade" aria-hidden="true"></div></main><script src="game.js?v=2.00-fantasy-ui" defer></script></body></html>
