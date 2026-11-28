@@ -1495,3 +1495,24 @@ test('Phase 14.2 rival retains the same starter family through evolution',()=>{
   assert.equal(ctx.rivalPartnerAtLevel(56).speciesId,third);
  }
 });
+
+test('Phase 14.3 Eclipse first contact is badge gated, persistent and recoverable',()=>{
+ let callbacks=[],saves=0;
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:{},say:(lines,cb)=>{if(cb)callbacks.push(cb)},save:()=>saves++});
+ for(let badges=0;badges<=8;badges++){
+  assert.equal(ctx.eclipseIntroAvailable({introComplete:true,badges}),badges>=1);
+  assert.equal(ctx.eclipseIntroAvailable({introComplete:false,badges}),false);
+ }
+ for(const q of vm.runInContext('ECLIPSE_INTRO_SITES',ctx)){
+  const state={introComplete:true,badges:1,area:q.area};ctx.s=state;
+  assert.equal(ctx.storyChapterStatus('eclipseIntro',state),'available');
+  ctx.eclipseContactDialogue(q.id);assert.equal(ctx.storyFlag('eclipseIntroduced',state),false);
+  callbacks.shift()();assert.equal(ctx.storyFlag('eclipseIntroduced',state),true);
+  assert.equal(ctx.storyFlag('eclipseContact:'+q.id,state),true);
+  assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'reserved');
+  assert.equal(ctx.storyFlag('eclipseIntroduced',JSON.parse(JSON.stringify(state))),true);
+  const before=saves;ctx.eclipseContactDialogue(q.id);assert.equal(saves,before);
+  delete state.story.flags.eclipseIntroduced;ctx.eclipseContactDialogue(q.id);
+  assert.equal(ctx.storyFlag('eclipseIntroduced',state),true);
+ }
+});
