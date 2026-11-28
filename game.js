@@ -3944,8 +3944,8 @@ function drawChampionshipHall(ox,oy){
  for(const [i,r] of CHAMPIONSHIP_ROOMS.entries()){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name+(PARAGON_MEMBERS[i].active?' · '+PARAGON_MEMBERS[i].name:''),X(r.x+r.w/2),Y(r.y+.65));}
  box(18.85,11,.1,14,'#ad874b');box(20.05,11,.1,14,'#ad874b');
  ctx.fillStyle='#ead9ad';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('CHAMPION',X(19),Y(4.65));
- box(18.1,5.1,1.8,4.8,'#9a8052');box(18.2,5.2,1.6,4.6,'#485361');
- ctx.strokeStyle='#e5c68b';ctx.strokeRect(X(18.25),Y(5.25),1.5*S,4.5*S);ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
+ box(17.1,5.1,3.8,4.8,'#9a8052');box(17.2,5.2,3.6,4.6,'#485361');
+ ctx.strokeStyle='#e5c68b';ctx.strokeRect(X(17.25),Y(5.25),3.5*S,4.5*S);ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
  if(championRecognized(s)){
   box(26.2,27.1,2.6,1.2,'#465660');box(26.35,27.25,2.3,.9,'#c8b17c');
   ctx.fillStyle='#303d44';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('HALL OF FAME',X(27.5),Y(27.85));
@@ -5250,7 +5250,9 @@ function normalizeParagonProgress(state){
  const old=state.paragonProgress&&typeof state.paragonProgress==='object'&&!Array.isArray(state.paragonProgress)?state.paragonProgress:{};
  const cleared=[];
  if(old.registered===true&&Array.isArray(old.cleared))for(const m of PARAGON_MEMBERS){if(old.cleared[cleared.length]!==m.id)break;cleared.push(m.id);}
- state.paragonProgress={...old,registered:old.registered===true,cleared,losses:Number.isSafeInteger(old.losses)&&old.losses>=0?old.losses:0};
+ const championDefeated=cleared.length===PARAGON_MEMBERS.length&&old.championDefeated===true;
+ state.paragonProgress={...old,registered:old.registered===true,cleared,championDefeated,ceremonyComplete:championDefeated&&old.ceremonyComplete===true,losses:Number.isSafeInteger(old.losses)&&old.losses>=0?old.losses:0};
+ if(!championDefeated)delete state.paragonProgress.hallOfFame;
  return state.paragonProgress;
 }
 function paragonStatus(state){
@@ -5325,6 +5327,9 @@ function ensureHallOfFame(state){
  if(!championRecognized(state))return null;
  const p=state.paragonProgress;
  if(!p.hallOfFame||!Array.isArray(p.hallOfFame.party))p.hallOfFame=championshipSnapshot(state,true);
+ const h=p.hallOfFame;
+ if(h.party.some(q=>!q||typeof q.name!=='string'||!Array.isArray(q.types)||!Number.isFinite(q.level)))p.hallOfFame=championshipSnapshot(state,true);
+ if(p.ceremonyComplete&&Array.isArray(state.trainerProgress?.outfits)&&!state.trainerProgress.outfits.includes('champion'))state.trainerProgress.outfits.push('champion');
  return p.hallOfFame;
 }
 function completeChampionCeremony(state){
@@ -5401,7 +5406,7 @@ function championshipHallGeometry(state=s){
   rect(r.x,r.y,1,r.h,T.wall);rect(r.x+r.w-1,r.y,1,r.h,T.wall);
   if(paragonChamberOpen(slot,state))put(slot%2===0?r.x+r.w-1:r.x,r.y+Math.floor(r.h/2),T.path);
  }
- rect(17,4,4,7,T.wall);rect(18,5,2,5,T.mat);
+ rect(16,4,6,7,T.wall);rect(17,5,4,5,T.mat);
  if(paragonStatus(state).championEligible)rect(18,10,2,1,T.path);
  rect(17,11,4,21,T.path);
  rect(2,25,W-4,7,T.path);put(Math.floor(W/2),H-1,T.door);
@@ -5420,7 +5425,7 @@ function buildChampionshipHall(){
 }
 function buildSpecialStorySite(area){
  const plans={
-  leagueGrounds:{kind:'league',actors:[[12,18,championRecognized(s)?'Championship attendant: Welcome back, Champion. Your victory is recorded inside the hall.':'Championship attendant: The hall is open to visitors with all eight badges. Register at reception to begin The Paragon challenge.'],[26,18,'Championship groundskeeper: Follow the central steps to the hall entrance.']]},
+  leagueGrounds:{kind:'league',actors:[[12,18,(typeof s!=='undefined'&&s&&championRecognized(s))?'Championship attendant: Welcome back, Champion. Your victory is recorded inside the hall.':'Championship attendant: The hall is open to visitors with all eight badges. Register at reception to begin The Paragon challenge.'],[26,18,'Championship groundskeeper: Follow the central steps to the hall entrance.']]},
   eclipseSite:{kind:'facility',actors:[[12,18,'Survey worker: The facility entrance is closed. Please remain on the public grounds.']]},
   legendaryReserveA:{kind:'coast',actors:[[12,18,'Coastal observer: Please leave the sanctuary undisturbed. The shoreline is open for quiet exploration.']]},
   legendaryReserveB:{kind:'marsh',actors:[[12,18,'Wetland observer: Keep to the raised paths around the pools.']]},
@@ -6569,7 +6574,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.86</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.87</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -8156,6 +8161,7 @@ async function resolveTeamTurn(){
    if(battle!==currentBattle)return;
  }
  if(battle!==currentBattle)return;
+ if(!s.party.some(p=>!isEgg(p)&&p.hp>0)&&battle.paragon)return blackout();
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  const enemyChoices=planEnemyTeam();
  for(const {enemyIndex,move,target} of enemyChoices){
@@ -8174,6 +8180,7 @@ async function resolveTeamTurn(){
  battle.guards={};battle.enemyGuards={};
  await narrateCombatEvents(log.slice(beforeEffects),null);
  if(battle!==currentBattle)return;
+ if(!s.party.some(p=>!isEgg(p)&&p.hp>0)&&battle.paragon)return blackout(); // A mutual knockout cannot earn a championship victory.
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  if(!s.party.some(p=>!isEgg(p)&&p.hp>0))return blackout();
  battle.enemySlots=battle.enemySlots.filter(i=>battle.enemies[i]?.hp>0);
