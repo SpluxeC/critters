@@ -15129,9 +15129,9 @@
       },
       "habitats": [
         {
-          "areaId": "cave",
-          "areaName": "Mountain Cave",
-          "minLevel": 23,
+          "areaId": "legendaryReserveC",
+          "areaName": "Remote Volcanic Sanctuary",
+          "minLevel": 29,
           "maxLevel": 29,
           "rarity": "legendary"
         }
