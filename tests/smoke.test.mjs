@@ -1382,3 +1382,24 @@ test('Phase 13.7 Champion rival keeps original evolved partner and legal adaptiv
   assert.equal(ctx.championBattleReady(JSON.parse(JSON.stringify(state))),false);assert.equal(ctx.championRoster({starter})[5].speciesId,ace);
  }
 });
+
+test('Phase 13.8 Hall of Fame preserves winning party and one-time ceremony reward',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ for(const starter of ['Water','Rock','Electric']){
+  const state={badges:8,starter,name:'Test',worldDay:23,party:[{speciesId:'test',name:'Original',types:['Water'],level:70},{isEgg:true,egg:{}},{name:'Second',type:'Rock',level:80}],trainerProgress:{outfits:['original']}};
+  assert.equal(ctx.ensureHallOfFame(state),null);assert.equal(ctx.completeChampionCeremony(state),false);
+  ctx.registerParagon(state);
+  for(let i=1;i<=4;i++){assert.equal(ctx.championRecognized(state),false);assert.equal(ctx.recordParagonWin('paragon-'+i,state),true);}
+  assert.equal(ctx.recordChampionWin(state),true);assert.equal(ctx.championRecognized(state),true);
+  const h=ctx.ensureHallOfFame(state);assert.equal(h.party.length,2);assert.equal(h.day,23);
+  state.party[0].name='Changed';state.party[0].types[0]='Fire';state.party=[];
+  assert.equal(h.party[0].name,'Original');assert.equal(h.party[0].types[0],'Water');
+  assert.equal(ctx.completeChampionCeremony(state),true);assert.equal(ctx.completeChampionCeremony(state),false);
+  assert.equal(state.trainerProgress.outfits.filter(x=>x==='champion').length,1);
+  assert.equal(ctx.recordChampionWin(state),false);
+  const reload=JSON.parse(JSON.stringify(state));assert.equal(ctx.ensureHallOfFame(reload).party.length,2);assert.equal(ctx.completeChampionCeremony(reload),false);
+  delete reload.paragonProgress.hallOfFame;delete reload.paragonProgress.ceremonyComplete;
+  const legacy=ctx.ensureHallOfFame(reload);assert.equal(legacy.legacy,true);assert.equal(legacy.day,null);assert.equal(legacy.party.length,0);
+  assert.equal(ctx.completeChampionCeremony(reload),true);assert.equal(reload.trainerProgress.outfits.filter(x=>x==='champion').length,1);
+ }
+});
