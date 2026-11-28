@@ -680,7 +680,7 @@ test('expansion route habitats preserve original roster and exclude starters and
 
 test('Phase 5 special sites have accessible stationary attendants and no battle or capture triggers',()=>{
  const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7,roof:8,wall:9,door:10};
- const context={T,W:42,H:38,tiles:[],npcs:[],naturalSeed:(x,y)=>x*31+y*17};
+ const context={T,W:42,H:38,tiles:[],npcs:[],naturalSeed:(x,y)=>x*31+y*17,s:{},DRAGON_LEGEND:{area:'legendaryReserveC'},PRIMORDIAL_LEGEND:{area:'legendaryReserveA'},BEAST_LEGEND:{area:'legendaryReserveB'},dragonEncounterAvailable:()=>false,primordialEncounterAvailable:()=>false,beastEncounterAvailable:()=>false};
  const ctx=extract('function sanctuaryKind(','function populateExpansionArea(',context);
  vm.runInContext(`
  function put(x,y,t){if(x>=0&&y>=0&&x<W&&y<H)tiles[y][x]=t}
@@ -1752,4 +1752,52 @@ test('Phase 14.10 restoration surveys and veteran rival unlock independently',()
  state.defeated['postgame-rival']=true;ctx.normalizeStoryState(state);
  assert.equal(ctx.storyFlag('postgameRivalWon',state),true);
  assert.ok(vm.runInContext('POSTGAME_RIVAL_TEAM',ctx).every(([id,level])=>species.some(p=>p.speciesId===id)&&level<=100));
+});
+
+test('Phase 14.11 cancelled story scene cannot commit stale dialogue or prevent restart',()=>{
+ const state={introComplete:true,badges:1};let callbacks=[],saves=0;
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:state,say:(lines,cb)=>callbacks.push(cb),save:()=>saves++});
+ assert.equal(ctx.storyScene('researchDebrief',['first']),true);
+ vm.runInContext('pendingStoryScene=null',ctx);
+ assert.equal(ctx.storyScene('researchDebrief',['second']),true);
+ callbacks.shift()();assert.equal(ctx.storyFlag('researchDebrief',state),false);
+ callbacks.shift()();assert.equal(ctx.storyFlag('researchDebrief',state),true);
+ assert.equal(saves,1);
+ assert.match(game,/function clearWorldNarrator\(\)\{[^\n]*pendingStoryScene=null/);
+});
+test('Phase 14.11 malformed collections cannot crash story migration',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const state={introComplete:true,badges:1,party:{},storage:42,captureLog:'bad',story:{flags:{storyResolved:true,postgameSanctuariesComplete:true,postgameRivalWon:true}}};
+ assert.doesNotThrow(()=>ctx.normalizeStoryState(state));
+ assert.equal(ctx.storyFlag('storyResolved',state),false);
+ assert.equal(ctx.storyFlag('postgameSanctuariesComplete',state),false);
+ assert.equal(ctx.storyFlag('postgameRivalWon',state),false);
+});
+test('Phase 14.11 story journey survives reloads from opening through epilogue and postgame',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ let state={introComplete:true,badges:1,area:'lab',party:[],storage:[],puzzles:{},defeated:{},money:0,inventory:{}};
+ const reload=()=>{state=JSON.parse(JSON.stringify(state));ctx.normalizeStoryState(state)};
+ assert.equal(ctx.storyChapterStatus('eclipseIntro',state),'available');
+ assert.equal(ctx.setStoryFlag('eclipseIntroduced',state),true);
+ for(const q of vm.runInContext('ECLIPSE_OPERATIONS',ctx)){state.badges=q.badges;state.defeated[q.id]=true;reload()}
+ assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'complete');
+ for(const q of vm.runInContext('REGIONAL_HISTORY_RECORDS',ctx)){state.puzzles[q.puzzle]=true;ctx.setStoryFlag(q.id,state);reload()}
+ assert.equal(ctx.storyChapterStatus('regionalHistory',state),'complete');
+ for(const id of ['cr-209-drakoryn','cr-101-eonolith','cr-153-feralune']){state.storage.push({speciesId:id});reload()}
+ assert.equal(ctx.eclipseHQAvailable(state),true);
+ assert.equal(ctx.eclipseHQAvailable({...state,badges:5}),false);
+ state.area='eclipseHQ';
+ for(const q of vm.runInContext('ECLIPSE_HQ_OPPONENTS',ctx)){assert.equal(ctx.eclipseHQOpponentReady(q.id,state),true);state.defeated[q.id]=true;reload()}
+ assert.equal(ctx.completeEclipseShutdown(state),true);reload();
+ state.area='lab';assert.equal(ctx.completeStoryResolution(state),true);reload();
+ assert.equal(ctx.completeStoryResolution(state),false);
+ for(const q of vm.runInContext('POSTGAME_SANCTUARIES',ctx)){ctx.setStoryFlag(q.flag,state);reload()}
+ assert.equal(ctx.claimPostgameSurvey(state),true);reload();
+ assert.equal(ctx.claimPostgameSurvey(state),false);
+ assert.equal(state.money,2700);
+ assert.equal(ctx.postgameRivalAvailable(state),false);
+});
+test('Phase 14.11 legendary overworld markers use species art rather than human sprites',()=>{
+ for(const name of ['DRAGON','PRIMORDIAL','BEAST'])assert.ok(game.includes('legendarySpeciesId='+name+'_LEGEND.speciesId'));
+ assert.match(game,/if\(p.legendarySpeciesId\)\{/);
 });
