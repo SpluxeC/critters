@@ -10790,10 +10790,10 @@
       },
       "habitats": [
         {
-          "areaId": "route3",
-          "areaName": "Route 3 — Mountain Foothills",
-          "minLevel": 18,
-          "maxLevel": 22,
+          "areaId": "legendaryReserveB",
+          "areaName": "Secluded Wetland Sanctuary",
+          "minLevel": 42,
+          "maxLevel": 42,
           "rarity": "legendary"
         }
       ],
