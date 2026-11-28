@@ -1577,7 +1577,8 @@ test('Phase 14.5 history requires the first badge, both solved puzzles and both 
  delete reload.story.flags.regionalHistoryRevealed;
  assert.equal(ctx.storyChapterStatus('regionalHistory',reload),'complete');
  const before=saves;ctx.regionalHistoryDialogue('history-archive-tablet');assert.equal(saves,before);
- for(const id of ['legendaryDragon','legendaryPrimordial','legendaryBeast','eclipseFinale'])assert.equal(ctx.storyChapterStatus(id,state),'reserved');
+ assert.equal(ctx.storyChapterStatus('legendaryDragon',state),'available');
+ for(const id of ['legendaryPrimordial','legendaryBeast','eclipseFinale'])assert.equal(ctx.storyChapterStatus(id,state),'reserved');
 });
 test('Phase 14.5 previously solved puzzles do not auto-grant lore or duplicate caches',()=>{
  const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
@@ -1587,4 +1588,34 @@ test('Phase 14.5 previously solved puzzles do not auto-grant lore or duplicate c
  assert.equal(ctx.storyFlag('history-archive-tablet',state),false);
  assert.equal(state.discoveries['ruins-cache'],true);
  assert.equal(state.discoveries['oldArchive-cache'],true);
+});
+
+test('Phase 14.6 Drakoryn is a unique story encounter and older captures remain valid',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const state={introComplete:true,badges:1,story:{flags:{regionalHistoryRevealed:true}},party:[],storage:[]};
+ assert.equal(ctx.dragonEncounterAvailable(state),true);
+ assert.equal(ctx.dragonEncounterAvailable({...state,badges:0}),false);
+ assert.equal(ctx.dragonEncounterAvailable({...state,story:{flags:{}}}),false);
+ assert.equal(ctx.setStoryFlag('dragonStoryComplete',state),false);
+ assert.equal(ctx.storyChapterStatus('legendaryDragon',state),'available');
+ for(const id of ['cr-209-drakoryn','cr-198-drakoryn']){
+  const old={...state,story:{flags:{regionalHistoryRevealed:true}},storage:[{speciesId:id}]};
+  assert.equal(ctx.dragonAlreadyCaptured(old),true);
+  assert.equal(ctx.dragonEncounterAvailable(old),false);
+  assert.equal(ctx.storyChapterStatus('legendaryDragon',old),'complete');
+  assert.equal(ctx.storyChapterStatus('legendaryDragon',JSON.parse(JSON.stringify(old))),'complete');
+ }
+ const sp=species.find(p=>p.speciesId==='cr-209-drakoryn');
+ assert.deepEqual(sp.types,['Dragon','Fire']);
+ assert.equal(sp.habitats[0].areaId,'legendaryReserveC');
+ assert.equal(sp.habitats[0].maxLevel,29);
+});
+test('Phase 14.6 encounter retries until captured and uses the wild battle path',()=>{
+ let starts=[];
+ const state={introComplete:true,badges:8,area:'legendaryReserveC',story:{flags:{regionalHistoryRevealed:true}},party:[],storage:[]};
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:state,battle:null,speciesDataReady:true,moveDataReady:true,speciesRegistry:new Map(species.map(p=>[p.speciesId,p])),firstAlive:()=>0,critter:(id,level)=>({speciesId:id,level}),startBattle:b=>starts.push(b)});
+ ctx.startDragonEncounter();ctx.startDragonEncounter();
+ assert.equal(starts.length,2);assert.equal(starts[0].kind,'wild');assert.equal(starts[0].enemies[0].speciesId,'cr-209-drakoryn');
+ state.storage.push({speciesId:'cr-209-drakoryn'});
+ ctx.startDragonEncounter();assert.equal(starts.length,2);
 });
