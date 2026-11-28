@@ -59,6 +59,8 @@ const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant',
 const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
  const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
+ if(id==='eclipse-hq-commander')return 21;
+ if(id.startsWith('eclipse-hq-'))return 26;
  if(id==='eclipse-marsh-contact'||id.startsWith('eclipse-op-'))return 25;
  if(id==='paragon-1')return 21;
  if(id==='paragon-2')return 19;
@@ -812,6 +814,7 @@ const TOWN_ROOMS=Object.freeze({
  gardenHouse:{parent:'garden',name:'Garden Residence',kind:'home',door:[7,23]},
  gardenShop:{parent:'garden',name:'Garden Town Critter Shop',kind:'shop',door:[25,23]},
  championshipHall:{parent:'leagueGrounds',name:'Championship Hall',kind:'championship',door:[20,10]},
+ eclipseHQ:{parent:'eclipseSite',name:'Team Eclipse Headquarters',kind:'eclipse',door:[12,9]},
  ...settlementRoomDefinitions()
 });
 const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)||Object.hasOwn(TOWN_ROOMS,area);
@@ -926,7 +929,7 @@ function populateGymChallenge(area){
 }
 function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;if(kind==='championship')return {w:38,h:34};return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:kind==='gym'?{w:30,h:24}:{w:34,h:26}}
 function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
-function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;if(room.kind==='championship'&&!leagueEligible())return notifyWorld('Earn all eight regional Gym badges to enter the Championship Hall.');if(room.kind==='gym'||room.kind==='championship'){recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
+function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;if(room.kind==='championship'&&!leagueEligible())return notifyWorld('Earn all eight regional Gym badges to enter the Championship Hall.');if(room.kind==='eclipse'&&!eclipseHQAvailable(s))return notifyWorld('Complete the three field operations and all three legendary chapters before entering.');if(room.kind==='gym'||room.kind==='championship'||room.kind==='eclipse'){recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
 function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
 function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
 
@@ -1413,6 +1416,7 @@ function furnishInterior(area){
 }
 function inspectInterior(o){
  startPropAnimation(o.id,interactivePropBase(o));
+ if(o.id==='eclipse-shutdown-terminal')return eclipseShutdownDialogue();
  if(o.id==='championship-reception'||o.id==='championship-notice'||o.id==='hall-of-fame-terminal')return championshipReception();
  if(o.action?.startsWith('harbor-valve-'))return operateHarborValve(o.action.slice(13));
  if(o.action?.startsWith('marsh-bridge-'))return operateMarshBridge(o.action.slice(13));
@@ -2068,6 +2072,7 @@ function migrate(){
  s.questCaptureCounts=s.questCaptureCounts&&typeof s.questCaptureCounts==='object'&&!Array.isArray(s.questCaptureCounts)?s.questCaptureCounts:{};
  s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'&&!Array.isArray(s.earlyJourney)?s.earlyJourney:{};
  normalizeStoryState();
+ if(s.area==='eclipseHQ'&&!eclipseHQAvailable(s)){s.area='eclipseSite';s.x=12;s.y=10;}
  normalizeTrainerProgress();ensureHallOfFame(s);
  if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
  if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
@@ -2433,6 +2438,7 @@ function build(preview=false){
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  if(REGIONAL_EXPANSION[s.area])buildExpansionArea(s.area);
  else if(s.area==='championshipHall'){buildChampionshipHall();}
+ else if(s.area==='eclipseHQ'){buildEclipseHQ();}
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
@@ -3334,6 +3340,7 @@ function drawLeagueFeature(x,y,a,b,kind){
  queueSolarShadow(x+S/2,y+S,S,kind==='pillar'?28:15);
 }
 function drawTile(t,x,y,a,b){
+ if(s.area==='eclipseSite'&&t===T.door&&a===12&&b===9){ctx.fillStyle='#38434b';ctx.fillRect(x,y,S,S);ctx.fillStyle='#78848b';ctx.fillRect(x+2,y+2,S-4,3);ctx.fillRect(x+2,y+2,3,S-2);ctx.fillRect(x+S-5,y+2,3,S-2);ctx.fillStyle='#a8c4ad';ctx.fillRect(x+S-9,y+S/2,4,5);return;}
  if(s.area==='leagueGrounds'&&t===T.door&&a===20&&b===10){ctx.fillStyle='#514b40';ctx.fillRect(x,y,S,S);ctx.fillStyle='#cdb785';ctx.fillRect(x,y,3,S);ctx.fillRect(x+S-3,y,3,S);ctx.fillRect(x,y,S,3);ctx.fillStyle='#bfa66b';ctx.fillRect(x+S/2-2,y+S*.55,4,5);return;}
  if(s.area==='leagueGrounds'&&(t===T.roof||t===T.rock)){const feature=leagueFeature(a,b);if(feature){drawLeagueFeature(x,y,a,b,feature);return;}}
  if(s.area==='victoryRoad'&&t===T.rock&&victoryRidgeCell(a,b,W,H)){drawCanyonCliff(x,y,a,b);return;}
@@ -3959,6 +3966,7 @@ function drawChampionshipHall(ox,oy){
 }
 function drawInteriorDetails(ox,oy,viewW,viewH){
  if(s.area==='championshipHall')return drawChampionshipHall(ox,oy);
+ if(s.area==='eclipseHQ')return drawEclipseHQ(ox,oy);
  if(!isInterior(s.area))return;
  if(TOWN_ROOMS[s.area]?.kind==='gym')return drawExpansionGym(ox,oy,viewW,viewH);
  if(shopInterior(s.area))return drawShopInterior(ox,oy,viewW,viewH);
@@ -5414,6 +5422,30 @@ function championshipHallGeometry(state=s){
  rect(17,11,4,21,T.path);
  rect(2,25,W-4,7,T.path);put(Math.floor(W/2),H-1,T.door);
 }
+function eclipseHQGeometry(state=s){
+ borders(T.wall);rect(1,4,W-2,H-5,T.stone);
+ for(const y of [9,16]){rect(1,y,W-2,1,T.wall);const prev=y===16?'eclipse-hq-guard':'eclipse-hq-research';if(state.defeated?.[prev]===true)rect(16,y,3,1,T.path);}
+ rect(16,17,3,H-18,T.path);put(...roomExit('eclipseHQ'),T.door);
+}
+function buildEclipseHQ(){
+ eclipseHQGeometry();
+ const prop=(id,x,y,w,h,title,art)=>{const o=addInteriorObject(id,x,y,w,h,'terminal',title,[title]);o.art=art;};
+ for(const [i,y] of [6,12,19].entries()){
+  prop('eclipse-console-'+i,5,y,2,1,'Research equipment','critter-center-diagnostic-terminal-015');
+  prop('eclipse-records-'+i,25,y,2,1,'Research records','critter-center-diagnostic-terminal-015');
+ }
+ prop('eclipse-shutdown-terminal',20,6,1,1,'Resonance control terminal','critter-center-diagnostic-terminal-015');
+ for(const q of ECLIPSE_HQ_OPPONENTS)npc(q.x,q.y,q.lines,'site-attendant',q.id);
+}
+function drawEclipseHQ(ox,oy){
+ const box=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x*S-ox,y*S-oy,w*S,h*S);};
+ ctx.save();box(0,0,W,H,'#65737a');
+ for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){const t=tiles[y][x];box(x,y,1,1,t===T.wall?'#343d47':t===T.path?'#819094':(x+y)%2?'#64737b':'#6b7980');}
+ connectedInteriorWalls(ox,oy,'#343d47','#9da6a8',roomExit('eclipseHQ')[0]);
+ for(const o of interiorObjects)if(!drawInteriorAsset(s.area,o,o.x*S-ox,o.y*S-oy,o.w*S,o.h*S)){box(o.x,o.y,o.w,o.h,'#303f4a');box(o.x+.2,o.y+.1,.6,.4,'#9db3a7');}
+ ctx.fillStyle='#e2e4e5';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText(storyFlag('eclipseResolved')?'FACILITY OFFLINE':'ECLIPSE RESEARCH',17*S-ox,2*S-oy);
+ ctx.restore();
+}
 function buildChampionshipHall(){
  championshipHallGeometry();
  const prop=(id,x,y,w,h,kind,title,desc,art)=>{const o=addInteriorObject(id,x,y,w,h,kind,title,[desc]);o.art=art;};
@@ -6008,7 +6040,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(p.id==='legendaryReserveB-attendant-12')return beastObserverDialogue();if(p.id==='beast-sanctuary-encounter')return beastEncounterDialogue();if(p.id==='legendaryReserveA-attendant-12')return primordialObserverDialogue();if(p.id==='primordial-sanctuary-encounter')return primordialEncounterDialogue();if(p.id==='legendaryReserveC-attendant-12')return dragonObserverDialogue();if(p.id==='dragon-sanctuary-encounter')return dragonEncounterDialogue();if(ECLIPSE_OPERATIONS.some(q=>q.id===p.id))return eclipseOperationDialogue(p.id);if(ECLIPSE_INTRO_SITES.some(q=>q.id===p.id)&&eclipseIntroAvailable())return eclipseContactDialogue(p.id);if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(ECLIPSE_HQ_OPPONENTS.some(q=>q.id===p.id))return eclipseHQOpponentDialogue(p.id);if(p.id==='eclipseSite-attendant-12'&&eclipseHQAvailable(s))return eclipseHQEntranceDialogue();if(p.id==='legendaryReserveB-attendant-12')return beastObserverDialogue();if(p.id==='beast-sanctuary-encounter')return beastEncounterDialogue();if(p.id==='legendaryReserveA-attendant-12')return primordialObserverDialogue();if(p.id==='primordial-sanctuary-encounter')return primordialEncounterDialogue();if(p.id==='legendaryReserveC-attendant-12')return dragonObserverDialogue();if(p.id==='dragon-sanctuary-encounter')return dragonEncounterDialogue();if(ECLIPSE_OPERATIONS.some(q=>q.id===p.id))return eclipseOperationDialogue(p.id);if(ECLIPSE_INTRO_SITES.some(q=>q.id===p.id)&&eclipseIntroAvailable())return eclipseContactDialogue(p.id);if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6590,7 +6622,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.95</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.96</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -6899,7 +6931,7 @@ function indexRecords(){
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchSectionTitle">Landmark discoveries</div>'
    +allExplorationFinds().map(o=>'<div class="watchRow"><span>'+escapeHtml(s.discoveries?.[o.id]?o.title:'Undiscovered location')+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
-   +storyMilestonePanel()+regionalHistoryPanel()+dragonStoryPanel()+primordialStoryPanel()+beastStoryPanel()+hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
+   +storyMilestonePanel()+regionalHistoryPanel()+dragonStoryPanel()+primordialStoryPanel()+beastStoryPanel()+eclipseHQPanel()+hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
@@ -7165,7 +7197,7 @@ const STORY_CHAPTERS=Object.freeze([
  {id:'legendaryDragon',title:'Dragon legend',requires:['regionalHistoryRevealed'],milestone:'dragonStoryComplete',active:true},
  {id:'legendaryPrimordial',title:'Primordial legend',requires:['regionalHistoryRevealed'],milestone:'primordialStoryComplete',active:true},
  {id:'legendaryBeast',title:'Beast legend',requires:['regionalHistoryRevealed'],milestone:'beastStoryComplete',active:true},
- {id:'eclipseFinale',title:'Team Eclipse confrontation',requires:['eclipseOperationsComplete','dragonStoryComplete','primordialStoryComplete','beastStoryComplete'],milestone:'eclipseResolved',active:false},
+ {id:'eclipseFinale',title:'Team Eclipse confrontation',requires:['eclipseOperationsComplete','dragonStoryComplete','primordialStoryComplete','beastStoryComplete'],milestone:'eclipseResolved',active:true},
  {id:'resolution',title:'Story resolution',requires:['eclipseResolved'],milestone:'storyResolved',active:false}
 ]);
 // Inactive chapters are reserved integration points, not playable quests.
@@ -7190,6 +7222,7 @@ function normalizeStoryState(state=s){
  if(state.paragonProgress?.championDefeated===true&&flags.paragonComplete){flags.championVictory=true;flags.rivalJourneyComplete=true;}
  for(const operation of ECLIPSE_OPERATIONS)if(flags.eclipseIntroduced&&state.badges>=operation.badges&&state.defeated?.[operation.id]===true)flags[operation.id+'Won']=true;
  if(flags.eclipseIntroduced&&ECLIPSE_OPERATIONS.every(q=>flags[q.id+'Won']&&state.badges>=q.badges))flags.eclipseOperationsComplete=true;
+ if(eclipseHQPrerequisites(state)){for(const q of ECLIPSE_HQ_OPPONENTS){if(state.defeated?.[q.id]!==true)break;flags[q.id+'Won']=true;}if(ECLIPSE_HQ_OPPONENTS.every(q=>flags[q.id+'Won'])&&flags.eclipseDeviceShutdown)flags.eclipseResolved=true;}
  for(const encounter of RIVAL_JOURNEY)if(state.defeated?.[encounter.id]===true)flags[encounter.id+'Won']=true;
  if(state.paragonProgress?.ceremonyComplete===true&&flags.championVictory)flags.hallOfFame=true;
  return state.story;
@@ -7208,7 +7241,7 @@ function setStoryFlag(id,state){
  normalizeStoryState(state);
  if(storyFlag(id,state))return false;
  const chapter=STORY_CHAPTERS.find(q=>q.milestone===id);
- if(id==='regionalHistoryRevealed'||id==='dragonStoryComplete'||id==='dragonCaptured'||id==='primordialStoryComplete'||id==='primordialCaptured'||id==='beastStoryComplete'||id==='beastCaptured')return false; // Derived only from both authenticated records.
+ if(id==='regionalHistoryRevealed'||id==='dragonStoryComplete'||id==='dragonCaptured'||id==='primordialStoryComplete'||id==='primordialCaptured'||id==='beastStoryComplete'||id==='beastCaptured'||id==='eclipseResolved'||id==='eclipseDeviceShutdown')return false; // Derived only from both authenticated records.
  if(chapter&&storyChapterStatus(chapter.id,state)!=='available')return false;
  state.story.flags[id]=true;return true;
 }
@@ -7224,7 +7257,7 @@ function storyScene(id,lines,callback){
 }
 function storyMilestonePanel(state=s){
  normalizeStoryState(state);
- const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor operation disrupted','eclipse-op-harborWon'],['Canyon operation disrupted','eclipse-op-canyonWon'],['Highland operation disrupted','eclipse-op-highlandWon'],['Team Eclipse operations investigated','eclipseOperationsComplete'],['Founders Tablet translated','history-ruins-tablet'],['Keepers Tablet translated','history-archive-tablet'],['Ancient regional history recovered','regionalHistoryRevealed'],['Dragon legend investigated','dragonStoryComplete'],['Primordial legend investigated','primordialStoryComplete'],['Beast legend investigated','beastStoryComplete'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
+ const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor operation disrupted','eclipse-op-harborWon'],['Canyon operation disrupted','eclipse-op-canyonWon'],['Highland operation disrupted','eclipse-op-highlandWon'],['Team Eclipse operations investigated','eclipseOperationsComplete'],['Founders Tablet translated','history-ruins-tablet'],['Keepers Tablet translated','history-archive-tablet'],['Ancient regional history recovered','regionalHistoryRevealed'],['Dragon legend investigated','dragonStoryComplete'],['Primordial legend investigated','primordialStoryComplete'],['Beast legend investigated','beastStoryComplete'],['Headquarters security defeated','eclipse-hq-guardWon'],['Research division defeated','eclipse-hq-researchWon'],['Eclipse commander defeated','eclipse-hq-commanderWon'],['Team Eclipse operation stopped','eclipseResolved'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
  const completed=rows.filter(([,id])=>storyFlag(id,state));
  return '<div class="watchSectionTitle">Journey history</div>'+(completed.length?completed.map(([label])=>'<div class="watchRow"><span>'+label+'</span><span>Recorded</span></div>').join(''):'<div class="watchReadOnly">Your completed story milestones will appear here.</div>');
 }
@@ -7411,6 +7444,53 @@ function beastStoryPanel(state=s){
  const description=beastAlreadyCaptured(state)?'Feralune is registered. The Beast legend is complete.':'Visit the Secluded Wetland Sanctuary south of Wetland Settlement. Speak with the observer and approach Feralune. The normal Capture Beam is used.';
  return '<div class="watchSectionTitle">Beast legend</div><div class="watchToolCard"><strong>Feralune · Beast / Shadow</strong><p>'+description+'</p></div>';
 }
+// Phase 14.9: headquarters, sequential battles, and a durable shutdown.
+const ECLIPSE_HQ_OPPONENTS=Object.freeze([
+ {id:'eclipse-hq-guard',name:'Eclipse Security Captain',x:14,y:19,award:900,team:[['cr-164-circuitip',55],['cr-182-quartzling',56],['cr-188-arcquill',57]],lines:['Security captain: The survey records were never meant to leave this facility.','You will not reach the research division.'],after:'The security captain steps aside. The research division is accessible.'},
+ {id:'eclipse-hq-research',name:'Eclipse Research Chief',x:14,y:12,award:1100,team:[['cr-167-clairling',57],['cr-169-mesmeric',58],['cr-174-psychelet',59],['cr-195-veilwhisk',60]],lines:['Research chief: We built a resonance device from our sanctuary surveys. We believed its readings could help predict another regional upheaval.','The commander has ignored every warning about forcing the signal. I cannot allow you to interfere with our work.'],after:'The chief steps away from the controls. The command chamber is accessible.'},
+ {id:'eclipse-hq-commander',name:'Eclipse Commander',x:14,y:6,award:1600,team:[['cr-188-arcquill',60],['cr-190-hailhorn',61],['cr-174-psychelet',62],['cr-183-rockoon',62],['cr-195-veilwhisk',63],['cr-196-darklilt',64]],lines:['Commander: The ancient upheaval scattered entire communities. I will not wait helplessly for history to repeat itself.','With the resonance device I intended to control the forces we detected at the sanctuaries. The risks were acceptable to me.','You protected the three legendary Critters from our interference. If you believe my approach is wrong, prove it in battle.'],after:'The commander yields. The resonance device remains active. Shut it down at the control terminal.'}
+]);
+function eclipseHQPrerequisites(state=s){
+ return state.introComplete===true&&['eclipseOperationsComplete','dragonStoryComplete','primordialStoryComplete','beastStoryComplete'].every(id=>storyFlag(id,state));
+}
+function eclipseHQAvailable(state=s){normalizeStoryState(state);return eclipseHQPrerequisites(state);}
+function eclipseHQOpponentReady(id,state=s){
+ const i=ECLIPSE_HQ_OPPONENTS.findIndex(q=>q.id===id);
+ return i>=0&&eclipseHQPrerequisites(state)&&state.defeated?.[id]!==true&&ECLIPSE_HQ_OPPONENTS.slice(0,i).every(q=>state.defeated?.[q.id]===true);
+}
+function eclipseHQEntranceDialogue(){
+ return say(storyFlag('eclipseResolved')?['Survey worker: The facility is secure and the device has been shut down.']:['Survey worker: Your recovered field reports and sanctuary records establish the connection.','The research facility entrance is on the northwestern building. Be careful inside.']);
+}
+function eclipseHQOpponentDialogue(id){
+ const q=ECLIPSE_HQ_OPPONENTS.find(p=>p.id===id);
+ if(!q||s.area!=='eclipseHQ')return;
+ if(s.defeated?.[id])return say([q.after]);
+ if(!eclipseHQOpponentReady(id))return say(['Access is restricted.']);
+ return say(q.lines,()=>startEclipseHQBattle(id));
+}
+function startEclipseHQBattle(id){
+ const q=ECLIPSE_HQ_OPPONENTS.find(p=>p.id===id);
+ if(!q||s.area!=='eclipseHQ'||!eclipseHQOpponentReady(id)||battle)return;
+ if(!speciesDataReady||!moveDataReady||q.team.some(([id])=>!speciesRegistry.has(id)))return notifyWorld('Critter data is loading. Try again shortly.');
+ if(firstAlive()<0)return notifyWorld('Heal your party before challenging Team Eclipse.');
+ startBattle({kind:'trainer',id,name:q.name,award:q.award,enemies:q.team.map(([id,level])=>critter(id,level)),eclipseHQ:true},q.name+' challenges you!');
+}
+function completeEclipseShutdown(state){
+ if(!eclipseHQPrerequisites(state)||state.area!=='eclipseHQ'||!ECLIPSE_HQ_OPPONENTS.every(q=>state.defeated?.[q.id]===true)||storyFlag('eclipseDeviceShutdown',state))return false;
+ normalizeStoryState(state);state.story.flags.eclipseDeviceShutdown=true;normalizeStoryState(state);return true;
+}
+function eclipseShutdownDialogue(){
+ if(storyFlag('eclipseDeviceShutdown'))return say(['The resonance device is offline. The sanctuary readings have stabilized.']);
+ if(!ECLIPSE_HQ_OPPONENTS.every(q=>s.defeated?.[q.id]===true))return say(['The terminal is locked by the command division.']);
+ const owner=s;
+ return say(['You inspect the resonance device. Its forced signal is disrupting the sanctuary readings.','You disengage the amplification controls and preserve the research records.','The device powers down. Team Eclipse’s operation has been stopped.'],()=>{if(s!==owner||!completeEclipseShutdown(s))return;save();build();});
+}
+function eclipseHQPanel(state=s){
+ if(!storyFlag('eclipseIntroduced',state))return '';
+ const ready=eclipseHQPrerequisites(state),done=storyFlag('eclipseResolved',state);
+ const text=done?'Resonance device shut down. Headquarters operation stopped.':ready?'Enter headquarters south of Canyon Pass. Defeat the three divisions and shut down the device.':'Complete the three field operations and all three legendary chapters to gain access.';
+ return '<div class="watchSectionTitle">Team Eclipse headquarters</div><div class="watchToolCard"><p>'+text+'</p>'+ECLIPSE_HQ_OPPONENTS.map(q=>'<div class="watchRow"><span>'+q.name+'</span><span>'+(state.defeated?.[q.id]?'Defeated':'Pending')+'</span></div>').join('')+'</div>';
+}
 function researcherStoryDialogue(){
  if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
  if(!s.introComplete)return say(['Researcher: Let us finish your introductory training match.'],()=>startTrainer('tutorial'));
@@ -7428,6 +7508,7 @@ function researcherStoryDialogue(){
  if(storyFlag('regionalHistoryRevealed')&&!storyFlag('dragonBriefed'))return storyScene('dragonBriefed',['Researcher: The Keepers mention a Dragon and Fire Critter called Drakoryn. A trail observer at the Remote Volcanic Sanctuary may know more.','Travel south from Volcanic Settlement. The sanctuary is protected; approach the Critter with care.']);
  if(storyFlag('regionalHistoryRevealed')&&!storyFlag('primordialBriefed'))return storyScene('primordialBriefed',['Researcher: The second lineage is the Primordial Critter Eonolith. Coastal records describe a figure beside the stone waymarkers after the upheaval.','Visit the Remote Coastal Sanctuary south of Harbor Settlement. Its observer may have more information.']);
  if(storyFlag('regionalHistoryRevealed')&&!storyFlag('beastBriefed'))return storyScene('beastBriefed',['Researcher: The third lineage is the Beast Critter Feralune. The Keepers recorded sightings near the wetland paths after the upheaval.','Visit the Secluded Wetland Sanctuary south of Wetland Settlement. The observer there may know more.']);
+ if(eclipseHQAvailable(s)&&!storyFlag('eclipseResolved')&&!storyFlag('eclipseHQBriefed'))return storyScene('eclipseHQBriefed',['Researcher: Comparing the three sanctuary records with the recovered field dispatches identifies the facility south of Canyon Pass as Team Eclipse’s headquarters.','Investigate the facility and stop whatever is disrupting the sanctuary readings.']);
  if(storyFlag('eclipseIntroduced')){
   normalizeStoryState(s);
   const remaining=ECLIPSE_OPERATIONS.filter(q=>!storyFlag(q.id+'Won'));
@@ -7625,7 +7706,7 @@ function startTrainer(id){
 const BATTLE_AREAS=['village','route1','town','route2','forest','route3','cave','garden','gym','lab','home','neighbor'];
 const BATTLE_AREA_LABELS={village:'Starting Village',route1:'Rice Fields',town:'First Town',route2:'Bamboo Trail',forest:'Hidden Forest',route3:'Mountain Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home'};
 function battleEnvironment(){
- const sourceArea=s.area==='championshipHall'?'gym':TOWN_ROOMS[s.area]?.kind==='gym'?TOWN_ROOMS[s.area].parent:SECRET_AREAS[s.area]?.parent||s.area;
+ const sourceArea=s.area==='eclipseHQ'?'lab':s.area==='championshipHall'?'gym':TOWN_ROOMS[s.area]?.kind==='gym'?TOWN_ROOMS[s.area].parent:SECRET_AREAS[s.area]?.parent||s.area;
  const area=BATTLE_AREAS.includes(sourceArea)||REGIONAL_EXPANSION[sourceArea]?sourceArea:'route1';
  const tile=tiles?.[s.y]?.[s.x];
  const terrain=tile===T.rice?'rice':tile===T.tall?'grass':tile===T.stone?'stone':tile===T.flower?'flowers':tile===T.path?'path':tile===T.water?'water':'field';
@@ -8268,6 +8349,8 @@ function predictedMoveDamage(foe,target,move,enemyIndex,allyIndex){
 }
 // Tactics differ by trainer role; all actions still use learned moves and PP.
 function trainerTactics(){
+ if(battle.id==='eclipse-hq-commander')return {support:1.3,setup:1.25,noise:.3,conserve:1.5,adaptive:true};
+ if(battle.id==='eclipse-hq-research')return {support:1.45,setup:1.3,noise:.6,conserve:1.2,control:true};
  if(battle.id==='paragon-1')return {support:1.55,setup:1.4,noise:.55,conserve:2,defensive:true};
  if(battle.id==='paragon-2')return {support:1.05,setup:1.2,noise:.35,conserve:.6,aggressive:true};
  if(battle.id==='paragon-3')return {support:1.45,setup:1.35,noise:.4,conserve:1.2,control:true};
@@ -8614,6 +8697,7 @@ function endBattle(won,message,defeated){
  else if(b.paragon&&!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));recoverParagonDefeat();message+=' Previous Paragon victories are preserved.';}
  else if(defeated&&won){s.money+=b.award||0;if(b.id==='quest-garden'&&s.sideQuests?.['garden-challenge']?.status==='active')s.sideQuests['garden-challenge'].won=true;else if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   if(b.eclipseOperation){normalizeStoryState(s);message+=' Field report recorded in your Critter Index.';}
+  if(b.eclipseHQ){normalizeStoryState(s);build();message+=' Headquarters progress recorded.';}
   const g=GYM_CHALLENGES.find(g=>g.active&&g.leaderId===b.id);
   if(g&&awardGymBadge(g)){message+=g.number===1?' You earned your first badge! The Critter Index vegetation cutter is now unlocked.':' You earned the '+(g.badgeName||'regional badge '+g.number)+'!';}
  }
@@ -8622,7 +8706,7 @@ function endBattle(won,message,defeated){
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
   ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">INDEX</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
  save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
- $('battleDone').onclick=()=>{close();if(b.beastLegend&&won){if(beastAlreadyCaptured(s)){build();return say(['Feralune is registered in your Critter Index. The Beast legend is complete.']);}return say(['Feralune retreats into the reeds. You may approach it again when you are ready.']);}if(b.primordialLegend&&won){if(primordialAlreadyCaptured(s)){build();return say(['Eonolith is registered in your Critter Index. The Primordial legend is complete.']);}return say(['Eonolith returns to the stone platform. You may approach it again when you are ready.']);}if(b.dragonLegend&&won){if(dragonAlreadyCaptured(s)){build();return say(['Drakoryn is registered in your Critter Index. The Dragon legend is complete.']);}return say(['Drakoryn withdraws to rest. You may approach it again when you are ready.']);}if(b.champion&&won&&defeated)return championCeremony();if(b.eclipseOperation&&won&&defeated)return say([ECLIPSE_OPERATIONS.find(q=>q.id===b.id).after]);if(b.rivalJourney&&won&&defeated)return say([RIVAL_JOURNEY.find(q=>q.id===b.id).after]);if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
+ $('battleDone').onclick=()=>{close();if(b.eclipseHQ&&won&&defeated)return say([ECLIPSE_HQ_OPPONENTS.find(q=>q.id===b.id).after]);if(b.beastLegend&&won){if(beastAlreadyCaptured(s)){build();return say(['Feralune is registered in your Critter Index. The Beast legend is complete.']);}return say(['Feralune retreats into the reeds. You may approach it again when you are ready.']);}if(b.primordialLegend&&won){if(primordialAlreadyCaptured(s)){build();return say(['Eonolith is registered in your Critter Index. The Primordial legend is complete.']);}return say(['Eonolith returns to the stone platform. You may approach it again when you are ready.']);}if(b.dragonLegend&&won){if(dragonAlreadyCaptured(s)){build();return say(['Drakoryn is registered in your Critter Index. The Dragon legend is complete.']);}return say(['Drakoryn withdraws to rest. You may approach it again when you are ready.']);}if(b.champion&&won&&defeated)return championCeremony();if(b.eclipseOperation&&won&&defeated)return say([ECLIPSE_OPERATIONS.find(q=>q.id===b.id).after]);if(b.rivalJourney&&won&&defeated)return say([RIVAL_JOURNEY.find(q=>q.id===b.id).after]);if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
  const wasParagon=battle?.paragon===true,wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
