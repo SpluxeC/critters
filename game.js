@@ -1412,7 +1412,7 @@ function furnishInterior(area){
 }
 function inspectInterior(o){
  startPropAnimation(o.id,interactivePropBase(o));
- if(o.id==='championship-reception'||o.id==='championship-notice')return openParagonRegistration();
+ if(o.id==='championship-reception'||o.id==='championship-notice'||o.id==='hall-of-fame-terminal')return championshipReception();
  if(o.action?.startsWith('harbor-valve-'))return operateHarborValve(o.action.slice(13));
  if(o.action?.startsWith('marsh-bridge-'))return operateMarshBridge(o.action.slice(13));
  if(o.action?.startsWith('canyon-weight-'))return operateCanyonWeight(o.action.slice(14));
@@ -2065,7 +2065,7 @@ function migrate(){
  s.questCaptureCounts=s.questCaptureCounts&&typeof s.questCaptureCounts==='object'&&!Array.isArray(s.questCaptureCounts)?s.questCaptureCounts:{};
  s.earlyJourney=s.earlyJourney&&typeof s.earlyJourney==='object'&&!Array.isArray(s.earlyJourney)?s.earlyJourney:{};
  normalizeStoryState();
- normalizeTrainerProgress();
+ normalizeTrainerProgress();ensureHallOfFame(s);
  if(s.captureLog?.some(q=>q.area==='route1'&&q.speciesId))s.earlyJourney.firstCapture=true;
  if(s.collection?.seen&&Object.values(s.collection.seen).some(q=>q&&q.firstArea==='route1'))s.earlyJourney.firstEncounter=true;
  if(s.starter&&!s.rival)s.rival={Rock:'Water',Water:'Electric',Electric:'Rock'}[s.starter];
@@ -3946,6 +3946,10 @@ function drawChampionshipHall(ox,oy){
  ctx.fillStyle='#ead9ad';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('CHAMPION',X(19),Y(4.65));
  box(18.1,5.1,1.8,4.8,'#9a8052');box(18.2,5.2,1.6,4.6,'#485361');
  ctx.strokeStyle='#e5c68b';ctx.strokeRect(X(18.25),Y(5.25),1.5*S,4.5*S);ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
+ if(championRecognized(s)){
+  box(26.2,27.1,2.6,1.2,'#465660');box(26.35,27.25,2.3,.9,'#c8b17c');
+  ctx.fillStyle='#303d44';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('HALL OF FAME',X(27.5),Y(27.85));
+ }
  for(const x of [3,10,26,33])drawUploadedFit('wall-banner',X(x),Y(.5),2*S,2*S);
  for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
  ctx.restore();
@@ -5301,10 +5305,60 @@ function championBattleReady(state){
 }
 function recordChampionWin(state){
  if(!championBattleReady(state))return false;
- state.paragonProgress.championDefeated=true;return true;
+ state.paragonProgress.championDefeated=true;
+ state.paragonProgress.hallOfFame=championshipSnapshot(state,false);
+ return true;
+}
+// Phase 13.8: immutable-by-design historical record, separate from the live party.
+function championshipSnapshot(state,legacy=false){
+ const party=legacy?[]:(Array.isArray(state.party)?state.party:[]).filter(p=>p&&!(p.isEgg===true&&p.egg)).slice(0,8).map(p=>({
+  speciesId:typeof p.speciesId==='string'?p.speciesId:null,
+  name:String(p.name||p.type||'Critter'),types:(Array.isArray(p.types)?p.types:[p.type]).filter(t=>typeof t==='string').slice(0,2),
+  level:Math.max(1,Math.min(100,Math.floor(Number(p.level)||1)))
+ }));
+ return {version:1,trainer:String(state.name||'Trainer'),day:legacy?null:Math.max(1,Math.floor(Number(state.worldDay)||1)),starter:state.starter||null,party,legacy};
+}
+function championRecognized(state){
+ return paragonStatus(state).championEligible&&state.paragonProgress.championDefeated===true;
+}
+function ensureHallOfFame(state){
+ if(!championRecognized(state))return null;
+ const p=state.paragonProgress;
+ if(!p.hallOfFame||!Array.isArray(p.hallOfFame.party))p.hallOfFame=championshipSnapshot(state,true);
+ return p.hallOfFame;
+}
+function completeChampionCeremony(state){
+ if(!ensureHallOfFame(state)||state.paragonProgress.ceremonyComplete===true)return false;
+ const trainer=state.trainerProgress||(state.trainerProgress={});
+ if(!Array.isArray(trainer.outfits))trainer.outfits=['original'];
+ if(!trainer.outfits.includes('champion'))trainer.outfits.push('champion');
+ state.paragonProgress.ceremonyComplete=true;return true;
+}
+function hallOfFamePanel(state=s){
+ const h=ensureHallOfFame(state);
+ if(!h)return '<div class="watchReadOnly">Defeat the Champion to enter the Hall of Fame.</div>';
+ return '<div class="watchSectionTitle">Hall of Fame</div><div class="watchToolCard"><strong>Regional Champion · '+escapeHtml(h.trainer)+'</strong><p>'+(h.day===null?'Victory recorded before the Hall of Fame update.':'Inducted · Day '+Number(h.day))+'</p></div>'+
+ (h.party.length?h.party.map((p,i)=>'<div class="watchRow"><span>'+critterSpriteTag(p,'watchCritterMini')+escapeHtml(p.name)+' <small>Lv '+Number(p.level)+' · '+escapeHtml(p.types.join(' / '))+'</small></span><span>Slot '+(i+1)+'</span></div>').join(''):'<div class="watchReadOnly">Original winning party was not recorded in this older save.</div>')+
+ '<div class="watchReadOnly">'+(state.paragonProgress.ceremonyComplete?'Champion attire unlocked in Wardrobe.':'Victory ceremony available at Championship Hall.')+'</div>';
+}
+function openHallOfFame(){
+ open('Hall of Fame',hallOfFamePanel(s)+'<button class="btn primary" id="hallFameClose">Continue</button>');
+ $('hallFameClose').onclick=close;
+}
+function championCeremony(){
+ if(!championRecognized(s))return notifyWorld('Defeat the Champion first.');
+ if(s.paragonProgress.ceremonyComplete)return openHallOfFame();
+ return say(['Rival: You earned this victory. I am proud of how far we have both come.','Warden Veyra: Your patience and resolve have carried you here.','Marshal Kael: Your courage held strong under pressure.','Sage Nyra: You learned to read the field and make every turn count.','Arbiter Soren: You adapted when it mattered most.','Championship attendant: Your victory is officially recognized. Welcome to the Hall of Fame, Champion.'],()=>{
+  if(completeChampionCeremony(s)){save();build();}
+  openHallOfFame();
+ });
+}
+function championshipReception(){
+ if(championRecognized(s))return s.paragonProgress.ceremonyComplete?openHallOfFame():championCeremony();
+ return openParagonRegistration();
 }
 function championDialogue(){
- if(s.paragonProgress?.championDefeated)return say(['You earned that victory. Our journey is far from over.']);
+ if(championRecognized(s))return s.paragonProgress.ceremonyComplete?say(['Champion, you earned that victory. Our journey is far from over.']):championCeremony();
  if(!championBattleReady(s))return notifyWorld('Defeat all four members of The Paragon first.');
  return say(['Remember our first match at the laboratory? We have both come a long way.','I kept training with my original partner, just as I promised.','The Paragon tested your skill. Now show me everything you have learned.'],()=>startChampionBattle());
 }
@@ -5357,15 +5411,16 @@ function buildChampionshipHall(){
  const prop=(id,x,y,w,h,kind,title,desc,art)=>{const o=addInteriorObject(id,x,y,w,h,kind,title,[desc]);o.art=art;};
  prop('championship-reception',12,28,3,1,'counter','Registration','Register here to begin The Paragon challenge.','critter-center-reception-counter-002');
  prop('championship-notice',25,28,1,1,'terminal','Championship Directory','Register and clear the four Paragon chambers in order. The Champion arena opens after all four victories.','critter-center-diagnostic-terminal-015');
+ if(championRecognized(s))prop('hall-of-fame-terminal',27,29,1,1,'terminal','Hall of Fame','The regional Champion record is preserved here.','critter-center-diagnostic-terminal-015');
  for(const x of [4,30]){prop('championship-bench-'+x,x,28,3,1,'table','Waiting Bench','A place for challengers to rest.','gym-bench-01');prop('championship-planter-'+x,x,31,1,1,'display','Planter','A carefully maintained plant.','gym-potted-plant-01');}
- npc(13,27,['Welcome to the Championship Hall. Register here to begin.'],'site-attendant','championship-receptionist');
- for(const m of PARAGON_MEMBERS){if(!paragonChamberOpen(m.slot,s))continue;const r=CHAMPIONSHIP_ROOMS[m.slot],x=r.x+Math.floor(r.w/2),y=r.y+2;const cleared=paragonStatus(s).cleared>m.slot;npc(x,y,[cleared?'Your victory is recorded.':m.active?(m.dialogue?.[0]||'Ready for your challenge?'):'This opponent is not yet available.'],'site-attendant',m.id);}
+ npc(13,27,[championRecognized(s)?'Welcome back, Champion. Your achievement is recorded in the Hall of Fame.':'Welcome to the Championship Hall. Register here to begin.'],'site-attendant','championship-receptionist');
+ for(const m of PARAGON_MEMBERS){if(!paragonChamberOpen(m.slot,s))continue;const r=CHAMPIONSHIP_ROOMS[m.slot],x=r.x+Math.floor(r.w/2),y=r.y+2;const cleared=paragonStatus(s).cleared>m.slot;npc(x,y,[cleared?(championRecognized(s)?'Congratulations, Champion. Your place in the Hall of Fame is earned.':'Your victory is recorded.'):m.active?(m.dialogue?.[0]||'Ready for your challenge?'):'This opponent is not yet available.'],'site-attendant',m.id);}
  if(paragonStatus(s).championEligible)npc(19,6,['The final challenge awaits.'],'site-attendant',CHAMPION_ID);
  npc(24,26,['The four members of The Paragon each master a different battle strategy.'],'site-attendant','championship-guide');
 }
 function buildSpecialStorySite(area){
  const plans={
-  leagueGrounds:{kind:'league',actors:[[12,18,'Championship attendant: The hall is open to visitors with all eight badges. Register at reception to begin The Paragon challenge.'],[26,18,'Championship groundskeeper: Follow the central steps to the hall entrance.']]},
+  leagueGrounds:{kind:'league',actors:[[12,18,championRecognized(s)?'Championship attendant: Welcome back, Champion. Your victory is recorded inside the hall.':'Championship attendant: The hall is open to visitors with all eight badges. Register at reception to begin The Paragon challenge.'],[26,18,'Championship groundskeeper: Follow the central steps to the hall entrance.']]},
   eclipseSite:{kind:'facility',actors:[[12,18,'Survey worker: The facility entrance is closed. Please remain on the public grounds.']]},
   legendaryReserveA:{kind:'coast',actors:[[12,18,'Coastal observer: Please leave the sanctuary undisturbed. The shoreline is open for quiet exploration.']]},
   legendaryReserveB:{kind:'marsh',actors:[[12,18,'Wetland observer: Keep to the raised paths around the pools.']]},
@@ -5932,7 +5987,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return openParagonRegistration();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6357,7 +6412,7 @@ const INDEX_TABS=[['clock','Index'],['player','Player'],['encyclopedia','Encyclo
 const INDEX_SECTIONS=[['clock','Critters'],['tools','Tools'],['map','Map']];
 let indexMainSection='clock',settingsSavedMessage=false;
 const PLAYER_INDEX_SECTIONS=[['bag','Bag'],['records','Records'],['trainer','Trainer'],['wardrobe','Wardrobe']];
-const TRAINER_OUTFITS=[{id:'original',name:'Original',color:null},{id:'explorer',name:'Forest Explorer',color:'#54865b'},{id:'researcher',name:'Field Researcher',color:'#577fa8'},{id:'challenger',name:'Gym Challenger',color:'#ad594b'},{id:'veteran',name:'Veteran Traveler',color:'#8a729c'},{id:'caretaker',name:'Community Helper',color:'#c4a05d'}];
+const TRAINER_OUTFITS=[{id:'original',name:'Original',color:null},{id:'explorer',name:'Forest Explorer',color:'#54865b'},{id:'researcher',name:'Field Researcher',color:'#577fa8'},{id:'challenger',name:'Gym Challenger',color:'#ad594b'},{id:'veteran',name:'Veteran Traveler',color:'#8a729c'},{id:'caretaker',name:'Community Helper',color:'#c4a05d'},{id:'champion',name:'Champion Attire',color:'#d5b15b'}];
 const TRAINER_ACHIEVEMENTS=[
  {id:'first-catch',name:'First Capture',goal:1,metric:'captures',credits:50},
  {id:'collector',name:'Field Researcher',goal:10,metric:'unique',credits:150,outfit:'researcher'},
@@ -6382,7 +6437,7 @@ function normalizeTrainerProgress(){
 function trainerMetrics(){return {captures:s.captureCount||0,unique:collectionCounts().captured,finds:allExplorationFinds().filter(o=>s.discoveries?.[o.id]).length,badges:s.badges||0,steps:s.steps||0,quests:SIDE_QUESTS.filter(q=>s.sideQuests?.[q.id]?.status==='complete').length,wins:s.trainerProgress.wins,estate:s.homestead?.owned?1:0}}
 function trainerProfile(){
  const m=trainerMetrics(),p=s.trainerProgress;
- return '<div class="watchSectionTitle">Trainer profile · '+escapeHtml(s.name)+'</div><div class="watchMetrics">'+[['Steps',m.steps],['Trainer wins',m.wins],['Battle losses',p.losses],['Quests',m.quests],['Badges',m.badges],['Discoveries',m.finds]].map(([k,v])=>'<div><strong>'+v.toLocaleString()+'</strong><span>'+k+'</span></div>').join('')+'</div>'+gymProgressPanel()+paragonProgressPanel()+'<div class="watchSectionTitle">Achievements</div>'+TRAINER_ACHIEVEMENTS.map(a=>'<div class="watchToolCard"><strong>'+a.name+'</strong><p>'+Math.min(a.goal,m[a.metric])+' / '+a.goal+' · '+a.metric+' · Reward '+a.credits+' money'+(a.outfit?' + outfit':a.decor?' + home decoration':'')+'</p>'+(p.claimed.includes(a.id)?'<span>Claimed</span>':'<button class="btn" data-achievement="'+a.id+'" '+(m[a.metric]<a.goal?'disabled':'')+'>Claim reward</button>')+'</div>').join('');
+ return '<div class="watchSectionTitle">Trainer profile · '+escapeHtml(s.name)+'</div><div class="watchMetrics">'+[['Steps',m.steps],['Trainer wins',m.wins],['Battle losses',p.losses],['Quests',m.quests],['Badges',m.badges],['Discoveries',m.finds]].map(([k,v])=>'<div><strong>'+v.toLocaleString()+'</strong><span>'+k+'</span></div>').join('')+'</div>'+gymProgressPanel()+paragonProgressPanel()+hallOfFamePanel()+'<div class="watchSectionTitle">Achievements</div>'+TRAINER_ACHIEVEMENTS.map(a=>'<div class="watchToolCard"><strong>'+a.name+'</strong><p>'+Math.min(a.goal,m[a.metric])+' / '+a.goal+' · '+a.metric+' · Reward '+a.credits+' money'+(a.outfit?' + outfit':a.decor?' + home decoration':'')+'</p>'+(p.claimed.includes(a.id)?'<span>Claimed</span>':'<button class="btn" data-achievement="'+a.id+'" '+(m[a.metric]<a.goal?'disabled':'')+'>Claim reward</button>')+'</div>').join('');
 }
 function claimTrainerAchievement(id){
  const a=TRAINER_ACHIEVEMENTS.find(a=>a.id===id),p=s.trainerProgress;
@@ -6394,7 +6449,7 @@ function claimTrainerAchievement(id){
 }
 function trainerWardrobe(){
  const p=s.trainerProgress;
- return '<div class="watchSectionTitle">Collectible outfits</div><p class="muted">Unlock cosmetic travel colors through achievements. No battle bonuses.</p>'+TRAINER_OUTFITS.map(o=>'<div class="watchToolCard"><strong>'+o.name+'</strong><p>'+(o.color?'<span style="display:inline-block;width:18px;height:18px;background:'+o.color+';border:1px solid #eee;border-radius:4px"></span> ':'')+(p.outfit===o.id?'Equipped':p.outfits.includes(o.id)?'Owned':'Achievement reward')+'</p><button class="btn" data-outfit="'+o.id+'" '+(!p.outfits.includes(o.id)||p.outfit===o.id?'disabled':'')+'>Equip</button></div>').join('');
+ return '<div class="watchSectionTitle">Collectible outfits</div><p class="muted">Unlock cosmetic travel colors through achievements. No battle bonuses.</p>'+TRAINER_OUTFITS.map(o=>'<div class="watchToolCard"><strong>'+o.name+'</strong><p>'+(o.color?'<span style="display:inline-block;width:18px;height:18px;background:'+o.color+';border:1px solid #eee;border-radius:4px"></span> ':'')+(p.outfit===o.id?'Equipped':p.outfits.includes(o.id)?'Owned':o.id==='champion'?'Championship ceremony reward':'Achievement reward')+'</p><button class="btn" data-outfit="'+o.id+'" '+(!p.outfits.includes(o.id)||p.outfit===o.id?'disabled':'')+'>Equip</button></div>').join('');
 }
 function trainerOutfitColor(){return TRAINER_OUTFITS.find(o=>o.id===s?.trainerProgress?.outfit)?.color||null}
 
@@ -6514,7 +6569,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.85</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.86</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -6823,7 +6878,7 @@ function indexRecords(){
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchSectionTitle">Landmark discoveries</div>'
    +allExplorationFinds().map(o=>'<div class="watchRow"><span>'+escapeHtml(s.discoveries?.[o.id]?o.title:'Undiscovered location')+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
-   +sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
+   +hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
@@ -8281,7 +8336,7 @@ function endBattle(won,message,defeated){
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
   ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">INDEX</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
  save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
- $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
+ $('battleDone').onclick=()=>{close();if(b.champion&&won&&defeated)return championCeremony();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
  const wasParagon=battle?.paragon===true,wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
