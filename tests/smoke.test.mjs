@@ -1539,7 +1539,7 @@ test('Phase 14.4 Eclipse operations require introduction and badge thresholds, p
  }
  assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'complete');
  assert.equal(ctx.storyChapterStatus('eclipseOperations',JSON.parse(JSON.stringify(state))),'complete');
- assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'reserved');
+ assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'locked');
  assert.equal(ctx.storyChapterStatus('regionalHistory',state),'available');
 });
 test('Phase 14.4 completed operations cannot start another battle and loss leaves progress unchanged',()=>{
@@ -1580,7 +1580,7 @@ test('Phase 14.5 history requires the first badge, both solved puzzles and both 
  assert.equal(ctx.storyChapterStatus('legendaryDragon',state),'available');
  assert.equal(ctx.storyChapterStatus('legendaryPrimordial',state),'available');
  assert.equal(ctx.storyChapterStatus('legendaryBeast',state),'available');
- assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'reserved');
+ assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'locked');
 });
 test('Phase 14.5 previously solved puzzles do not auto-grant lore or duplicate caches',()=>{
  const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
@@ -1683,4 +1683,41 @@ test('Phase 14.8 Feralune retries until captured and uses standard wild battle',
  assert.equal(starts.length,2);assert.equal(starts[0].kind,'wild');assert.equal(starts[0].enemies[0].speciesId,'cr-153-feralune');
  state.storage.push({speciesId:'cr-153-feralune'});
  ctx.startBeastEncounter();assert.equal(starts.length,2);
+});
+
+test('Phase 14.9 headquarters requires all four preceding chapters and sequential victories',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const flags={eclipseOperationsComplete:true,dragonStoryComplete:true,primordialStoryComplete:true,beastStoryComplete:true};
+ const state={introComplete:true,badges:8,area:'eclipseHQ',story:{flags:{...flags}},defeated:{}};
+ for(const key of Object.keys(flags))assert.equal(ctx.eclipseHQAvailable({...state,story:{flags:{...flags,[key]:false}}}),false);
+ assert.equal(ctx.eclipseHQAvailable(state),true);
+ const ops=vm.runInContext('ECLIPSE_HQ_OPPONENTS',ctx);
+ for(const [i,q] of ops.entries()){
+  assert.equal(ctx.eclipseHQOpponentReady(q.id,state),true);
+  for(const later of ops.slice(i+1))assert.equal(ctx.eclipseHQOpponentReady(later.id,state),false);
+  assert.ok(q.team.every(([id,level])=>species.some(p=>p.speciesId===id&&!p.types.some(t=>['Dragon','Primordial','Beast'].includes(t)))&&level<=100));
+  assert.equal(ctx.completeEclipseShutdown(state),false);
+  state.defeated[q.id]=true;
+  assert.equal(ctx.eclipseHQOpponentReady(q.id,state),false);
+ }
+ assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'available');
+ assert.equal(ctx.setStoryFlag('eclipseResolved',state),false);
+ assert.equal(ctx.completeEclipseShutdown({...state,area:'lab'}),false);
+ assert.equal(ctx.completeEclipseShutdown(state),true);
+ assert.equal(ctx.completeEclipseShutdown(state),false);
+ assert.equal(ctx.storyChapterStatus('eclipseFinale',JSON.parse(JSON.stringify(state))),'complete');
+ assert.equal(ctx.storyChapterStatus('resolution',state),'reserved');
+});
+test('Phase 14.9 headquarters gates physically separate the three divisions',()=>{
+ const T={wall:1,stone:2,path:3,door:4};
+ const ctx=extract('function eclipseHQGeometry(','function buildEclipseHQ(',{T,W:34,H:26,tiles:[],roomExit:()=>[17,25]});
+ vm.runInContext('function put(x,y,t){tiles[y][x]=t}function rect(x,y,w,h,t){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)put(i,j,t)}function borders(t){rect(0,0,W,H,t)}',ctx);
+ for(let stage=0;stage<=2;stage++){
+  ctx.state={defeated:{'eclipse-hq-guard':stage>=1,'eclipse-hq-research':stage>=2}};
+  const tiles=vm.runInContext('(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));eclipseHQGeometry(state);return tiles})()',ctx);
+  const seen=new Set(['17,23']),q=[[17,23]];
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,key=a+','+b;if(![T.stone,T.path,T.door].includes(tiles[b]?.[a])||seen.has(key))continue;seen.add(key);q.push([a,b]);}}
+  assert.ok(seen.has('17,25'));assert.ok(seen.has('15,19'));
+  assert.equal(seen.has('15,12'),stage>=1);assert.equal(seen.has('15,6'),stage>=2);
+ }
 });
