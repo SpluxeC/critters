@@ -1888,7 +1888,10 @@ function keepInheritedMove(p,ids){
 function inheritedMoveHTML(p){
  const id=inheritedMoveFor(p);return id?'<div class="watchPartyMeta">Inherited move: '+escapeHtml(validMove(id).name)+'</div>':'';
 }
+// Authored opponent loadouts are battle-local, never a modification of player learnsets.
+const opponentLoadouts=new WeakMap();
 function legalLearnedMoves(p){
+ const authored=opponentLoadouts.get(p);if(authored?.length)return authored.slice();
  const species=speciesFor(p),list=registeredLearnset(species).filter(e=>e.level<=p.level&&validMove(e.moveId)).map(e=>e.moveId);
  if(species&&list.length)return [...new Set(list)].slice(-4);
  return defaultMoveIds(p.type,p.level);
@@ -5211,7 +5214,7 @@ function buildLeagueLandscape(){
 const CHAMPIONSHIP_ROOMS=[{x:3,y:5,w:13,h:9,name:'Paragon Chamber I'},{x:22,y:5,w:13,h:9,name:'Paragon Chamber II'},{x:3,y:16,w:13,h:8,name:'Paragon Chamber III'},{x:22,y:16,w:13,h:8,name:'Paragon Chamber IV'}];
 // Phase 13.2: checkpoint-based challenge. Individual teams are authored in later phases.
 const PARAGON_MEMBERS=Object.freeze([
- {id:'paragon-1',slot:0,active:false,team:[]},
+ {id:'paragon-1',slot:0,active:true,name:'Warden Veyra',strategy:'Defensive Strategist',award:1100,dialogue:['A strong defense is not hesitation. It is preparation.','Show me how you break a carefully built defense.'],team:[{speciesId:'cr-046-flitwing',level:63,moves:['steel-iron-guard','metal-clang','gear-grind','restore-spark']},{speciesId:'cr-073-petaloor',level:63,moves:['bark-shelter','septic-sting','sunpetal','corrode-claw']},{speciesId:'cr-072-miasmoth',level:64,moves:['antidote-skin','drench-mark','breaker-fang','miasma-lance']},{speciesId:'cr-085-veiloo',level:65,moves:['graveglass-ward','moonlit-echo','veil-ripper','restore-spark']},{speciesId:'cr-017-barkwarden',level:65,moves:['battle-breath','breaker-kick','force-palm','feint-stare']},{speciesId:'cr-144-gemhorn',level:66,moves:['bedrock-brace','geode-burst','boulderfall','second-breath']}]},
  {id:'paragon-2',slot:1,active:false,team:[]},
  {id:'paragon-3',slot:2,active:false,team:[]},
  {id:'paragon-4',slot:3,active:false,team:[]}
@@ -5259,9 +5262,9 @@ function openParagonRegistration(){
 function startParagonBattle(id){
  if(s.area!=='championshipHall'||!paragonBattleReady(id,s))return notifyWorld('This Paragon opponent is not ready to challenge.');
  const m=PARAGON_MEMBERS.find(q=>q.id===id);
- if(!speciesRegistry.size||m.team.some(t=>!speciesRegistry.has(t.speciesId)))return notifyWorld('Critter data is not ready. Please try again.');
+ if(!speciesDataReady||!moveDataReady||m.team.some(t=>!speciesRegistry.has(t.speciesId)||t.moves?.some(id=>!validMove(id))))return notifyWorld('Critter data is not ready. Please try again.');
  if(firstAlive()<0)return notifyWorld('Heal your party before challenging The Paragon.');
- const enemies=m.team.map(t=>critter(t.speciesId,t.level));
+ const enemies=m.team.map(t=>{const foe=critter(t.speciesId,t.level);if(t.moves?.length){opponentLoadouts.set(foe,t.moves);refillMovePP(foe);}return foe;});
  startBattle({kind:'trainer',id:m.id,name:m.name||'Paragon member',award:m.award||0,enemies,paragon:true},(m.name||'Paragon member')+' challenges you!');
 }
 function recoverParagonDefeat(){
@@ -5289,7 +5292,7 @@ function buildChampionshipHall(){
  prop('championship-notice',25,28,1,1,'terminal','Championship Directory','Register and clear the four Paragon chambers in order. The Champion arena opens after all four victories.','critter-center-diagnostic-terminal-015');
  for(const x of [4,30]){prop('championship-bench-'+x,x,28,3,1,'table','Waiting Bench','A place for challengers to rest.','gym-bench-01');prop('championship-planter-'+x,x,31,1,1,'display','Planter','A carefully maintained plant.','gym-potted-plant-01');}
  npc(13,27,['Welcome to the Championship Hall. Register here to begin.'],'site-attendant','championship-receptionist');
- for(const m of PARAGON_MEMBERS){if(!paragonChamberOpen(m.slot,s))continue;const r=CHAMPIONSHIP_ROOMS[m.slot],x=r.x+Math.floor(r.w/2),y=r.y+2;const cleared=paragonStatus(s).cleared>m.slot;npc(x,y,[cleared?'Your victory is recorded.':m.active?'Ready for your challenge?':'This opponent is not yet available.'],'site-attendant',m.id);}
+ for(const m of PARAGON_MEMBERS){if(!paragonChamberOpen(m.slot,s))continue;const r=CHAMPIONSHIP_ROOMS[m.slot],x=r.x+Math.floor(r.w/2),y=r.y+2;const cleared=paragonStatus(s).cleared>m.slot;npc(x,y,[cleared?'Your victory is recorded.':m.active?(m.dialogue?.[0]||'Ready for your challenge?'):'This opponent is not yet available.'],'site-attendant',m.id);}
  npc(24,26,['The four members of The Paragon each master a different battle strategy.'],'site-attendant','championship-guide');
 }
 function buildSpecialStorySite(area){
@@ -5861,7 +5864,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(p.id==='championship-receptionist'||p.id==='championship-guide')return openParagonRegistration();if(PARAGON_MEMBERS.some(m=>m.id===p.id))return paragonBattleReady(p.id,s)?say(p.text,()=>startParagonBattle(p.id)):say(p.text);if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(p.id==='championship-receptionist'||p.id==='championship-guide')return openParagonRegistration();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6443,7 +6446,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.80</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.81</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7220,7 +7223,7 @@ function startTrainer(id){
 const BATTLE_AREAS=['village','route1','town','route2','forest','route3','cave','garden','gym','lab','home','neighbor'];
 const BATTLE_AREA_LABELS={village:'Starting Village',route1:'Rice Fields',town:'First Town',route2:'Bamboo Trail',forest:'Hidden Forest',route3:'Mountain Foothills',cave:'Mountain Cave',garden:'Garden Town',gym:'Grass Gym',lab:'Research Laboratory',home:'Player Home',neighbor:'Village Home'};
 function battleEnvironment(){
- const sourceArea=TOWN_ROOMS[s.area]?.kind==='gym'?TOWN_ROOMS[s.area].parent:SECRET_AREAS[s.area]?.parent||s.area;
+ const sourceArea=s.area==='championshipHall'?'gym':TOWN_ROOMS[s.area]?.kind==='gym'?TOWN_ROOMS[s.area].parent:SECRET_AREAS[s.area]?.parent||s.area;
  const area=BATTLE_AREAS.includes(sourceArea)||REGIONAL_EXPANSION[sourceArea]?sourceArea:'route1';
  const tile=tiles?.[s.y]?.[s.x];
  const terrain=tile===T.rice?'rice':tile===T.tall?'grass':tile===T.stone?'stone':tile===T.flower?'flowers':tile===T.path?'path':tile===T.water?'water':'field';
@@ -7322,7 +7325,7 @@ function battleHeader(moveOverlay=''){
  const their=battle.enemySlots.map(i=>sceneFigure(battle.enemies[i],'enemy',i)).join('');
  const ours=battle.allySlots.map(i=>sceneFigure(s.party[i],'ally',i)).join('');
  const scene=battle.environment||{area:'route1',phase:'Day'};
- return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(BATTLE_AREA_LABELS[scene.area]||REGIONAL_EXPANSION[scene.area]?.name||'Wildlands')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
+ return '<div class="combatTop"><span>'+(battle.mode===2?'2v2 TRAINER BATTLE':'1v1 BATTLE')+' · '+escapeHtml(battle.paragon?'Championship Hall':BATTLE_AREA_LABELS[scene.area]||REGIONAL_EXPANSION[scene.area]?.name||'Wildlands')+'</span><span>TEAM TURN '+battle.turn+'</span></div>'
   +'<div class="combatRoster"><div><div class="rosterTitle">'+battleTrainerPortrait(battle.id)+'OPPONENT TEAM</div>'+foe+'</div></div>'
   +'<div class="combatArena '+battleEnvironmentClass()+(battle.mode===2?' arena-doubles':'')+'"><div class="battleScenery" aria-hidden="true"><span class="sceneryCloud cloudA"></span><span class="sceneryCloud cloudB"></span><span class="sceneryTree treeA"></span><span class="sceneryTree treeB"></span><span class="sceneryTree treeC"></span><span class="sceneDetail detailA"></span><span class="sceneDetail detailB"></span><span class="sceneStructure"></span></div><div class="combatSide enemies">'+their+'</div><div class="combatSide allies">'+ours+'</div>'+battleVisual()+moveOverlay+'</div>'
   +'<div class="combatAllyStatus" aria-label="Your active Critter health">'+ally+'</div>';
@@ -7862,6 +7865,7 @@ function predictedMoveDamage(foe,target,move,enemyIndex,allyIndex){
 }
 // Tactics differ by trainer role; all actions still use learned moves and PP.
 function trainerTactics(){
+ if(battle.id==='paragon-1')return {support:1.55,setup:1.4,noise:.55,conserve:2,defensive:true};
  if(battle.id==='leader')return {support:1.65,setup:1.65,noise:.7,conserve:1};
  if(battle.id==='rival')return {support:1.1,setup:1.2,noise:1.3,conserve:.7};
  if(battle.mode===2)return {support:1.35,setup:1.2,noise:1,conserve:.8};
@@ -7895,6 +7899,13 @@ function trainerMoveScore(foe,move,enemyIndex,targetIndex,planned=[]){
  if(effect.id==='switch')utility=0;
  if(effect.id==='reveal')utility=(battleStages('ally',targetIndex).evasion||0)>0?7:0;
  if(planned.some(a=>a.move.effect?.id===effect.id&&['terrain','team_buff','team_guard'].includes(effect.id)))utility*=.25;
+ if(tactics.defensive){
+  // Defense is valuable early, but do not waste turns stacking beyond +2.
+  if(effect.id==='raise_stat'&&['defense','specialDefense'].includes(effect.stat))utility=stage<2&&hpRatio>.35?(battle.turn<=4?37:23):0;
+  if(effect.id==='heal')utility=hpRatio<=.6?Math.min(target.maxHp-target.hp,target.maxHp*(effect.fraction||.25))*1.25:0;
+  if(effect.id==='lower_stat'&&effect.stat==='accuracy')utility=stage>-1&&battle.turn<=4?8:0;
+  if(effect.id==='recoil'&&foe.hp/foe.maxHp<.35)score-=22;
+ }
  score+=utility*chance*tactics.support;
  if(move.category==='status'&&utility<=0)score-=9;
  if((foe.movePP?.[move.id]||0)<=1)score-=tactics.conserve;
