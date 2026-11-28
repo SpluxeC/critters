@@ -1775,7 +1775,7 @@ function backUpLegacySaveBeforeMigration(){
  }catch(err){console.warn('Could not back up pre-migration save',err)}
 }
 let saveWarningShown=false;
-function save(){if(!s)return false;try{s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false;saveWarningShown=false;return true}catch(err){console.warn('Save unavailable',err);if(!saveWarningShown&&screen==='game'){saveWarningShown=true;notifyWorld('Save unavailable. Check browser storage before leaving the game.')}return false}}
+function save(){if(!s)return false;try{normalizeStoryState(s);s.version=4;localStorage.setItem('critters-v1',JSON.stringify(s));$('continue').hidden=false;saveWarningShown=false;return true}catch(err){console.warn('Save unavailable',err);if(!saveWarningShown&&screen==='game'){saveWarningShown=true;notifyWorld('Save unavailable. Check browser storage before leaving the game.')}return false}}
 function show(page){cancelTrainerApproach();clearWorldNarrator();releaseMovement();if(page==='title'){outdoorChunks.clear();pastureActors.clear();}document.querySelectorAll('.screen').forEach(p=>p.classList.toggle('show',p.id===page));screen=page;if(page==='game'){resetOutdoorCamera();snapVisual();resizeGameCanvas();syncMovementToggle()}}
 
 // Editable Critter moves and species: authored in data/moves.json and data/critters.json.
