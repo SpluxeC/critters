@@ -1365,3 +1365,20 @@ test('Phase 13.6 adaptive AI chooses defense, recovery or finishing pressure by 
  foe.hp=40;assert.ok(score(heal)>score(attack));
  target.hp=20;assert.ok(score(attack)>score(heal));assert.ok(score(status)<0);
 });
+
+test('Phase 13.7 Champion rival keeps original evolved partner and legal adaptive roster',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const by=new Map(moves.map(m=>[m.id,m]));
+ for(const [starter,rival,ace] of [['Rock','Water','cr-003-starter-water-3'],['Water','Electric','cr-009-starter-electric-3'],['Electric','Rock','cr-006-starter-rock-3']]){
+  const state={badges:8,starter,rival},roster=ctx.championRoster(state);
+  assert.equal(roster.length,6);assert.equal(roster[5].speciesId,ace);assert.equal(new Set(roster.map(t=>t.speciesId)).size,6);
+  for(const t of roster){const sp=species.find(s=>s.speciesId===t.speciesId);assert.ok(sp);assert.equal(t.moves.length,4);assert.equal(new Set(t.moves).size,4);
+   for(const id of t.moves){assert.ok(by.has(id));assert.ok(sp.levelUp.some(q=>q.moveId===id&&q.level<=t.level)||(id==='restore-spark'&&by.get(id).requiredLevelGuide<=t.level));}
+   assert.ok(t.moves.some(id=>by.get(id).power>0));
+  }
+  assert.equal(ctx.championBattleReady(state),false);ctx.registerParagon(state);
+  for(let i=1;i<=4;i++){assert.equal(ctx.championBattleReady(state),false);assert.equal(ctx.recordParagonWin('paragon-'+i,state),true);}
+  assert.equal(ctx.championBattleReady(state),true);assert.equal(ctx.recordChampionWin(state),true);assert.equal(ctx.recordChampionWin(state),false);
+  assert.equal(ctx.championBattleReady(JSON.parse(JSON.stringify(state))),false);assert.equal(ctx.championRoster({starter})[5].speciesId,ace);
+ }
+});
