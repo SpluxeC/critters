@@ -1260,3 +1260,40 @@ test('Phase 13.3 defensive AI prefers early defense and injured recovery without
  stages.defense=2;assert.ok(ctx.trainerMoveScore(foe,guard,0,0)<0);
  foe.hp=40;assert.ok(ctx.trainerMoveScore(foe,heal,0,0)>0);
 });
+
+test('Phase 13.4 Marshal Kael uses legal mixed-type offensive loadouts and unlocks chamber III',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const member=vm.runInContext('PARAGON_MEMBERS[1]',ctx);
+ assert.equal(member.active,true);assert.equal(member.team.length,6);
+ const by=new Map(moves.map(m=>[m.id,m])),types=new Set();
+ for(const t of member.team){
+  const sp=species.find(s=>s.speciesId===t.speciesId);assert.ok(sp,t.speciesId);
+  sp.types.forEach(type=>types.add(type));assert.equal(t.moves.length,4);assert.equal(new Set(t.moves).size,4);
+  for(const id of t.moves){assert.ok(by.has(id),id);assert.ok(sp.levelUp.some(q=>q.moveId===id&&q.level<=t.level),id);}
+  assert.ok(t.moves.some(id=>by.get(id).power>0));
+ }
+ assert.ok(types.size>=6);
+ const state={badges:8};ctx.registerParagon(state);
+ assert.equal(ctx.paragonBattleReady(member.id,state),false);
+ assert.equal(ctx.recordParagonWin('paragon-1',state),true);
+ assert.equal(ctx.paragonBattleReady(member.id,state),true);
+ assert.equal(ctx.recordParagonWin(member.id,state),true);
+ assert.equal(ctx.recordParagonWin(member.id,state),false);
+ assert.equal(ctx.paragonChamberOpen(2,state),true);
+ assert.equal(ctx.paragonStatus(state).championEligible,false);
+});
+test('Phase 13.4 offensive AI rewards finishing blows and avoids wasted setup and risky recoil',()=>{
+ const foe={hp:100,maxHp:100,moves:['strike'],movePP:{strike:10,boost:10,burst:10,recoil:10,speed:10}};
+ const target={hp:100,maxHp:100},stages={attack:0};
+ const attack={id:'strike',target:'enemy',category:'physical',power:50};
+ const boost={id:'boost',target:'self',category:'status',effect:{id:'raise_stat',stat:'attack'}};
+ const speed={id:'speed',target:'self',category:'status',effect:{id:'raise_stat',stat:'speed'}};
+ const burst={id:'burst',target:'enemy',category:'physical',power:50,effect:{id:'recharge'}};
+ const recoil={id:'recoil',target:'enemy',category:'physical',power:50,effect:{id:'recoil',fraction:.2}};
+ const ctx=extract('function trainerTactics(','function chooseTrainerAction(',{battle:{id:'paragon-2',turn:1,enemies:[foe]},s:{party:[target]},STAGE_LIMIT:6,battleStages:()=>stages,validMove:id=>id==='strike'?attack:null,predictedMoveDamage:()=>30});
+ const score=m=>ctx.trainerMoveScore(foe,m,0,0);
+ assert.ok(score(attack)>score(burst));assert.ok(score(boost)>0);assert.ok(score(speed)<0);
+ stages.attack=2;assert.ok(score(boost)<0);
+ target.hp=25;assert.ok(score(attack)>75);
+ foe.hp=15;target.hp=100;assert.ok(score(recoil)<score(attack));
+});
