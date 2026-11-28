@@ -854,7 +854,13 @@ const GYM_CHALLENGES=Object.freeze([
  {id:'highland-g3',name:'Sky Ranger',x:5,y:12,award:400,team:[{speciesId:'cr-078-breezlet',level:48},{speciesId:'cr-141-jabmink',level:49},{speciesId:'cr-184-zappet',level:49}],dialogue:['Flying teams can approach a battle from many angles.']},
  {id:'highland-g4',name:'Summit Veteran',x:24,y:12,award:415,team:[{speciesId:'cr-110-stonewisp',level:49},{speciesId:'cr-105-ignifawn',level:50},{speciesId:'cr-124-gustwing',level:50}],dialogue:['Show me how you adapt to changing conditions.']}
  ],leader:{id:'highland-leader',name:'Highland Gym Leader',x:15,y:6,award:650,team:[{speciesId:'cr-147-clouduck',level:50},{speciesId:'cr-078-breezlet',level:51},{speciesId:'cr-141-jabmink',level:52},{speciesId:'cr-184-zappet',level:53},{speciesId:'cr-124-gustwing',level:54}],dialogue:['The strongest wings are guided by a clear purpose.']}},
- {id:'ancientTown',room:'ancientTownGym',town:'ancientTown',number:8,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}
+ {id:'ancientTown',room:'ancientTownGym',town:'ancientTown',number:8,type:'Ghost',active:true,badgeName:'Relic Badge',trainerIds:['ancient-g1','ancient-g2','ancient-g3','ancient-g4'],leaderId:'ancient-leader',puzzle:'relic-inscriptions',
+ trainers:[
+ {id:'ancient-g1',name:'Archive Keeper',x:5,y:20,award:430,team:[{speciesId:'cr-085-veiloo',level:53},{speciesId:'cr-132-echomoth',level:54}],dialogue:['Read the inscriptions; the past still has much to teach us.']},
+ {id:'ancient-g2',name:'Relic Guardian',x:24,y:20,award:445,team:[{speciesId:'cr-097-etherfin',level:54},{speciesId:'cr-197-spectrill',level:55},{speciesId:'cr-130-hauntlet',level:55}],dialogue:['Not every obstacle can be overcome by brute strength.']},
+ {id:'ancient-g3',name:'Spirit Scholar',x:5,y:12,award:460,team:[{speciesId:'cr-128-wispkin',level:55},{speciesId:'cr-134-lanternik',level:56},{speciesId:'cr-089-rotwhisk',level:56}],dialogue:['Even the faintest echo can guide you forward.']},
+ {id:'ancient-g4',name:'Sanctum Veteran',x:24,y:12,award:475,team:[{speciesId:'cr-206-kickquill',level:56},{speciesId:'cr-191-polarip',level:57},{speciesId:'cr-198-glimmergeist',level:57}],dialogue:['The last challenge demands everything you have learned.']}
+ ],leader:{id:'ancient-leader',name:'Ancient Gym Leader',x:15,y:6,award:800,team:[{speciesId:'cr-128-wispkin',level:57},{speciesId:'cr-097-etherfin',level:58},{speciesId:'cr-197-spectrill',level:59},{speciesId:'cr-206-kickquill',level:60},{speciesId:'cr-198-glimmergeist',level:61},{speciesId:'cr-134-lanternik',level:62}],dialogue:['Your journey has brought you here. Show me what you have learned, and carry that wisdom onward.']}}
 ]);
 function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
 function gymTrainerDefinition(id){
@@ -1012,6 +1018,7 @@ function furnishExpansionGym(area,add){
  if(area==='volcanicTownGym'){furnishVolcanicGym(add);return;}
  if(area==='snowTownGym'){furnishSnowGym(add);return;}
  if(area==='highlandTownGym'){furnishHighlandGym(add);return;}
+ if(area==='ancientTownGym'){furnishAncientGym(add);return;}
  const theme=expansionInteriorTheme(area),gym=theme.gym;
  // Practice hall fixtures are deliberately non-battling, with unobstructed
  // entrance, middle aisle, arena and attendant access.
@@ -1249,6 +1256,49 @@ function operateHighlandSeal(){
  if(!completeGymPuzzle(g))return notifyWorld('Earn the previous badges and defeat all four Gym trainers first.');
  build();save();return notifyWorld('The summit seal opens. Challenge the Gym Leader!');
 }
+// Independent Gym inscriptions; never reuse the regional archive quest flags.
+const ANCIENT_GLYPHS=[{id:'dawn',x:8,y:18,trainer:'ancient-g1'},{id:'echo',x:21,y:18,trainer:'ancient-g2'},{id:'memory',x:8,y:11,trainer:'ancient-g3'},{id:'twilight',x:21,y:11,trainer:'ancient-g4'}];
+function ancientGlyphProgress(state=s){
+ const raw=state.gymProgress?.ancientGlyphs;
+ if(!Array.isArray(raw))return [];
+ const seq=[];
+ for(const id of raw){if(ANCIENT_GLYPHS[seq.length]?.id!==id)break;seq.push(id);}
+ return seq;
+}
+function ancientGymGeometry(state=s){
+ const seq=ancientGlyphProgress(state),done=gymEarned(gymChallenge('ancientTown'),state)||state.gymProgress?.puzzles?.ancientTown;
+ rect(1,4,W-2,H-5,T.stone);
+ rect(1,8,W-2,1,T.rock);
+ if(done)rect(13,8,4,1,T.path);
+ rect(1,15,W-2,1,T.rock);
+ if(done||seq.length>=2){rect(4,15,4,1,T.path);rect(22,15,4,1,T.path);}
+ rect(13,16,5,7,T.path);
+ for(const [x,y] of [[11,11],[18,11],[11,19],[18,19]])rect(x,y,1,2,T.rock);
+}
+function furnishAncientGym(add){
+ const note=add('relicNotice',12,21,1,1,'terminal','Ancient Inscription','Four memories open the sanctum: Dawn, Echo, Memory, Twilight. Defeat each guardian before activating its inscription.');note.art='critter-center-diagnostic-terminal-015';
+ for(const b of ANCIENT_GLYPHS){const o=add('glyph-'+b.id,b.x,b.y,1,1,'terminal','Inscription — '+b.id,'An ancient carved symbol.','ancient-glyph-'+b.id);o.art='critter-center-diagnostic-terminal-015';}
+ const seal=add('relicSeal',16,9,1,1,'terminal','Sanctum Seal','Requires four inscriptions and four guardian victories.','ancient-seal');seal.art='critter-center-diagnostic-terminal-015';
+}
+function operateAncientGlyph(id){
+ const g=gymChallenge('ancientTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.ancientTown)return notifyWorld('The sanctum is already open.');
+ if(GYM_CHALLENGES.some(q=>q.number<g.number&&!gymEarned(q)))return notifyWorld('Earn the seven previous badges first.');
+ const b=ANCIENT_GLYPHS.find(q=>q.id===id);if(!b)return;
+ const seq=ancientGlyphProgress();
+ if(seq.includes(id))return notifyWorld('This inscription is already illuminated.');
+ if(!s.defeated?.[b.trainer])return notifyWorld('Defeat the nearby guardian first.');
+ if(ANCIENT_GLYPHS[seq.length]?.id!==id)return notifyWorld('The inscription remains quiet. Next symbol: '+ANCIENT_GLYPHS[seq.length]?.id+'.');
+ normalizeGymProgress(s);s.gymProgress.ancientGlyphs=[...seq,id];build();save();
+ return notifyWorld('Inscription illuminated: '+id+' ('+(seq.length+1)+'/4).');
+}
+function operateAncientSeal(){
+ const g=gymChallenge('ancientTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.ancientTown)return notifyWorld('The sanctum is already open.');
+ if(ancientGlyphProgress().length!==ANCIENT_GLYPHS.length)return notifyWorld('Illuminate all four inscriptions first.');
+ if(!completeGymPuzzle(g))return notifyWorld('Earn the previous badges and defeat all four guardians first.');
+ build();save();return notifyWorld('The sanctum opens. Challenge the final Gym Leader!');
+}
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
  // Always maintain a free central aisle and unobstructed exit at (17,25).
@@ -1360,6 +1410,8 @@ function inspectInterior(o){
  if(o.action==='snow-seal')return operateSnowSeal();
  if(o.action?.startsWith('highland-wind-'))return operateHighlandWind(o.action.slice(14));
  if(o.action==='highland-seal')return operateHighlandSeal();
+ if(o.action?.startsWith('ancient-glyph-'))return operateAncientGlyph(o.action.slice(14));
+ if(o.action==='ancient-seal')return operateAncientSeal();
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -2367,7 +2419,7 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();if(s.area==='volcanicTownGym')volcanicGymGeometry();if(s.area==='snowTownGym')snowGymGeometry();if(s.area==='highlandTownGym')highlandGymGeometry();populateGymChallenge(s.area);}
+  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();if(s.area==='volcanicTownGym')volcanicGymGeometry();if(s.area==='snowTownGym')snowGymGeometry();if(s.area==='highlandTownGym')highlandGymGeometry();if(s.area==='ancientTownGym')ancientGymGeometry();populateGymChallenge(s.area);}
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -3792,6 +3844,16 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  ctx.strokeRect(X(9),Y(9),12*S,8*S);
  ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
  ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
+ if(s.area==='ancientTownGym'){
+  for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
+   const t=tiles[y][x];box(x,y,1,1,t===T.rock?'#55535d':t===T.path?'#b6aa94':'#8d8b83');
+   box(x,y+.95,1,.05,'#69675f');box(x+.95,y,.05,1,'#69675f');
+   if(t===T.rock){box(x+.09,y+.09,.82,.18,'#a39c93');box(x+.13,y+.76,.74,.13,'#393943');}
+   else if(t===T.path&&y===15){box(x+.12,y+.4,.76,.08,'#d4bd91');}
+  }
+  const seq=ancientGlyphProgress();
+  for(const b of ANCIENT_GLYPHS){box(b.x,b.y+.8,1,.13,seq.includes(b.id)?'#d5bbef':'#625b73');}
+ }
  if(s.area==='highlandTownGym'){
   for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
    const t=tiles[y][x];box(x,y,1,1,t===T.rock?'#56685e':t===T.path?'#d2c7a4':'#a8af98');
@@ -6270,7 +6332,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.76</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.77</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
