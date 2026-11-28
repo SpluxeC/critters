@@ -1706,7 +1706,7 @@ test('Phase 14.9 headquarters requires all four preceding chapters and sequentia
  assert.equal(ctx.completeEclipseShutdown(state),true);
  assert.equal(ctx.completeEclipseShutdown(state),false);
  assert.equal(ctx.storyChapterStatus('eclipseFinale',JSON.parse(JSON.stringify(state))),'complete');
- assert.equal(ctx.storyChapterStatus('resolution',state),'reserved');
+ assert.equal(ctx.storyChapterStatus('resolution',state),'available');
 });
 test('Phase 14.9 headquarters gates physically separate the three divisions',()=>{
  const T={wall:1,stone:2,path:3,door:4};
@@ -1720,4 +1720,36 @@ test('Phase 14.9 headquarters gates physically separate the three divisions',()=
   assert.ok(seen.has('17,25'));assert.ok(seen.has('15,19'));
   assert.equal(seen.has('15,12'),stage>=1);assert.equal(seen.has('15,6'),stage>=2);
  }
+});
+
+test('Phase 14.10 epilogue is gated, persistent and grants its reward once',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const state={introComplete:true,badges:8,area:'lab',worldDay:12,money:50,inventory:{Revive:1},story:{flags:{}}};
+ assert.equal(ctx.completeStoryResolution(state),false);
+ state.story.flags.eclipseResolved=true;
+ assert.equal(ctx.setStoryFlag('storyResolved',state),false);
+ assert.equal(ctx.completeStoryResolution({...state,area:'eclipseHQ'}),false);
+ assert.equal(ctx.completeStoryResolution(state),true);
+ assert.equal(state.money,1550);assert.equal(state.inventory.Revive,4);assert.equal(state.story.resolutionDay,12);
+ assert.equal(ctx.completeStoryResolution(state),false);
+ assert.equal(ctx.storyChapterStatus('resolution',JSON.parse(JSON.stringify(state))),'complete');
+ assert.equal(ctx.postgameRivalAvailable(state),false);
+});
+test('Phase 14.10 restoration surveys and veteran rival unlock independently',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const state={area:'lab',money:0,inventory:{},story:{flags:{eclipseResolved:true,storyResolved:true}},defeated:{}};
+ const surveys=vm.runInContext('POSTGAME_SANCTUARIES',ctx);
+ for(const q of surveys){
+  assert.equal(ctx.claimPostgameSurvey(state),false);
+  state.story.flags[q.flag]=true;
+ }
+ assert.equal(ctx.claimPostgameSurvey(state),true);
+ assert.equal(state.money,1200);assert.equal(state.inventory['PP Potion'],3);
+ assert.equal(ctx.claimPostgameSurvey(JSON.parse(JSON.stringify(state))),false);
+ assert.equal(ctx.postgameRivalAvailable(state),false);
+ state.story.flags.championVictory=true;
+ assert.equal(ctx.postgameRivalAvailable(state),true);
+ state.defeated['postgame-rival']=true;ctx.normalizeStoryState(state);
+ assert.equal(ctx.storyFlag('postgameRivalWon',state),true);
+ assert.ok(vm.runInContext('POSTGAME_RIVAL_TEAM',ctx).every(([id,level])=>species.some(p=>p.speciesId===id)&&level<=100));
 });
