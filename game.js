@@ -344,7 +344,7 @@ function drawNpc(p,x,y,area=s.area){
  }
 }
 function battleTrainerArt(id){
- if(id==='tutorial'||id==='rival'||id==='champion-rival')return 'npc-rival';
+ if(id==='tutorial'||id==='rival'||id==='champion-rival'||id?.startsWith('rival-'))return 'npc-rival';
  if(id==='leader')return 'npc-gym-leader-grass';
  if(id==='water-leader')return 'npc-gym-leader-water';
  return null;
@@ -5455,6 +5455,8 @@ function populateExpansionArea(area){
   npc(x,y,lines,kind,id);const p=npcs[npcs.length-1];Object.assign(p,extra);return p;
  }
  if(SETTLEMENT_PLANS[area]){
+  const rival=RIVAL_JOURNEY.find(q=>q.area===area&&rivalEncounterAvailable(q.id));
+  if(rival)for(const [x,y] of [[15,16],[21,16],[15,10],[21,10],[12,16],[24,16],[15,18],[21,18]])if(add(x,y,rival.lines,'rival',rival.id))break;
   const lots=settlementLots(area);
   for(const [i,b] of lots.filter(b=>b.kind==='home').entries()){
    const home={x:b.door,y:b.y+b.h+2,doorY:b.y+b.h+1,interior:b.id};
@@ -5992,7 +5994,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6574,7 +6576,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.88</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.89</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7142,7 +7144,7 @@ const STORY_STRUCTURE=Object.freeze({gymCount:8,firstGym:'Grass',paragonCount:4,
 const STORY_CHAPTERS=Object.freeze([
  {id:'opening',title:'The beginning',requires:[],milestone:'tutorial',active:true},
  {id:'firstBadge',title:'First regional badge',requires:['tutorial'],milestone:'grassBadge',active:true},
- {id:'rivalJourney',title:'Rival journey',requires:['tutorial'],milestone:'rivalJourneyComplete',active:false},
+ {id:'rivalJourney',title:'Rival journey',requires:['tutorial'],milestone:'rivalJourneyComplete',active:true},
  {id:'eclipseIntro',title:'Team Eclipse',requires:['grassBadge'],milestone:'eclipseIntroduced',active:false},
  {id:'eclipseOperations',title:'Team Eclipse operations',requires:['eclipseIntroduced'],milestone:'eclipseOperationsComplete',active:false},
  {id:'regionalHistory',title:'Regional history',requires:['grassBadge'],milestone:'regionalHistoryRevealed',active:false},
@@ -7167,7 +7169,8 @@ function normalizeStoryState(state=s){
  if(state.paragonProgress?.registered===true)flags.paragonRegistered=true;
  if(Array.isArray(state.paragonProgress?.cleared))for(let i=0;i<4;i++){if(state.paragonProgress.cleared[i]!=='paragon-'+(i+1))break;flags['paragonVictory'+(i+1)]=true;}
  if(flags.paragonVictory4)flags.paragonComplete=true;
- if(state.paragonProgress?.championDefeated===true&&flags.paragonComplete)flags.championVictory=true;
+ if(state.paragonProgress?.championDefeated===true&&flags.paragonComplete){flags.championVictory=true;flags.rivalJourneyComplete=true;}
+ for(const encounter of RIVAL_JOURNEY)if(state.defeated?.[encounter.id]===true)flags[encounter.id+'Won']=true;
  if(state.paragonProgress?.ceremonyComplete===true&&flags.championVictory)flags.hallOfFame=true;
  return state.story;
 }
@@ -7200,9 +7203,33 @@ function storyScene(id,lines,callback){
 }
 function storyMilestonePanel(state=s){
  normalizeStoryState(state);
- const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
+ const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
  const completed=rows.filter(([,id])=>storyFlag(id,state));
  return '<div class="watchSectionTitle">Journey history</div>'+(completed.length?completed.map(([label])=>'<div class="watchRow"><span>'+label+'</span><span>Recorded</span></div>').join(''):'<div class="watchReadOnly">Your completed story milestones will appear here.</div>');
+}
+// Phase 14.2: optional rival encounters do not gate Gyms or championship access.
+const RIVAL_JOURNEY=Object.freeze([
+ {id:'rival-harbor',area:'harborTown',badges:2,level:24,award:220,team:[['cr-012-falgrath',22],['cr-017-barkwarden',23]],lines:['Rival: I used to think choosing the stronger starter was enough. The Harbor Gym taught me otherwise.','I have been working with my whole team. Want to see how far we have come?'],after:'That was a good lesson. I need to trust every member of my team.'},
+ {id:'rival-volcanic',area:'volcanicTown',badges:4,level:42,award:480,team:[['cr-012-falgrath',39],['cr-046-flitwing',40],['cr-017-barkwarden',41]],lines:['Rival: I lost a difficult match recently. Trying to force every battle to go my way did not help.','I have changed how I train. Let us put that to the test.'],after:'Win or lose, I want to understand what my Critters need from me.'},
+ {id:'rival-highland',area:'highlandTown',badges:6,level:56,award:750,team:[['cr-012-falgrath',53],['cr-046-flitwing',54],['cr-073-petaloor',54],['cr-062-parryfin',55]],lines:['Rival: Remember how competitive we were back in the village? I still want to win, but I respect the trainer you have become.','Let us battle again before we reach the championship.'],after:'I am going to keep training. I hope we meet on the championship stage.'}
+]);
+function rivalEncounterAvailable(id,state=s){
+ const q=RIVAL_JOURNEY.find(r=>r.id===id);
+ return !!q&&state.introComplete===true&&state.badges>=q.badges&&!state.paragonProgress?.championDefeated&&['Water','Rock','Electric'].includes(state.rival||({Rock:'Water',Water:'Electric',Electric:'Rock'}[state.starter]));
+}
+function rivalEncounterDialogue(id){
+ const q=RIVAL_JOURNEY.find(r=>r.id===id);
+ if(!q||!rivalEncounterAvailable(id)||s.area!==q.area)return;
+ if(s.defeated?.[id])return say([q.after]);
+ return say(q.lines,()=>startRivalEncounter(id));
+}
+function startRivalEncounter(id){
+ const q=RIVAL_JOURNEY.find(r=>r.id===id);
+ if(!q||!rivalEncounterAvailable(id)||s.area!==q.area||s.defeated?.[id])return;
+ if(!speciesDataReady||!moveDataReady||q.team.some(([id])=>!speciesRegistry.has(id)))return notifyWorld('Critter data is loading. Try again shortly.');
+ if(firstAlive()<0)return notifyWorld('Heal your party before challenging your rival.');
+ const enemies=[...q.team.map(([id,level])=>critter(id,level)),rivalPartnerAtLevel(q.level)];
+ startBattle({kind:'trainer',id,name:'Childhood Rival',award:q.award,enemies,rivalJourney:true},'Your childhood rival challenges you!');
 }
 function researcherStoryDialogue(){
  if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
@@ -8051,6 +8078,9 @@ function trainerTactics(){
  if(battle.id==='champion-rival')return {support:1.3,setup:1.25,noise:.15,conserve:1.5,adaptive:true,champion:true};
  if(battle.id==='leader')return {support:1.65,setup:1.65,noise:.7,conserve:1};
  if(battle.id==='rival')return {support:1.1,setup:1.2,noise:1.3,conserve:.7};
+ if(battle.id==='rival-harbor')return {support:1.15,setup:1.2,noise:1,conserve:.8};
+ if(battle.id==='rival-volcanic')return {support:1.25,setup:1.25,noise:.7,conserve:1,control:true};
+ if(battle.id==='rival-highland')return {support:1.25,setup:1.2,noise:.45,conserve:1.2,adaptive:true};
  if(battle.mode===2)return {support:1.35,setup:1.2,noise:1,conserve:.8};
  return {support:1,setup:1,noise:2.4,conserve:.5};
 }
@@ -8394,7 +8424,7 @@ function endBattle(won,message,defeated){
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
   ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">INDEX</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
  save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
- $('battleDone').onclick=()=>{close();if(b.champion&&won&&defeated)return championCeremony();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
+ $('battleDone').onclick=()=>{close();if(b.champion&&won&&defeated)return championCeremony();if(b.rivalJourney&&won&&defeated)return say([RIVAL_JOURNEY.find(q=>q.id===b.id).after]);if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
  const wasParagon=battle?.paragon===true,wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
