@@ -59,6 +59,7 @@ const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant',
 const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
  const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
+ if(id==='paragon-1')return 21;
  if(kind in special)return special[kind];
  if(kind==='construction-worker')return x%2?17:18;
  if(kind==='gymtrainer')return 20;
@@ -3920,7 +3921,11 @@ function drawChampionshipHall(ox,oy){
  ctx.save();ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();box(0,0,W,H,'#a8a398');
  for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){const t=tiles[y][x];box(x,y,1,1,t===T.wall?'#424e56':t===T.mat?'#717e85':t===T.path?'#d3c9b0':(x+y)%2?'#b3afa2':'#a8a599');if(t===T.wall)box(x,y,1,.12,'#bca67b');else{box(x,y+.96,1,.04,'#89877f');box(x+.96,y,.04,1,'#89877f');}}
  connectedInteriorWalls(ox,oy,'#465660','#c8b17c',roomExit(s.area)[0]);
- for(const r of CHAMPIONSHIP_ROOMS){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name,X(r.x+r.w/2),Y(r.y+.65));}
+ const defense=CHAMPIONSHIP_ROOMS[0];
+ box(defense.x+1,defense.y+1,defense.w-2,defense.h-2,'#687c80');
+ ctx.strokeStyle='#cbbd91';ctx.lineWidth=2;ctx.strokeRect(X(defense.x+1.3),Y(defense.y+1.3),(defense.w-2.6)*S,(defense.h-2.6)*S);
+ ctx.strokeRect(X(defense.x+4),Y(defense.y+3),5*S,3*S);
+ for(const r of CHAMPIONSHIP_ROOMS){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name+(r===defense?' · Warden Veyra':''),X(r.x+r.w/2),Y(r.y+.65));}
  box(18.85,11,.1,14,'#ad874b');box(20.05,11,.1,14,'#ad874b');
  ctx.fillStyle='#ead9ad';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('CHAMPION',X(19),Y(8));ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
  for(const x of [3,10,26,33])drawUploadedFit('wall-banner',X(x),Y(.5),2*S,2*S);
@@ -5251,7 +5256,7 @@ function recordParagonLoss(state){
 }
 function paragonProgressPanel(state=s){
  const p=paragonStatus(state);
- return '<div class="watchSectionTitle">The Paragon · '+p.cleared+'/4</div><div class="watchReadOnly">'+(!leagueEligible(state)?'Earn eight regional Gym badges.':!p.registered?'Register at Championship Hall.':p.championEligible?'Champion eligible.':p.next?.active?'Next: Paragon Chamber '+(p.cleared+1):'Next: Paragon Chamber '+(p.cleared+1)+' — opponent pending.')+'</div>'+PARAGON_MEMBERS.map((m,i)=>'<div class="watchRow"><span>Paragon Chamber '+(i+1)+'</span><span>'+(i<p.cleared?'Cleared':!p.registered||!leagueEligible(state)||i>p.cleared?'Locked':m.active?'Ready':'Opponent pending')+'</span></div>').join('');
+ return '<div class="watchSectionTitle">The Paragon · '+p.cleared+'/4</div><div class="watchReadOnly">'+(!leagueEligible(state)?'Earn eight regional Gym badges.':!p.registered?'Register at Championship Hall.':p.championEligible?'Champion eligible.':p.next?.active?'Next: Paragon Chamber '+(p.cleared+1):'Next: Paragon Chamber '+(p.cleared+1)+' — opponent pending.')+'</div>'+PARAGON_MEMBERS.map((m,i)=>'<div class="watchRow"><span>Paragon Chamber '+(i+1)+(m.active?' · '+escapeHtml(m.name)+'<small> · '+escapeHtml(m.strategy||'')+'</small>':'')+'</span><span>'+(i<p.cleared?'Cleared':!p.registered||!leagueEligible(state)||i>p.cleared?'Locked':m.active?'Ready':'Opponent pending')+'</span></div>').join('');
 }
 function openParagonRegistration(){
  const p=paragonStatus(s);
