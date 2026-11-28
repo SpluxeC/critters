@@ -6747,10 +6747,10 @@
       },
       "habitats": [
         {
-          "areaId": "forest",
-          "areaName": "Hidden Forest",
-          "minLevel": 15,
-          "maxLevel": 18,
+          "areaId": "legendaryReserveA",
+          "areaName": "Remote Coastal Sanctuary",
+          "minLevel": 36,
+          "maxLevel": 36,
           "rarity": "legendary"
         }
       ],
