@@ -826,7 +826,14 @@ const GYM_CHALLENGES=Object.freeze([
  {id:'marsh-g2',name:'Reed Keeper',x:22,y:14,award:165,team:[{speciesId:'cr-054-corrofin',level:23},{speciesId:'cr-072-miasmoth',level:24}],dialogue:['A good strategy can weather the marsh.']},
  {id:'marsh-g3',name:'Marsh Naturalist',x:7,y:10,award:180,team:[{speciesId:'cr-048-dusklet',level:24},{speciesId:'cr-166-acidillo',level:25}],dialogue:['The most direct route is not always the best.']}
  ],leader:{id:'marsh-leader',name:'Marsh Gym Leader',x:15,y:6,award:320,team:[{speciesId:'cr-054-corrofin',level:26},{speciesId:'cr-166-acidillo',level:27},{speciesId:'cr-201-sporefang',level:28}],dialogue:['Patience and adaptability are the strengths of the wetlands.']}},
- ...['canyonTown','volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+4,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
+ {id:'canyonTown',room:'canyonTownGym',town:'canyonTown',number:4,type:'Rock',active:true,badgeName:'Summit Badge',trainerIds:['canyon-g1','canyon-g2','canyon-g3','canyon-g4'],leaderId:'canyon-leader',puzzle:'counterweights',
+ trainers:[
+ {id:'canyon-g1',name:'Stone Mason',x:7,y:19,award:190,team:[{speciesId:'cr-149-rubblit',level:27},{speciesId:'cr-076-slatetail',level:28}],dialogue:['A sturdy foundation makes a strong team.']},
+ {id:'canyon-g2',name:'Canyon Climber',x:23,y:19,award:205,team:[{speciesId:'cr-109-cliffmole',level:28},{speciesId:'cr-183-rockoon',level:29}],dialogue:['Every climb requires patience.']},
+ {id:'canyon-g3',name:'Quarry Keeper',x:7,y:12,award:220,team:[{speciesId:'cr-144-gemhorn',level:29},{speciesId:'cr-197-spectrill',level:30}],dialogue:['Think carefully before striking.']},
+ {id:'canyon-g4',name:'Ridge Veteran',x:23,y:12,award:235,team:[{speciesId:'cr-207-comboon',level:30},{speciesId:'cr-076-slatetail',level:31},{speciesId:'cr-149-rubblit',level:31}],dialogue:['The summit is almost within reach.']}
+ ],leader:{id:'canyon-leader',name:'Canyon Gym Leader',x:15,y:6,award:400,team:[{speciesId:'cr-109-cliffmole',level:31},{speciesId:'cr-144-gemhorn',level:32},{speciesId:'cr-197-spectrill',level:33},{speciesId:'cr-207-comboon',level:34}],dialogue:['Strength is knowing when to stand firm and when to adapt.']}},
+ ...['volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+5,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
 ]);
 function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
 function gymTrainerDefinition(id){
@@ -980,6 +987,7 @@ function furnishExpansionRoom(area,add){
 function furnishExpansionGym(area,add){
  if(area==='harborTownGym'){furnishHarborGym(add);return;}
  if(area==='marshTownGym'){furnishMarshGym(add);return;}
+ if(area==='canyonTownGym'){furnishCanyonGym(add);return;}
  const theme=expansionInteriorTheme(area),gym=theme.gym;
  // Practice hall fixtures are deliberately non-battling, with unobstructed
  // entrance, middle aisle, arena and attendant access.
@@ -1047,6 +1055,43 @@ function operateMarshBridge(id){
  bridges[id]=true;
  if(index===2)completeGymPuzzle(g);
  build();save();return notifyWorld(index===2?'The final boardwalk is open. Challenge the Gym Leader!':'The boardwalk lowers, revealing the next island.');
+}
+// Counterweights toggle pairs of gates. The southern corridor always stays open.
+function canyonGateState(mask){
+ return {west:!!(mask&1),east:!!(mask&2),summit:mask===3};
+}
+function canyonGymGeometry(state=s){
+ const done=state.gymProgress?.puzzles?.canyonTown||gymEarned(gymChallenge('canyonTown'),state);
+ const gates=canyonGateState(done?3:(state.gymProgress?.canyonWeights||0));
+ rect(1,4,W-2,H-5,T.stone);
+ rect(1,15,W-2,1,T.rock);rect(1,8,W-2,1,T.rock);
+ rect(14,16,2,4,T.rock);
+ if(gates.west)rect(6,15,3,1,T.path);
+ if(gates.east)rect(21,15,3,1,T.path);
+ if(done)rect(13,8,5,1,T.path);
+}
+function furnishCanyonGym(add){
+ const note=add('weightNotice',12,21,1,1,'terminal','Challenge Instructions','After defeating the two lower trainers, engage both counterweights to open the upper galleries. Defeat both upper trainers, then release the summit seal.');note.art='critter-center-diagnostic-terminal-015';
+ for(const [id,x,y] of [['west',9,18],['east',21,18],['seal',15,10]]){
+  const o=add('weight-'+id,x,y,1,1,'terminal',id==='seal'?'Summit Seal':'Counterweight — '+id,'Stone gate control.','canyon-weight-'+id);o.art='critter-center-diagnostic-terminal-015';
+ }
+}
+function operateCanyonWeight(id){
+ const g=gymChallenge('canyonTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.canyonTown)return notifyWorld('The summit seal is open.');
+ if(!gymEarned(gymChallenge('marshTown')))return notifyWorld('Earn the Reed Badge first.');
+ normalizeGymProgress(s);
+ if(id==='seal'){
+  if((s.gymProgress.canyonWeights||0)!==3||!completeGymPuzzle(g))return notifyWorld('Engage both counterweights and defeat all four trainers first.');
+  build();save();return notifyWorld('The summit seal opens. Challenge the Gym Leader!');
+ }
+ if(!['west','east'].includes(id))return;
+ const i=id==='west'?0:1;
+ if(!s.defeated?.[g.trainerIds[i]])return notifyWorld('Defeat the nearby trainer first.');
+ const bit=1<<i;
+ // Latching counterweights cannot strand the player in an upper gallery.
+ s.gymProgress.canyonWeights=(s.gymProgress.canyonWeights||0)|bit;
+ build();save();return notifyWorld('The '+id+' stone gate rises.');
 }
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
@@ -1154,6 +1199,7 @@ function inspectInterior(o){
  startPropAnimation(o.id,interactivePropBase(o));
  if(o.action?.startsWith('harbor-valve-'))return operateHarborValve(o.action.slice(13));
  if(o.action?.startsWith('marsh-bridge-'))return operateMarshBridge(o.action.slice(13));
+ if(o.action?.startsWith('canyon-weight-'))return operateCanyonWeight(o.action.slice(14));
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -2161,7 +2207,7 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();populateGymChallenge(s.area);}
+  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();populateGymChallenge(s.area);}
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -3586,6 +3632,13 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  ctx.strokeRect(X(9),Y(9),12*S,8*S);
  ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
  ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
+ if(s.area==='canyonTownGym'){
+  for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
+   const t=tiles[y][x];box(x,y,1,1,t===T.rock?'#78634e':t===T.path?'#d9bd87':'#b9a287');
+   if(t===T.rock){box(x,y+.08,1,.15,'#b39b76');box(x,y+.48,1,.05,'#514b43');box(x+.47,y+.48,.05,.52,'#514b43');}
+   else{box(x,y+.96,1,.04,'#97836c');box(x+.96,y,.04,1,'#97836c');}
+  }
+ }
  if(s.area==='harborTownGym'||s.area==='marshTownGym'){
   const marsh=s.area==='marshTownGym';
   for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
@@ -6025,7 +6078,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.72</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.73</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
