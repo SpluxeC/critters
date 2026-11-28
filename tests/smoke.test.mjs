@@ -1439,3 +1439,34 @@ test('Phase 13.9 championship mutual knockout is not a victory',()=>{
  const turn=game.slice(game.indexOf('async function resolveTeamTurn('),game.indexOf('function capture(){'));
  assert.equal((turn.match(/!s\.party\.some\(p=>!isEgg\(p\)&&p\.hp>0\)&&battle\.paragon\)return blackout\(\)/g)||[]).length,2);
 });
+
+test('Phase 14.1 story migration preserves completed milestones and reserved chapters',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ for(let badges=0;badges<=8;badges++){
+  const state={badges,introComplete:true,story:{flags:{custom:true,invalid:'true'}}};
+  ctx.normalizeStoryState(state);
+  assert.equal(state.story.version,2);assert.equal(state.story.flags.custom,true);assert.equal(state.story.flags.invalid,undefined);
+  assert.equal(ctx.storyChapterStatus('opening',state),'complete');
+  assert.equal(ctx.storyChapterStatus('firstBadge',state),badges?'complete':'available');
+  for(let i=1;i<=8;i++)assert.equal(ctx.storyFlag('regionalBadge'+i,state),i<=badges);
+  for(const chapter of vm.runInContext('STORY_CHAPTERS.filter(q=>!q.active)',ctx)){
+   assert.equal(ctx.storyChapterStatus(chapter.id,state),'reserved');
+   assert.equal(ctx.setStoryFlag(chapter.milestone,state),false);
+  }
+ }
+ const state={badges:8,paragonProgress:{registered:true,cleared:['paragon-1','paragon-2','paragon-3','paragon-4'],championDefeated:true,ceremonyComplete:true}};
+ ctx.normalizeStoryState(state);assert.equal(ctx.storyFlag('hallOfFame',state),true);
+ assert.equal(ctx.storyFlag('hallOfFame',JSON.parse(JSON.stringify(state))),true);
+});
+test('Phase 14.1 story scenes commit only after completion and reject stale callbacks',()=>{
+ let callbacks=[],saves=0;
+ const state={introComplete:true,badges:1};
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:state,say:(lines,cb)=>callbacks.push(cb),save:()=>saves++});
+ assert.equal(ctx.storyScene('researchDebrief',['test']),true);
+ assert.equal(ctx.storyScene('researchDebrief',['test']),false);
+ assert.equal(ctx.storyFlag('researchDebrief',state),false);callbacks.shift()();
+ assert.equal(ctx.storyFlag('researchDebrief',state),true);assert.equal(saves,1);
+ assert.equal(ctx.storyScene('researchDebrief',['test']),false);
+ assert.equal(ctx.storyScene('grassCeremony',['test']),true);ctx.s={};callbacks.shift()();
+ assert.equal(ctx.storyFlag('grassCeremony',ctx.s),false);
+});
