@@ -1540,7 +1540,7 @@ test('Phase 14.4 Eclipse operations require introduction and badge thresholds, p
  assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'complete');
  assert.equal(ctx.storyChapterStatus('eclipseOperations',JSON.parse(JSON.stringify(state))),'complete');
  assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'reserved');
- assert.equal(ctx.storyChapterStatus('regionalHistory',state),'reserved');
+ assert.equal(ctx.storyChapterStatus('regionalHistory',state),'available');
 });
 test('Phase 14.4 completed operations cannot start another battle and loss leaves progress unchanged',()=>{
  let starts=0,callbacks=[];
@@ -1552,4 +1552,39 @@ test('Phase 14.4 completed operations cannot start another battle and loss leave
  state.defeated['eclipse-op-harbor']=true;
  ctx.startEclipseOperation('eclipse-op-harbor');assert.equal(starts,2);
  ctx.eclipseOperationDialogue('eclipse-op-harbor');assert.equal(callbacks.length,0);
+});
+
+test('Phase 14.5 history requires the first badge, both solved puzzles and both translations',()=>{
+ const state={introComplete:true,badges:1,area:'ruins',puzzles:{},story:{flags:{}}};
+ let callbacks=[],saves=0;
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:state,say:(lines,cb)=>{if(cb)callbacks.push(cb)},save:()=>{ctx.normalizeStoryState(state);saves++}});
+ assert.equal(ctx.regionalHistoryAvailable({...state,badges:0}),false);
+ assert.equal(ctx.regionalHistoryAvailable({...state,introComplete:false}),false);
+ assert.equal(ctx.storyChapterStatus('regionalHistory',state),'available');
+ assert.equal(ctx.setStoryFlag('regionalHistoryRevealed',state),false);
+ ctx.regionalHistoryDialogue('history-ruins-tablet');assert.equal(callbacks.length,0);
+ state.puzzles.ruinsOpened=true;
+ ctx.regionalHistoryDialogue('history-archive-tablet');assert.equal(callbacks.length,0);
+ ctx.regionalHistoryDialogue('history-ruins-tablet');assert.equal(callbacks.length,1);
+ assert.equal(ctx.storyFlag('history-ruins-tablet',state),false);callbacks.shift()();
+ assert.equal(ctx.storyFlag('history-ruins-tablet',state),true);
+ assert.equal(ctx.storyFlag('regionalHistoryRevealed',state),false);
+ state.area='oldArchive';state.puzzles.archiveOpened=true;
+ ctx.regionalHistoryDialogue('history-archive-tablet');callbacks.shift()();
+ assert.equal(ctx.storyChapterStatus('regionalHistory',state),'complete');
+ const reload=JSON.parse(JSON.stringify(state));
+ assert.equal(ctx.storyChapterStatus('regionalHistory',reload),'complete');
+ delete reload.story.flags.regionalHistoryRevealed;
+ assert.equal(ctx.storyChapterStatus('regionalHistory',reload),'complete');
+ const before=saves;ctx.regionalHistoryDialogue('history-archive-tablet');assert.equal(saves,before);
+ for(const id of ['legendaryDragon','legendaryPrimordial','legendaryBeast','eclipseFinale'])assert.equal(ctx.storyChapterStatus(id,state),'reserved');
+});
+test('Phase 14.5 previously solved puzzles do not auto-grant lore or duplicate caches',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const state={introComplete:true,badges:8,puzzles:{ruinsOpened:true,archiveOpened:true},discoveries:{'ruins-cache':true,'oldArchive-cache':true}};
+ assert.equal(ctx.storyChapterStatus('regionalHistory',state),'available');
+ assert.equal(ctx.storyFlag('history-ruins-tablet',state),false);
+ assert.equal(ctx.storyFlag('history-archive-tablet',state),false);
+ assert.equal(state.discoveries['ruins-cache'],true);
+ assert.equal(state.discoveries['oldArchive-cache'],true);
 });
