@@ -59,7 +59,7 @@ const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant',
 const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
  const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
- if(id==='eclipse-marsh-contact')return 25;
+ if(id==='eclipse-marsh-contact'||id.startsWith('eclipse-op-'))return 25;
  if(id==='paragon-1')return 21;
  if(id==='paragon-2')return 19;
  if(id==='paragon-3')return 27;
@@ -5460,6 +5460,12 @@ function populateExpansionArea(area){
   if(contact)for(const [x,y] of [[12,16],[24,16],[15,18],[21,18],[12,18],[24,18],[15,10],[21,10]])if(add(x,y,contact.lines,contact.kind,contact.id))break;
   const rival=RIVAL_JOURNEY.find(q=>q.area===area&&rivalEncounterAvailable(q.id));
   if(rival)for(const [x,y] of [[15,16],[21,16],[15,10],[21,10],[12,16],[24,16],[15,18],[21,18]])if(add(x,y,rival.lines,'rival',rival.id))break;
+  const operation=ECLIPSE_OPERATIONS.find(q=>q.area===area&&s.introComplete&&s.badges>=q.badges);
+  if(operation){
+   const candidates=[[12,16],[24,16],[15,18],[21,18],[12,18],[24,18],[15,10],[21,10]];
+   for(let y=3;y<H-3;y++)for(let x=3;x<W-3;x++)if(tiles[y]?.[x]===T.grass&&[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>tiles[y+dy]?.[x+dx]===T.path))candidates.push([x,y]);
+   for(const [x,y] of candidates)if(add(x,y,operation.lines,'site-attendant',operation.id))break;
+  }
   const lots=settlementLots(area);
   for(const [i,b] of lots.filter(b=>b.kind==='home').entries()){
    const home={x:b.door,y:b.y+b.h+2,doorY:b.y+b.h+1,interior:b.id};
@@ -5997,7 +6003,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(ECLIPSE_INTRO_SITES.some(q=>q.id===p.id)&&eclipseIntroAvailable())return eclipseContactDialogue(p.id);if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(ECLIPSE_OPERATIONS.some(q=>q.id===p.id))return eclipseOperationDialogue(p.id);if(ECLIPSE_INTRO_SITES.some(q=>q.id===p.id)&&eclipseIntroAvailable())return eclipseContactDialogue(p.id);if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6579,7 +6585,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.90</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.91</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7149,7 +7155,7 @@ const STORY_CHAPTERS=Object.freeze([
  {id:'firstBadge',title:'First regional badge',requires:['tutorial'],milestone:'grassBadge',active:true},
  {id:'rivalJourney',title:'Rival journey',requires:['tutorial'],milestone:'rivalJourneyComplete',active:true},
  {id:'eclipseIntro',title:'Team Eclipse',requires:['grassBadge'],milestone:'eclipseIntroduced',active:true},
- {id:'eclipseOperations',title:'Team Eclipse operations',requires:['eclipseIntroduced'],milestone:'eclipseOperationsComplete',active:false},
+ {id:'eclipseOperations',title:'Team Eclipse operations',requires:['eclipseIntroduced'],milestone:'eclipseOperationsComplete',active:true},
  {id:'regionalHistory',title:'Regional history',requires:['grassBadge'],milestone:'regionalHistoryRevealed',active:false},
  {id:'legendaryDragon',title:'Dragon legend',requires:['regionalHistoryRevealed'],milestone:'dragonStoryComplete',active:false},
  {id:'legendaryPrimordial',title:'Primordial legend',requires:['regionalHistoryRevealed'],milestone:'primordialStoryComplete',active:false},
@@ -7173,6 +7179,8 @@ function normalizeStoryState(state=s){
  if(Array.isArray(state.paragonProgress?.cleared))for(let i=0;i<4;i++){if(state.paragonProgress.cleared[i]!=='paragon-'+(i+1))break;flags['paragonVictory'+(i+1)]=true;}
  if(flags.paragonVictory4)flags.paragonComplete=true;
  if(state.paragonProgress?.championDefeated===true&&flags.paragonComplete){flags.championVictory=true;flags.rivalJourneyComplete=true;}
+ for(const operation of ECLIPSE_OPERATIONS)if(flags.eclipseIntroduced&&state.badges>=operation.badges&&state.defeated?.[operation.id]===true)flags[operation.id+'Won']=true;
+ if(flags.eclipseIntroduced&&ECLIPSE_OPERATIONS.every(q=>flags[q.id+'Won']&&state.badges>=q.badges))flags.eclipseOperationsComplete=true;
  for(const encounter of RIVAL_JOURNEY)if(state.defeated?.[encounter.id]===true)flags[encounter.id+'Won']=true;
  if(state.paragonProgress?.ceremonyComplete===true&&flags.championVictory)flags.hallOfFame=true;
  return state.story;
@@ -7206,7 +7214,7 @@ function storyScene(id,lines,callback){
 }
 function storyMilestonePanel(state=s){
  normalizeStoryState(state);
- const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
+ const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor operation disrupted','eclipse-op-harborWon'],['Canyon operation disrupted','eclipse-op-canyonWon'],['Highland operation disrupted','eclipse-op-highlandWon'],['Team Eclipse operations investigated','eclipseOperationsComplete'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
  const completed=rows.filter(([,id])=>storyFlag(id,state));
  return '<div class="watchSectionTitle">Journey history</div>'+(completed.length?completed.map(([label])=>'<div class="watchRow"><span>'+label+'</span><span>Recorded</span></div>').join(''):'<div class="watchReadOnly">Your completed story milestones will appear here.</div>');
 }
@@ -7253,6 +7261,30 @@ function eclipseContactDialogue(id){
   if(storyChapterStatus('eclipseIntro',s)==='available')markStory('eclipseIntroduced');
  });
 }
+// Phase 14.4: field operations, not the headquarters or legendary storyline.
+const ECLIPSE_OPERATIONS=Object.freeze([
+ {id:'eclipse-op-harbor',area:'harborTown',badges:2,award:260,team:[['cr-012-falgrath',22],['cr-017-barkwarden',24]],lines:['Team Eclipse operative: These copies of the harbor survey records are for our field teams. You should not be asking questions.','If you insist on interfering, face my Critters.'],after:'The operative withdraws. You recover a copy of a survey inventory listing equipment shipments to several inland sites.'},
+ {id:'eclipse-op-canyon',area:'canyonTown',badges:4,award:520,team:[['cr-046-flitwing',37],['cr-017-barkwarden',39],['cr-062-parryfin',41]],lines:['Team Eclipse operative: We have been marking remote trails for our survey crews. This work is not open to outsiders.','You have come far enough. Prepare to battle.'],after:'The operative calls off the local survey. Their discarded route notes identify several remote survey locations, but reveal no reason for the work.'},
+ {id:'eclipse-op-highland',area:'highlandTown',badges:6,award:850,team:[['cr-012-falgrath',51],['cr-046-flitwing',53],['cr-073-petaloor',54],['cr-062-parryfin',56]],lines:['Team Eclipse operative: Our field reports have been delayed. We are relocating the remaining survey equipment.','I will not let you interfere with this operation.'],after:'The operative abandons the relocation. You record a field dispatch confirming that the surveyed sites are connected to a larger operation.'}
+]);
+function eclipseOperationAvailable(id,state=s){
+ const q=ECLIPSE_OPERATIONS.find(p=>p.id===id);
+ return !!q&&state.introComplete===true&&state.badges>=q.badges&&storyFlag('eclipseIntroduced',state);
+}
+function eclipseOperationDialogue(id){
+ const q=ECLIPSE_OPERATIONS.find(p=>p.id===id);
+ if(!q||s.area!==q.area)return;
+ if(!eclipseOperationAvailable(id))return say(['A survey worker turns away. Speak with the harbor dock worker or wetland contact to learn more about Team Eclipse.']);
+ if(s.defeated?.[id])return say(['This field operation has ended.',q.after]);
+ return say(q.lines,()=>startEclipseOperation(id));
+}
+function startEclipseOperation(id){
+ const q=ECLIPSE_OPERATIONS.find(p=>p.id===id);
+ if(!q||s.area!==q.area||!eclipseOperationAvailable(id)||s.defeated?.[id]||battle)return;
+ if(!speciesDataReady||!moveDataReady||q.team.some(([id])=>!speciesRegistry.has(id)))return notifyWorld('Critter data is loading. Try again shortly.');
+ if(firstAlive()<0)return notifyWorld('Heal your party before challenging Team Eclipse.');
+ startBattle({kind:'trainer',id,name:'Team Eclipse Operative',award:q.award,enemies:q.team.map(([id,level])=>critter(id,level)),eclipseOperation:true},'Team Eclipse challenges you!');
+}
 function researcherStoryDialogue(){
  if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
  if(!s.introComplete)return say(['Researcher: Let us finish your introductory training match.'],()=>startTrainer('tutorial'));
@@ -7262,7 +7294,12 @@ function researcherStoryDialogue(){
   'Our archives contain accounts of three legendary Critters. Their full story remains a subject of research.',
   'Researcher: If you hear the name Team Eclipse during your travels, remember it.'
  ]);
- if(storyFlag('eclipseIntroduced'))return say(['Researcher: Team Eclipse is a name worth remembering. We still need reliable information about their activities.']);
+ if(storyFlag('eclipseIntroduced')){
+  normalizeStoryState(s);
+  const remaining=ECLIPSE_OPERATIONS.filter(q=>!storyFlag(q.id+'Won'));
+  if(!remaining.length)return say(['Researcher: Your recovered reports confirm that Team Eclipse is coordinating surveys across the region.','Keep these records safe. We still do not know their purpose.']);
+  return say(['Researcher: Investigate the field teams in the harbor, canyon and highland settlements as your badge journey progresses.','Operations still to investigate: '+remaining.length+'.']);
+ }
  return say(['Researcher: Your Critter Index is functioning well. Good luck!']);
 }
 function rivalGardenScene(){
@@ -8439,6 +8476,7 @@ function endBattle(won,message,defeated){
  else if(b.paragon&&defeated&&won){if(recordParagonWin(b.id,s)){s.money+=b.award||0;s.defeated[b.id]=true;message+=' Paragon victory recorded. '+(paragonStatus(s).championEligible?'You are eligible to challenge the Champion.':'The next chamber is unlocked.');build();}}
  else if(b.paragon&&!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));recoverParagonDefeat();message+=' Previous Paragon victories are preserved.';}
  else if(defeated&&won){s.money+=b.award||0;if(b.id==='quest-garden'&&s.sideQuests?.['garden-challenge']?.status==='active')s.sideQuests['garden-challenge'].won=true;else if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
+  if(b.eclipseOperation){normalizeStoryState(s);message+=' Field report recorded in your Critter Index.';}
   const g=GYM_CHALLENGES.find(g=>g.active&&g.leaderId===b.id);
   if(g&&awardGymBadge(g)){message+=g.number===1?' You earned your first badge! The Critter Index vegetation cutter is now unlocked.':' You earned the '+(g.badgeName||'regional badge '+g.number)+'!';}
  }
@@ -8447,7 +8485,7 @@ function endBattle(won,message,defeated){
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
   ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">INDEX</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
  save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
- $('battleDone').onclick=()=>{close();if(b.champion&&won&&defeated)return championCeremony();if(b.rivalJourney&&won&&defeated)return say([RIVAL_JOURNEY.find(q=>q.id===b.id).after]);if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
+ $('battleDone').onclick=()=>{close();if(b.champion&&won&&defeated)return championCeremony();if(b.eclipseOperation&&won&&defeated)return say([ECLIPSE_OPERATIONS.find(q=>q.id===b.id).after]);if(b.rivalJourney&&won&&defeated)return say([RIVAL_JOURNEY.find(q=>q.id===b.id).after]);if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
  const wasParagon=battle?.paragon===true,wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
