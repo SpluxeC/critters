@@ -59,6 +59,7 @@ const NPC_VARIANTS=['Villager Boy','Villager Girl','Researcher','Lab Assistant',
 const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
  const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
+ if(id==='eclipse-marsh-contact')return 25;
  if(id==='paragon-1')return 21;
  if(id==='paragon-2')return 19;
  if(id==='paragon-3')return 27;
@@ -5455,6 +5456,8 @@ function populateExpansionArea(area){
   npc(x,y,lines,kind,id);const p=npcs[npcs.length-1];Object.assign(p,extra);return p;
  }
  if(SETTLEMENT_PLANS[area]){
+  const contact=ECLIPSE_INTRO_SITES.find(q=>q.area===area&&eclipseIntroAvailable());
+  if(contact)for(const [x,y] of [[12,16],[24,16],[15,18],[21,18],[12,18],[24,18],[15,10],[21,10]])if(add(x,y,contact.lines,contact.kind,contact.id))break;
   const rival=RIVAL_JOURNEY.find(q=>q.area===area&&rivalEncounterAvailable(q.id));
   if(rival)for(const [x,y] of [[15,16],[21,16],[15,10],[21,10],[12,16],[24,16],[15,18],[21,18]])if(add(x,y,rival.lines,'rival',rival.id))break;
   const lots=settlementLots(area);
@@ -5994,7 +5997,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(ECLIPSE_INTRO_SITES.some(q=>q.id===p.id)&&eclipseIntroAvailable())return eclipseContactDialogue(p.id);if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6576,7 +6579,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.89</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.90</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7145,7 +7148,7 @@ const STORY_CHAPTERS=Object.freeze([
  {id:'opening',title:'The beginning',requires:[],milestone:'tutorial',active:true},
  {id:'firstBadge',title:'First regional badge',requires:['tutorial'],milestone:'grassBadge',active:true},
  {id:'rivalJourney',title:'Rival journey',requires:['tutorial'],milestone:'rivalJourneyComplete',active:true},
- {id:'eclipseIntro',title:'Team Eclipse',requires:['grassBadge'],milestone:'eclipseIntroduced',active:false},
+ {id:'eclipseIntro',title:'Team Eclipse',requires:['grassBadge'],milestone:'eclipseIntroduced',active:true},
  {id:'eclipseOperations',title:'Team Eclipse operations',requires:['eclipseIntroduced'],milestone:'eclipseOperationsComplete',active:false},
  {id:'regionalHistory',title:'Regional history',requires:['grassBadge'],milestone:'regionalHistoryRevealed',active:false},
  {id:'legendaryDragon',title:'Dragon legend',requires:['regionalHistoryRevealed'],milestone:'dragonStoryComplete',active:false},
@@ -7203,7 +7206,7 @@ function storyScene(id,lines,callback){
 }
 function storyMilestonePanel(state=s){
  normalizeStoryState(state);
- const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
+ const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
  const completed=rows.filter(([,id])=>storyFlag(id,state));
  return '<div class="watchSectionTitle">Journey history</div>'+(completed.length?completed.map(([label])=>'<div class="watchRow"><span>'+label+'</span><span>Recorded</span></div>').join(''):'<div class="watchReadOnly">Your completed story milestones will appear here.</div>');
 }
@@ -7231,6 +7234,25 @@ function startRivalEncounter(id){
  const enemies=[...q.team.map(([id,level])=>critter(id,level)),rivalPartnerAtLevel(q.level)];
  startBattle({kind:'trainer',id,name:'Childhood Rival',award:q.award,enemies,rivalJourney:true},'Your childhood rival challenges you!');
 }
+// Phase 14.3: first contact only. Leadership, motives and legendary mechanics remain reserved.
+const ECLIPSE_INTRO_SITES=Object.freeze([
+ {area:'harborTown',id:'eclipse-harbor-contact',kind:'site-attendant',lines:['Dock worker: A group calling themselves Team Eclipse has been asking about old records and remote places.','They would not tell us why. If you meet them, pay attention to what they say.']},
+ {area:'marshTown',id:'eclipse-marsh-contact',kind:'site-attendant',lines:['Team Eclipse member: You have heard our name? Then you know we are interested in this region.','Our work is not something we discuss with passing trainers. Stay out of our way.']},
+ {area:'eclipseSite',id:'eclipseSite-attendant-12',kind:'site-attendant',lines:['Survey worker: Team Eclipse has been seen near these grounds. The facility is closed to visitors.','There is no authorized access beyond the public area.']}
+]);
+function eclipseIntroAvailable(state=s){
+ return state.introComplete===true&&state.badges>=1;
+}
+function eclipseContactDialogue(id){
+ const q=ECLIPSE_INTRO_SITES.find(p=>p.id===id);
+ if(!q||s.area!==q.area)return;
+ if(!eclipseIntroAvailable(s))return say(['There is nothing further to report at present.']);
+ const flag='eclipseContact:'+id;
+ if(storyFlag(flag))return say(q.lines);
+ return storyScene(flag,q.lines,()=>{
+  if(storyChapterStatus('eclipseIntro',s)==='available')markStory('eclipseIntroduced');
+ });
+}
 function researcherStoryDialogue(){
  if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
  if(!s.introComplete)return say(['Researcher: Let us finish your introductory training match.'],()=>startTrainer('tutorial'));
@@ -7240,6 +7262,7 @@ function researcherStoryDialogue(){
   'Our archives contain accounts of three legendary Critters. Their full story remains a subject of research.',
   'Researcher: If you hear the name Team Eclipse during your travels, remember it.'
  ]);
+ if(storyFlag('eclipseIntroduced'))return say(['Researcher: Team Eclipse is a name worth remembering. We still need reliable information about their activities.']);
  return say(['Researcher: Your Critter Index is functioning well. Good luck!']);
 }
 function rivalGardenScene(){
