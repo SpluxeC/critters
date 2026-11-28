@@ -935,7 +935,7 @@ test('Phase 9.10 Eclipse compound preserves public access and closed facility co
  for(const y of [3,11])for(const x of [17,18,19])assert.equal(tiles[y][x],T.path);
 });
 
-test('Phase 9.11 Victory Road and League court retain their crossings and closed palace',()=>{
+test('Phase 9.11/13.1 Ascension Pass and championship court retain their crossings and hall entrance',()=>{
  const T={grass:0,path:1,rock:2,stone:3,roof:4,tree:5,flower:6};
  const ctx=extract('function victoryRidgeCell(','function buildSpecialStorySite(',{T,W:44,H:34,tiles:[]});
  vm.runInContext(`
@@ -949,7 +949,7 @@ test('Phase 9.11 Victory Road and League court retain their crossings and closed
   for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);queue.push([nx,ny])}}
   assert.ok(seen.has((ctx.W-1)+',13'));
   if(area==='victoryRoad'){assert.ok(seen.has('0,13'));assert.ok(seen.has('29,25'));assert.equal(tiles[7][29],T.rock);}
-  else{assert.ok(seen.has('20,11'));assert.ok(seen.has('20,28'));assert.equal(tiles[10][20],T.roof);assert.equal(tiles[17][8],T.rock);}
+  else{assert.ok(seen.has('20,11'));assert.ok(seen.has('20,28'));assert.equal(tiles[10][20],T.door);assert.equal(tiles[17][8],T.rock);}
  }
 });
 
@@ -1169,4 +1169,21 @@ test('Phase 12.9 all eight Gym badges progress in order, once each, and unlock L
 test('Phase 12.9 raw Critter art path is accepted without breaking JavaScript parsing',()=>{
  const ctx=extract('function uploadedArtPath(','\nfunction ',{RESIDENTIAL_ART:new Set()});
  assert.equal(ctx.uploadedArtPath('assets/critters/starters/water.png'),'assets/critters/starters/water.png');
+});
+
+test('Phase 13.1 championship entry, retreat and public corridors remain accessible',()=>{
+ const T={wall:1,stone:2,mat:3,path:4,door:5};
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{T,W:38,H:34,tiles:[]});
+ vm.runInContext(`function put(x,y,t){tiles[y][x]=t}function rect(x,y,w,h,t){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)put(i,j,t)}function borders(t){rect(0,0,W,H,t)}`,ctx);
+ const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));championshipHallGeometry();return tiles})()`,ctx);
+ const blocked=new Set(['12,28','13,28','14,28','25,28','4,28','5,28','6,28','30,28','31,28','32,28','4,31','30,31','13,27','24,26']);
+ const seen=new Set(['19,31']),q=[[19,31]];
+ for(let k=0;k<q.length;k++){const [x,y]=q[k];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,key=a+','+b;if(![T.stone,T.mat,T.path,T.door].includes(tiles[b]?.[a])||seen.has(key)||blocked.has(key))continue;seen.add(key);q.push([a,b]);}}
+ for(const p of ['19,33','13,26','25,29','19,11'])assert.ok(seen.has(p),p);
+ for(const p of ['5,7','24,7','5,18','24,18','19,8'])assert.ok(!seen.has(p),p);
+});
+test('Phase 13.1 Ascension Pass habitat labels preserve existing area IDs',()=>{
+ const habitats=species.flatMap(sp=>sp.habitats||[]).filter(h=>h.areaId==='victoryRoad');
+ assert.ok(habitats.length>0);
+ assert.ok(habitats.every(h=>!h.areaName.includes('Victory Road')&&h.areaName.includes('Ascension Pass')));
 });
