@@ -60,6 +60,7 @@ const NPC_ROWS={down:0,left:1,right:2,up:3};
 function pickNpcSprite(x,y,kind='',id=''){
  const special={researcher:2,labassistant:3,center:4,shop:9,leader:21,switch:27};
  if(id==='paragon-1')return 21;
+ if(id==='paragon-2')return 19;
  if(kind in special)return special[kind];
  if(kind==='construction-worker')return x%2?17:18;
  if(kind==='gymtrainer')return 20;
@@ -3925,7 +3926,11 @@ function drawChampionshipHall(ox,oy){
  box(defense.x+1,defense.y+1,defense.w-2,defense.h-2,'#687c80');
  ctx.strokeStyle='#cbbd91';ctx.lineWidth=2;ctx.strokeRect(X(defense.x+1.3),Y(defense.y+1.3),(defense.w-2.6)*S,(defense.h-2.6)*S);
  ctx.strokeRect(X(defense.x+4),Y(defense.y+3),5*S,3*S);
- for(const r of CHAMPIONSHIP_ROOMS){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name+(r===defense?' · Warden Veyra':''),X(r.x+r.w/2),Y(r.y+.65));}
+ const offense=CHAMPIONSHIP_ROOMS[1];
+ box(offense.x+1,offense.y+1,offense.w-2,offense.h-2,'#795450');
+ ctx.strokeStyle='#e6bf86';ctx.lineWidth=2;ctx.strokeRect(X(offense.x+1.3),Y(offense.y+1.3),(offense.w-2.6)*S,(offense.h-2.6)*S);
+ for(const x of [offense.x+3,offense.x+8]){ctx.beginPath();ctx.moveTo(X(x),Y(offense.y+3));ctx.lineTo(X(x+1.5),Y(offense.y+4.5));ctx.lineTo(X(x),Y(offense.y+6));ctx.stroke();}
+ for(const [i,r] of CHAMPIONSHIP_ROOMS.entries()){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name+(PARAGON_MEMBERS[i].active?' · '+PARAGON_MEMBERS[i].name:''),X(r.x+r.w/2),Y(r.y+.65));}
  box(18.85,11,.1,14,'#ad874b');box(20.05,11,.1,14,'#ad874b');
  ctx.fillStyle='#ead9ad';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('CHAMPION',X(19),Y(8));ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
  for(const x of [3,10,26,33])drawUploadedFit('wall-banner',X(x),Y(.5),2*S,2*S);
@@ -5220,7 +5225,7 @@ const CHAMPIONSHIP_ROOMS=[{x:3,y:5,w:13,h:9,name:'Paragon Chamber I'},{x:22,y:5,
 // Phase 13.2: checkpoint-based challenge. Individual teams are authored in later phases.
 const PARAGON_MEMBERS=Object.freeze([
  {id:'paragon-1',slot:0,active:true,name:'Warden Veyra',strategy:'Defensive Strategist',award:1100,dialogue:['A strong defense is not hesitation. It is preparation.','Show me how you break a carefully built defense.'],team:[{speciesId:'cr-046-flitwing',level:63,moves:['steel-iron-guard','metal-clang','gear-grind','restore-spark']},{speciesId:'cr-073-petaloor',level:63,moves:['bark-shelter','septic-sting','sunpetal','corrode-claw']},{speciesId:'cr-072-miasmoth',level:64,moves:['antidote-skin','drench-mark','breaker-fang','miasma-lance']},{speciesId:'cr-085-veiloo',level:65,moves:['graveglass-ward','moonlit-echo','veil-ripper','restore-spark']},{speciesId:'cr-017-barkwarden',level:65,moves:['battle-breath','breaker-kick','force-palm','feint-stare']},{speciesId:'cr-144-gemhorn',level:66,moves:['bedrock-brace','geode-burst','boulderfall','second-breath']}]},
- {id:'paragon-2',slot:1,active:false,team:[]},
+ {id:'paragon-2',slot:1,active:true,name:'Marshal Kael',strategy:'Offensive Strategist',award:1250,dialogue:['Momentum wins battles. Every opening is an opportunity.','Show me whether your team can withstand relentless pressure.'],team:[{speciesId:'cr-012-falgrath',level:67,moves:['feather-jab','gale-whisper','updraft-poise','wingline-cut']},{speciesId:'cr-105-ignifawn',level:67,moves:['pyre-talon','flare-torrent','kindle-heart','cyclone-sweep']},{speciesId:'cr-184-zappet',level:68,moves:['thunderhook','skywire-flash','cyclone-sweep','tempest-conduit']},{speciesId:'cr-206-kickquill',level:68,moves:['comet-uppercut','focused-impact','hollow-star','victory-burst']},{speciesId:'cr-161-torchmink',level:69,moves:['pyre-talon','flare-torrent','breaker-fang','volcanic-rend']},{speciesId:'cr-174-psychelet',level:70,moves:['cerebral-crash','infinite-focus','volcanic-rend','kindle-heart']}]},
  {id:'paragon-3',slot:2,active:false,team:[]},
  {id:'paragon-4',slot:3,active:false,team:[]}
 ]);
@@ -6451,7 +6456,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.81</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.82</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7871,6 +7876,7 @@ function predictedMoveDamage(foe,target,move,enemyIndex,allyIndex){
 // Tactics differ by trainer role; all actions still use learned moves and PP.
 function trainerTactics(){
  if(battle.id==='paragon-1')return {support:1.55,setup:1.4,noise:.55,conserve:2,defensive:true};
+ if(battle.id==='paragon-2')return {support:1.05,setup:1.2,noise:.35,conserve:.6,aggressive:true};
  if(battle.id==='leader')return {support:1.65,setup:1.65,noise:.7,conserve:1};
  if(battle.id==='rival')return {support:1.1,setup:1.2,noise:1.3,conserve:.7};
  if(battle.mode===2)return {support:1.35,setup:1.2,noise:1,conserve:.8};
@@ -7890,6 +7896,13 @@ function trainerMoveScore(foe,move,enemyIndex,targetIndex,planned=[]){
   if(projected>=target.hp)score-=12;
   if(effect.id==='recoil')score-=Math.min(foe.hp,foe.maxHp*(effect.fraction||.2))*.55;
   if(effect.id==='recharge')score-=damage*.25;
+  if(tactics.aggressive){
+   // Prefer reliable type coverage, immediate pressure and safe finishing blows.
+   score+=Math.min(damage,remaining)*.65;
+   if(remaining>0&&damage>=remaining)score+=30;
+   if(effect.id==='recharge'&&damage<remaining)score-=damage*.45;
+   if(effect.id==='recoil'&&foe.hp<=Math.ceil(foe.maxHp*(effect.fraction||.2)))score-=damage<remaining?40:12;
+  }
  }
  let utility=0;
  const side=offensive?'ally':'enemy',stage=battleStages(side,targetIndex)[effect.stat||'attack']||0;
@@ -7910,6 +7923,16 @@ function trainerMoveScore(foe,move,enemyIndex,targetIndex,planned=[]){
   if(effect.id==='heal')utility=hpRatio<=.6?Math.min(target.maxHp-target.hp,target.maxHp*(effect.fraction||.25))*1.25:0;
   if(effect.id==='lower_stat'&&effect.stat==='accuracy')utility=stage>-1&&battle.turn<=4?8:0;
   if(effect.id==='recoil'&&foe.hp/foe.maxHp<.35)score-=22;
+ }
+ if(tactics.aggressive){
+  if(move.category==='status'){
+   if(effect.id==='raise_stat'&&['attack','special_attack'].includes(effect.stat)){
+    const category=effect.stat==='attack'?'physical':'special';
+    const compatible=foe.moves?.some(id=>{const m=validMove(id);return m?.category===category&&m.target==='enemy'&&(foe.movePP?.[id]||0)>0;});
+    utility=compatible&&stage<2&&hpRatio>.65?24:0;
+   }else if(effect.id==='raise_stat'&&effect.stat==='speed')utility=0; // Existing 1v1 team turns are player-first.
+   else utility*=.3;
+  }
  }
  score+=utility*chance*tactics.support;
  if(move.category==='status'&&utility<=0)score-=9;
