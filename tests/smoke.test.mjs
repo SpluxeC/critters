@@ -679,7 +679,7 @@ test('expansion route habitats preserve original roster and exclude starters and
 });
 
 test('Phase 5 special sites have accessible stationary attendants and no battle or capture triggers',()=>{
- const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7,roof:8,wall:9};
+ const T={grass:0,path:1,tree:2,rock:3,stone:4,water:5,tall:6,flower:7,roof:8,wall:9,door:10};
  const context={T,W:42,H:38,tiles:[],npcs:[],naturalSeed:(x,y)=>x*31+y*17};
  const ctx=extract('function sanctuaryKind(','function populateExpansionArea(',context);
  vm.runInContext(`
@@ -1402,4 +1402,40 @@ test('Phase 13.8 Hall of Fame preserves winning party and one-time ceremony rewa
   const legacy=ctx.ensureHallOfFame(reload);assert.equal(legacy.legacy,true);assert.equal(legacy.day,null);assert.equal(legacy.party.length,0);
   assert.equal(ctx.completeChampionCeremony(reload),true);assert.equal(reload.trainerProgress.outfits.filter(x=>x==='champion').length,1);
  }
+});
+
+test('Phase 13.9 malformed championship flags cannot bypass the Paragon',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const state={badges:8,paragonProgress:{registered:true,cleared:['paragon-2'],championDefeated:true,ceremonyComplete:true,hallOfFame:{party:[]}}};
+ assert.equal(ctx.championRecognized(state),false);
+ assert.equal(state.paragonProgress.championDefeated,false);
+ assert.equal(state.paragonProgress.ceremonyComplete,false);
+ assert.equal(state.paragonProgress.hallOfFame,undefined);
+});
+test('Phase 13.9 malformed Hall of Fame rows and missing ceremony outfit recover safely',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const state={badges:8,starter:'Water',trainerProgress:{outfits:['original']},paragonProgress:{registered:true,cleared:['paragon-1','paragon-2','paragon-3','paragon-4'],championDefeated:true,ceremonyComplete:true,hallOfFame:{party:[null]}}};
+ const h=ctx.ensureHallOfFame(state);assert.equal(h.legacy,true);assert.equal(h.party.length,0);
+ assert.ok(state.trainerProgress.outfits.includes('champion'));
+ assert.equal(ctx.completeChampionCeremony(state),false);
+});
+test('Phase 13.9 final arena has room to approach the rival from either side without bypassing gates',()=>{
+ const T={wall:1,stone:2,mat:3,path:4,door:5};
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{T,W:38,H:34,tiles:[],leagueEligible:state=>state.badges===8});
+ vm.runInContext(`function put(x,y,t){tiles[y][x]=t}function rect(x,y,w,h,t){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)put(i,j,t)}function borders(t){rect(0,0,W,H,t)}`,ctx);
+ for(let stage=-1;stage<=4;stage++){
+  ctx.state={badges:8,paragonProgress:{registered:stage>=0,cleared:Array.from({length:Math.max(0,stage)},(_,i)=>'paragon-'+(i+1))}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));championshipHallGeometry(state);return tiles})()`,ctx);
+  const blocked=new Set(['12,28','13,28','14,28','25,28','4,28','5,28','6,28','30,28','31,28','32,28','4,31','30,31','13,27','24,26','19,6','9,7','28,7','9,18','28,18']);
+  const seen=new Set(['19,31']),q=[[19,31]];
+  for(let k=0;k<q.length;k++){const [x,y]=q[k];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,key=a+','+b;if(![T.stone,T.mat,T.path,T.door].includes(tiles[b]?.[a])||seen.has(key)||blocked.has(key))continue;seen.add(key);q.push([a,b]);}}
+  assert.ok(seen.has('19,33'));
+  for(const [i,p] of ['5,7','24,7','5,18','24,18'].entries())assert.equal(seen.has(p),stage>=i,p);
+  assert.equal(seen.has('19,7'),stage===4);
+  if(stage===4){assert.ok(seen.has('18,6'));assert.ok(seen.has('20,6'));}
+ }
+});
+test('Phase 13.9 championship mutual knockout is not a victory',()=>{
+ const turn=game.slice(game.indexOf('async function resolveTeamTurn('),game.indexOf('function capture(){'));
+ assert.equal((turn.match(/!s\.party\.some\(p=>!isEgg\(p\)&&p\.hp>0\)&&battle\.paragon\)return blackout\(\)/g)||[]).length,2);
 });
