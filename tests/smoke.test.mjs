@@ -1107,3 +1107,34 @@ test('Phase 12.7 Flying teams use real species and Gale Badge is awarded once',(
  assert.equal(ctx.awardGymBadge(g,state),true);
  assert.equal(state.badges,7);assert.equal(ctx.awardGymBadge(g,state),false);
 });
+
+test('Phase 12.8 Ancient Gym inscriptions preserve retreat and guard the sanctum',()=>{
+ const T={stone:1,rock:2,path:3,wall:4};
+ const ctx=extract('const ANCIENT_GLYPHS=','function furnishAncientGym(',{T,W:30,H:24,tiles:[],gymChallenge:()=>({}),gymEarned:()=>false});
+ vm.runInContext(`function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)tiles[yy][xx]=t}`,ctx);
+ const order=['dawn','echo','memory','twilight'];
+ assert.equal(ctx.ancientGlyphProgress({gymProgress:{ancientGlyphs:['dawn','twilight']}}).length,1);
+ for(let stage=0;stage<=4;stage++)for(const done of [false,true]){
+  ctx.state={gymProgress:{ancientGlyphs:order.slice(0,stage),puzzles:{ancientTown:done}}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));ancientGymGeometry(state);return tiles})()`,ctx);
+  const blocked=new Set(['5,20','24,20','5,12','24,12','15,6','12,21','8,18','21,18','8,11','21,11','16,9']);
+  const seen=new Set(['15,21']),q=[[15,21]];
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k)||blocked.has(k))continue;seen.add(k);q.push([nx,ny])}}
+  for(const p of ['15,22','5,19','24,19','8,19','21,19'])assert.ok(seen.has(p),p);
+  for(const p of ['5,11','24,11','8,10','21,10','15,9'])assert.equal(seen.has(p),done||stage>=2,p);
+  assert.equal(seen.has('15,7'),done);
+ }
+});
+test('Phase 12.8 Ghost teams and eighth badge preserve progression',()=>{
+ const ctx=extract('const GYM_CHALLENGES=','function roomSize(',{});
+ const g=ctx.gymChallenge('ancientTown'),state={badges:7,defeated:{}};
+ ctx.normalizeGymProgress(state);
+ assert.equal(g.type,'Ghost');assert.equal(g.trainers.length,4);assert.equal(g.leader.team.length,6);
+ for(const trainer of [...g.trainers,g.leader])for(const member of trainer.team)assert.ok(species.find(sp=>sp.speciesId===member.speciesId)?.types.includes('Ghost'),member.speciesId);
+ assert.equal(ctx.completeGymPuzzle(g,state),false);
+ for(const id of g.trainerIds)state.defeated[id]=true;
+ assert.equal(ctx.gymRequirements(g,state).ready,false);
+ assert.equal(ctx.completeGymPuzzle(g,state),true);
+ assert.equal(ctx.awardGymBadge(g,state),true);
+ assert.equal(state.badges,8);assert.equal(ctx.awardGymBadge(g,state),false);
+});
