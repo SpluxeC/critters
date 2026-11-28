@@ -847,7 +847,14 @@ const GYM_CHALLENGES=Object.freeze([
  {id:'snow-g3',name:'Glacier Ranger',x:5,y:10,award:340,team:[{speciesId:'cr-119-rimesnout',level:41},{speciesId:'cr-205-pallowl',level:42},{speciesId:'cr-208-blizzlet',level:42}],dialogue:['Plan ahead, even when the ice carries you farther than expected.']},
  {id:'snow-g4',name:'Alpine Veteran',x:24,y:10,award:355,team:[{speciesId:'cr-190-hailhorn',level:42},{speciesId:'cr-116-frostip',level:43},{speciesId:'cr-117-glacibun',level:43}],dialogue:['A patient trainer can weather any winter.']}
  ],leader:{id:'snow-leader',name:'Snow Gym Leader',x:15,y:6,award:570,team:[{speciesId:'cr-119-rimesnout',level:43},{speciesId:'cr-121-chillume',level:44},{speciesId:'cr-205-pallowl',level:45},{speciesId:'cr-190-hailhorn',level:46},{speciesId:'cr-208-blizzlet',level:47}],dialogue:['The glacier teaches us to turn momentum into strength.']}},
- ...['highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+7,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
+ {id:'highlandTown',room:'highlandTownGym',town:'highlandTown',number:7,type:'Flying',active:true,badgeName:'Gale Badge',trainerIds:['highland-g1','highland-g2','highland-g3','highland-g4'],leaderId:'highland-leader',puzzle:'wind-lanes',
+ trainers:[
+ {id:'highland-g1',name:'Ridge Scout',x:5,y:19,award:370,team:[{speciesId:'cr-123-updrift',level:46},{speciesId:'cr-125-zephip',level:47}],dialogue:['Read the wind before crossing the ridge.']},
+ {id:'highland-g2',name:'Wind Surveyor',x:24,y:19,award:385,team:[{speciesId:'cr-124-gustwing',level:47},{speciesId:'cr-147-clouduck',level:48}],dialogue:['A steady tailwind makes all the difference.']},
+ {id:'highland-g3',name:'Sky Ranger',x:5,y:12,award:400,team:[{speciesId:'cr-078-breezlet',level:48},{speciesId:'cr-141-jabmink',level:49},{speciesId:'cr-184-zappet',level:49}],dialogue:['Flying teams can approach a battle from many angles.']},
+ {id:'highland-g4',name:'Summit Veteran',x:24,y:12,award:415,team:[{speciesId:'cr-110-stonewisp',level:49},{speciesId:'cr-105-ignifawn',level:50},{speciesId:'cr-124-gustwing',level:50}],dialogue:['Show me how you adapt to changing conditions.']}
+ ],leader:{id:'highland-leader',name:'Highland Gym Leader',x:15,y:6,award:650,team:[{speciesId:'cr-147-clouduck',level:50},{speciesId:'cr-078-breezlet',level:51},{speciesId:'cr-141-jabmink',level:52},{speciesId:'cr-184-zappet',level:53},{speciesId:'cr-124-gustwing',level:54}],dialogue:['The strongest wings are guided by a clear purpose.']}},
+ {id:'ancientTown',room:'ancientTownGym',town:'ancientTown',number:8,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}
 ]);
 function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
 function gymTrainerDefinition(id){
@@ -1004,6 +1011,7 @@ function furnishExpansionGym(area,add){
  if(area==='canyonTownGym'){furnishCanyonGym(add);return;}
  if(area==='volcanicTownGym'){furnishVolcanicGym(add);return;}
  if(area==='snowTownGym'){furnishSnowGym(add);return;}
+ if(area==='highlandTownGym'){furnishHighlandGym(add);return;}
  const theme=expansionInteriorTheme(area),gym=theme.gym;
  // Practice hall fixtures are deliberately non-battling, with unobstructed
  // entrance, middle aisle, arena and attendant access.
@@ -1202,6 +1210,45 @@ function operateSnowSeal(){
  if(!completeGymPuzzle(g))return notifyWorld('Defeat all four Gym trainers first.');
  build();save();return notifyWorld('The glacier seal opens. Challenge the Gym Leader!');
 }
+const HIGHLAND_CONTROLS=[{id:'west',x:8,y:17,target:1,trainer:'highland-g1'},{id:'east',x:21,y:17,target:2,trainer:'highland-g2'},{id:'summit',x:15,y:10,target:1,trainer:'highland-g4'}];
+function highlandSettings(state=s){
+ const old=state.gymProgress?.highlandWind;
+ return HIGHLAND_CONTROLS.map((_,i)=>[0,1,2].includes(old?.[i])?old[i]:0);
+}
+function highlandGymGeometry(){
+ const values=highlandSettings(),done=gymEarned(gymChallenge('highlandTown'))||s.gymProgress?.puzzles?.highlandTown;
+ rect(1,4,W-2,H-5,T.stone);
+ rect(1,8,W-2,1,T.rock);
+ if(done)rect(13,8,4,1,T.path);
+ rect(1,15,W-2,1,T.rock);
+ if(done||values[0]===1)rect(4,15,4,1,T.path);
+ if(done||values[1]===2)rect(22,15,4,1,T.path);
+ rect(12,19,6,4,T.path);
+}
+function furnishHighlandGym(add){
+ const note=add('windNotice',13,20,1,1,'terminal','Wind Lane Instructions','Defeat the ridge trainers and align the west vane East, the east vane West, and the summit vane East. Then use the summit seal.');note.art='critter-center-diagnostic-terminal-015';
+ for(const b of HIGHLAND_CONTROLS){const o=add('wind-'+b.id,b.x,b.y,1,1,'terminal','Wind Vane — '+b.id,'Rotate the vane to redirect the wind.','highland-wind-'+b.id);o.art='critter-center-diagnostic-terminal-015';}
+ const seal=add('windSeal',16,9,1,1,'terminal','Summit Seal','Requires all four trainer victories and correctly aligned vanes.','highland-seal');seal.art='critter-center-diagnostic-terminal-015';
+}
+function operateHighlandWind(id){
+ const g=gymChallenge('highlandTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.highlandTown)return notifyWorld('The wind lanes are already open.');
+ if(!gymEarned(gymChallenge('snowTown')))return notifyWorld('Earn the Glacier Badge first.');
+ const i=HIGHLAND_CONTROLS.findIndex(b=>b.id===id);if(i<0)return;
+ if(!s.defeated?.[HIGHLAND_CONTROLS[i].trainer])return notifyWorld('Defeat the nearby Gym trainer first.');
+ normalizeGymProgress(s);const values=highlandSettings(),labels=['North','East','West'];
+ // Once a lower lane is aligned it remains open, so retreat is always possible.
+ if(i<2&&values[i]===HIGHLAND_CONTROLS[i].target)return notifyWorld('This vane is aligned and its lane is open.');
+ values[i]=(values[i]+1)%3;s.gymProgress.highlandWind=values;build();save();
+ return notifyWorld('Wind vane '+id+': '+labels[values[i]]+'. Target: '+labels[HIGHLAND_CONTROLS[i].target]+'.');
+}
+function operateHighlandSeal(){
+ const g=gymChallenge('highlandTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.highlandTown)return notifyWorld('The summit seal is already open.');
+ if(!highlandSettings().every((v,i)=>v===HIGHLAND_CONTROLS[i].target))return notifyWorld('Align all three wind vanes first.');
+ if(!completeGymPuzzle(g))return notifyWorld('Earn the previous badges and defeat all four Gym trainers first.');
+ build();save();return notifyWorld('The summit seal opens. Challenge the Gym Leader!');
+}
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
  // Always maintain a free central aisle and unobstructed exit at (17,25).
@@ -1311,6 +1358,8 @@ function inspectInterior(o){
  if(o.action?.startsWith('canyon-weight-'))return operateCanyonWeight(o.action.slice(14));
  if(o.action?.startsWith('thermal-'))return operateThermalControl(o.action.slice(8));
  if(o.action==='snow-seal')return operateSnowSeal();
+ if(o.action?.startsWith('highland-wind-'))return operateHighlandWind(o.action.slice(14));
+ if(o.action==='highland-seal')return operateHighlandSeal();
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -2318,7 +2367,7 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();if(s.area==='volcanicTownGym')volcanicGymGeometry();if(s.area==='snowTownGym')snowGymGeometry();populateGymChallenge(s.area);}
+  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();if(s.area==='volcanicTownGym')volcanicGymGeometry();if(s.area==='snowTownGym')snowGymGeometry();if(s.area==='highlandTownGym')highlandGymGeometry();populateGymChallenge(s.area);}
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -3743,6 +3792,16 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  ctx.strokeRect(X(9),Y(9),12*S,8*S);
  ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
  ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
+ if(s.area==='highlandTownGym'){
+  for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
+   const t=tiles[y][x];box(x,y,1,1,t===T.rock?'#56685e':t===T.path?'#d2c7a4':'#a8af98');
+   box(x,y+.95,1,.05,'#788575');box(x+.95,y,.05,1,'#788575');
+   if(t===T.rock){box(x+.08,y+.1,.84,.22,'#829388');box(x+.12,y+.7,.76,.18,'#394e45');}
+   if(t===T.path&&y===15){box(x+.13,y+.35,.74,.09,'#f3e8bc');}
+  }
+  const values=highlandSettings();
+  for(let i=0;i<HIGHLAND_CONTROLS.length;i++){const b=HIGHLAND_CONTROLS[i];box(b.x,b.y+.8,1,.12,values[i]===b.target?'#e3cf81':'#657d88');}
+ }
  if(s.area==='snowTownGym'){
   for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
    const t=tiles[y][x];box(x,y,1,1,t===T.tall?'#b4dce5':t===T.rock?'#718b9a':t===T.path?'#d9e2de':'#a5b6bc');
@@ -6211,7 +6270,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.75</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.76</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
