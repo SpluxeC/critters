@@ -1408,6 +1408,7 @@ function furnishInterior(area){
 }
 function inspectInterior(o){
  startPropAnimation(o.id,interactivePropBase(o));
+ if(o.id==='championship-reception'||o.id==='championship-notice')return openParagonRegistration();
  if(o.action?.startsWith('harbor-valve-'))return operateHarborValve(o.action.slice(13));
  if(o.action?.startsWith('marsh-bridge-'))return operateMarshBridge(o.action.slice(13));
  if(o.action?.startsWith('canyon-weight-'))return operateCanyonWeight(o.action.slice(14));
@@ -2047,7 +2048,7 @@ function migrate(){
  s.regionalWildEncounters=s.regionalWildEncounters&&typeof s.regionalWildEncounters==='object'&&!Array.isArray(s.regionalWildEncounters)?s.regionalWildEncounters:{};
  s.captureCount=s.captureCount||0;s.captureLog=Array.isArray(s.captureLog)?s.captureLog.filter(q=>q&&typeof q.type==='string').slice(-80):[];collectionData();s.money=Number.isFinite(s.money)?s.money:250;
  s.inventory=s.inventory||{Potion:4,Revive:1};s.modules=Array.isArray(s.modules)?s.modules:[];s.installed=Array.isArray(s.installed)?s.installed:[];
- s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};normalizeGymProgress(s);
+ s.defeated=s.defeated||{};s.puzzles=s.puzzles||{};normalizeGymProgress(s);normalizeParagonProgress(s);
  migrateHomestead();
  s.rivalPassed=!!s.rivalPassed;s.introComplete=!!s.introComplete;
  s.worldMinutes=Number.isFinite(s.worldMinutes)?((s.worldMinutes%1440)+1440)%1440:8*60;
@@ -5208,29 +5209,92 @@ function buildLeagueLandscape(){
 }
 // Phase 13.1: public championship venue; battle systems arrive in later phases.
 const CHAMPIONSHIP_ROOMS=[{x:3,y:5,w:13,h:9,name:'Paragon Chamber I'},{x:22,y:5,w:13,h:9,name:'Paragon Chamber II'},{x:3,y:16,w:13,h:8,name:'Paragon Chamber III'},{x:22,y:16,w:13,h:8,name:'Paragon Chamber IV'}];
-function championshipHallGeometry(){
+// Phase 13.2: checkpoint-based challenge. Individual teams are authored in later phases.
+const PARAGON_MEMBERS=Object.freeze([
+ {id:'paragon-1',slot:0,active:false,team:[]},
+ {id:'paragon-2',slot:1,active:false,team:[]},
+ {id:'paragon-3',slot:2,active:false,team:[]},
+ {id:'paragon-4',slot:3,active:false,team:[]}
+]);
+function normalizeParagonProgress(state){
+ const old=state.paragonProgress&&typeof state.paragonProgress==='object'&&!Array.isArray(state.paragonProgress)?state.paragonProgress:{};
+ const cleared=[];
+ if(old.registered===true&&Array.isArray(old.cleared))for(const m of PARAGON_MEMBERS){if(old.cleared[cleared.length]!==m.id)break;cleared.push(m.id);}
+ state.paragonProgress={...old,registered:old.registered===true,cleared,losses:Number.isSafeInteger(old.losses)&&old.losses>=0?old.losses:0};
+ return state.paragonProgress;
+}
+function paragonStatus(state){
+ const p=normalizeParagonProgress(state),eligible=leagueEligible(state);
+ return {registered:p.registered,cleared:p.cleared.length,next:eligible&&p.registered?PARAGON_MEMBERS[p.cleared.length]||null:null,championEligible:eligible&&p.registered&&p.cleared.length===PARAGON_MEMBERS.length};
+}
+function registerParagon(state){
+ if(!leagueEligible(state))return false;
+ normalizeParagonProgress(state).registered=true;return true;
+}
+function paragonChamberOpen(slot,state){
+ const status=paragonStatus(state);
+ return leagueEligible(state)&&status.registered&&Number.isInteger(slot)&&slot>=0&&slot<PARAGON_MEMBERS.length&&slot<=status.cleared;
+}
+function paragonBattleReady(id,state){
+ const status=paragonStatus(state),m=status.next;
+ return !!m&&m.id===id&&m.active===true&&Array.isArray(m.team)&&m.team.length>0;
+}
+function recordParagonWin(id,state){
+ if(!paragonBattleReady(id,state))return false;
+ state.paragonProgress.cleared.push(id);return true;
+}
+function recordParagonLoss(state){
+ const p=normalizeParagonProgress(state);p.losses++;return p.losses;
+}
+function paragonProgressPanel(state=s){
+ const p=paragonStatus(state);
+ return '<div class="watchSectionTitle">The Paragon · '+p.cleared+'/4</div><div class="watchReadOnly">'+(!leagueEligible(state)?'Earn eight regional Gym badges.':!p.registered?'Register at Championship Hall.':p.championEligible?'Champion eligible.':p.next?.active?'Next: Paragon Chamber '+(p.cleared+1):'Next: Paragon Chamber '+(p.cleared+1)+' — opponent pending.')+'</div>'+PARAGON_MEMBERS.map((m,i)=>'<div class="watchRow"><span>Paragon Chamber '+(i+1)+'</span><span>'+(i<p.cleared?'Cleared':!p.registered||!leagueEligible(state)||i>p.cleared?'Locked':m.active?'Ready':'Opponent pending')+'</span></div>').join('');
+}
+function openParagonRegistration(){
+ const p=paragonStatus(s);
+ open('The Paragon',paragonProgressPanel(s)+'<p>Completed chambers are saved. You may leave to prepare and resume at your next opponent. Defeat returns you to reception with your prior victories intact.</p>'+(!p.registered&&leagueEligible(s)?'<button class="btn primary" id="paragonRegister">Register challenge</button>':'')+'<button class="btn" id="paragonClose">Close</button>');
+ if($('paragonRegister'))$('paragonRegister').onclick=()=>{if(!registerParagon(s))return;close();build();save();notifyWorld('Registration complete. Paragon Chamber I is open.');};
+ $('paragonClose').onclick=close;
+}
+function startParagonBattle(id){
+ if(s.area!=='championshipHall'||!paragonBattleReady(id,s))return notifyWorld('This Paragon opponent is not ready to challenge.');
+ const m=PARAGON_MEMBERS.find(q=>q.id===id);
+ if(!speciesRegistry.size||m.team.some(t=>!speciesRegistry.has(t.speciesId)))return notifyWorld('Critter data is not ready. Please try again.');
+ if(firstAlive()<0)return notifyWorld('Heal your party before challenging The Paragon.');
+ const enemies=m.team.map(t=>critter(t.speciesId,t.level));
+ startBattle({kind:'trainer',id:m.id,name:m.name||'Paragon member',award:m.award||0,enemies,paragon:true},(m.name||'Paragon member')+' challenges you!');
+}
+function recoverParagonDefeat(){
+ recordParagonLoss(s);
+ s.party.forEach(p=>{if(!isEgg(p)){p.hp=p.maxHp;p.status='';refillMovePP(p);}});
+ s.area='championshipHall';s.x=19;s.y=30;s.face='up';build();resetOutdoorCamera();
+}
+function championshipHallGeometry(state=s){
  borders(T.wall);rect(1,4,W-2,H-5,T.stone);
- for(const r of CHAMPIONSHIP_ROOMS){
+ for(const [slot,r] of CHAMPIONSHIP_ROOMS.entries()){
   rect(r.x,r.y,r.w,r.h,T.mat);
   rect(r.x,r.y,r.w,1,T.wall);rect(r.x,r.y+r.h-1,r.w,1,T.wall);
   rect(r.x,r.y,1,r.h,T.wall);rect(r.x+r.w-1,r.y,1,r.h,T.wall);
+  if(paragonChamberOpen(slot,state))put(slot%2===0?r.x+r.w-1:r.x,r.y+Math.floor(r.h/2),T.path);
  }
- // Four reserved chambers and the Champion's arena remain closed until challenges exist.
- rect(17,4,4,7,T.wall);rect(17,11,4,21,T.path);
+ rect(17,4,4,7,T.wall);rect(18,5,2,5,T.mat);
+ if(paragonStatus(state).championEligible)rect(18,10,2,1,T.path);
+ rect(17,11,4,21,T.path);
  rect(2,25,W-4,7,T.path);put(Math.floor(W/2),H-1,T.door);
 }
 function buildChampionshipHall(){
  championshipHallGeometry();
  const prop=(id,x,y,w,h,kind,title,desc,art)=>{const o=addInteriorObject(id,x,y,w,h,kind,title,[desc]);o.art=art;};
- prop('championship-reception',12,28,3,1,'counter','Registration','The Paragon challenge is not yet open.','critter-center-reception-counter-002');
- prop('championship-notice',25,28,1,1,'terminal','Championship Directory','Four Paragon chambers and the Champion arena are reserved for official challenges.','critter-center-diagnostic-terminal-015');
+ prop('championship-reception',12,28,3,1,'counter','Registration','Register here to begin The Paragon challenge.','critter-center-reception-counter-002');
+ prop('championship-notice',25,28,1,1,'terminal','Championship Directory','Register and clear the four Paragon chambers in order. The Champion arena opens after all four victories.','critter-center-diagnostic-terminal-015');
  for(const x of [4,30]){prop('championship-bench-'+x,x,28,3,1,'table','Waiting Bench','A place for challengers to rest.','gym-bench-01');prop('championship-planter-'+x,x,31,1,1,'display','Planter','A carefully maintained plant.','gym-potted-plant-01');}
- npc(13,27,['Welcome to the Championship Hall. The Paragon challenges will open in a later update.'],'site-attendant','championship-receptionist');
+ npc(13,27,['Welcome to the Championship Hall. Register here to begin.'],'site-attendant','championship-receptionist');
+ for(const m of PARAGON_MEMBERS){if(!paragonChamberOpen(m.slot,s))continue;const r=CHAMPIONSHIP_ROOMS[m.slot],x=r.x+Math.floor(r.w/2),y=r.y+2;const cleared=paragonStatus(s).cleared>m.slot;npc(x,y,[cleared?'Your victory is recorded.':m.active?'Ready for your challenge?':'This opponent is not yet available.'],'site-attendant',m.id);}
  npc(24,26,['The four members of The Paragon each master a different battle strategy.'],'site-attendant','championship-guide');
 }
 function buildSpecialStorySite(area){
  const plans={
-  leagueGrounds:{kind:'league',actors:[[12,18,'Championship attendant: The hall is open to visitors with all eight badges. The Paragon challenges are not yet available.'],[26,18,'Championship groundskeeper: Follow the central steps to the hall entrance.']]},
+  leagueGrounds:{kind:'league',actors:[[12,18,'Championship attendant: The hall is open to visitors with all eight badges. Register at reception to begin The Paragon challenge.'],[26,18,'Championship groundskeeper: Follow the central steps to the hall entrance.']]},
   eclipseSite:{kind:'facility',actors:[[12,18,'Survey worker: The facility entrance is closed. Please remain on the public grounds.']]},
   legendaryReserveA:{kind:'coast',actors:[[12,18,'Coastal observer: Please leave the sanctuary undisturbed. The shoreline is open for quiet exploration.']]},
   legendaryReserveB:{kind:'marsh',actors:[[12,18,'Wetland observer: Keep to the raised paths around the pools.']]},
@@ -5797,7 +5861,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(p.id==='championship-receptionist'||p.id==='championship-guide')return openParagonRegistration();if(PARAGON_MEMBERS.some(m=>m.id===p.id))return paragonBattleReady(p.id,s)?say(p.text,()=>startParagonBattle(p.id)):say(p.text);if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6247,7 +6311,7 @@ function normalizeTrainerProgress(){
 function trainerMetrics(){return {captures:s.captureCount||0,unique:collectionCounts().captured,finds:allExplorationFinds().filter(o=>s.discoveries?.[o.id]).length,badges:s.badges||0,steps:s.steps||0,quests:SIDE_QUESTS.filter(q=>s.sideQuests?.[q.id]?.status==='complete').length,wins:s.trainerProgress.wins,estate:s.homestead?.owned?1:0}}
 function trainerProfile(){
  const m=trainerMetrics(),p=s.trainerProgress;
- return '<div class="watchSectionTitle">Trainer profile · '+escapeHtml(s.name)+'</div><div class="watchMetrics">'+[['Steps',m.steps],['Trainer wins',m.wins],['Battle losses',p.losses],['Quests',m.quests],['Badges',m.badges],['Discoveries',m.finds]].map(([k,v])=>'<div><strong>'+v.toLocaleString()+'</strong><span>'+k+'</span></div>').join('')+'</div>'+gymProgressPanel()+'<div class="watchSectionTitle">Achievements</div>'+TRAINER_ACHIEVEMENTS.map(a=>'<div class="watchToolCard"><strong>'+a.name+'</strong><p>'+Math.min(a.goal,m[a.metric])+' / '+a.goal+' · '+a.metric+' · Reward '+a.credits+' money'+(a.outfit?' + outfit':a.decor?' + home decoration':'')+'</p>'+(p.claimed.includes(a.id)?'<span>Claimed</span>':'<button class="btn" data-achievement="'+a.id+'" '+(m[a.metric]<a.goal?'disabled':'')+'>Claim reward</button>')+'</div>').join('');
+ return '<div class="watchSectionTitle">Trainer profile · '+escapeHtml(s.name)+'</div><div class="watchMetrics">'+[['Steps',m.steps],['Trainer wins',m.wins],['Battle losses',p.losses],['Quests',m.quests],['Badges',m.badges],['Discoveries',m.finds]].map(([k,v])=>'<div><strong>'+v.toLocaleString()+'</strong><span>'+k+'</span></div>').join('')+'</div>'+gymProgressPanel()+paragonProgressPanel()+'<div class="watchSectionTitle">Achievements</div>'+TRAINER_ACHIEVEMENTS.map(a=>'<div class="watchToolCard"><strong>'+a.name+'</strong><p>'+Math.min(a.goal,m[a.metric])+' / '+a.goal+' · '+a.metric+' · Reward '+a.credits+' money'+(a.outfit?' + outfit':a.decor?' + home decoration':'')+'</p>'+(p.claimed.includes(a.id)?'<span>Claimed</span>':'<button class="btn" data-achievement="'+a.id+'" '+(m[a.metric]<a.goal?'disabled':'')+'>Claim reward</button>')+'</div>').join('');
 }
 function claimTrainerAchievement(id){
  const a=TRAINER_ACHIEVEMENTS.find(a=>a.id===id),p=s.trainerProgress;
@@ -6379,7 +6443,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.79</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.80</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -8057,6 +8121,8 @@ function endBattle(won,message,defeated){
  const b=battle;clearCombatNarrator();battle=null;$('close').hidden=false;
  if(b.kind==='trainer'&&won&&defeated)s.trainerProgress.wins++;else if(!won&&b.kind!=='tutorial')s.trainerProgress.losses++;
  if(b.kind==='tutorial'){s.introComplete=true;s.party.forEach(p=>{if(isEgg(p))return;p.hp=p.maxHp;p.status='';refillMovePP(p)})}
+ else if(b.paragon&&defeated&&won){if(recordParagonWin(b.id,s)){s.money+=b.award||0;s.defeated[b.id]=true;message+=' Paragon victory recorded. '+(paragonStatus(s).championEligible?'You are eligible to challenge the Champion.':'The next chamber is unlocked.');build();}}
+ else if(b.paragon&&!won){s.money=Math.max(0,s.money-Math.floor(s.money*0.1));recoverParagonDefeat();message+=' Previous Paragon victories are preserved.';}
  else if(defeated&&won){s.money+=b.award||0;if(b.id==='quest-garden'&&s.sideQuests?.['garden-challenge']?.status==='active')s.sideQuests['garden-challenge'].won=true;else if(b.id&&b.id!=='tutorial')s.defeated[b.id]=true;
   const g=GYM_CHALLENGES.find(g=>g.active&&g.leaderId===b.id);
   if(g&&awardGymBadge(g)){message+=g.number===1?' You earned your first badge! The Critter Index vegetation cutter is now unlocked.':' You earned the '+(g.badgeName||'regional badge '+g.number)+'!';}
@@ -8069,10 +8135,10 @@ function endBattle(won,message,defeated){
  $('battleDone').onclick=()=>{close();if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
- const wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
+ const wasParagon=battle?.paragon===true,wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
  if(!wasTutorial)s.money=Math.max(0,s.money-Math.floor(s.money*0.1));s.party.forEach(p=>{if(!isEgg(p))p.hp=p.maxHp});
- if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>{if(!isEgg(p))refillMovePP(p)})}else{const target=centerArrival(s.lastCenter);s.area=target?.room||'village';s.x=target?.x??17;s.y=target?.y??16;s.face='up'}build();resetOutdoorCamera();save();
- open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
+ if(wasParagon){recoverParagonDefeat();}else if(wasTutorial){s.introComplete=true;s.area='lab';s.x=17;s.y=14;s.party.forEach(p=>{if(!isEgg(p))refillMovePP(p)})}else{const target=centerArrival(s.lastCenter);s.area=target?.room||'village';s.x=target?.x??17;s.y=target?.y??16;s.face='up'}build();resetOutdoorCamera();save();
+ open('Blackout','<p>'+(wasTutorial?'Your friendly tutorial match ended. The researcher healed your starter without a penalty.':wasParagon?'Your party recovered at championship reception. Previous Paragon victories are preserved.':'Your whole party fainted. You lost a little money and recovered at your last Critter Center.')+'</p><button class="btn primary" id="blackoutDone">Continue</button>');$('blackoutDone').onclick=close
 }
 function center(){
  ensureMapDiscovery();const parent=townServiceParent();if(REGION_MAP_PLACES.some(p=>p.id===parent&&p.kind==='center'))s.discoveredCenters[parent]=true;
