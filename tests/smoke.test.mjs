@@ -1196,7 +1196,7 @@ test('Phase 13.2 Paragon registration, ordered victories, checkpoints and Champi
  state.badges=8;assert.equal(ctx.registerParagon(state),true);
  assert.equal(ctx.paragonChamberOpen(0,state),true);
  assert.equal(ctx.paragonChamberOpen(1,state),false);
- assert.equal(ctx.recordParagonWin('paragon-1',state),false);
+ assert.equal(ctx.recordParagonWin('paragon-2',state),false);
  // Simulate future authored opponents in this isolated context only.
  vm.runInContext('for(const m of PARAGON_MEMBERS){m.active=true;m.team=[{speciesId:"test",level:1}]}',ctx);
  for(let i=0;i<4;i++){
@@ -1225,4 +1225,38 @@ test('Phase 13.2 chamber gates open in order and always allow retreat',()=>{
   for(const [i,p] of ['5,7','24,7','5,18','24,18'].entries())assert.equal(seen.has(p),stage>=i,p);
   assert.equal(seen.has('19,8'),stage===4);
  }
+});
+
+test('Phase 13.3 Warden Veyra uses valid mixed-type defensive loadouts',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const member=vm.runInContext('PARAGON_MEMBERS[0]',ctx);
+ assert.equal(member.active,true);assert.equal(member.team.length,6);
+ const types=new Set(),moveById=new Map(moves.map(m=>[m.id,m]));
+ for(const t of member.team){
+  const sp=species.find(s=>s.speciesId===t.speciesId);assert.ok(sp,t.speciesId);
+  sp.types.forEach(type=>types.add(type));assert.equal(t.moves.length,4);
+  assert.equal(new Set(t.moves).size,4);
+  for(const id of t.moves){
+   const m=moveById.get(id);assert.ok(m,id);
+   assert.ok(sp.levelUp.some(q=>q.moveId===id&&q.level<=t.level)||(['restore-spark','second-breath'].includes(id)&&m.type==='Typeless'&&m.requiredLevelGuide<=t.level),id);
+  }
+  assert.ok(t.moves.some(id=>moveById.get(id).target==='enemy'&&moveById.get(id).power>0));
+ }
+ assert.ok(types.size>=5);
+ const state={badges:8};ctx.registerParagon(state);
+ assert.equal(ctx.paragonBattleReady('paragon-1',state),true);
+ assert.equal(ctx.recordParagonWin('paragon-1',state),true);
+ assert.equal(ctx.paragonChamberOpen(1,state),true);
+});
+test('Phase 13.3 defensive AI prefers early defense and injured recovery without full-HP healing',()=>{
+ const foe={hp:100,maxHp:100,movePP:{guard:10,heal:5}},stages={defense:0};
+ const ctx=extract('function trainerTactics(','function chooseTrainerAction(',{
+  battle:{id:'paragon-1',turn:1,enemies:[foe]},s:{party:[]},STAGE_LIMIT:6,battleStages:()=>stages
+ });
+ const guard={id:'guard',target:'self',category:'status',effect:{id:'raise_stat',stat:'defense',chance:100}};
+ const heal={id:'heal',target:'self',category:'status',effect:{id:'heal',fraction:.5,chance:100}};
+ assert.ok(ctx.trainerMoveScore(foe,guard,0,0)>0);
+ assert.ok(ctx.trainerMoveScore(foe,heal,0,0)<0);
+ stages.defense=2;assert.ok(ctx.trainerMoveScore(foe,guard,0,0)<0);
+ foe.hp=40;assert.ok(ctx.trainerMoveScore(foe,heal,0,0)>0);
 });
