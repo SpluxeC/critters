@@ -1579,7 +1579,8 @@ test('Phase 14.5 history requires the first badge, both solved puzzles and both 
  const before=saves;ctx.regionalHistoryDialogue('history-archive-tablet');assert.equal(saves,before);
  assert.equal(ctx.storyChapterStatus('legendaryDragon',state),'available');
  assert.equal(ctx.storyChapterStatus('legendaryPrimordial',state),'available');
- for(const id of ['legendaryBeast','eclipseFinale'])assert.equal(ctx.storyChapterStatus(id,state),'reserved');
+ assert.equal(ctx.storyChapterStatus('legendaryBeast',state),'available');
+ assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'reserved');
 });
 test('Phase 14.5 previously solved puzzles do not auto-grant lore or duplicate caches',()=>{
  const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
@@ -1650,4 +1651,36 @@ test('Phase 14.7 Eonolith is retryable until capture and cannot spawn again afte
  assert.equal(starts.length,2);assert.equal(starts[0].kind,'wild');assert.equal(starts[0].enemies[0].speciesId,'cr-101-eonolith');
  state.storage.push({speciesId:'cr-101-eonolith'});
  ctx.startPrimordialEncounter();assert.equal(starts.length,2);
+});
+
+test('Phase 14.8 Feralune unlocks independently and recognizes legacy captures',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const state={introComplete:true,badges:1,story:{flags:{regionalHistoryRevealed:true}},party:[],storage:[]};
+ assert.equal(ctx.beastEncounterAvailable(state),true);
+ assert.equal(ctx.beastEncounterAvailable({...state,badges:0}),false);
+ assert.equal(ctx.beastEncounterAvailable({...state,story:{flags:{}}}),false);
+ assert.equal(ctx.setStoryFlag('beastStoryComplete',state),false);
+ assert.equal(ctx.storyChapterStatus('legendaryBeast',state),'available');
+ for(const id of ['cr-153-feralune','cr-200-feralune']){
+  const old={...state,story:{flags:{regionalHistoryRevealed:true}},storage:[{speciesId:id}]};
+  assert.equal(ctx.beastAlreadyCaptured(old),true);
+  assert.equal(ctx.beastEncounterAvailable(old),false);
+  assert.equal(ctx.storyChapterStatus('legendaryBeast',old),'complete');
+  assert.equal(ctx.storyChapterStatus('legendaryBeast',JSON.parse(JSON.stringify(old))),'complete');
+  assert.equal(ctx.storyChapterStatus('legendaryDragon',old),'available');
+  assert.equal(ctx.storyChapterStatus('legendaryPrimordial',old),'available');
+ }
+ const sp=species.find(p=>p.speciesId==='cr-153-feralune');
+ assert.deepEqual(sp.types,['Beast','Shadow']);
+ assert.equal(sp.habitats[0].areaId,'legendaryReserveB');
+ assert.equal(sp.habitats[0].maxLevel,42);
+});
+test('Phase 14.8 Feralune retries until captured and uses standard wild battle',()=>{
+ let starts=[];
+ const state={introComplete:true,badges:8,area:'legendaryReserveB',story:{flags:{regionalHistoryRevealed:true}},party:[],storage:[]};
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:state,battle:null,speciesDataReady:true,moveDataReady:true,speciesRegistry:new Map(species.map(p=>[p.speciesId,p])),firstAlive:()=>0,critter:(id,level)=>({speciesId:id,level}),startBattle:b=>starts.push(b)});
+ ctx.startBeastEncounter();ctx.startBeastEncounter();
+ assert.equal(starts.length,2);assert.equal(starts[0].kind,'wild');assert.equal(starts[0].enemies[0].speciesId,'cr-153-feralune');
+ state.storage.push({speciesId:'cr-153-feralune'});
+ ctx.startBeastEncounter();assert.equal(starts.length,2);
 });
