@@ -1801,3 +1801,34 @@ test('Phase 14.11 legendary overworld markers use species art rather than human 
  for(const name of ['DRAGON','PRIMORDIAL','BEAST'])assert.ok(game.includes('legendarySpeciesId='+name+'_LEGEND.speciesId'));
  assert.match(game,/if\(p.legendarySpeciesId\)\{/);
 });
+
+test('Phase 15 wild encounters have recovery steps, bounded droughts and no encounters in safe areas',()=>{
+ const ctx=extract('function shouldStartWildEncounter(','function wildEncounterChance(',{});
+ for(const rate of [.075,.085,.105,.11]){
+  for(let n=0;n<=3;n++)assert.equal(ctx.shouldStartWildEncounter(n,rate,0),false);
+  assert.equal(ctx.shouldStartWildEncounter(4,rate,0),true);
+  assert.equal(ctx.shouldStartWildEncounter(4,rate,.99),false);
+  assert.equal(ctx.shouldStartWildEncounter(20,rate,rate*1.25),true);
+  assert.equal(ctx.shouldStartWildEncounter(Math.ceil(3/rate),rate,.99),true);
+ }
+ assert.equal(ctx.shouldStartWildEncounter(100,0,0),false);
+ assert.equal(ctx.shouldStartWildEncounter(100,NaN,0),false);
+});
+test('Phase 15 bounded chunk cache preserves active world geometry',()=>{
+ const start=game.indexOf('const outdoorChunks=new Map();'),at=game.indexOf('function rememberOutdoorChunk(',start),end=game.indexOf('\n',at);
+ const ctx=vm.createContext({});
+ vm.runInContext(game.slice(start,end),ctx);
+ ctx.rememberOutdoorChunk('active',{marker:1},'active');
+ for(let i=0;i<20;i++)ctx.rememberOutdoorChunk('chunk'+i,{marker:i},'active');
+ assert.equal(vm.runInContext('outdoorChunks.size',ctx),8);
+ assert.equal(vm.runInContext("outdoorChunks.get('active').marker",ctx),1);
+ assert.equal(vm.runInContext("outdoorChunks.has('chunk0')",ctx),false);
+ assert.equal(vm.runInContext("outdoorChunks.has('chunk19')",ctx),true);
+});
+
+test('Phase 15 invalid or fainted targets cannot produce capture probability',()=>{
+ const ctx=extract('function captureChance(','function addCapturedCritter(',{});
+ for(const hp of [0,-1,NaN,Infinity,undefined])assert.equal(ctx.captureChance({hp,maxHp:100}),0);
+ assert.equal(ctx.captureChance({hp:100,maxHp:100}),.14);
+ assert.ok(ctx.captureChance({hp:1,maxHp:100})>.8);
+});
