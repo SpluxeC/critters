@@ -1337,3 +1337,31 @@ test('Phase 13.5 control AI avoids redundant conditions and terrain',()=>{
  assert.ok(score(lower)>0);stages.defense=-2;assert.ok(score(lower)<0);
  target.hp=20;assert.ok(score(attack)>score(status));
 });
+
+test('Phase 13.6 Arbiter Soren roster and complete Paragon progression',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const member=vm.runInContext('PARAGON_MEMBERS[3]',ctx),by=new Map(moves.map(m=>[m.id,m]));
+ assert.equal(member.active,true);assert.equal(member.team.length,6);
+ for(const t of member.team){
+  const sp=species.find(s=>s.speciesId===t.speciesId);assert.ok(sp,t.speciesId);
+  assert.equal(t.moves.length,4);assert.equal(new Set(t.moves).size,4);
+  for(const id of t.moves){assert.ok(by.has(id),id);assert.ok(sp.levelUp.some(q=>q.moveId===id&&q.level<=t.level)||(['restore-spark','second-breath'].includes(id)&&by.get(id).requiredLevelGuide<=t.level),id);}
+  assert.ok(t.moves.some(id=>by.get(id).power>0));
+ }
+ const state={badges:8};assert.equal(ctx.registerParagon(state),true);
+ for(let i=1;i<=4;i++){const id='paragon-'+i;assert.equal(ctx.paragonBattleReady(id,state),true);assert.equal(ctx.paragonStatus(state).championEligible,false);assert.equal(ctx.recordParagonWin(id,state),true);assert.equal(ctx.recordParagonWin(id,state),false);}
+ assert.equal(ctx.paragonStatus(state).championEligible,true);
+ assert.equal(ctx.paragonStatus(JSON.parse(JSON.stringify(state))).championEligible,true);
+});
+test('Phase 13.6 adaptive AI chooses defense, recovery or finishing pressure by context',()=>{
+ const foe={hp:100,maxHp:100,type:'Ice',moves:['strike'],movePP:{strike:10,heal:10,defense:10,status:10}},target={hp:100,maxHp:100,moves:['strike'],movePP:{strike:10}},stages={defense:0};
+ const attack={id:'strike',target:'enemy',category:'physical',power:50,type:'Ice'};
+ const heal={id:'heal',target:'self',category:'status',effect:{id:'heal',fraction:.5}};
+ const defense={id:'defense',target:'self',category:'status',effect:{id:'raise_stat',stat:'defense'}};
+ const status={id:'status',target:'enemy',category:'status',effect:{id:'ailment',name:'chill'}};
+ const ctx=extract('function trainerTactics(','function chooseTrainerAction(',{battle:{id:'paragon-4',turn:1,enemies:[foe],allySlots:[0]},s:{party:[target]},STAGE_LIMIT:6,battleStages:()=>stages,validMove:id=>id==='strike'?attack:null,predictedMoveDamage:()=>30});
+ const score=m=>ctx.trainerMoveScore(foe,m,0,0);
+ assert.ok(score(heal)<0);assert.ok(score(defense)>0);
+ foe.hp=40;assert.ok(score(heal)>score(attack));
+ target.hp=20;assert.ok(score(attack)>score(heal));assert.ok(score(status)<0);
+});
