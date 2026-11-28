@@ -1297,3 +1297,43 @@ test('Phase 13.4 offensive AI rewards finishing blows and avoids wasted setup an
  target.hp=25;assert.ok(score(attack)>75);
  foe.hp=15;target.hp=100;assert.ok(score(recoil)<score(attack));
 });
+
+test('Phase 13.5 Sage Nyra has legal control loadouts and unlocks Chamber IV',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const member=vm.runInContext('PARAGON_MEMBERS[2]',ctx),by=new Map(moves.map(m=>[m.id,m]));
+ assert.equal(member.active,true);assert.equal(member.team.length,6);
+ for(const t of member.team){
+  const sp=species.find(s=>s.speciesId===t.speciesId);assert.ok(sp,t.speciesId);
+  assert.equal(t.moves.length,4);assert.equal(new Set(t.moves).size,4);
+  for(const id of t.moves){assert.ok(by.has(id),id);assert.ok(sp.levelUp.some(q=>q.moveId===id&&q.level<=t.level),id);}
+  assert.ok(t.moves.some(id=>by.get(id).power>0));
+  assert.ok(t.moves.some(id=>by.get(id).effect?.id==='terrain'));
+  assert.ok(t.moves.some(id=>by.get(id).effect?.id==='ailment'));
+ }
+ const state={badges:8};ctx.registerParagon(state);
+ assert.equal(ctx.paragonBattleReady(member.id,state),false);
+ assert.equal(ctx.recordParagonWin('paragon-1',state),true);
+ assert.equal(ctx.paragonBattleReady(member.id,state),false);
+ assert.equal(ctx.recordParagonWin('paragon-2',state),true);
+ assert.equal(ctx.paragonBattleReady(member.id,state),true);
+ assert.equal(ctx.recordParagonWin(member.id,state),true);
+ assert.equal(ctx.recordParagonWin(member.id,state),false);
+ assert.equal(ctx.paragonChamberOpen(3,state),true);
+ assert.equal(ctx.paragonStatus(state).championEligible,false);
+});
+test('Phase 13.5 control AI avoids redundant conditions and terrain',()=>{
+ const foe={hp:100,maxHp:100,type:'Venom',moves:['strike'],movePP:{strike:10,status:10,terrain:10,lower:10}};
+ const target={hp:100,maxHp:100},stages={defense:0};
+ const attack={id:'strike',target:'enemy',category:'physical',power:50,type:'Venom'};
+ const status={id:'status',target:'enemy',category:'status',effect:{id:'ailment',name:'poison'}};
+ const terrain={id:'terrain',target:'field',category:'status',effect:{id:'terrain'}};
+ const lower={id:'lower',target:'enemy',category:'status',effect:{id:'lower_stat',stat:'defense'}};
+ const battle={id:'paragon-3',turn:1,enemies:[foe],allySlots:[0]};
+ const ctx=extract('function trainerTactics(','function chooseTrainerAction(',{battle,s:{party:[target]},STAGE_LIMIT:6,battleStages:()=>stages,validMove:id=>id==='strike'?attack:null,predictedMoveDamage:()=>30});
+ const score=m=>ctx.trainerMoveScore(foe,m,0,0);
+ assert.ok(score(status)>score(attack));target.status='poison';assert.ok(score(status)<0);
+ assert.ok(score(terrain)>0);battle.terrain={type:'Venom',turns:3};assert.ok(score(terrain)<0);
+ battle.terrain={type:'Fire',turns:3};assert.ok(score(terrain)>0);
+ assert.ok(score(lower)>0);stages.defense=-2;assert.ok(score(lower)<0);
+ target.hp=20;assert.ok(score(attack)>score(status));
+});
