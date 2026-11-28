@@ -1529,6 +1529,8 @@ EXPLORATION_OBJECTS.push(
  {id:'regional-harbor-marker',area:'coastRoute',x:10,y:21,kind:'quest',title:'Weathered Trail Marker',quest:'regional-harbor-repair',text:'You secure the loose marker.'},
  {id:'regional-marsh-marker',area:'marshRoute',x:12,y:26,kind:'quest',title:'Boardwalk Marker',quest:'regional-marsh-repair',text:'You replace the faded trail marker.'},
  {id:'regional-archive-clue',area:'oldArchive',x:17,y:18,kind:'sign',title:'Stone Inscription',text:'Trace the path of the water, then stone, then sun.'},
+ {id:'history-ruins-tablet',area:'ruins',x:20,y:6,kind:'sign',title:'Founders Tablet',text:'A weathered record of the earliest settlements.'},
+ {id:'history-archive-tablet',area:'oldArchive',x:17,y:6,kind:'sign',title:'Keepers Tablet',text:'A preserved record of the old regional sanctuaries.'},
  ...['water','stone','sun'].map((rune,i)=>({id:'archive-'+rune,area:'oldArchive',x:9+i*8,y:15,kind:'archive-rune',rune,title:rune+' Rune'}))
 );
 const PUZZLE_RUNES=['sun','water','stone'];
@@ -1548,7 +1550,7 @@ function inspectExplorationObject(o){
   if(state.objectDone)return notifyWorld('This objective is already complete. Return to the quest giver.');
   state.objectDone=true;save();return notifyWorld([o.text,'Objective complete. Return to '+sideQuest(o.quest).giver+'.']);
  }
- if(o.kind==='sign')return notifyWorld(o.text);
+ if(o.kind==='sign'){if(REGIONAL_HISTORY_RECORDS.some(q=>q.id===o.id))return regionalHistoryDialogue(o.id);return notifyWorld(o.text);}
  if(o.kind==='archive-rune'){
   if(s.puzzles.archiveOpened)return notifyWorld('The archive passage is open.');
   const seq=Array.isArray(s.puzzles.archiveSequence)?s.puzzles.archiveSequence:[];
@@ -6585,7 +6587,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.91</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.92</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -6894,7 +6896,7 @@ function indexRecords(){
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchSectionTitle">Landmark discoveries</div>'
    +allExplorationFinds().map(o=>'<div class="watchRow"><span>'+escapeHtml(s.discoveries?.[o.id]?o.title:'Undiscovered location')+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
-   +storyMilestonePanel()+hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
+   +storyMilestonePanel()+regionalHistoryPanel()+hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
@@ -7156,7 +7158,7 @@ const STORY_CHAPTERS=Object.freeze([
  {id:'rivalJourney',title:'Rival journey',requires:['tutorial'],milestone:'rivalJourneyComplete',active:true},
  {id:'eclipseIntro',title:'Team Eclipse',requires:['grassBadge'],milestone:'eclipseIntroduced',active:true},
  {id:'eclipseOperations',title:'Team Eclipse operations',requires:['eclipseIntroduced'],milestone:'eclipseOperationsComplete',active:true},
- {id:'regionalHistory',title:'Regional history',requires:['grassBadge'],milestone:'regionalHistoryRevealed',active:false},
+ {id:'regionalHistory',title:'Regional history',requires:['grassBadge'],milestone:'regionalHistoryRevealed',active:true},
  {id:'legendaryDragon',title:'Dragon legend',requires:['regionalHistoryRevealed'],milestone:'dragonStoryComplete',active:false},
  {id:'legendaryPrimordial',title:'Primordial legend',requires:['regionalHistoryRevealed'],milestone:'primordialStoryComplete',active:false},
  {id:'legendaryBeast',title:'Beast legend',requires:['regionalHistoryRevealed'],milestone:'beastStoryComplete',active:false},
@@ -7173,6 +7175,7 @@ function normalizeStoryState(state=s){
  if(state.rivalPassed)flags.gardenRival=true;
  if(state.defeated?.rival)flags.rivalVictory=true;
  if(state.badges>=1)flags.grassBadge=true;
+ if(state.introComplete===true&&state.badges>=1&&REGIONAL_HISTORY_RECORDS.every(q=>flags[q.id]&&state.puzzles?.[q.puzzle]===true))flags.regionalHistoryRevealed=true;
  for(let n=1;n<=Math.min(8,Math.max(0,Math.floor(Number(state.badges)||0)));n++)flags['regionalBadge'+n]=true;
  if(state.badges>=8)flags.regionalGymsComplete=true;
  if(state.paragonProgress?.registered===true)flags.paragonRegistered=true;
@@ -7199,6 +7202,7 @@ function setStoryFlag(id,state){
  normalizeStoryState(state);
  if(storyFlag(id,state))return false;
  const chapter=STORY_CHAPTERS.find(q=>q.milestone===id);
+ if(id==='regionalHistoryRevealed')return false; // Derived only from both authenticated records.
  if(chapter&&storyChapterStatus(chapter.id,state)!=='available')return false;
  state.story.flags[id]=true;return true;
 }
@@ -7214,7 +7218,7 @@ function storyScene(id,lines,callback){
 }
 function storyMilestonePanel(state=s){
  normalizeStoryState(state);
- const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor operation disrupted','eclipse-op-harborWon'],['Canyon operation disrupted','eclipse-op-canyonWon'],['Highland operation disrupted','eclipse-op-highlandWon'],['Team Eclipse operations investigated','eclipseOperationsComplete'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
+ const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor operation disrupted','eclipse-op-harborWon'],['Canyon operation disrupted','eclipse-op-canyonWon'],['Highland operation disrupted','eclipse-op-highlandWon'],['Team Eclipse operations investigated','eclipseOperationsComplete'],['Founders Tablet translated','history-ruins-tablet'],['Keepers Tablet translated','history-archive-tablet'],['Ancient regional history recovered','regionalHistoryRevealed'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
  const completed=rows.filter(([,id])=>storyFlag(id,state));
  return '<div class="watchSectionTitle">Journey history</div>'+(completed.length?completed.map(([label])=>'<div class="watchRow"><span>'+label+'</span><span>Recorded</span></div>').join(''):'<div class="watchReadOnly">Your completed story milestones will appear here.</div>');
 }
@@ -7285,6 +7289,29 @@ function startEclipseOperation(id){
  if(firstAlive()<0)return notifyWorld('Heal your party before challenging Team Eclipse.');
  startBattle({kind:'trainer',id,name:'Team Eclipse Operative',award:q.award,enemies:q.team.map(([id,level])=>critter(id,level)),eclipseOperation:true},'Team Eclipse challenges you!');
 }
+// Phase 14.5: surviving records distinguish history from oral legend.
+const REGIONAL_HISTORY_RECORDS=Object.freeze([
+ {id:'history-ruins-tablet',area:'ruins',puzzle:'ruinsOpened',title:'The Founding Age',location:'Forgotten Ruins, Hidden Forest',lines:['Founders Tablet: Before the regional towns were established, small communities settled beside rivers, forests and mountain trails.','They learned to travel and cultivate the land alongside Critters, sharing knowledge between settlements. Stone waymarkers and sheltered gathering places joined their communities.','A later period of severe floods, tremors and failing harvests scattered many settlements. Survivors preserved their knowledge in stone archives and rebuilt the routes.'],summary:'Early communities lived alongside Critters, built shared routes and rebuilt after a period of natural upheaval.'},
+ {id:'history-archive-tablet',area:'oldArchive',puzzle:'archiveOpened',title:'The Age of the Keepers',location:'Old Stone Archive, Ancient Trail',lines:['Keepers Tablet: After the upheaval, custodians established protected sanctuaries and recorded the region’s oldest accounts.','Their writings describe three extraordinary Critters, associated with the Dragon, Primordial and Beast lineages. The accounts disagree about their origins and role in the upheaval.','The custodians warned that knowledge must be preserved and living habitats respected. Later settlements maintained this tradition through local challenges and shared research.'],summary:'Custodians preserved records and sanctuaries. Three legendary lineages are documented, but their origins and role remain uncertain.'}
+]);
+function regionalHistoryAvailable(state=s){return state.introComplete===true&&state.badges>=1;}
+function regionalHistoryDialogue(id){
+ const q=REGIONAL_HISTORY_RECORDS.find(r=>r.id===id);
+ if(!q||s.area!==q.area)return;
+ if(!regionalHistoryAvailable(s))return say(['The script is difficult to interpret. Complete your first regional Gym challenge and return.']);
+ if(s.puzzles?.[q.puzzle]!==true)return say(['The inscription remains sealed behind the archive barrier.']);
+ if(storyFlag(id))return say(q.lines);
+ return storyScene(id,q.lines,()=>{
+  if(storyFlag('regionalHistoryRevealed'))return say(['Your Critter Index combines the two translations into a regional history record.','The accounts of the three legendary Critters remain open questions.']);
+  const other=REGIONAL_HISTORY_RECORDS.find(r=>r.id!==id);
+  return say(['Translation saved to your Critter Index. The companion record is at '+other.location+'.']);
+ });
+}
+function regionalHistoryPanel(state=s){
+ if(!regionalHistoryAvailable(state))return '';
+ const count=REGIONAL_HISTORY_RECORDS.filter(q=>storyFlag(q.id,state)).length;
+ return '<div class="watchSectionTitle">Ancient regional history · '+count+'/2</div>'+REGIONAL_HISTORY_RECORDS.map(q=>'<div class="watchToolCard"><strong>'+escapeHtml(q.title)+'</strong><p>'+escapeHtml(storyFlag(q.id,state)?q.summary:'Record not yet translated. Search '+q.location+'.')+'</p></div>').join('');
+}
 function researcherStoryDialogue(){
  if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
  if(!s.introComplete)return say(['Researcher: Let us finish your introductory training match.'],()=>startTrainer('tutorial'));
@@ -7294,12 +7321,18 @@ function researcherStoryDialogue(){
   'Our archives contain accounts of three legendary Critters. Their full story remains a subject of research.',
   'Researcher: If you hear the name Team Eclipse during your travels, remember it.'
  ]);
+ if(regionalHistoryAvailable(s)&&!storyFlag('regionalHistoryBriefed'))return storyScene('regionalHistoryBriefed',[
+  'Researcher: Two surviving inscriptions may explain how this region was founded. One lies in the Forgotten Ruins in Hidden Forest; the other in the Old Stone Archive off the Ancient Trail.',
+  'Solve the existing rune puzzles to reach the records. Your Critter Index can preserve both translations.',
+  'The accounts mention three legendary lineages, but we must distinguish evidence from folklore.'
+ ]);
  if(storyFlag('eclipseIntroduced')){
   normalizeStoryState(s);
   const remaining=ECLIPSE_OPERATIONS.filter(q=>!storyFlag(q.id+'Won'));
   if(!remaining.length)return say(['Researcher: Your recovered reports confirm that Team Eclipse is coordinating surveys across the region.','Keep these records safe. We still do not know their purpose.']);
   return say(['Researcher: Investigate the field teams in the harbor, canyon and highland settlements as your badge journey progresses.','Operations still to investigate: '+remaining.length+'.']);
  }
+ if(regionalHistoryAvailable(s))return say(storyFlag('regionalHistoryRevealed')?['Researcher: Your translations are invaluable. The three legendary accounts deserve further study.']:['Researcher: Look for the two sealed inscriptions in Forgotten Ruins and Old Stone Archive. Your Index records each translation.']);
  return say(['Researcher: Your Critter Index is functioning well. Good luck!']);
 }
 function rivalGardenScene(){
