@@ -833,7 +833,14 @@ const GYM_CHALLENGES=Object.freeze([
  {id:'canyon-g3',name:'Quarry Keeper',x:7,y:12,award:220,team:[{speciesId:'cr-144-gemhorn',level:29},{speciesId:'cr-197-spectrill',level:30}],dialogue:['Think carefully before striking.']},
  {id:'canyon-g4',name:'Ridge Veteran',x:23,y:12,award:235,team:[{speciesId:'cr-207-comboon',level:30},{speciesId:'cr-076-slatetail',level:31},{speciesId:'cr-149-rubblit',level:31}],dialogue:['The summit is almost within reach.']}
  ],leader:{id:'canyon-leader',name:'Canyon Gym Leader',x:15,y:6,award:400,team:[{speciesId:'cr-109-cliffmole',level:31},{speciesId:'cr-144-gemhorn',level:32},{speciesId:'cr-197-spectrill',level:33},{speciesId:'cr-207-comboon',level:34}],dialogue:['Strength is knowing when to stand firm and when to adapt.']}},
- ...['volcanicTown','snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+5,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
+ {id:'volcanicTown',room:'volcanicTownGym',town:'volcanicTown',number:5,type:'Fire',active:true,badgeName:'Ember Badge',trainerIds:['volcanic-g1','volcanic-g2','volcanic-g3','volcanic-g4'],leaderId:'volcanic-leader',puzzle:'thermal-balance',
+ trainers:[
+ {id:'volcanic-g1',name:'Furnace Technician',x:7,y:19,award:250,team:[{speciesId:'cr-162-pyrelark',level:33},{speciesId:'cr-178-flarefox',level:34}],dialogue:['Control the heat before it controls you.']},
+ {id:'volcanic-g2',name:'Spring Engineer',x:23,y:19,award:265,team:[{speciesId:'cr-161-torchmink',level:34},{speciesId:'cr-148-sootsprite',level:35}],dialogue:['Even extreme temperatures can be balanced.']},
+ {id:'volcanic-g3',name:'Thermal Researcher',x:7,y:12,award:280,team:[{speciesId:'cr-174-psychelet',level:35},{speciesId:'cr-177-cindlet',level:36}],dialogue:['Pressure and timing are everything.']},
+ {id:'volcanic-g4',name:'Foundry Veteran',x:23,y:12,award:295,team:[{speciesId:'cr-178-flarefox',level:36},{speciesId:'cr-162-pyrelark',level:37},{speciesId:'cr-161-torchmink',level:37}],dialogue:['Show me a team that can withstand the heat.']}
+ ],leader:{id:'volcanic-leader',name:'Volcanic Gym Leader',x:15,y:6,award:480,team:[{speciesId:'cr-148-sootsprite',level:37},{speciesId:'cr-161-torchmink',level:38},{speciesId:'cr-174-psychelet',level:39},{speciesId:'cr-177-cindlet',level:40}],dialogue:['Fire is not simply destruction. Master its energy and you can accomplish anything.']}},
+ ...['snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+6,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
 ]);
 function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
 function gymTrainerDefinition(id){
@@ -988,6 +995,7 @@ function furnishExpansionGym(area,add){
  if(area==='harborTownGym'){furnishHarborGym(add);return;}
  if(area==='marshTownGym'){furnishMarshGym(add);return;}
  if(area==='canyonTownGym'){furnishCanyonGym(add);return;}
+ if(area==='volcanicTownGym'){furnishVolcanicGym(add);return;}
  const theme=expansionInteriorTheme(area),gym=theme.gym;
  // Practice hall fixtures are deliberately non-battling, with unobstructed
  // entrance, middle aisle, arena and attendant access.
@@ -1092,6 +1100,50 @@ function operateCanyonWeight(id){
  // Latching counterweights cannot strand the player in an upper gallery.
  s.gymProgress.canyonWeights=(s.gymProgress.canyonWeights||0)|bit;
  build();save();return notifyWorld('The '+id+' stone gate rises.');
+}
+// Thermal balance puzzle: four regulators cycle between three pressure settings.
+// No timed hazards, damage or closing routes: players can always retreat.
+const THERMAL_TARGET=[1,2,0,1];
+function thermalSettings(state){
+ const raw=state.gymProgress?.thermalSettings;
+ return Array.from({length:4},(_,i)=>Number.isInteger(raw?.[i])&&raw[i]>=0&&raw[i]<=2?raw[i]:[0,0,1,2][i]);
+}
+function thermalBalanced(values){return THERMAL_TARGET.every((v,i)=>values[i]===v)}
+function volcanicGymGeometry(state=s){
+ const done=state.gymProgress?.puzzles?.volcanicTown||gymEarned(gymChallenge('volcanicTown'),state);
+ rect(1,4,W-2,H-5,T.stone);
+ // Two long geothermal channels flank the safe central service corridor.
+ rect(10,10,3,10,T.water);rect(17,10,3,10,T.water);
+ // Permanent crosswalks provide access to each regulator and trainer.
+ for(const y of [11,17]){rect(10,y,3,2,T.path);rect(17,y,3,2,T.path);}
+ rect(13,9,4,13,T.path);
+ rect(1,8,W-2,1,T.rock);
+ if(done)rect(13,8,4,1,T.path);
+}
+function furnishVolcanicGym(add){
+ const controls=[['A',5,18,'Warm'],['B',25,18,'Hot'],['C',5,11,'Cool'],['D',25,11,'Warm']];
+ for(const [id,x,y,target] of controls){
+  const o=add('thermal-'+id,x,y,1,1,'terminal','Pressure regulator '+id,'Target: '+target+'. Cycle Cool, Warm, Hot.','thermal-'+id);o.art='critter-center-diagnostic-terminal-015';
+ }
+ const note=add('thermalNotice',12,21,1,1,'terminal','Thermal Instructions','Defeat all four trainers. Set A to Warm, B to Hot, C to Cool and D to Warm. Then use the central balance console.');note.art='critter-center-diagnostic-terminal-015';
+ const console=add('thermal-balance',15,9,1,1,'terminal','Balance Console','Check all four regulator settings.','thermal-balance');console.art='critter-center-diagnostic-terminal-015';
+}
+function operateThermalControl(id){
+ const g=gymChallenge('volcanicTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.volcanicTown)return notifyWorld('The thermal chamber is stabilized.');
+ if(!gymEarned(gymChallenge('canyonTown')))return notifyWorld('Earn the Summit Badge first.');
+ normalizeGymProgress(s);
+ const values=thermalSettings(s),labels=['Cool','Warm','Hot'];
+ if(id==='balance'){
+  if(g.trainerIds.some(t=>!s.defeated?.[t]))return notifyWorld('Defeat all four Gym trainers before balancing the chamber.');
+  if(!thermalBalanced(values))return notifyWorld('Pressure is not balanced. '+values.map((v,i)=>'ABCD'[i]+': '+labels[v]).join(' · '));
+  if(!completeGymPuzzle(g))return;
+  build();save();return notifyWorld('Thermal pressure stabilized. The leader chamber is open!');
+ }
+ const i=['A','B','C','D'].indexOf(id);if(i<0)return;
+ if(!s.defeated?.[g.trainerIds[i]])return notifyWorld('Defeat the nearby trainer before using this regulator.');
+ values[i]=(values[i]+1)%3;s.gymProgress.thermalSettings=values;save();
+ return notifyWorld('Regulator '+id+': '+labels[values[i]]+'. Target: '+labels[THERMAL_TARGET[i]]+'.');
 }
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
@@ -1200,6 +1252,7 @@ function inspectInterior(o){
  if(o.action?.startsWith('harbor-valve-'))return operateHarborValve(o.action.slice(13));
  if(o.action?.startsWith('marsh-bridge-'))return operateMarshBridge(o.action.slice(13));
  if(o.action?.startsWith('canyon-weight-'))return operateCanyonWeight(o.action.slice(14));
+ if(o.action?.startsWith('thermal-'))return operateThermalControl(o.action.slice(8));
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -2207,7 +2260,7 @@ function build(preview=false){
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();populateGymChallenge(s.area);}
+  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();if(s.area==='volcanicTownGym')volcanicGymGeometry();populateGymChallenge(s.area);}
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -3632,6 +3685,17 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  ctx.strokeRect(X(9),Y(9),12*S,8*S);
  ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
  ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
+ if(s.area==='volcanicTownGym'){
+  const now=reducedWorldMotion()?0:performance.now();
+  for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
+   const t=tiles[y][x];box(x,y,1,1,t===T.water?'#9b4d35':t===T.rock?'#383b3c':t===T.path?'#88877e':'#5d605b');
+   if(t===T.water){
+    box(x+.07,y+.08,.86,.84,'#bc693a');box(x+.2,y+.25,.6,.08,'#e9a75b');
+    if(naturalSeed(x,y)%4===0){const p=(now/1600+naturalSeed(x,y)%17/17)%1;ctx.fillStyle='rgba(235,221,192,'+(.34*(1-p))+')';ctx.beginPath();ctx.ellipse(X(x+.5),Y(y+.8-p*.6),S*.18*(1+p),S*.09*(1+p),0,0,Math.PI*2);ctx.fill();}
+   }else if(t===T.rock){box(x,y+.08,1,.13,'#77756b');box(x,y+.75,1,.08,'#242b2b');}
+   else {box(x,y+.96,1,.04,'#414541');box(x+.96,y,.04,1,'#414541');if(t===T.path){box(x+.07,y+.1,.06,.8,'#d8af55');box(x+.87,y+.1,.06,.8,'#d8af55');}}
+  }
+ }
  if(s.area==='canyonTownGym'){
   for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
    const t=tiles[y][x];box(x,y,1,1,t===T.rock?'#78634e':t===T.path?'#d9bd87':'#b9a287');
@@ -6078,7 +6142,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.73</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.74</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
