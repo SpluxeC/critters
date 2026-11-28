@@ -1033,3 +1033,20 @@ test('Phase 12.4 canyon counterweights preserve retreat and gate the leader',()=
   assert.equal(seen.has('7,12'),done||mask!==0);assert.equal(seen.has('15,6'),done);
  }
 });
+
+test('Phase 12.5 thermal settings require all four targets and keep the exit accessible',()=>{
+ const T={stone:1,rock:2,path:3,water:4,wall:5};
+ const ctx=extract('const THERMAL_TARGET=','function furnishVolcanicGym(',{T,W:30,H:24,tiles:[],gymChallenge:()=>({}),gymEarned:()=>false});
+ assert.equal(ctx.thermalBalanced(ctx.thermalSettings({})),false);
+ assert.equal(ctx.thermalBalanced([1,2,0,1]),true);
+ assert.equal(ctx.thermalBalanced([1,2,0,2]),false);
+ vm.runInContext(`function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)tiles[yy][xx]=t}`,ctx);
+ for(const done of [false,true]){
+  ctx.state={gymProgress:{puzzles:{volcanicTown:done}}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));volcanicGymGeometry(state);return tiles})()`,ctx);
+  const seen=new Set(['15,21']),q=[[15,21]];
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);q.push([nx,ny])}}
+  for(const p of ['7,19','23,19','7,12','23,12','15,9','5,18','25,18','5,11','25,11','15,22'])assert.ok(seen.has(p),p);
+  assert.equal(seen.has('15,6'),done);
+ }
+});
