@@ -2514,6 +2514,7 @@ function build(preview=false){
  furnishInterior('lab');
  npc(17,7,['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],'researcher');
  npc(21,10,['Lab Assistant: I help maintain the Critter Index and calibrate its capture beam.','The researcher has three starter Critters ready for you.'],'labassistant');
+ if(postgameRivalAvailable(s))npc(11,12,['Your childhood rival is waiting for a friendly challenge.'],'rival','postgame-rival');
  break;
  case 'route1':
  // A winding countryside road with connected side trails and terrace paddies.
@@ -6040,7 +6041,7 @@ function interact(){
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
- if(p){if(ECLIPSE_HQ_OPPONENTS.some(q=>q.id===p.id))return eclipseHQOpponentDialogue(p.id);if(p.id==='eclipseSite-attendant-12'&&eclipseHQAvailable(s))return eclipseHQEntranceDialogue();if(p.id==='legendaryReserveB-attendant-12')return beastObserverDialogue();if(p.id==='beast-sanctuary-encounter')return beastEncounterDialogue();if(p.id==='legendaryReserveA-attendant-12')return primordialObserverDialogue();if(p.id==='primordial-sanctuary-encounter')return primordialEncounterDialogue();if(p.id==='legendaryReserveC-attendant-12')return dragonObserverDialogue();if(p.id==='dragon-sanctuary-encounter')return dragonEncounterDialogue();if(ECLIPSE_OPERATIONS.some(q=>q.id===p.id))return eclipseOperationDialogue(p.id);if(ECLIPSE_INTRO_SITES.some(q=>q.id===p.id)&&eclipseIntroAvailable())return eclipseContactDialogue(p.id);if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
+ if(p){if(p.id==='postgame-rival')return postgameRivalDialogue();if(storyFlag('storyResolved')&&POSTGAME_SANCTUARIES.some(q=>q.npc===p.id))return postgameSanctuaryDialogue(p.id);if(ECLIPSE_HQ_OPPONENTS.some(q=>q.id===p.id))return eclipseHQOpponentDialogue(p.id);if(p.id==='eclipseSite-attendant-12'&&eclipseHQAvailable(s))return eclipseHQEntranceDialogue();if(p.id==='legendaryReserveB-attendant-12')return beastObserverDialogue();if(p.id==='beast-sanctuary-encounter')return beastEncounterDialogue();if(p.id==='legendaryReserveA-attendant-12')return primordialObserverDialogue();if(p.id==='primordial-sanctuary-encounter')return primordialEncounterDialogue();if(p.id==='legendaryReserveC-attendant-12')return dragonObserverDialogue();if(p.id==='dragon-sanctuary-encounter')return dragonEncounterDialogue();if(ECLIPSE_OPERATIONS.some(q=>q.id===p.id))return eclipseOperationDialogue(p.id);if(ECLIPSE_INTRO_SITES.some(q=>q.id===p.id)&&eclipseIntroAvailable())return eclipseContactDialogue(p.id);if(RIVAL_JOURNEY.some(q=>q.id===p.id))return rivalEncounterDialogue(p.id);if(p.id===CHAMPION_ID)return championDialogue();if(p.id==='championship-receptionist'||p.id==='championship-guide')return championshipReception();if(PARAGON_MEMBERS.some(m=>m.id===p.id)){const m=PARAGON_MEMBERS.find(m=>m.id===p.id);return paragonBattleReady(p.id,s)?say(m.dialogue||p.text,()=>startParagonBattle(p.id)):say(p.text);}if(p.kind==='property-sign')return talkPropertyAgent();if(s.area==='home'&&p.homeX===14&&p.homeY===11&&s.badges>=4)return talkMomProperty();if(p.kind==='sidequest')return questHub(p.id);
  if(p.kind==='researcher')return researcherStoryDialogue();
  if(p.kind==='center')return center();
  if(p.kind==='shop')return shop();
@@ -6622,7 +6623,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.96</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.97</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -6931,7 +6932,7 @@ function indexRecords(){
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchSectionTitle">Landmark discoveries</div>'
    +allExplorationFinds().map(o=>'<div class="watchRow"><span>'+escapeHtml(s.discoveries?.[o.id]?o.title:'Undiscovered location')+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
-   +storyMilestonePanel()+regionalHistoryPanel()+dragonStoryPanel()+primordialStoryPanel()+beastStoryPanel()+eclipseHQPanel()+hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
+   +storyMilestonePanel()+regionalHistoryPanel()+dragonStoryPanel()+primordialStoryPanel()+beastStoryPanel()+eclipseHQPanel()+postgamePanel()+hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
@@ -7198,7 +7199,7 @@ const STORY_CHAPTERS=Object.freeze([
  {id:'legendaryPrimordial',title:'Primordial legend',requires:['regionalHistoryRevealed'],milestone:'primordialStoryComplete',active:true},
  {id:'legendaryBeast',title:'Beast legend',requires:['regionalHistoryRevealed'],milestone:'beastStoryComplete',active:true},
  {id:'eclipseFinale',title:'Team Eclipse confrontation',requires:['eclipseOperationsComplete','dragonStoryComplete','primordialStoryComplete','beastStoryComplete'],milestone:'eclipseResolved',active:true},
- {id:'resolution',title:'Story resolution',requires:['eclipseResolved'],milestone:'storyResolved',active:false}
+ {id:'resolution',title:'Story resolution',requires:['eclipseResolved'],milestone:'storyResolved',active:true}
 ]);
 // Inactive chapters are reserved integration points, not playable quests.
 function normalizeStoryState(state=s){
@@ -7225,6 +7226,8 @@ function normalizeStoryState(state=s){
  if(eclipseHQPrerequisites(state)){for(const q of ECLIPSE_HQ_OPPONENTS){if(state.defeated?.[q.id]!==true)break;flags[q.id+'Won']=true;}if(ECLIPSE_HQ_OPPONENTS.every(q=>flags[q.id+'Won'])&&flags.eclipseDeviceShutdown)flags.eclipseResolved=true;}
  for(const encounter of RIVAL_JOURNEY)if(state.defeated?.[encounter.id]===true)flags[encounter.id+'Won']=true;
  if(state.paragonProgress?.ceremonyComplete===true&&flags.championVictory)flags.hallOfFame=true;
+ if(flags.storyResolved&&POSTGAME_SANCTUARIES.every(q=>flags[q.flag]))flags.postgameSanctuariesComplete=true;
+ if(flags.storyResolved&&flags.championVictory&&state.defeated?.['postgame-rival']===true)flags.postgameRivalWon=true;
  return state.story;
 }
 function storyFlag(id,state=s){return state.story?.flags?.[id]===true}
@@ -7241,7 +7244,7 @@ function setStoryFlag(id,state){
  normalizeStoryState(state);
  if(storyFlag(id,state))return false;
  const chapter=STORY_CHAPTERS.find(q=>q.milestone===id);
- if(id==='regionalHistoryRevealed'||id==='dragonStoryComplete'||id==='dragonCaptured'||id==='primordialStoryComplete'||id==='primordialCaptured'||id==='beastStoryComplete'||id==='beastCaptured'||id==='eclipseResolved'||id==='eclipseDeviceShutdown')return false; // Derived only from both authenticated records.
+ if(id==='regionalHistoryRevealed'||id==='dragonStoryComplete'||id==='dragonCaptured'||id==='primordialStoryComplete'||id==='primordialCaptured'||id==='beastStoryComplete'||id==='beastCaptured'||id==='eclipseResolved'||id==='eclipseDeviceShutdown'||id==='storyResolved'||id==='postgameSanctuariesComplete'||id==='postgameRivalWon')return false; // Derived only from both authenticated records.
  if(chapter&&storyChapterStatus(chapter.id,state)!=='available')return false;
  state.story.flags[id]=true;return true;
 }
@@ -7257,7 +7260,7 @@ function storyScene(id,lines,callback){
 }
 function storyMilestonePanel(state=s){
  normalizeStoryState(state);
- const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor operation disrupted','eclipse-op-harborWon'],['Canyon operation disrupted','eclipse-op-canyonWon'],['Highland operation disrupted','eclipse-op-highlandWon'],['Team Eclipse operations investigated','eclipseOperationsComplete'],['Founders Tablet translated','history-ruins-tablet'],['Keepers Tablet translated','history-archive-tablet'],['Ancient regional history recovered','regionalHistoryRevealed'],['Dragon legend investigated','dragonStoryComplete'],['Primordial legend investigated','primordialStoryComplete'],['Beast legend investigated','beastStoryComplete'],['Headquarters security defeated','eclipse-hq-guardWon'],['Research division defeated','eclipse-hq-researchWon'],['Eclipse commander defeated','eclipse-hq-commanderWon'],['Team Eclipse operation stopped','eclipseResolved'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
+ const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['First reports of Team Eclipse','eclipseIntroduced'],['Harbor operation disrupted','eclipse-op-harborWon'],['Canyon operation disrupted','eclipse-op-canyonWon'],['Highland operation disrupted','eclipse-op-highlandWon'],['Team Eclipse operations investigated','eclipseOperationsComplete'],['Founders Tablet translated','history-ruins-tablet'],['Keepers Tablet translated','history-archive-tablet'],['Ancient regional history recovered','regionalHistoryRevealed'],['Dragon legend investigated','dragonStoryComplete'],['Primordial legend investigated','primordialStoryComplete'],['Beast legend investigated','beastStoryComplete'],['Headquarters security defeated','eclipse-hq-guardWon'],['Research division defeated','eclipse-hq-researchWon'],['Eclipse commander defeated','eclipse-hq-commanderWon'],['Team Eclipse operation stopped','eclipseResolved'],['Regional restoration ceremony','storyResolved'],['Sanctuary restoration survey','postgameSanctuariesComplete'],['Veteran rival victory','postgameRivalWon'],['Harbor rival victory','rival-harborWon'],['Volcanic rival victory','rival-volcanicWon'],['Highland rival victory','rival-highlandWon'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
  const completed=rows.filter(([,id])=>storyFlag(id,state));
  return '<div class="watchSectionTitle">Journey history</div>'+(completed.length?completed.map(([label])=>'<div class="watchRow"><span>'+label+'</span><span>Recorded</span></div>').join(''):'<div class="watchReadOnly">Your completed story milestones will appear here.</div>');
 }
@@ -7491,9 +7494,73 @@ function eclipseHQPanel(state=s){
  const text=done?'Resonance device shut down. Headquarters operation stopped.':ready?'Enter headquarters south of Canyon Pass. Defeat the three divisions and shut down the device.':'Complete the three field operations and all three legendary chapters to gain access.';
  return '<div class="watchSectionTitle">Team Eclipse headquarters</div><div class="watchToolCard"><p>'+text+'</p>'+ECLIPSE_HQ_OPPONENTS.map(q=>'<div class="watchRow"><span>'+q.name+'</span><span>'+(state.defeated?.[q.id]?'Defeated':'Pending')+'</span></div>').join('')+'</div>';
 }
+// Phase 14.10: a saved epilogue and optional postgame activities.
+const POSTGAME_SANCTUARIES=Object.freeze([
+ {area:'legendaryReserveA',npc:'legendaryReserveA-attendant-12',flag:'postgameCoastSurvey',name:'Coastal Sanctuary',lines:['Coastal observer: The readings have returned to normal. The tide pools are healthy, and we have reopened the observation paths.','You record the restored coastal habitat in your Critter Index.']},
+ {area:'legendaryReserveB',npc:'legendaryReserveB-attendant-12',flag:'postgameMarshSurvey',name:'Wetland Sanctuary',lines:['Wetland observer: The pools are quiet again. Critters have returned to the reeds and the raised paths are safe.','You record the restored wetland habitat in your Critter Index.']},
+ {area:'legendaryReserveC',npc:'legendaryReserveC-attendant-12',flag:'postgameVolcanicSurvey',name:'Volcanic Sanctuary',lines:['Trail observer: The abnormal resonance has faded. We can monitor the natural springs without interference.','You record the restored volcanic habitat in your Critter Index.']}
+]);
+const POSTGAME_RIVAL_TEAM=Object.freeze([['cr-012-falgrath',69],['cr-046-flitwing',70],['cr-073-petaloor',71],['cr-062-parryfin',72],['cr-188-arcquill',73]]);
+function completeStoryResolution(state){
+ normalizeStoryState(state);
+ if(state.area!=='lab'||!storyFlag('eclipseResolved',state)||storyFlag('storyResolved',state))return false;
+ state.story.flags.storyResolved=true;
+ state.story.resolutionDay=Math.max(1,Math.floor(Number(state.worldDay)||1));
+ state.money=(Number(state.money)||0)+1500;
+ state.inventory=state.inventory||{};
+ state.inventory.Revive=(state.inventory.Revive||0)+3;
+ return true;
+}
+function storyResolutionDialogue(){
+ const owner=s;
+ return say(['Researcher: The sanctuary readings have stabilized. Your recovered records will help us understand the past without repeating its mistakes.','The regional communities are working together to restore the protected sites. Team Eclipse’s device will remain offline and its research records will be preserved.','Rival: We started here with our first Critters. We have both learned that strength means more than winning battles.','Researcher: Your journey belongs to you now. Explore, train, and care for the Critters you have met.','The main story is complete. Your adventure continues.'],()=>{
+  if(s!==owner||!completeStoryResolution(s))return;
+  save();build();notifyWorld('Story complete! Received 1,500 money and 3 Revives. Postgame sanctuary surveys are available.');
+ });
+}
+function postgameSanctuaryDialogue(id){
+ const q=POSTGAME_SANCTUARIES.find(r=>r.npc===id);
+ if(!q||s.area!==q.area||!storyFlag('storyResolved'))return;
+ if(storyFlag(q.flag))return say(['The sanctuary remains healthy. Thank you for helping preserve it.']);
+ return storyScene(q.flag,q.lines,()=>{normalizeStoryState(s);if(storyFlag('postgameSanctuariesComplete'))say(['All three restoration surveys are recorded. Return to the researcher for your reward.']);});
+}
+function claimPostgameSurvey(state){
+ normalizeStoryState(state);
+ if(state.area!=='lab'||!storyFlag('postgameSanctuariesComplete',state)||storyFlag('postgameSurveyReward',state))return false;
+ state.story.flags.postgameSurveyReward=true;
+ state.money=(Number(state.money)||0)+1200;
+ state.inventory=state.inventory||{};
+ state.inventory['PP Potion']=(state.inventory['PP Potion']||0)+3;
+ return true;
+}
+function postgameRivalAvailable(state=s){
+ return storyFlag('storyResolved',state)&&storyFlag('championVictory',state);
+}
+function postgameRivalDialogue(){
+ if(!postgameRivalAvailable(s)||s.area!=='lab')return;
+ if(s.defeated?.['postgame-rival'])return say(['Rival: That was our best battle yet. Let us keep training and enjoy the journey.']);
+ return say(['Rival: We have both finished the championship and helped protect the region.','How about one more friendly battle, right where it all began?'],()=>startPostgameRival());
+}
+function startPostgameRival(){
+ if(!postgameRivalAvailable(s)||s.area!=='lab'||s.defeated?.['postgame-rival']||battle)return;
+ if(!speciesDataReady||!moveDataReady||POSTGAME_RIVAL_TEAM.some(([id])=>!speciesRegistry.has(id)))return notifyWorld('Critter data is loading. Try again shortly.');
+ if(firstAlive()<0)return notifyWorld('Heal your party before challenging your rival.');
+ startBattle({kind:'trainer',id:'postgame-rival',name:'Veteran Rival',award:1800,enemies:[...POSTGAME_RIVAL_TEAM.map(([id,level])=>critter(id,level)),rivalPartnerAtLevel(75)],postgameRival:true},'Your childhood rival challenges you!');
+}
+function postgamePanel(state=s){
+ if(!storyFlag('eclipseResolved',state))return '';
+ if(!storyFlag('storyResolved',state))return '<div class="watchSectionTitle">Story resolution</div><div class="watchToolCard"><p>Return to the researcher in the Starting Village laboratory for the conclusion.</p></div>';
+ return '<div class="watchSectionTitle">Postgame · Main story complete</div><div class="watchToolCard"><strong>Sanctuary restoration surveys</strong>'+POSTGAME_SANCTUARIES.map(q=>'<div class="watchRow"><span>'+q.name+'</span><span>'+(storyFlag(q.flag,state)?'Recorded':'Visit observer')+'</span></div>').join('')+'<p>'+(storyFlag('postgameSurveyReward',state)?'Reward claimed.':storyFlag('postgameSanctuariesComplete',state)?'Return to the researcher for your reward.':'Visit each sanctuary observer.')+'</p></div><div class="watchToolCard"><strong>Veteran rival challenge</strong><p>'+(storyFlag('postgameRivalWon',state)?'Victory recorded.':postgameRivalAvailable(state)?'Challenge your rival in the Starting Village laboratory.':'Become regional Champion to unlock this challenge.')+'</p></div>';
+}
 function researcherStoryDialogue(){
  if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
  if(!s.introComplete)return say(['Researcher: Let us finish your introductory training match.'],()=>startTrainer('tutorial'));
+ normalizeStoryState(s);
+ if(storyFlag('eclipseResolved')&&!storyFlag('storyResolved'))return storyResolutionDialogue();
+ if(storyFlag('storyResolved')){
+  if(storyFlag('postgameSanctuariesComplete')&&!storyFlag('postgameSurveyReward'))return say(['Researcher: All three habitats are recovering. Thank you for documenting their restoration.'],()=>{if(claimPostgameSurvey(s)){save();notifyWorld('Received 1,200 money and 3 PP Potions.');}});
+  return say(['Researcher: The region is recovering. Continue exploring at your own pace.',storyFlag('postgameSurveyReward')?'Your restoration reports are safely archived.':'Visit the three sanctuary observers to document their recovery.',postgameRivalAvailable(s)?'Your rival is here for a veteran challenge.':'The regional championship is still open to you.']);
+ }
  if(s.badges>=1&&!storyFlag('researchDebrief'))return storyScene('researchDebrief',[
   'Researcher: Congratulations on earning your first badge.',
   'There are eight regional Gyms. Every challenge will help you grow alongside your Critters.',
@@ -8706,7 +8773,7 @@ function endBattle(won,message,defeated){
  const captureVisual=won&&b.kind==='wild'&&message.startsWith('Capture successful!')
   ?'<div class="captureCelebration" aria-label="Critter captured"><div class="captureWatch">INDEX</div><span class="captureBeam"></span><span class="captureSpark">✦</span><strong>CAPTURE REGISTERED</strong></div>':'';
  save();open(won?'Battle Complete':'Defeated',captureVisual+'<p>'+message+'</p>'+evolveMessages+(b.kind==='tutorial'?'<p>The researcher heals both starters. No money penalty applies.</p>':'')+'<button class="btn primary" id="battleDone">Continue</button>');
- $('battleDone').onclick=()=>{close();if(b.eclipseHQ&&won&&defeated)return say([ECLIPSE_HQ_OPPONENTS.find(q=>q.id===b.id).after]);if(b.beastLegend&&won){if(beastAlreadyCaptured(s)){build();return say(['Feralune is registered in your Critter Index. The Beast legend is complete.']);}return say(['Feralune retreats into the reeds. You may approach it again when you are ready.']);}if(b.primordialLegend&&won){if(primordialAlreadyCaptured(s)){build();return say(['Eonolith is registered in your Critter Index. The Primordial legend is complete.']);}return say(['Eonolith returns to the stone platform. You may approach it again when you are ready.']);}if(b.dragonLegend&&won){if(dragonAlreadyCaptured(s)){build();return say(['Drakoryn is registered in your Critter Index. The Dragon legend is complete.']);}return say(['Drakoryn withdraws to rest. You may approach it again when you are ready.']);}if(b.champion&&won&&defeated)return championCeremony();if(b.eclipseOperation&&won&&defeated)return say([ECLIPSE_OPERATIONS.find(q=>q.id===b.id).after]);if(b.rivalJourney&&won&&defeated)return say([RIVAL_JOURNEY.find(q=>q.id===b.id).after]);if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
+ $('battleDone').onclick=()=>{close();if(b.postgameRival&&won&&defeated)return say(['Rival: That was our best battle yet. Our journey is far from over.']);if(b.eclipseHQ&&won&&defeated)return say([ECLIPSE_HQ_OPPONENTS.find(q=>q.id===b.id).after]);if(b.beastLegend&&won){if(beastAlreadyCaptured(s)){build();return say(['Feralune is registered in your Critter Index. The Beast legend is complete.']);}return say(['Feralune retreats into the reeds. You may approach it again when you are ready.']);}if(b.primordialLegend&&won){if(primordialAlreadyCaptured(s)){build();return say(['Eonolith is registered in your Critter Index. The Primordial legend is complete.']);}return say(['Eonolith returns to the stone platform. You may approach it again when you are ready.']);}if(b.dragonLegend&&won){if(dragonAlreadyCaptured(s)){build();return say(['Drakoryn is registered in your Critter Index. The Dragon legend is complete.']);}return say(['Drakoryn withdraws to rest. You may approach it again when you are ready.']);}if(b.champion&&won&&defeated)return championCeremony();if(b.eclipseOperation&&won&&defeated)return say([ECLIPSE_OPERATIONS.find(q=>q.id===b.id).after]);if(b.rivalJourney&&won&&defeated)return say([RIVAL_JOURNEY.find(q=>q.id===b.id).after]);if(b.kind==='tutorial')say(['Researcher: Excellent! Your team is fully healed.','Travel east to Route 1 and walk in rice fields to find wild Critters.','Lower wild Critters’ HP before using the Index capture beam.']);if(b.id==='leader'){build();storyGrassBadgeScene()}}
 }
 function blackout(){
  const wasParagon=battle?.paragon===true,wasTutorial=battle?.kind==='tutorial';if(battle&&!wasTutorial)s.trainerProgress.losses++;clearCombatNarrator();battle=null;$('close').hidden=false;
