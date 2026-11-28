@@ -3944,8 +3944,8 @@ function drawChampionshipHall(ox,oy){
  for(const [i,r] of CHAMPIONSHIP_ROOMS.entries()){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name+(PARAGON_MEMBERS[i].active?' · '+PARAGON_MEMBERS[i].name:''),X(r.x+r.w/2),Y(r.y+.65));}
  box(18.85,11,.1,14,'#ad874b');box(20.05,11,.1,14,'#ad874b');
  ctx.fillStyle='#ead9ad';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('CHAMPION',X(19),Y(4.65));
- box(17.1,5.1,3.8,4.8,'#9a8052');box(17.2,5.2,3.6,4.6,'#485361');
- ctx.strokeStyle='#e5c68b';ctx.strokeRect(X(17.25),Y(5.25),3.5*S,4.5*S);ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
+ box(17.1,5.1,3.8,3.8,'#9a8052');box(17.2,5.2,3.6,3.6,'#485361');box(18.1,9,1.8,1,'#485361');
+ ctx.strokeStyle='#e5c68b';ctx.strokeRect(X(17.25),Y(5.25),3.5*S,3.5*S);ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
  if(championRecognized(s)){
   box(26.2,27.1,2.6,1.2,'#465660');box(26.35,27.25,2.3,.9,'#c8b17c');
   ctx.fillStyle='#303d44';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('HALL OF FAME',X(27.5),Y(27.85));
@@ -5406,7 +5406,7 @@ function championshipHallGeometry(state=s){
   rect(r.x,r.y,1,r.h,T.wall);rect(r.x+r.w-1,r.y,1,r.h,T.wall);
   if(paragonChamberOpen(slot,state))put(slot%2===0?r.x+r.w-1:r.x,r.y+Math.floor(r.h/2),T.path);
  }
- rect(16,4,6,7,T.wall);rect(17,5,4,5,T.mat);
+ rect(17,4,4,7,T.wall);rect(16,4,6,5,T.wall);rect(17,5,4,4,T.mat);rect(18,9,2,1,T.mat);
  if(paragonStatus(state).championEligible)rect(18,10,2,1,T.path);
  rect(17,11,4,21,T.path);
  rect(2,25,W-4,7,T.path);put(Math.floor(W/2),H-1,T.door);
