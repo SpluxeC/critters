@@ -1050,3 +1050,31 @@ test('Phase 12.5 thermal settings require all four targets and keep the exit acc
   assert.equal(seen.has('15,6'),done);
  }
 });
+
+test('Phase 12.6 snow sliding stops at obstacles and rough stone',()=>{
+ const ctx=extract('function snowSlideNext(','let snowSlideDirection=',{});
+ const ice=(x,y)=>x>=7&&x<=22&&y>=10&&y<=19;
+ assert.equal(ctx.snowSlideNext(7,10,'right',ice,()=>false).x,8);
+ assert.equal(ctx.snowSlideNext(7,10,'right',ice,()=>true),null);
+ assert.equal(ctx.snowSlideNext(6,10,'right',ice,()=>false),null);
+});
+test('Phase 12.6 ice gym all beacons and trainers reachable without opening leader seal',()=>{
+ const T={stone:1,rock:2,path:3,tall:4,wall:5};
+ const ctx=extract('const SNOW_BEACONS=','function furnishSnowGym(',{T,W:30,H:24,tiles:[],gymChallenge:()=>({}),gymEarned:()=>false});
+ vm.runInContext(`function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)tiles[yy][xx]=t}`,ctx);
+ for(const done of [false,true]){
+  ctx.state={gymProgress:{puzzles:{snowTown:done}}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));snowGymGeometry(state);return tiles})()`,ctx);
+  const obstacles=new Set(['5,19','24,19','5,10','24,10','15,6','12,21','15,9']);
+  const pass=(x,y)=>[T.stone,T.path,T.tall].includes(tiles[y]?.[x])&&!obstacles.has(x+','+y);
+  const seen=new Set(['15,21']),q=[[15,21]],crossed=new Set();
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   let nx=x+dx,ny=y+dy;if(!pass(nx,ny))continue;
+   while(tiles[ny][nx]===T.tall&&pass(nx+dx,ny+dy)){crossed.add(nx+','+ny);nx+=dx;ny+=dy;}
+   const k=nx+','+ny;if(!seen.has(k)){seen.add(k);q.push([nx,ny]);}
+  }}
+  for(const p of ['5,15','24,15','15,10','15,22'])assert.ok(seen.has(p)||crossed.has(p),p);
+  for(const p of [[5,19],[24,19],[5,10],[24,10]])assert.ok([[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>seen.has((p[0]+dx)+','+(p[1]+dy))),p.join(','));
+  assert.equal(seen.has('15,7'),done);
+ }
+});
