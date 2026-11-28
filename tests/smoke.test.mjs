@@ -568,8 +568,64 @@ test('v84 outdoor transitions keep world-space animation and a continuous damped
  for(const sp of species.filter(s=>s.art?.status==='ready'))for(const a of [sp.art,...Object.values(sp.art.genderVariants||{})])for(const p of [a.spritePath,a.rearSpritePath]){
  assert.match(p,/^assets\/critters\/[a-z0-9/_-]+\.png$/);const png=readFileSync(new URL('../'+p,import.meta.url));assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
  }
- assert.equal(species.filter(s=>s.art?.status==='ready').length,46);
- assert.equal(species.slice(9,46).length,37);assert.ok(species.slice(9,46).every(s=>s.art.status==='ready'));assert.ok(species.slice(46).every(s=>s.art.status!=='ready'));
+ const expectedReadyIds = [
+  'cr-001-starter-water-1',
+  'cr-002-starter-water-2',
+  'cr-003-starter-water-3',
+  'cr-004-starter-rock-1',
+  'cr-005-starter-rock-2',
+  'cr-006-starter-rock-3',
+  'cr-007-starter-electric-1',
+  'cr-008-starter-electric-2',
+  'cr-009-starter-electric-3',
+  'cr-010-falquill',
+  'cr-011-falrift',
+  'cr-012-falgrath',
+  'cr-013-toxidot',
+  'cr-014-mothoxin',
+  'cr-015-scruffin',
+  'cr-016-ruffguard',
+  'cr-017-barkwarden',
+  'cr-018-mossplate',
+  'cr-019-bramblevault',
+  'cr-020-sparkhorn',
+  'cr-021-thundelope',
+  'cr-022-pebblusk',
+  'cr-023-mastolith',
+  'cr-024-quilldash',
+  'cr-025-aerosaur',
+  'cr-026-emberpuff',
+  'cr-027-sludgip',
+  'cr-028-toxotter',
+  'cr-029-venomwake',
+  'cr-030-thornix',
+  'cr-031-wispurr',
+  'cr-032-phantompaw',
+  'cr-033-mindwink',
+  'cr-034-seerclaw',
+  'cr-035-duskhound',
+  'cr-036-noctirush',
+  'cr-037-froststoat',
+  'cr-038-brinefin',
+  'cr-039-coraloo',
+  'cr-040-driftkip',
+  'cr-041-glintgill',
+  'cr-042-wavetail',
+  'cr-043-icicleaf',
+  'cr-044-kiteclaw',
+  'cr-045-soarwhisk',
+  'cr-046-flitwing',
+  'cr-047-skyfin',
+  'cr-052-sablefin',
+  'cr-068-willowink',
+ ];
+ assert.deepEqual(species.filter(s=>s.art?.status==='ready').map(s=>s.speciesId).sort(),expectedReadyIds.sort());
+ const newArt = {"cr-047-skyfin": "skyfin", "cr-052-sablefin": "owl-stage-2", "cr-068-willowink": "willowink"};
+ for(const [id,stem] of Object.entries(newArt)){
+  const art=species.find(s=>s.speciesId===id).art;
+  assert.equal(art.spritePath,'assets/critters/route-two-designs/'+stem+'-front.png');
+  assert.equal(art.rearSpritePath,'assets/critters/route-two-designs/'+stem+'-back.png');
+ }
  });
 
 test('v90 floating world touch direction has neutral deadzone and cardinal movement',()=>{
