@@ -6574,7 +6574,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.87</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.88</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -6883,7 +6883,7 @@ function indexRecords(){
   +'</div><div class="watchSectionTitle">Recent capture registrations</div>'+history
   +'<div class="watchSectionTitle">Landmark discoveries</div>'
    +allExplorationFinds().map(o=>'<div class="watchRow"><span>'+escapeHtml(s.discoveries?.[o.id]?o.title:'Undiscovered location')+'</span><span>'+(s.discoveries?.[o.id]?'Discovered':'Not yet found')+'</span></div>').join('')
-   +hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
+   +storyMilestonePanel()+hallOfFamePanel()+sideQuestIndex()+collectionProgressUI()+collectionMilestonesUI()
   +'<div class="watchReadOnly">Only distinct registered species count toward milestones. Your previous captures are credited when their species IDs are available.</div>';
 }
 function indexMoves(){
@@ -7136,23 +7136,73 @@ function renderIndex(){
 function inventoryText(){return Object.entries(s.inventory).filter(([,v])=>v>0).map(([k,v])=>k+' ×'+v).join(', ')||'Empty'}
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
-// Main story foundation: only the existing first-badge chapter is playable.
+// Phase 14.1: independent, save-compatible story milestones and prerequisite graph.
 // Later gym types, Eclipse motives and legendary capture conditions are not inferred.
-const STORY_STRUCTURE=Object.freeze({gymCount:8,firstGym:'Grass',eliteFourCount:4,championRole:'evolving rival',antagonist:'Team Eclipse',legendaryTypes:['Dragon','Primordial','Beast']});
-function normalizeStoryState(){
- const old=s.story&&typeof s.story==='object'&&!Array.isArray(s.story)?s.story:{};
- const flags=old.flags&&typeof old.flags==='object'&&!Array.isArray(old.flags)?old.flags:{};
- s.story={...old,flags};
- if(s.introComplete)flags.tutorial=true;
- if(s.rivalPassed)flags.gardenRival=true;
- if(s.defeated?.rival)flags.rivalVictory=true;
- if(s.badges>=1)flags.grassBadge=true;
+const STORY_STRUCTURE=Object.freeze({gymCount:8,firstGym:'Grass',paragonCount:4,championRole:'evolving rival',antagonist:'Team Eclipse',legendaryTypes:['Dragon','Primordial','Beast']});
+const STORY_CHAPTERS=Object.freeze([
+ {id:'opening',title:'The beginning',requires:[],milestone:'tutorial',active:true},
+ {id:'firstBadge',title:'First regional badge',requires:['tutorial'],milestone:'grassBadge',active:true},
+ {id:'rivalJourney',title:'Rival journey',requires:['tutorial'],milestone:'rivalJourneyComplete',active:false},
+ {id:'eclipseIntro',title:'Team Eclipse',requires:['grassBadge'],milestone:'eclipseIntroduced',active:false},
+ {id:'eclipseOperations',title:'Team Eclipse operations',requires:['eclipseIntroduced'],milestone:'eclipseOperationsComplete',active:false},
+ {id:'regionalHistory',title:'Regional history',requires:['grassBadge'],milestone:'regionalHistoryRevealed',active:false},
+ {id:'legendaryDragon',title:'Dragon legend',requires:['regionalHistoryRevealed'],milestone:'dragonStoryComplete',active:false},
+ {id:'legendaryPrimordial',title:'Primordial legend',requires:['regionalHistoryRevealed'],milestone:'primordialStoryComplete',active:false},
+ {id:'legendaryBeast',title:'Beast legend',requires:['regionalHistoryRevealed'],milestone:'beastStoryComplete',active:false},
+ {id:'eclipseFinale',title:'Team Eclipse confrontation',requires:['eclipseOperationsComplete','dragonStoryComplete','primordialStoryComplete','beastStoryComplete'],milestone:'eclipseResolved',active:false},
+ {id:'resolution',title:'Story resolution',requires:['eclipseResolved'],milestone:'storyResolved',active:false}
+]);
+// Inactive chapters are reserved integration points, not playable quests.
+function normalizeStoryState(state=s){
+ const old=state.story&&typeof state.story==='object'&&!Array.isArray(state.story)?state.story:{};
+ const raw=old.flags&&typeof old.flags==='object'&&!Array.isArray(old.flags)?old.flags:{};
+ const flags=Object.fromEntries(Object.entries(raw).filter(([id,value])=>value===true));
+ state.story={...old,version:2,flags};
+ if(state.introComplete)flags.tutorial=true;
+ if(state.rivalPassed)flags.gardenRival=true;
+ if(state.defeated?.rival)flags.rivalVictory=true;
+ if(state.badges>=1)flags.grassBadge=true;
+ for(let n=1;n<=Math.min(8,Math.max(0,Math.floor(Number(state.badges)||0)));n++)flags['regionalBadge'+n]=true;
+ if(state.badges>=8)flags.regionalGymsComplete=true;
+ if(state.paragonProgress?.registered===true)flags.paragonRegistered=true;
+ if(Array.isArray(state.paragonProgress?.cleared))for(let i=0;i<4;i++){if(state.paragonProgress.cleared[i]!=='paragon-'+(i+1))break;flags['paragonVictory'+(i+1)]=true;}
+ if(flags.paragonVictory4)flags.paragonComplete=true;
+ if(state.paragonProgress?.championDefeated===true&&flags.paragonComplete)flags.championVictory=true;
+ if(state.paragonProgress?.ceremonyComplete===true&&flags.championVictory)flags.hallOfFame=true;
+ return state.story;
 }
-function storyFlag(id){return !!s.story?.flags?.[id]}
-function markStory(id){normalizeStoryState();if(storyFlag(id))return false;s.story.flags[id]=true;save();return true}
+function storyFlag(id,state=s){return state.story?.flags?.[id]===true}
+function storyChapterStatus(id,state=s){
+ normalizeStoryState(state);
+ const chapter=STORY_CHAPTERS.find(q=>q.id===id);
+ if(!chapter)return 'unknown';
+ if(!chapter.active)return 'reserved';
+ if(storyFlag(chapter.milestone,state))return 'complete';
+ return chapter.requires.every(flag=>storyFlag(flag,state))?'available':'locked';
+}
+function setStoryFlag(id,state){
+ if(typeof id!=='string'||!id||['__proto__','constructor','prototype'].includes(id))return false;
+ normalizeStoryState(state);
+ if(storyFlag(id,state))return false;
+ const chapter=STORY_CHAPTERS.find(q=>q.milestone===id);
+ if(chapter&&storyChapterStatus(chapter.id,state)!=='available')return false;
+ state.story.flags[id]=true;return true;
+}
+function markStory(id){if(!setStoryFlag(id,s))return false;save();return true}
+let pendingStoryScene=null;
 function storyScene(id,lines,callback){
  if(storyFlag(id)){if(callback)callback();return false}
- say(lines,()=>{markStory(id);if(callback)callback()});return true;
+ if(pendingStoryScene)return false;
+ const chapter=STORY_CHAPTERS.find(q=>q.milestone===id);
+ if(chapter&&storyChapterStatus(chapter.id)!=='available')return false;
+ const owner=s;pendingStoryScene={id,owner};
+ say(lines,()=>{if(pendingStoryScene?.owner!==owner||pendingStoryScene?.id!==id)return;pendingStoryScene=null;if(s!==owner)return;markStory(id);if(callback)callback()});return true;
+}
+function storyMilestonePanel(state=s){
+ normalizeStoryState(state);
+ const rows=[['Laboratory training','tutorial'],['Garden rival encounter','gardenRival'],['First badge ceremony','grassCeremony'],['Researcher debrief','researchDebrief'],['Eight regional badges','regionalGymsComplete'],['The Paragon defeated','paragonComplete'],['Champion defeated','championVictory'],['Hall of Fame induction','hallOfFame']];
+ const completed=rows.filter(([,id])=>storyFlag(id,state));
+ return '<div class="watchSectionTitle">Journey history</div>'+(completed.length?completed.map(([label])=>'<div class="watchRow"><span>'+label+'</span><span>Recorded</span></div>').join(''):'<div class="watchReadOnly">Your completed story milestones will appear here.</div>');
 }
 function researcherStoryDialogue(){
  if(!s.starter)return say(['Welcome to the research laboratory!','Your Critter Index is a capture device, inventory and party manager.','Choose a Rock, Water or Electric starter.'],starterMenu);
@@ -7179,6 +7229,7 @@ function storyGrassBadgeScene(){
  ]);
 }
 function tickStoryScenes(){
+ if(pendingStoryScene&&pendingStoryScene.owner!==s)pendingStoryScene=null;
  if(!s||screen!=='game'||modal||battle||worldTransitionBusy||doorTransition||narratorBlocking()||trainerApproachLocked())return;
  if(s.area==='gym'&&s.badges>=1&&!storyFlag('grassCeremony'))storyGrassBadgeScene();
 }
