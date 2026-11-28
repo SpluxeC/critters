@@ -331,7 +331,16 @@ function drawNpcActivity(p,x,y,now=performance.now(),area=s.area){
  }
  ctx.restore();
 }
+const legendaryWorldImages=new Map();
 function drawNpc(p,x,y,area=s.area){
+ if(p.legendarySpeciesId){
+  const sp=speciesRegistry.get(p.legendarySpeciesId),path=critterSpritePath({speciesId:p.legendarySpeciesId});
+  if(path){let im=legendaryWorldImages.get(path);if(!im){im=new Image();im.src=path;legendaryWorldImages.set(path,im);}if(im.complete&&im.naturalWidth){const k=Math.min(54/im.naturalWidth,54/im.naturalHeight);ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x-im.naturalWidth*k/2,y-im.naturalHeight*k,im.naturalWidth*k,im.naturalHeight*k);ctx.restore();return;}}
+  // Neutral non-human encounter marker until approved creature art exists.
+  ctx.save();ctx.fillStyle='rgba(30,40,48,.22)';ctx.beginPath();ctx.ellipse(x,y-3,15,5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=sp?.types?.includes('Fire')?'#ae7654':sp?.types?.includes('Rock')?'#8d9a88':'#7e7498';
+  ctx.strokeStyle='#e0d9c7';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-40);ctx.lineTo(x+15,y-21);ctx.lineTo(x,y-8);ctx.lineTo(x-15,y-21);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();return;
+ }
  const name=uploadedNpcName(p,area);
  const im=name==='npc-researcher'?npcResearcher:name==='npc-lab-assistant'?npcLabAssistant:name?uploadedArt(name):null;
  const active=!p.walking&&!modal&&!battle&&!narratorBlocking()&&!trainerApproach&&performance.now()>=(p.pauseUntil||0)&&['farm','research','work','home'].includes(npcActivityKind(p.task));
@@ -1956,7 +1965,7 @@ async function loadCritterMoveData(){
   moveDataReady=true;
  }catch(err){console.warn('Critter move database unavailable; safe basic moves remain available',err)}
  try{
-  const res=await fetch('data/critters.json?v=152-expanded-habitats',{cache:'no-store'});
+  const res=await fetch('data/critters.json?v=1.98-story-qa',{cache:'no-store'});
   if(!res.ok)throw Error('species HTTP '+res.status);
   const data=await res.json();
   if(Array.isArray(data.species))for(const sp of data.species)
@@ -2664,7 +2673,7 @@ function build(preview=false){
 const worldNarratorQueue=[];let worldNarratorCurrent=null,worldNarratorTimer=null;
 function narratorBlocking(){return !!worldNarratorCurrent&&!worldNarratorCurrent.notice}
 function hideWorldNarrator(){clearTimeout(worldNarratorTimer);worldNarratorTimer=null;$('dialog').classList.remove('notice');$('dialog').classList.add('show','idle');$('dialogText').textContent='';$('dialogHint').textContent='';$('game').classList.remove('narrating')}
-function clearWorldNarrator(){hideWorldNarrator();worldNarratorQueue.length=0;worldNarratorCurrent=null}
+function clearWorldNarrator(){hideWorldNarrator();worldNarratorQueue.length=0;worldNarratorCurrent=null;pendingStoryScene=null}
 function suspendWorldNotice(){if(worldNarratorCurrent?.notice){worldNarratorQueue.unshift(worldNarratorCurrent);worldNarratorCurrent=null;hideWorldNarrator()}}
 function say(lines,callback){enqueueWorldNarration(lines,false,callback)}
 function notifyWorld(lines){enqueueWorldNarration(lines,true)}
@@ -5481,9 +5490,9 @@ function buildSpecialStorySite(area){
   put(x,y,T.grass);
   npc(x,y,[line],'site-attendant',area+'-attendant-'+x);
  }
- if(area===DRAGON_LEGEND.area&&dragonEncounterAvailable(s)){npc(20,25,['A powerful Critter watches from the clearing.'],'site-attendant','dragon-sanctuary-encounter');}
- if(area===PRIMORDIAL_LEGEND.area&&primordialEncounterAvailable(s)){npc(20,25,['An ancient Critter rests beside the stone platform.'],'site-attendant','primordial-sanctuary-encounter');}
- if(area===BEAST_LEGEND.area&&beastEncounterAvailable(s)){npc(20,25,['A watchful Critter waits beside the wetland clearing.'],'site-attendant','beast-sanctuary-encounter');}
+ if(area===DRAGON_LEGEND.area&&dragonEncounterAvailable(s)){npc(20,25,['A powerful Critter watches from the clearing.'],'site-attendant','dragon-sanctuary-encounter');npcs[npcs.length-1].legendarySpeciesId=DRAGON_LEGEND.speciesId;}
+ if(area===PRIMORDIAL_LEGEND.area&&primordialEncounterAvailable(s)){npc(20,25,['An ancient Critter rests beside the stone platform.'],'site-attendant','primordial-sanctuary-encounter');npcs[npcs.length-1].legendarySpeciesId=PRIMORDIAL_LEGEND.speciesId;}
+ if(area===BEAST_LEGEND.area&&beastEncounterAvailable(s)){npc(20,25,['A watchful Critter waits beside the wetland clearing.'],'site-attendant','beast-sanctuary-encounter');npcs[npcs.length-1].legendarySpeciesId=BEAST_LEGEND.speciesId;}
  return true;
 }
 function populateExpansionArea(area){
@@ -6623,7 +6632,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.97</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.98</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7205,7 +7214,7 @@ const STORY_CHAPTERS=Object.freeze([
 function normalizeStoryState(state=s){
  const old=state.story&&typeof state.story==='object'&&!Array.isArray(state.story)?state.story:{};
  const raw=old.flags&&typeof old.flags==='object'&&!Array.isArray(old.flags)?old.flags:{};
- const flags=Object.fromEntries(Object.entries(raw).filter(([id,value])=>value===true));
+ const flags=Object.fromEntries(Object.entries(raw).filter(([id,value])=>value===true&&!['__proto__','constructor','prototype'].includes(id)));
  state.story={...old,version:2,flags};
  if(state.introComplete)flags.tutorial=true;
  if(state.rivalPassed)flags.gardenRival=true;
@@ -7226,8 +7235,10 @@ function normalizeStoryState(state=s){
  if(eclipseHQPrerequisites(state)){for(const q of ECLIPSE_HQ_OPPONENTS){if(state.defeated?.[q.id]!==true)break;flags[q.id+'Won']=true;}if(ECLIPSE_HQ_OPPONENTS.every(q=>flags[q.id+'Won'])&&flags.eclipseDeviceShutdown)flags.eclipseResolved=true;}
  for(const encounter of RIVAL_JOURNEY)if(state.defeated?.[encounter.id]===true)flags[encounter.id+'Won']=true;
  if(state.paragonProgress?.ceremonyComplete===true&&flags.championVictory)flags.hallOfFame=true;
+ if(flags.storyResolved&&!flags.eclipseResolved){delete flags.storyResolved;}
  if(flags.storyResolved&&POSTGAME_SANCTUARIES.every(q=>flags[q.flag]))flags.postgameSanctuariesComplete=true;
- if(flags.storyResolved&&flags.championVictory&&state.defeated?.['postgame-rival']===true)flags.postgameRivalWon=true;
+ else delete flags.postgameSanctuariesComplete;
+ if(flags.storyResolved&&flags.championVictory&&state.defeated?.['postgame-rival']===true)flags.postgameRivalWon=true;else delete flags.postgameRivalWon;
  return state.story;
 }
 function storyFlag(id,state=s){return state.story?.flags?.[id]===true}
@@ -7252,11 +7263,12 @@ function markStory(id){if(!setStoryFlag(id,s))return false;save();return true}
 let pendingStoryScene=null;
 function storyScene(id,lines,callback){
  if(storyFlag(id)){if(callback)callback();return false}
+ if(pendingStoryScene?.owner!==s)pendingStoryScene=null;
  if(pendingStoryScene)return false;
  const chapter=STORY_CHAPTERS.find(q=>q.milestone===id);
  if(chapter&&storyChapterStatus(chapter.id)!=='available')return false;
- const owner=s;pendingStoryScene={id,owner};
- say(lines,()=>{if(pendingStoryScene?.owner!==owner||pendingStoryScene?.id!==id)return;pendingStoryScene=null;if(s!==owner)return;markStory(id);if(callback)callback()});return true;
+ const owner=s,scene={id,owner};pendingStoryScene=scene;
+ say(lines,()=>{if(pendingStoryScene!==scene)return;pendingStoryScene=null;if(s!==owner)return;markStory(id);if(callback)callback()});return true;
 }
 function storyMilestonePanel(state=s){
  normalizeStoryState(state);
@@ -7359,7 +7371,7 @@ const DRAGON_LEGEND=Object.freeze({speciesId:'cr-209-drakoryn',legacyId:'cr-198-
 function dragonAlreadyCaptured(state=s){
  const ids=[DRAGON_LEGEND.speciesId,DRAGON_LEGEND.legacyId];
  return state.story?.flags?.dragonCaptured===true||ids.some(id=>!!state.collection?.caught?.[id])||
-  [...(state.party||[]),...(state.storage||[]),...(state.captureLog||[])].some(p=>ids.includes(p?.speciesId));
+  [state.party,state.storage,state.captureLog].some(list=>Array.isArray(list)&&list.some(p=>ids.includes(p?.speciesId)));
 }
 function dragonEncounterAvailable(state=s){
  return state.introComplete===true&&state.badges>=1&&storyFlag('regionalHistoryRevealed',state)&&!dragonAlreadyCaptured(state);
@@ -7390,7 +7402,7 @@ const PRIMORDIAL_LEGEND=Object.freeze({speciesId:'cr-101-eonolith',legacyId:'cr-
 function primordialAlreadyCaptured(state=s){
  const ids=[PRIMORDIAL_LEGEND.speciesId,PRIMORDIAL_LEGEND.legacyId];
  return state.story?.flags?.primordialCaptured===true||ids.some(id=>!!state.collection?.caught?.[id])||
-  [...(state.party||[]),...(state.storage||[]),...(state.captureLog||[])].some(p=>ids.includes(p?.speciesId));
+  [state.party,state.storage,state.captureLog].some(list=>Array.isArray(list)&&list.some(p=>ids.includes(p?.speciesId)));
 }
 function primordialEncounterAvailable(state=s){
  return state.introComplete===true&&state.badges>=1&&storyFlag('regionalHistoryRevealed',state)&&!primordialAlreadyCaptured(state);
@@ -7421,7 +7433,7 @@ const BEAST_LEGEND=Object.freeze({speciesId:'cr-153-feralune',legacyId:'cr-200-f
 function beastAlreadyCaptured(state=s){
  const ids=[BEAST_LEGEND.speciesId,BEAST_LEGEND.legacyId];
  return state.story?.flags?.beastCaptured===true||ids.some(id=>!!state.collection?.caught?.[id])||
-  [...(state.party||[]),...(state.storage||[]),...(state.captureLog||[])].some(p=>ids.includes(p?.speciesId));
+  [state.party,state.storage,state.captureLog].some(list=>Array.isArray(list)&&list.some(p=>ids.includes(p?.speciesId)));
 }
 function beastEncounterAvailable(state=s){
  return state.introComplete===true&&state.badges>=1&&storyFlag('regionalHistoryRevealed',state)&&!beastAlreadyCaptured(state);
@@ -7454,7 +7466,7 @@ const ECLIPSE_HQ_OPPONENTS=Object.freeze([
  {id:'eclipse-hq-commander',name:'Eclipse Commander',x:14,y:6,award:1600,team:[['cr-188-arcquill',60],['cr-190-hailhorn',61],['cr-174-psychelet',62],['cr-183-rockoon',62],['cr-195-veilwhisk',63],['cr-196-darklilt',64]],lines:['Commander: The ancient upheaval scattered entire communities. I will not wait helplessly for history to repeat itself.','With the resonance device I intended to control the forces we detected at the sanctuaries. The risks were acceptable to me.','You protected the three legendary Critters from our interference. If you believe my approach is wrong, prove it in battle.'],after:'The commander yields. The resonance device remains active. Shut it down at the control terminal.'}
 ]);
 function eclipseHQPrerequisites(state=s){
- return state.introComplete===true&&['eclipseOperationsComplete','dragonStoryComplete','primordialStoryComplete','beastStoryComplete'].every(id=>storyFlag(id,state));
+ return state.introComplete===true&&state.badges>=6&&['eclipseOperationsComplete','dragonStoryComplete','primordialStoryComplete','beastStoryComplete'].every(id=>storyFlag(id,state));
 }
 function eclipseHQAvailable(state=s){normalizeStoryState(state);return eclipseHQPrerequisites(state);}
 function eclipseHQOpponentReady(id,state=s){
@@ -8590,6 +8602,7 @@ async function resolveTeamTurn(){
  }
  if(battle!==currentBattle)return;
  if(!s.party.some(p=>!isEgg(p)&&p.hp>0)&&battle.paragon)return blackout();
+ if(!s.party.some(p=>!isEgg(p)&&p.hp>0)&&(battle.eclipseHQ||battle.eclipseOperation||battle.postgameRival))return blackout();
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  const enemyChoices=planEnemyTeam();
  for(const {enemyIndex,move,target} of enemyChoices){
@@ -8609,6 +8622,7 @@ async function resolveTeamTurn(){
  await narrateCombatEvents(log.slice(beforeEffects),null);
  if(battle!==currentBattle)return;
  if(!s.party.some(p=>!isEgg(p)&&p.hp>0)&&battle.paragon)return blackout(); // A mutual knockout cannot earn a championship victory.
+ if(!s.party.some(p=>!isEgg(p)&&p.hp>0)&&(battle.eclipseHQ||battle.eclipseOperation||battle.postgameRival))return blackout();
  if(!battle.enemies.some(p=>p.hp>0))return endBattle(true,log.join(' ')+' Victory!',true);
  if(!s.party.some(p=>!isEgg(p)&&p.hp>0))return blackout();
  battle.enemySlots=battle.enemySlots.filter(i=>battle.enemies[i]?.hp>0);
