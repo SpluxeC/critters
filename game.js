@@ -806,6 +806,7 @@ const TOWN_ROOMS=Object.freeze({
  gardenCenter:{parent:'garden',name:'Garden Town Critter Center',kind:'center',door:[6,8]},
  gardenHouse:{parent:'garden',name:'Garden Residence',kind:'home',door:[7,23]},
  gardenShop:{parent:'garden',name:'Garden Town Critter Shop',kind:'shop',door:[25,23]},
+ championshipHall:{parent:'leagueGrounds',name:'Championship Hall',kind:'championship',door:[20,10]},
  ...settlementRoomDefinitions()
 });
 const isInterior=area=>['home','neighbor','lab','homesteadHome'].includes(area)||Object.hasOwn(TOWN_ROOMS,area);
@@ -918,9 +919,9 @@ function populateGymChallenge(area){
  if(g.leader)npc(g.leader.x,g.leader.y,g.leader.dialogue||['Welcome to the Gym.'],'leader',g.leader.id);
  if(g.mechanism)npc(g.mechanism.x,g.mechanism.y,['Complete the Gym mechanism.'],'switch',g.id+'-mechanism');
 }
-function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:kind==='gym'?{w:30,h:24}:{w:34,h:26}}
+function roomSize(id){const kind=TOWN_ROOMS[id]?.kind;if(kind==='championship')return {w:38,h:34};return kind==='home'?{w:16,h:14}:kind==='shop'?{w:20,h:15}:kind==='center'?{w:24,h:17}:kind==='gym'?{w:30,h:24}:{w:34,h:26}}
 function roomExit(id){const d=roomSize(id);return [Math.floor(d.w/2),d.h-1]}
-function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;if(room.kind==='gym'){recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
+function enterTownRoom(id){const room=TOWN_ROOMS[id];if(!room)return;if(room.kind==='championship'&&!leagueEligible())return notifyWorld('Earn all eight regional Gym badges to enter the Championship Hall.');if(room.kind==='gym'||room.kind==='championship'){recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)}return beginDoorAnimation(roomDoorBase(room),room.door[0],room.door[1],()=>{recordWalkingStep();const [x,y]=roomExit(id);return region(id,x,y-2,'',true)})}
 function exitTownRoom(){const d=TOWN_ROOMS[s.area];if(d)return region(d.parent,d.door[0],d.door[1]+1,'',true)}
 function townServiceParent(){return TOWN_ROOMS[s.area]?.parent||s.area}
 
@@ -2420,6 +2421,7 @@ function build(preview=false){
  if(!preview){cancelTrainerApproach();npcResidenceDoor=null;snowSlideDirection=null;migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  if(REGIONAL_EXPANSION[s.area])buildExpansionArea(s.area);
+ else if(s.area==='championshipHall'){buildChampionshipHall();}
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
@@ -3321,6 +3323,7 @@ function drawLeagueFeature(x,y,a,b,kind){
  queueSolarShadow(x+S/2,y+S,S,kind==='pillar'?28:15);
 }
 function drawTile(t,x,y,a,b){
+ if(s.area==='leagueGrounds'&&t===T.door&&a===20&&b===10){ctx.fillStyle='#514b40';ctx.fillRect(x,y,S,S);ctx.fillStyle='#cdb785';ctx.fillRect(x,y,3,S);ctx.fillRect(x+S-3,y,3,S);ctx.fillRect(x,y,S,3);ctx.fillStyle='#bfa66b';ctx.fillRect(x+S/2-2,y+S*.55,4,5);return;}
  if(s.area==='leagueGrounds'&&(t===T.roof||t===T.rock)){const feature=leagueFeature(a,b);if(feature){drawLeagueFeature(x,y,a,b,feature);return;}}
  if(s.area==='victoryRoad'&&t===T.rock&&victoryRidgeCell(a,b,W,H)){drawCanyonCliff(x,y,a,b);return;}
  if(s.area==='eclipseSite'&&(t===T.rock||t===T.roof)){const kind=eclipseGroundKind(a,b);if(kind){drawEclipseGround(x,y,a,b,kind);return;}}
@@ -3908,7 +3911,20 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
  ctx.restore();
 }
+function drawChampionshipHall(ox,oy){
+ const X=x=>x*S-ox,Y=y=>y*S-oy,box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(X(x),Y(y),w*S,h*S)};
+ ctx.save();ctx.beginPath();ctx.rect(X(0),Y(0),W*S,H*S);ctx.clip();box(0,0,W,H,'#a8a398');
+ for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){const t=tiles[y][x];box(x,y,1,1,t===T.wall?'#424e56':t===T.mat?'#717e85':t===T.path?'#d3c9b0':(x+y)%2?'#b3afa2':'#a8a599');if(t===T.wall)box(x,y,1,.12,'#bca67b');else{box(x,y+.96,1,.04,'#89877f');box(x+.96,y,.04,1,'#89877f');}}
+ connectedInteriorWalls(ox,oy,'#465660','#c8b17c',roomExit(s.area)[0]);
+ for(const r of CHAMPIONSHIP_ROOMS){ctx.fillStyle='#f0dfb5';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(r.name,X(r.x+r.w/2),Y(r.y+.65));}
+ box(18.85,11,.1,14,'#ad874b');box(20.05,11,.1,14,'#ad874b');
+ ctx.fillStyle='#ead9ad';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('CHAMPION',X(19),Y(8));ctx.fillText('CHAMPIONSHIP HALL',X(19),Y(2));
+ for(const x of [3,10,26,33])drawUploadedFit('wall-banner',X(x),Y(.5),2*S,2*S);
+ for(const o of interiorObjects)drawInteriorAsset(s.area,o,X(o.x),Y(o.y),o.w*S,o.h*S);
+ ctx.restore();
+}
 function drawInteriorDetails(ox,oy,viewW,viewH){
+ if(s.area==='championshipHall')return drawChampionshipHall(ox,oy);
  if(!isInterior(s.area))return;
  if(TOWN_ROOMS[s.area]?.kind==='gym')return drawExpansionGym(ox,oy,viewW,viewH);
  if(shopInterior(s.area))return drawShopInterior(ox,oy,viewW,viewH);
@@ -4380,14 +4396,14 @@ const REGIONAL_EXPANSION=Object.freeze({
   "gym": 8
  },
  "victoryRoad": {
-  "name": "Victory Road",
+  "name": "Ascension Pass",
   "col": 7,
   "row": 0,
   "biome": "highland",
   "kind": "route"
  },
  "leagueGrounds": {
-  "name": "Regional League Grounds",
+  "name": "Championship Grounds",
   "col": 6,
   "row": 0,
   "biome": "highland",
@@ -5181,6 +5197,7 @@ function buildLeagueLandscape(){
  // Leave the original east portal connected to the entire grand court.
  for(let y=2;y<H-1;y++)for(let x=2;x<W-2;x++)if(tiles[y][x]!==T.path)put(x,y,T.grass);
  rect(8,3,26,8,T.roof);
+ put(20,10,T.door);
  rect(14,11,14,5,T.stone);rect(16,11,10,4,T.path);
  rect(12,15,18,14,T.stone);rect(18,15,6,15,T.path);
  rect(18,12,W-18,3,T.path);rect(9,19,24,3,T.path);
@@ -5189,9 +5206,31 @@ function buildLeagueLandscape(){
  for(const [x,y] of [[5,17],[36,17],[5,28],[36,28],[9,29],[32,29]])if(tiles[y]?.[x]===T.grass)put(x,y,T.tree);
  for(const [x,y] of [[10,16],[30,16],[10,22],[30,22],[13,30],[28,30]])if(tiles[y]?.[x]===T.grass)rect(x,y,2,1,T.flower);
 }
+// Phase 13.1: public championship venue; battle systems arrive in later phases.
+const CHAMPIONSHIP_ROOMS=[{x:3,y:5,w:13,h:9,name:'Paragon Chamber I'},{x:22,y:5,w:13,h:9,name:'Paragon Chamber II'},{x:3,y:16,w:13,h:8,name:'Paragon Chamber III'},{x:22,y:16,w:13,h:8,name:'Paragon Chamber IV'}];
+function championshipHallGeometry(){
+ borders(T.wall);rect(1,4,W-2,H-5,T.stone);
+ for(const r of CHAMPIONSHIP_ROOMS){
+  rect(r.x,r.y,r.w,r.h,T.mat);
+  rect(r.x,r.y,r.w,1,T.wall);rect(r.x,r.y+r.h-1,r.w,1,T.wall);
+  rect(r.x,r.y,1,r.h,T.wall);rect(r.x+r.w-1,r.y,1,r.h,T.wall);
+ }
+ // Four reserved chambers and the Champion's arena remain closed until challenges exist.
+ rect(17,4,4,7,T.wall);rect(17,11,4,21,T.path);
+ rect(2,25,W-4,7,T.path);put(Math.floor(W/2),H-1,T.door);
+}
+function buildChampionshipHall(){
+ championshipHallGeometry();
+ const prop=(id,x,y,w,h,kind,title,desc,art)=>{const o=addInteriorObject(id,x,y,w,h,kind,title,[desc]);o.art=art;};
+ prop('championship-reception',12,28,3,1,'counter','Registration','The Paragon challenge is not yet open.','critter-center-reception-counter-002');
+ prop('championship-notice',25,28,1,1,'terminal','Championship Directory','Four Paragon chambers and the Champion arena are reserved for official challenges.','critter-center-diagnostic-terminal-015');
+ for(const x of [4,30]){prop('championship-bench-'+x,x,28,3,1,'table','Waiting Bench','A place for challengers to rest.','gym-bench-01');prop('championship-planter-'+x,x,31,1,1,'display','Planter','A carefully maintained plant.','gym-potted-plant-01');}
+ npc(13,27,['Welcome to the Championship Hall. The Paragon challenges will open in a later update.'],'site-attendant','championship-receptionist');
+ npc(24,26,['The four members of The Paragon each master a different battle strategy.'],'site-attendant','championship-guide');
+}
 function buildSpecialStorySite(area){
  const plans={
-  leagueGrounds:{kind:'league',actors:[[12,18,'League attendant: The official League challenge is not available yet. You may explore the grounds.'],[24,18,'League groundskeeper: The central court is kept clear for visitors.']]},
+  leagueGrounds:{kind:'league',actors:[[12,18,'Championship attendant: The hall is open to visitors with all eight badges. The Paragon challenges are not yet available.'],[26,18,'Championship groundskeeper: Follow the central steps to the hall entrance.']]},
   eclipseSite:{kind:'facility',actors:[[12,18,'Survey worker: The facility entrance is closed. Please remain on the public grounds.']]},
   legendaryReserveA:{kind:'coast',actors:[[12,18,'Coastal observer: Please leave the sanctuary undisturbed. The shoreline is open for quiet exploration.']]},
   legendaryReserveB:{kind:'marsh',actors:[[12,18,'Wetland observer: Keep to the raised paths around the pools.']]},
@@ -5347,9 +5386,9 @@ function tryOutdoorExit(d,x,y){
  const cross=d==='left'||d==='right'?y:x;
  if(cross<start||cross>end)return true;
  if((dest==='victoryRoad'||dest==='leagueGrounds')&&s.area!=='leagueGrounds'&&s.area!=='victoryRoad'&&!leagueEligible()){
-  notifyWorld('Earn all eight regional Gym badges before entering Victory Road.');return true;
+  notifyWorld('Earn all eight regional Gym badges before entering Ascension Pass.');return true;
  }
- if(dest==='leagueGrounds'&&!leagueEligible()){notifyWorld('Earn all eight regional Gym badges before entering the League grounds.');return true;}
+ if(dest==='leagueGrounds'&&!leagueEligible()){notifyWorld('Earn all eight regional Gym badges before entering the championship grounds.');return true;}
  if(s.area==='garden'&&dest==='coastRoute'&&!(s.badges>=1)){
   notifyWorld(['Earn the first Gym badge before continuing beyond Garden Town.']);return true;
  }
@@ -6340,7 +6379,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.78</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.79</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
