@@ -1138,3 +1138,35 @@ test('Phase 12.8 Ghost teams and eighth badge preserve progression',()=>{
  assert.equal(ctx.awardGymBadge(g,state),true);
  assert.equal(state.badges,8);assert.equal(ctx.awardGymBadge(g,state),false);
 });
+
+test('Phase 12.9 all eight Gym badges progress in order, once each, and unlock League eligibility',()=>{
+ const ctx=extract('const GYM_CHALLENGES=','function roomSize(',{});
+ const state={badges:0,defeated:{},puzzles:{}};
+ ctx.normalizeGymProgress(state);
+ for(let n=1;n<=8;n++){
+  const g=vm.runInContext('GYM_CHALLENGES['+(n-1)+']',ctx);
+  assert.equal(g.number,n);assert.equal(g.active,true);
+  assert.equal(ctx.leagueEligible(state),false);
+  assert.equal(ctx.gymRequirements(g,state).ready,false);
+  assert.equal(ctx.completeGymPuzzle(g,state),false);
+  for(const id of g.trainerIds)state.defeated[id]=true;
+  assert.equal(ctx.gymRequirements(g,state).ready,false);
+  assert.equal(ctx.completeGymPuzzle(g,state),true);
+  assert.equal(ctx.awardGymBadge(g,state),true);
+  assert.equal(ctx.awardGymBadge(g,state),false);
+  assert.equal(state.badges,n);
+  for(const t of [...(g.trainers||[]),...(g.leader?[g.leader]:[])])for(const m of t.team){
+   assert.ok(species.find(sp=>sp.speciesId===m.speciesId)?.types.includes(g.type),m.speciesId);
+  }
+ }
+ assert.equal(ctx.leagueEligible(state),true);
+ for(let n=0;n<=8;n++){
+  const legacy={badges:n};ctx.normalizeGymProgress(legacy);
+  assert.equal(legacy.badges,n);assert.equal(ctx.leagueEligible(legacy),n===8);
+  if(n)assert.equal(legacy.puzzles.gate,true);
+ }
+});
+test('Phase 12.9 raw Critter art path is accepted without breaking JavaScript parsing',()=>{
+ const ctx=extract('function uploadedArtPath(','\nfunction ',{RESIDENTIAL_ART:new Set()});
+ assert.equal(ctx.uploadedArtPath('assets/critters/starters/water.png'),'assets/critters/starters/water.png');
+});
