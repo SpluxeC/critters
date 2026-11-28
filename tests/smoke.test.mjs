@@ -1173,7 +1173,7 @@ test('Phase 12.9 raw Critter art path is accepted without breaking JavaScript pa
 
 test('Phase 13.1 championship entry, retreat and public corridors remain accessible',()=>{
  const T={wall:1,stone:2,mat:3,path:4,door:5};
- const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{T,W:38,H:34,tiles:[]});
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{T,W:38,H:34,tiles:[],s:{},leagueEligible:()=>false});
  vm.runInContext(`function put(x,y,t){tiles[y][x]=t}function rect(x,y,w,h,t){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)put(i,j,t)}function borders(t){rect(0,0,W,H,t)}`,ctx);
  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));championshipHallGeometry();return tiles})()`,ctx);
  const blocked=new Set(['12,28','13,28','14,28','25,28','4,28','5,28','6,28','30,28','31,28','32,28','4,31','30,31','13,27','24,26']);
@@ -1186,4 +1186,43 @@ test('Phase 13.1 Ascension Pass habitat labels preserve existing area IDs',()=>{
  const habitats=species.flatMap(sp=>sp.habitats||[]).filter(h=>h.areaId==='victoryRoad');
  assert.ok(habitats.length>0);
  assert.ok(habitats.every(h=>!h.areaName.includes('Victory Road')&&h.areaName.includes('Ascension Pass')));
+});
+
+test('Phase 13.2 Paragon registration, ordered victories, checkpoints and Champion eligibility',()=>{
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{leagueEligible:state=>state.badges===8});
+ const state={badges:7};
+ assert.equal(ctx.registerParagon(state),false);
+ assert.equal(ctx.paragonChamberOpen(0,state),false);
+ state.badges=8;assert.equal(ctx.registerParagon(state),true);
+ assert.equal(ctx.paragonChamberOpen(0,state),true);
+ assert.equal(ctx.paragonChamberOpen(1,state),false);
+ assert.equal(ctx.recordParagonWin('paragon-1',state),false);
+ // Simulate future authored opponents in this isolated context only.
+ vm.runInContext('for(const m of PARAGON_MEMBERS){m.active=true;m.team=[{speciesId:"test",level:1}]}',ctx);
+ for(let i=0;i<4;i++){
+  const id='paragon-'+(i+1);
+  assert.equal(ctx.paragonBattleReady(id,state),true);
+  if(i<3)assert.equal(ctx.recordParagonWin('paragon-'+(i+2),state),false);
+  assert.equal(ctx.recordParagonWin(id,state),true);
+  assert.equal(ctx.recordParagonWin(id,state),false);
+  assert.equal(ctx.paragonStatus(state).cleared,i+1);
+  ctx.recordParagonLoss(state);
+  assert.equal(ctx.paragonStatus(JSON.parse(JSON.stringify(state))).cleared,i+1);
+  assert.equal(ctx.paragonStatus(state).championEligible,i===3);
+ }
+ assert.equal(state.paragonProgress.losses,4);
+});
+test('Phase 13.2 chamber gates open in order and always allow retreat',()=>{
+ const T={wall:1,stone:2,mat:3,path:4,door:5};
+ const ctx=extract('const CHAMPIONSHIP_ROOMS=','function buildChampionshipHall(',{T,W:38,H:34,tiles:[],leagueEligible:state=>state.badges===8});
+ vm.runInContext(`function put(x,y,t){tiles[y][x]=t}function rect(x,y,w,h,t){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)put(i,j,t)}function borders(t){rect(0,0,W,H,t)}`,ctx);
+ for(let stage=-1;stage<=4;stage++){
+  ctx.state={badges:8,paragonProgress:{registered:stage>=0,cleared:Array.from({length:Math.max(0,stage)},(_,i)=>'paragon-'+(i+1))}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));championshipHallGeometry(state);return tiles})()`,ctx);
+  const seen=new Set(['19,31']),q=[[19,31]];
+  for(let k=0;k<q.length;k++){const [x,y]=q[k];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const a=x+dx,b=y+dy,key=a+','+b;if(![T.stone,T.mat,T.path,T.door].includes(tiles[b]?.[a])||seen.has(key))continue;seen.add(key);q.push([a,b]);}}
+  assert.ok(seen.has('19,33'));
+  for(const [i,p] of ['5,7','24,7','5,18','24,18'].entries())assert.equal(seen.has(p),stage>=i,p);
+  assert.equal(seen.has('19,8'),stage===4);
+ }
 });
