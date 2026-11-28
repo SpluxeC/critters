@@ -7248,7 +7248,7 @@ function eclipseContactDialogue(id){
  if(!q||s.area!==q.area)return;
  if(!eclipseIntroAvailable(s))return say(['There is nothing further to report at present.']);
  const flag='eclipseContact:'+id;
- if(storyFlag(flag))return say(q.lines);
+ if(storyFlag(flag)){if(storyChapterStatus('eclipseIntro',s)==='available')markStory('eclipseIntroduced');return say(q.lines);}
  return storyScene(flag,q.lines,()=>{
   if(storyChapterStatus('eclipseIntro',s)==='available')markStory('eclipseIntroduced');
  });
