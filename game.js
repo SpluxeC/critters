@@ -2666,7 +2666,7 @@ function build(preview=false){
  }
  if(!preview){
   snapVisual();
-  if(OUTDOOR_GRID[s.area])outdoorChunks.set(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null});
+  if(OUTDOOR_GRID[s.area])rememberOutdoorChunk(s.area,{tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null});
  }
 
 }
@@ -4806,6 +4806,8 @@ const OUTDOOR_LINKS={
  ...Object.fromEntries(Object.entries(EXPANSION_LINKS).filter(([id])=>id!=='garden'))
 };
 const outdoorChunks=new Map();
+const OUTDOOR_CHUNK_LIMIT=8;
+function rememberOutdoorChunk(area,chunk,activeArea=s?.area){outdoorChunks.delete(area);outdoorChunks.set(area,chunk);while(outdoorChunks.size>OUTDOOR_CHUNK_LIMIT){const victim=[...outdoorChunks.keys()].find(id=>id!==activeArea&&id!==area);if(!victim)break;outdoorChunks.delete(victim);}return chunk;}
 let worldTransitionBusy=false,worldFadeTimer=null;
 function fadeWorldChange(effect){
  if(worldTransitionBusy)return;
@@ -5618,13 +5620,13 @@ function expansionGroundColor(area,t){
 }
 function outdoorChunk(area){
  if(area==='homestead'&&outdoorChunks.get(area)?.constructionKey!==homesteadGeometryKey())outdoorChunks.delete(area);
- if(outdoorChunks.has(area))return outdoorChunks.get(area);
+ if(outdoorChunks.has(area)){const chunk=outdoorChunks.get(area);return rememberOutdoorChunk(area,chunk,s.area);}
  const current={area:s.area,x:s.x,y:s.y,tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null};
  try{
   s.area=area;s.x=17;s.y=13;
   build(true); // Preview geometry without migrating, saving or discovering areas.
   const result={tiles,npcs,villageObstacles,route1Blocked,interiorObjects,interiorBlocked,w:W,h:H,constructionKey:s.area==='homestead'?homesteadGeometryKey():null};
-  outdoorChunks.set(area,result);
+  rememberOutdoorChunk(area,result,current.area);
   return result;
  }finally{
   s.area=current.area;s.x=current.x;s.y=current.y;W=current.w;H=current.h;
@@ -6006,11 +6008,10 @@ function move(d,sliding=false){
  if((['route1','route2','route3','forest','cave','grotto','cavern'].includes(s.area)&&[T.tall,T.rice,T.stone].includes(t)||s.area==='garden'&&t===T.flower||REGIONAL_EXPANSION[s.area]&&WILD_AREA_BALANCE[s.area]&&t===T.tall)&&s.introComplete){
  const first=s.area==='route1'&&!s.earlyJourney?.firstEncounter;
  if(first){s.earlyJourney=s.earlyJourney||{};s.earlyJourney.fieldSteps=(s.earlyJourney.fieldSteps||0)+1}
- // Roll independently on each eligible wild tile. Retain the first Route 1
- // encounter guarantee so the opening capture tutorial cannot stall.
+ // Give a short recovery window after a battle and cap long dry spells.
  s.wildStepsSinceEncounter=(s.wildStepsSinceEncounter||0)+1;
  const guaranteed=first&&s.earlyJourney.fieldSteps>=5;
- if(guaranteed||Math.random()<wildEncounterChance(s.area))startWild();
+ if(guaranteed||shouldStartWildEncounter(s.wildStepsSinceEncounter,wildEncounterChance(s.area)))startWild();
 }
 }
 
@@ -6632,7 +6633,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.98</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.99</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7690,10 +7691,11 @@ function encounterConditionsAllow(conditions,area,hour=worldHour(),weather=regio
   (!Array.isArray(weathers)||!weathers.length||weathers.includes(weather));
 }
 function encounterSpeciesFor(area){
+ const hour=worldHour(),weather=regionalWeather(area);
  return [...speciesRegistry.values()].filter(sp=>{
   if([DRAGON_LEGEND.speciesId,PRIMORDIAL_LEGEND.speciesId,BEAST_LEGEND.speciesId].includes(sp.speciesId))return false; // Story-only encounter, never a random duplicate.
   const h=effectiveWildHabitat(sp,area);
-  return h&&encounterConditionsAllow(sp.encounterConditions,area)&&encounterConditionsAllow(h.encounterConditions,area);
+  return h&&encounterConditionsAllow(sp.encounterConditions,area,hour,weather)&&encounterConditionsAllow(h.encounterConditions,area,hour,weather);
  });
 }
 function wildHabitat(sp,area){return effectiveWildHabitat(sp,area)}
@@ -7715,6 +7717,13 @@ function chooseWildSpecies(area,roll=Math.random()){
  let target=Math.max(0,Math.min(.999999999,roll))*total;
  for(let i=0;i<pool.length;i++){target-=weights[i];if(target<0)return pool[i]}
  for(let i=pool.length-1;i>=0;i--)if(weights[i]>0)return pool[i];return null;
+}
+function shouldStartWildEncounter(steps,rate,roll=Math.random()){
+ if(!Number.isFinite(rate)||rate<=0)return false;
+ const n=Math.max(0,Math.floor(Number(steps)||0));
+ if(n<=3)return false;
+ if(n>=Math.ceil(3/rate))return true;
+ return roll<Math.min(.35,rate*(n>=20?1.5:1));
 }
 function wildEncounterChance(area){return WILD_AREA_BALANCE[SECRET_AREAS[area]?.parent||area]?.stepRate||0}
 function areaTypes(){return {coastRoute:["Water","Flying"],marshRoute:["Venom","Water","Grass"],canyonRoute:["Rock","Ground","Steel","Fighting"],volcanicRoute:["Fire","Ground","Rock"],ashPass:["Fire","Shadow","Steel"],snowRoute:["Ice","Steel"],ancientRoute:["Ghost","Psychic","Rock"],victoryRoad:["Fighting","Steel","Ground","Flying","Electric","Rock"],route1:['Grass','Water','Flying'],route2:['Grass','Flying','Venom'],forest:['Grass','Ghost','Shadow'],route3:['Rock','Electric','Fighting'],cave:['Rock','Ghost','Ice'],garden:['Grass','Water','Psychic']}[s.area]||['Grass']}
@@ -8339,7 +8348,7 @@ function endOfTeamTurn(log){
 }
 
 function captureChance(foe){
- if(!foe||!Number.isFinite(foe.maxHp)||foe.maxHp<=0)return 0;
+ if(!foe||!Number.isFinite(foe.maxHp)||foe.maxHp<=0||!Number.isFinite(foe.hp)||foe.hp<=0)return 0;
  return Math.min(.88,Math.max(.14,.14+.74*(1-Math.max(0,foe.hp)/foe.maxHp)));
 }
 function addCapturedCritter(caught){
