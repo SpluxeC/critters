@@ -1078,3 +1078,32 @@ test('Phase 12.6 ice gym all beacons and trainers reachable without opening lead
   assert.equal(seen.has('15,7'),done);
  }
 });
+
+test('Phase 12.7 Highland Gym vanes preserve retreat and gate the leader',()=>{
+ const T={stone:1,rock:2,path:3,wall:4};
+ const ctx=extract('const HIGHLAND_CONTROLS=','function furnishHighlandGym(',{T,W:30,H:24,tiles:[],gymChallenge:()=>({}),gymEarned:()=>false});
+ vm.runInContext(`function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)tiles[yy][xx]=t}`,ctx);
+ for(const values of [[0,0,0],[1,0,0],[0,2,0],[1,2,1]])for(const done of [false,true]){
+  ctx.s={gymProgress:{highlandWind:values,puzzles:{highlandTown:done}}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));highlandGymGeometry();return tiles})()`,ctx);
+  const blocked=new Set(['5,19','24,19','5,12','24,12','15,6','13,20','8,17','21,17','15,10','16,9']);
+  const seen=new Set(['15,21']),q=[[15,21]];
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k)||blocked.has(k))continue;seen.add(k);q.push([nx,ny])}}
+  for(const p of ['15,22','5,18','24,18','8,18','21,18'])assert.ok(seen.has(p),p);
+  assert.equal(seen.has('5,11'),done||values[0]===1||values[1]===2);
+  assert.equal(seen.has('15,7'),done);
+ }
+});
+test('Phase 12.7 Flying teams use real species and Gale Badge is awarded once',()=>{
+ const ctx=extract('const GYM_CHALLENGES=','function roomSize(',{});
+ const g=ctx.gymChallenge('highlandTown'),state={badges:6,defeated:{}};
+ ctx.normalizeGymProgress(state);
+ assert.equal(g.type,'Flying');assert.equal(g.trainers.length,4);
+ for(const trainer of [...g.trainers,g.leader])for(const member of trainer.team)assert.ok(species.find(sp=>sp.speciesId===member.speciesId)?.types.includes('Flying'),member.speciesId);
+ assert.equal(ctx.completeGymPuzzle(g,state),false);
+ for(const id of g.trainerIds)state.defeated[id]=true;
+ assert.equal(ctx.gymRequirements(g,state).ready,false);
+ assert.equal(ctx.completeGymPuzzle(g,state),true);
+ assert.equal(ctx.awardGymBadge(g,state),true);
+ assert.equal(state.badges,7);assert.equal(ctx.awardGymBadge(g,state),false);
+});
