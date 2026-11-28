@@ -189,7 +189,7 @@ function finishSceneryLayer(){
 
 const RESIDENTIAL_ART=new Set(["armchair-front-alt","armchair-front","bamboo-screen","bed-east","bed-north","bed-south","bed-west","bonsai-blue-pot","bonsai-red-pot","book-table","bookshelf-front","bookshelf-side-a","bookshelf-side-b","ceramic-jar","chair-front-alt","chair-front","chair-side-a","chair-side-b","clock-front","clock-side","crate-a","crate-b","cushion-blue","cushion-green","cushion-purple","cushion-red","desk-front-alt","desk-front","dining-table-horizontal-a","dining-table-horizontal-b","dining-table-vertical-a","dining-table-vertical-b","dresser-front-alt","dresser-front","floor-lantern","flowering-plant","folding-screen-a","folding-screen-b","folding-screen-c","fridge-front-alt","fridge-front","futon-east","futon-north","futon-south","futon-west","hide-rug","hutch-front-narrow","hutch-front","hutch-side","low-table-seats-a","low-table-seats-b","low-table-seats-c","low-table-seats-d","nightstand-front","nightstand-variant-2","nightstand-variant-3","nightstand-variant-4","plant-brown-pot","plant-tall-a","plant-tall-b","prep-counter-front","prep-counter-narrow","round-rug-blue","round-rug-cream","round-tea-table-a","round-tea-table-b","round-tea-table-c","round-tea-table-d","rug-blue","rug-red","sink-front-alt","sink-front","sink-side-a","sink-side-b","small-chest","small-flower-pot","sofa-front-alt","sofa-front","sofa-side-a","sofa-side-b","square-lantern","storage-chest","stove-front-alt","stove-front","stove-side-a","stove-side-b","table-horizontal-a","table-horizontal-b","table-vertical-a","table-vertical-b","tatami-mat","vanity-back","vanity-front","vanity-side","vase-flowers","wall-banner","wall-family-portrait","wall-floral-picture","wall-herb-rack","wall-landscape","wall-scroll-a","wall-scroll-b","wardrobe-front-alt","wardrobe-front","wardrobe-side","wooden-bucket","woven-basket"]);
 function uploadedArtPath(name){
- if(/^assets\\/critters\\/[a-z0-9/_-]+\\.png$/.test(name))return name;
+ if(/^assets\/critters\/[a-z0-9/_-]+\.png$/.test(name))return name;
  if(RESIDENTIAL_ART.has(name))return 'assets/residential-furniture/'+name+'.png';
  if(name.startsWith('outdoor-'))return 'assets/outdoor-scenery/'+name+'.png';
  if(/^(family-home|neighbor-house|research-laboratory|critter-center|critter-shop|grass-gym)-(closed|ajar|half-open|open)$/.test(name))return 'assets2/interactive-animated/building-doors/'+name+'.png';
@@ -877,11 +877,13 @@ function normalizeGymProgress(state){
  const legacy=Math.max(0,Math.min(8,Math.floor(Number(state.badges)||0)));
  for(const g of GYM_CHALLENGES)if(g.number<=legacy)earned[g.id]=true;
  if(state.defeated?.leader)earned.grass=true;
+ if(earned.grass===true){state.puzzles=state.puzzles||{};state.puzzles.gate=true;}
  state.gymProgress={...old,earned,puzzles:old.puzzles&&typeof old.puzzles==='object'&&!Array.isArray(old.puzzles)?old.puzzles:{}};
  state.badges=GYM_CHALLENGES.filter(g=>earned[g.id]===true).length;state.cut=state.badges>=1;
  return state.gymProgress;
 }
 function gymEarned(g,state=s){return !!g&&(state.gymProgress?.earned?.[g.id]===true||(g.number===1&&state.badges>=1))}
+function leagueEligible(state=s){return GYM_CHALLENGES.every(g=>gymEarned(g,state));}
 function gymRequirements(g,state=s){
  if(!g||!g.active)return {ready:false,reason:'Official challenge not available yet.'};
  if(gymEarned(g,state))return {ready:false,reason:'You have already earned this badge.'};
@@ -905,8 +907,8 @@ function awardGymBadge(g,state=s){
 }
 function gymProgressPanel(){
  return '<div class="watchSectionTitle">Regional Gyms · '+s.badges+'/8 badges</div>'+GYM_CHALLENGES.map(g=>{
-  const earned=gymEarned(g),status=earned?'Badge earned':!g.active?'Challenge pending':GYM_CHALLENGES.some(q=>q.number<g.number&&!gymEarned(q))?'Locked': 'Available';
-  return '<div class="watchRow"><span><b>'+g.number+'. '+escapeHtml(g.number===1?'Grass Gym':TOWN_ROOMS[g.room]?.name||g.town)+'</b><small> · '+g.trainerIds.filter(id=>s.defeated?.[id]).length+'/'+g.trainerIds.length+' trainers</small></span><span>'+status+'</span></div>';
+  const earned=gymEarned(g),status=earned?'Badge earned':!g.active?'Challenge pending':GYM_CHALLENGES.some(q=>q.number<g.number&&!gymEarned(q))?'Locked':gymRequirements(g).ready?'Leader ready':g.trainerIds.some(id=>!s.defeated?.[id])?'Defeat trainers':'Complete puzzle';
+  return '<div class="watchRow"><span><b>'+g.number+'. '+escapeHtml(g.number===1?'Grass Gym':TOWN_ROOMS[g.room]?.name||g.town)+'</b><small> · '+escapeHtml(g.type||'')+' · '+escapeHtml(g.badgeName||'Grass Badge')+' · '+g.trainerIds.filter(id=>s.defeated?.[id]).length+'/'+g.trainerIds.length+' trainers</small></span><span>'+status+'</span></div>';
  }).join('');
 }
 function populateGymChallenge(area){
@@ -1050,10 +1052,11 @@ function operateHarborValve(id){
  if(gymEarned(g)||s.gymProgress?.puzzles?.harborTown)return notifyWorld('The tide gates are already open.');
  if(!gymEarned(gymChallenge('grass'))||g.trainerIds.some(t=>!s.defeated?.[t]))return notifyWorld('Earn the Grass badge and defeat all three Harbor Gym trainers first.');
  normalizeGymProgress(s);
- const seq=s.gymProgress.harborSequence||[],order=['west','east','central'];
+ const order=['west','east','central'],raw=s.gymProgress.harborSequence;
+ const seq=Array.isArray(raw)&&raw.length<3&&raw.every((v,i)=>v===order[i])?raw:[];
  if(order[seq.length]!==id){s.gymProgress.harborSequence=[];save();return notifyWorld('The valves reset. West, east, then central.');}
  s.gymProgress.harborSequence=[...seq,id];
- if(seq.length===2){completeGymPuzzle(g);s.gymProgress.harborSequence=[];build();save();return notifyWorld('The tide gates open. The Gym Leader is now accessible!');}
+ if(seq.length===2){if(!completeGymPuzzle(g)){s.gymProgress.harborSequence=[];save();return notifyWorld('Earn all previous badges and defeat the Gym trainers first.');}s.gymProgress.harborSequence=[];build();save();return notifyWorld('The tide gates open. The Gym Leader is now accessible!');}
  save();return notifyWorld('Valve activated. '+(seq.length+1)+'/3.');
 }
 // Marsh challenge: successive drawbridges connect three islands and the leader deck.
@@ -1083,8 +1086,8 @@ function operateMarshBridge(id){
  const bridges=s.gymProgress.marshBridges||(s.gymProgress.marshBridges={});
  if(index>0&&!bridges[['west','east','north'][index-1]])return notifyWorld('Open the preceding bridge first.');
  if(bridges[id])return notifyWorld('This bridge is already lowered.');
+ if(index===2&&!completeGymPuzzle(g))return notifyWorld('Earn all previous badges and defeat all three Gym trainers first.');
  bridges[id]=true;
- if(index===2)completeGymPuzzle(g);
  build();save();return notifyWorld(index===2?'The final boardwalk is open. Challenge the Gym Leader!':'The boardwalk lowers, revealing the next island.');
 }
 // Counterweights toggle pairs of gates. The southern corridor always stays open.
@@ -1200,7 +1203,8 @@ function snowSlideTick(now){
  if(now-visual.start<visual.duration)return true;
  const next=snowSlideNext(s.x,s.y,snowSlideDirection,snowIceAt,(x,y)=>solidAt(x,y)||npcs.some(p=>p.x===x&&p.y===y));
  if(!next){snowSlideDirection=null;return false}
- const d=snowSlideDirection;move(d,true);return true;
+ const d=snowSlideDirection,oldX=s.x,oldY=s.y;move(d,true);
+ if(s.x===oldX&&s.y===oldY){snowSlideDirection=null;return false;}return true;
 }
 function visitSnowBeacon(){
  if(s.area!=='snowTownGym'||!gymEarned(gymChallenge('volcanicTown')))return;
@@ -5342,6 +5346,10 @@ function tryOutdoorExit(d,x,y){
  if(!dest)return true;
  const cross=d==='left'||d==='right'?y:x;
  if(cross<start||cross>end)return true;
+ if((dest==='victoryRoad'||dest==='leagueGrounds')&&s.area!=='leagueGrounds'&&s.area!=='victoryRoad'&&!leagueEligible()){
+  notifyWorld('Earn all eight regional Gym badges before entering Victory Road.');return true;
+ }
+ if(dest==='leagueGrounds'&&!leagueEligible()){notifyWorld('Earn all eight regional Gym badges before entering the League grounds.');return true;}
  if(s.area==='garden'&&dest==='coastRoute'&&!(s.badges>=1)){
   notifyWorld(['Earn the first Gym badge before continuing beyond Garden Town.']);return true;
  }
@@ -6332,7 +6340,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.77</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.78</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -7083,6 +7091,7 @@ function rivalPartnerAtLevel(level){
 function startTrainer(id){
  const gymBattle=gymTrainerDefinition(id),leaderGym=GYM_CHALLENGES.find(g=>g.leaderId===id&&g.active);
  if(leaderGym&&!gymRequirements(leaderGym).ready)return notifyWorld(gymRequirements(leaderGym).reason);
+ if(gymBattle&&!gymBattle.leader&&s.defeated?.[id])return notifyWorld('You have already defeated this Gym trainer.');
  if(gymBattle&&s.area!==gymBattle.gym.room)return notifyWorld('Visit the Gym to challenge its trainers.');
  if(gymBattle&&GYM_CHALLENGES.some(g=>g.number<gymBattle.gym.number&&!gymEarned(g)))return notifyWorld('Earn the previous regional badges first.');
  if(firstAlive()<0)return blackout();
