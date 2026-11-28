@@ -1509,10 +1509,47 @@ test('Phase 14.3 Eclipse first contact is badge gated, persistent and recoverabl
   ctx.eclipseContactDialogue(q.id);assert.equal(ctx.storyFlag('eclipseIntroduced',state),false);
   callbacks.shift()();assert.equal(ctx.storyFlag('eclipseIntroduced',state),true);
   assert.equal(ctx.storyFlag('eclipseContact:'+q.id,state),true);
-  assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'reserved');
+  assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'available');
   assert.equal(ctx.storyFlag('eclipseIntroduced',JSON.parse(JSON.stringify(state))),true);
   const before=saves;ctx.eclipseContactDialogue(q.id);assert.equal(saves,before);
   delete state.story.flags.eclipseIntroduced;ctx.eclipseContactDialogue(q.id);
   assert.equal(ctx.storyFlag('eclipseIntroduced',state),true);
  }
+});
+
+test('Phase 14.4 Eclipse operations require introduction and badge thresholds, persist independently, and unlock no reserved chapters',()=>{
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{});
+ const ops=vm.runInContext('ECLIPSE_OPERATIONS',ctx);
+ assert.equal(ops.length,3);
+ const state={introComplete:true,badges:8,defeated:{}};
+ ctx.normalizeStoryState(state);
+ for(const q of ops){
+  assert.equal(ctx.eclipseOperationAvailable(q.id,state),false);
+  assert.ok(q.team.every(([id,level])=>species.some(p=>p.speciesId===id)&&level>=1&&level<=100));
+ }
+ assert.equal(ctx.setStoryFlag('eclipseIntroduced',state),true);
+ for(const q of ops){
+  for(let badges=0;badges<=8;badges++)assert.equal(ctx.eclipseOperationAvailable(q.id,{...state,badges}),badges>=q.badges);
+  assert.equal(ctx.eclipseOperationAvailable(q.id,{...state,introComplete:false}),false);
+ }
+ for(const q of [...ops].reverse()){
+  assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'available');
+  state.defeated[q.id]=true;ctx.normalizeStoryState(state);
+  assert.equal(ctx.storyFlag(q.id+'Won',state),true);
+ }
+ assert.equal(ctx.storyChapterStatus('eclipseOperations',state),'complete');
+ assert.equal(ctx.storyChapterStatus('eclipseOperations',JSON.parse(JSON.stringify(state))),'complete');
+ assert.equal(ctx.storyChapterStatus('eclipseFinale',state),'reserved');
+ assert.equal(ctx.storyChapterStatus('regionalHistory',state),'reserved');
+});
+test('Phase 14.4 completed operations cannot start another battle and loss leaves progress unchanged',()=>{
+ let starts=0,callbacks=[];
+ const state={introComplete:true,badges:8,area:'harborTown',defeated:{},story:{flags:{eclipseIntroduced:true}}};
+ const ctx=extract('const STORY_STRUCTURE=','function researcherStoryDialogue(',{s:state,battle:null,speciesDataReady:true,moveDataReady:true,speciesRegistry:new Map(species.map(p=>[p.speciesId,p])),firstAlive:()=>0,critter:(id,level)=>({id,level}),startBattle:()=>starts++,say:(lines,cb)=>{if(cb)callbacks.push(cb)}});
+ ctx.eclipseOperationDialogue('eclipse-op-harbor');callbacks.shift()();assert.equal(starts,1);
+ assert.equal(ctx.storyFlag('eclipse-op-harborWon',state),false);
+ ctx.startEclipseOperation('eclipse-op-harbor');assert.equal(starts,2);
+ state.defeated['eclipse-op-harbor']=true;
+ ctx.startEclipseOperation('eclipse-op-harbor');assert.equal(starts,2);
+ ctx.eclipseOperationDialogue('eclipse-op-harbor');assert.equal(callbacks.length,0);
 });
