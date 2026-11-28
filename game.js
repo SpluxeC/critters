@@ -840,7 +840,14 @@ const GYM_CHALLENGES=Object.freeze([
  {id:'volcanic-g3',name:'Thermal Researcher',x:7,y:12,award:280,team:[{speciesId:'cr-174-psychelet',level:35},{speciesId:'cr-177-cindlet',level:36}],dialogue:['Pressure and timing are everything.']},
  {id:'volcanic-g4',name:'Foundry Veteran',x:23,y:12,award:295,team:[{speciesId:'cr-178-flarefox',level:36},{speciesId:'cr-162-pyrelark',level:37},{speciesId:'cr-161-torchmink',level:37}],dialogue:['Show me a team that can withstand the heat.']}
  ],leader:{id:'volcanic-leader',name:'Volcanic Gym Leader',x:15,y:6,award:480,team:[{speciesId:'cr-148-sootsprite',level:37},{speciesId:'cr-161-torchmink',level:38},{speciesId:'cr-174-psychelet',level:39},{speciesId:'cr-177-cindlet',level:40}],dialogue:['Fire is not simply destruction. Master its energy and you can accomplish anything.']}},
- ...['snowTown','highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+6,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
+ {id:'snowTown',room:'snowTownGym',town:'snowTown',number:6,type:'Ice',active:true,badgeName:'Glacier Badge',trainerIds:['snow-g1','snow-g2','snow-g3','snow-g4'],leaderId:'snow-leader',puzzle:'ice-beacons',
+ trainers:[
+ {id:'snow-g1',name:'Winter Guide',x:5,y:19,award:310,team:[{speciesId:'cr-117-glacibun',level:39},{speciesId:'cr-116-frostip',level:40}],dialogue:['Learn to stop on the rough stone before crossing the ice.']},
+ {id:'snow-g2',name:'Ice Sculptor',x:24,y:19,award:325,team:[{speciesId:'cr-122-crystip',level:40},{speciesId:'cr-121-chillume',level:41}],dialogue:['Every frozen surface has a different path.']},
+ {id:'snow-g3',name:'Glacier Ranger',x:5,y:10,award:340,team:[{speciesId:'cr-119-rimesnout',level:41},{speciesId:'cr-205-pallowl',level:42},{speciesId:'cr-208-blizzlet',level:42}],dialogue:['Plan ahead, even when the ice carries you farther than expected.']},
+ {id:'snow-g4',name:'Alpine Veteran',x:24,y:10,award:355,team:[{speciesId:'cr-190-hailhorn',level:42},{speciesId:'cr-116-frostip',level:43},{speciesId:'cr-117-glacibun',level:43}],dialogue:['A patient trainer can weather any winter.']}
+ ],leader:{id:'snow-leader',name:'Snow Gym Leader',x:15,y:6,award:570,team:[{speciesId:'cr-119-rimesnout',level:43},{speciesId:'cr-121-chillume',level:44},{speciesId:'cr-205-pallowl',level:45},{speciesId:'cr-190-hailhorn',level:46},{speciesId:'cr-208-blizzlet',level:47}],dialogue:['The glacier teaches us to turn momentum into strength.']}},
+ ...['highlandTown','ancientTown'].map((town,i)=>({id:town,room:town+'Gym',town,number:i+7,type:null,active:false,trainerIds:[],leaderId:null,puzzle:null}))
 ]);
 function gymChallenge(id){return GYM_CHALLENGES.find(g=>g.id===id||g.room===id)||null}
 function gymTrainerDefinition(id){
@@ -996,6 +1003,7 @@ function furnishExpansionGym(area,add){
  if(area==='marshTownGym'){furnishMarshGym(add);return;}
  if(area==='canyonTownGym'){furnishCanyonGym(add);return;}
  if(area==='volcanicTownGym'){furnishVolcanicGym(add);return;}
+ if(area==='snowTownGym'){furnishSnowGym(add);return;}
  const theme=expansionInteriorTheme(area),gym=theme.gym;
  // Practice hall fixtures are deliberately non-battling, with unobstructed
  // entrance, middle aisle, arena and attendant access.
@@ -1145,6 +1153,55 @@ function operateThermalControl(id){
  values[i]=(values[i]+1)%3;s.gymProgress.thermalSettings=values;save();
  return notifyWorld('Regulator '+id+': '+labels[values[i]]+'. Target: '+labels[THERMAL_TARGET[i]]+'.');
 }
+// Ice is represented by T.tall only in this room; no encounter logic applies.
+const SNOW_BEACONS=[{id:'west',x:5,y:15},{id:'east',x:24,y:15},{id:'north',x:15,y:10}];
+function snowGymGeometry(state=s){
+ const done=state.gymProgress?.puzzles?.snowTown||gymEarned(gymChallenge('snowTown'),state);
+ rect(1,4,W-2,H-5,T.stone);
+ rect(1,8,W-2,1,T.rock);
+ if(done)rect(13,8,4,1,T.path);
+ // Broad ice fields with rough perimeter lanes and stopping islands.
+ rect(7,10,16,10,T.tall);
+ rect(14,20,3,3,T.path);
+ rect(7,15,3,1,T.path);rect(20,15,3,1,T.path);
+ rect(14,11,3,1,T.path);rect(14,17,3,1,T.path);
+ for(const [x,y] of [[11,12],[18,12],[11,18],[18,18]])rect(x,y,1,1,T.rock);
+}
+function furnishSnowGym(add){
+ const note=add('iceNotice',12,21,1,1,'terminal','Glacier Instructions','Slide across the pale ice. Rough stone stops your movement. Defeat all four trainers, light three beacons and use the summit console.');note.art='critter-center-diagnostic-terminal-015';
+ const seal=add('iceSeal',15,9,1,1,'terminal','Glacier Seal','Requires three illuminated beacons and four trainer victories.','snow-seal');seal.art='critter-center-diagnostic-terminal-015';
+}
+function snowIceAt(x,y){return s?.area==='snowTownGym'&&tiles[y]?.[x]===T.tall}
+function snowSlideNext(x,y,d,isIce,blocked){
+ if(!isIce(x,y))return null;
+ const v=({up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]})[d];
+ if(!v)return null;
+ const nx=x+v[0],ny=y+v[1];return blocked(nx,ny)?null:{x:nx,y:ny};
+}
+let snowSlideDirection=null;
+function snowSlideTick(now){
+ if(!snowSlideDirection)return false;
+ if(s?.area!=='snowTownGym'||screen!=='game'||modal||battle||narratorBlocking()||worldTransitionBusy||doorTransition||trainerApproachLocked()){snowSlideDirection=null;return false}
+ if(now-visual.start<visual.duration)return true;
+ const next=snowSlideNext(s.x,s.y,snowSlideDirection,snowIceAt,(x,y)=>solidAt(x,y)||npcs.some(p=>p.x===x&&p.y===y));
+ if(!next){snowSlideDirection=null;return false}
+ const d=snowSlideDirection;move(d,true);return true;
+}
+function visitSnowBeacon(){
+ if(s.area!=='snowTownGym'||!gymEarned(gymChallenge('volcanicTown')))return;
+ const b=SNOW_BEACONS.find(b=>b.x===s.x&&b.y===s.y);if(!b)return;
+ normalizeGymProgress(s);
+ const lights=s.gymProgress.snowBeacons||(s.gymProgress.snowBeacons={});
+ if(!lights[b.id]){lights[b.id]=true;save();}
+}
+function operateSnowSeal(){
+ const g=gymChallenge('snowTown');
+ if(gymEarned(g)||s.gymProgress?.puzzles?.snowTown)return notifyWorld('The glacier seal is already open.');
+ if(!gymEarned(gymChallenge('volcanicTown')))return notifyWorld('Earn the Ember Badge first.');
+ if(!SNOW_BEACONS.every(b=>s.gymProgress?.snowBeacons?.[b.id]))return notifyWorld('Light all three floor beacons first.');
+ if(!completeGymPuzzle(g))return notifyWorld('Defeat all four Gym trainers first.');
+ build();save();return notifyWorld('The glacier seal opens. Challenge the Gym Leader!');
+}
 function furnishInterior(area){
  interiorObjects=[];interiorBlocked=new Set();
  // Always maintain a free central aisle and unobstructed exit at (17,25).
@@ -1253,6 +1310,7 @@ function inspectInterior(o){
  if(o.action?.startsWith('marsh-bridge-'))return operateMarshBridge(o.action.slice(13));
  if(o.action?.startsWith('canyon-weight-'))return operateCanyonWeight(o.action.slice(14));
  if(o.action?.startsWith('thermal-'))return operateThermalControl(o.action.slice(8));
+ if(o.action==='snow-seal')return operateSnowSeal();
  if(o.action==='center')return center();
  if(o.action==='shop')return shop();
  if(o.id==='home-bookcase'||o.id==='lab-books')return storyArchiveDialogue();
@@ -2254,13 +2312,13 @@ function sideQuestIndex(){
   +'<div class="watchReadOnly">Side quests are optional. Accept and claim rewards by speaking to their NPCs.</div>';
 }
 function build(preview=false){
- if(!preview){cancelTrainerApproach();npcResidenceDoor=null;migrate()}
+ if(!preview){cancelTrainerApproach();npcResidenceDoor=null;snowSlideDirection=null;migrate()}
  applyAreaSize(s.area);tiles=Array.from({length:H},()=>Array(W).fill(['lab','gym','home','neighbor','homesteadHome'].includes(s.area)?T.wood:T.grass));npcs=[];villageObstacles=new Set();interiorObjects=[];interiorBlocked=new Set();route1Blocked=new Set();
  if(REGIONAL_EXPANSION[s.area])buildExpansionArea(s.area);
  else if(TOWN_ROOMS[s.area]&&SETTLEMENT_PLANS[TOWN_ROOMS[s.area].parent]){
   borders(T.wall);put(...roomExit(s.area),T.door);furnishInterior(s.area);
   const room=TOWN_ROOMS[s.area];
-  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();if(s.area==='volcanicTownGym')volcanicGymGeometry();populateGymChallenge(s.area);}
+  if(room.kind==='gym'){if(s.area==='harborTownGym')harborGymGeometry();if(s.area==='marshTownGym')marshGymGeometry();if(s.area==='canyonTownGym')canyonGymGeometry();if(s.area==='volcanicTownGym')volcanicGymGeometry();if(s.area==='snowTownGym')snowGymGeometry();populateGymChallenge(s.area);}
   else if(room.kind==='center')npc(12,4,['Welcome to the Critter Center.'],'center');
   else if(room.kind==='shop')npc(10,4,['Welcome to the Critter Shop.'],'shop');
   else npc(8,7,['Welcome to our home.']);
@@ -3685,6 +3743,15 @@ function drawExpansionGym(ox,oy,viewW,viewH){
  ctx.strokeRect(X(9),Y(9),12*S,8*S);
  ctx.beginPath();ctx.arc(X(15),Y(13),2*S,0,Math.PI*2);ctx.stroke();
  ctx.beginPath();ctx.moveTo(X(9),Y(13));ctx.lineTo(X(21),Y(13));ctx.stroke();
+ if(s.area==='snowTownGym'){
+  for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
+   const t=tiles[y][x];box(x,y,1,1,t===T.tall?'#b4dce5':t===T.rock?'#718b9a':t===T.path?'#d9e2de':'#a5b6bc');
+   if(t===T.tall){box(x+.12,y+.18,.58,.025,'#eaf8fb');if(naturalSeed(x,y)%7===0){ctx.strokeStyle='#8cb6c8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X(x+.2),Y(y+.9));ctx.lineTo(X(x+.5),Y(y+.5));ctx.lineTo(X(x+.8),Y(y+.3));ctx.stroke();}}
+   else if(t===T.rock){box(x+.08,y+.08,.84,.3,'#d8edf3');box(x+.15,y+.45,.7,.45,'#8faebd');}
+   else{box(x,y+.96,1,.04,'#82999e');box(x+.96,y,.04,1,'#82999e');}
+  }
+  for(const b of SNOW_BEACONS){const lit=s.gymProgress?.snowBeacons?.[b.id];ctx.fillStyle=lit?'#e7c77a':'#687e8c';ctx.beginPath();ctx.arc(X(b.x+.5),Y(b.y+.5),S*.32,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#edf5f3';ctx.lineWidth=2;ctx.stroke();}
+ }
  if(s.area==='volcanicTownGym'){
   const now=reducedWorldMotion()?0:performance.now();
   for(let y=4;y<H-1;y++)for(let x=1;x<W-1;x++){
@@ -5487,7 +5554,8 @@ function region(area,x,y,textLine='',forceFade=false){
  change();
 }
 
-function move(d){
+function move(d,sliding=false){
+ if(snowSlideDirection&&!sliding)return;
  if(screen!=='game'||modal||doorTransition||worldTransitionBusy||narratorBlocking()||trainerApproachLocked())return;
  s.face=d;const v=dirs[d],x=s.x+v[0],y=s.y+v[1];
  if(tryOutdoorExit(d,x,y))return;
@@ -5508,6 +5576,7 @@ function move(d){
  if(npcs.some(p=>(p.x===x&&p.y===y)||(p.walking&&p.fromX===x&&p.fromY===y))||solidAt(x,y))return;
  const t=tiles[y][x];
  beginStep(x,y);s.x=x;s.y=y;frame=(frame+1)%4;recordWalkingStep();
+ if(s.area==='snowTownGym'){snowSlideDirection=snowIceAt(x,y)?d:null;visitSnowBeacon();}
  if(checkTrainerSight())return;
  if(s.area==='garden'&&!s.rivalPassed&&Math.abs(s.x-24)+Math.abs(s.y-11)<=3)return rivalGardenScene();
  
@@ -5556,7 +5625,7 @@ function updateInteractVisibility(){
  button.setAttribute('aria-label',available?'Interact with the object ahead':'Nothing to interact with ahead');
 }
 function interact(){
- if(modal||doorTransition||worldTransitionBusy||trainerApproachLocked())return;if(narratorBlocking())return advance();
+ if(modal||doorTransition||worldTransitionBusy||trainerApproachLocked()||snowSlideDirection)return;if(narratorBlocking())return advance();
  const v=dirs[s.face],x=s.x+v[0],y=s.y+v[1],p=npcs.find(q=>q.x===x&&q.y===y);
  const pasture=pastureGateAt(x,y);if(pasture>=0)return greetPasture(pasture);
  if(p)pauseNpcForInteraction(p);
@@ -6142,7 +6211,7 @@ function fastTravelToCenter(id){
 }
 
 function indexSettings(){
- return '<div class="watchSectionTitle">Game settings · v1.74</div>'
+ return '<div class="watchSectionTitle">Game settings · v1.75</div>'
    +''
   +'<div class="watchToolCard watchSettingsCard"><strong>Save game</strong><p>Save your adventure, party, inventory, and progress.</p><button type="button" class="btn primary" id="settingsSaveGame">Save Game</button></div>'
   +'<div class="watchToolCard watchSettingsCard"><strong>Controls</strong><p><b>Move:</b> Touch and slide anywhere on the overworld. Hold to keep moving; release to stop.</p><p><b>Run / Walk:</b> Double-tap an empty part of the overworld to switch speed.</p><p><b>Interact:</b> Face an NPC or object and tap Interact. Tap Interact or the narrator to advance dialogue.</p><p><b>Critter Index:</b> Tap Index to open your watch.</p><p><b>Keyboard:</b> WASD or arrow keys to move, E / Enter / Space to interact, I for Index, Esc to close menus.</p></div>'
@@ -8053,7 +8122,7 @@ function renderWorldFrame(now){
  if(renderCostAverage>19)renderInterval=1000/30;
  else if(renderCostAverage<10)renderInterval=1000/60;
 }
-function loop(now=performance.now()){tickAmbient();if(screen==='game'&&!document.hidden){tickStoryScenes();finishDoorAnimation();tickNpcRoutines();if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}if(!battle)renderWorldFrame(now);else{atmospherePreviousFrame=0;lastWorldRender=-Infinity}}else{atmospherePreviousFrame=0;lastWorldRender=-Infinity}requestAnimationFrame(loop)}
+function loop(now=performance.now()){tickAmbient();if(screen==='game'&&!document.hidden){tickStoryScenes();finishDoorAnimation();tickNpcRoutines();if(snowSlideTick(now)){}else if(stickActive&&stickDirection&&!modal&&!narratorBlocking()&&Date.now()>=stickRepeatAt){move(stickDirection);stickRepeatAt=Date.now()+movementStepInterval();last=Date.now()}else if(!stickActive){for(const d of ['up','down','left','right'])if(held[d]&&Date.now()-last>movementStepInterval()){move(d);last=Date.now();break}}if(!battle)renderWorldFrame(now);else{atmospherePreviousFrame=0;lastWorldRender=-Infinity}}else{atmospherePreviousFrame=0;lastWorldRender=-Infinity}requestAnimationFrame(loop)}
 loadCritterMoveData();
 requestAnimationFrame(loop);
 })();
