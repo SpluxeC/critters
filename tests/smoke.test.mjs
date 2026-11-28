@@ -1019,3 +1019,17 @@ test('Phase 12.3 marsh boardwalks connect each island in order',()=>{
   assert.ok(seen.has('7,19'));assert.equal(seen.has('22,14'),stage>=1);assert.equal(seen.has('7,10'),stage>=2);assert.equal(seen.has('15,6'),stage>=3);
  }
 });
+
+test('Phase 12.4 canyon counterweights preserve retreat and gate the leader',()=>{
+ const T={stone:1,rock:2,path:3,wall:4};
+ const ctx=extract('function canyonGateState(','function furnishCanyonGym(',{T,W:30,H:24,tiles:[],gymChallenge:()=>({}),gymEarned:()=>false});
+ vm.runInContext(`function rect(x,y,w,h,t){for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)tiles[yy][xx]=t}`,ctx);
+ for(const mask of [0,1,2,3])for(const done of [false,true]){
+  ctx.state={gymProgress:{canyonWeights:mask,puzzles:{canyonTown:done}}};
+  const tiles=vm.runInContext(`(()=>{tiles=Array.from({length:H},()=>Array(W).fill(T.wall));canyonGymGeometry(state);return tiles})()`,ctx);
+  const seen=new Set(['15,21']),q=[[15,21]];
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(![T.path,T.stone].includes(tiles[ny]?.[nx])||seen.has(k))continue;seen.add(k);q.push([nx,ny])}}
+  assert.ok(seen.has('7,19'));assert.ok(seen.has('23,19'));
+  assert.equal(seen.has('7,12'),done||mask!==0);assert.equal(seen.has('15,6'),done);
+ }
+});
